@@ -38,7 +38,7 @@
     const f = p.ficha || {}, des = Number((f.atributos || {}).des) || 10, md = Math.floor((des - 10) / 2);
     const usados = new Set(window.__ini.list().map((c) => c.name));
     let nome = p.nome, n = 2; while (usados.has(nome)) nome = `${p.nome} ${n++}`;
-    window.__ini.add({ name: nome, kind: f.npc ? "NPC" : "Personagem", initiative: 1 + Math.floor(Math.random() * 20) + md, hp: p.pv_atual, maxHp: Math.max(1, p.pv_max), ac: p.ca || 0, key: "", pid: p.id });
+    window.__ini.add({ name: nome, kind: f.npc ? "NPC" : "Personagem", initiative: 1 + Math.floor(Math.random() * 20) + md, hp: p.pv_atual, maxHp: Math.max(1, p.pv_max), ac: p.ca || 0, key: "", pid: p.id, foto: f.foto || "" });
     enviado[p.id] = p.pv_atual;
   }
   box.addEventListener("click", (e) => {

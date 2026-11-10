@@ -602,7 +602,7 @@
     $("#tr-exp").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify({ ...D.M, ...TR }, null, 1)], { type: "application/json" })); a.download = "traducoes-monstros.json"; a.click(); };
     $("#tr-imp").onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { const o = JSON.parse(await f.text()); for (const k in o) TR[k.toLowerCase()] = String(o[k]); saveTR(); renderBestiary(); } catch (_) { alert("Arquivo JSON inválido."); } e.target.value = ""; };
 
-    window.__ini.avatar = (key, name, size) => av(BY[key] || { name }, size);
+    window.__ini.avatar = (key, name, size, foto) => (foto && /^data:image\//.test(foto) ? `<img class="av" style="width:${size}px;height:${size}px" src="${esc(foto)}" alt="">` : av(BY[key] || { name }, size));
     const fileIn = $("#ph-file");
     const toSquare = (file, size) => new Promise((ok, no) => { const url = URL.createObjectURL(file), im = new Image(); im.onload = () => { const c = document.createElement("canvas"); c.width = c.height = size; const q = Math.min(im.width, im.height); c.getContext("2d").drawImage(im, (im.width - q) / 2, (im.height - q) / 2, q, q, 0, 0, size, size); URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", 0.85)); }; im.onerror = () => no(new Error("imagem inválida")); im.src = url; });
 
