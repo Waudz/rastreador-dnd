@@ -383,3 +383,6 @@ button .ico:last-child:not(:first-child) { margin: 0 0 0 4px; }
 .fxbar { grid-column: 1 / -1; display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
 .fxbar .fxchip { flex: 0 0 auto; cursor: help; }
 .fxb { cursor: help; }
+
+/* letra do avatar sem foto: continua centralizada dentro do anel */
+.name .avfx .av0 { display: grid; place-items: center; line-height: 1; }
