@@ -82,7 +82,7 @@
         conc: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
         custom: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'
       };
-      const fxIcon = (t) => `<svg class="fxi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${FXI[t] || FXI.custom}</svg>`;
+      const fxIcon = (t) => `<svg class="fxi" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${FXI[t] || FXI.custom}</svg>`;
       let fxFor = null;
       const fxNote = document.createElement("div");
       fxNote.className = "fx-note";
