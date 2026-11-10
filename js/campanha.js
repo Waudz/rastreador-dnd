@@ -11,6 +11,17 @@
   const tamanho = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB");
   const aviso = (t, erro) => { const e = $("#erro"); e.innerHTML = t ? (erro ? `<span class="err">${esc(t)}</span>` : esc(t)) : ""; };
 
+  /* texto dos resumos: [[Título|id]] vira link para outro documento; endereços http(s) viram links */
+  const docPorId = (i) => docs.find((x) => x.id === i);
+  function renderTexto(txt) {
+    let h = esc(txt);
+    h = h.replace(/\[\[([^\]|]+)\|([0-9a-f-]{36})\]\]/gi, (_, t, i) => { const d = docPorId(i.toLowerCase()); return d ? `<a class="doclink" href="#" data-doclink="${esc(d.id)}">${t}</a>` : `<span class="muted" title="Documento indisponível">${t}</span>`; });
+    h = h.replace(/(https?:\/\/[^\s<]+)/g, (m) => { const fim = (m.match(/[.,;:!?)]+$/) || [""])[0], u = m.slice(0, m.length - fim.length); return `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>${fim}`; });
+    return h;
+  }
+  const idsCitados = (txt) => [...new Set([...String(txt).matchAll(/\[\[[^\]|]+\|([0-9a-f-]{36})\]\]/gi)].map((m) => m[1].toLowerCase()))].filter((i) => docPorId(i));
+  const anexosDe = (d) => { const ids = idsCitados(d.conteudo); return ids.length ? `<div class="anexos"><span class="muted">Documentos:</span>${ids.map((i) => `<a class="btnlike small doclink" href="#" data-doclink="${esc(i)}">${esc(docPorId(i).titulo)}</a>`).join("")}</div>` : ""; };
+
   async function carregar() {
     const [c, m, pf, ps, ds] = await Promise.all([
       nuvem.get(`campanhas?select=id,nome,mestre_id&id=eq.${encodeURIComponent(id)}`),
@@ -56,11 +67,14 @@
       <div class="cards">${pers.length ? pers.map(cartaoPers).join("") : '<span class="muted">Nenhum personagem aqui ainda.</span>'}</div>`;
   }
 
+  const opcoesLink = (excluir) => { const l = docs.filter((x) => x.id !== excluir); return l.length ? l.map((x) => `<option value="${esc(x.id)}">${esc((x.tipo === "arquivo" ? "Arquivo: " : x.tipo === "nota" ? "Nota: " : "Resumo: ") + (x.titulo || x.arquivo_nome))}</option>`).join("") : '<option value="">(nenhum documento ainda)</option>'; };
+  function inserirNoTexto(trecho) { const ta = $("#r-texto"), a = ta.selectionStart == null ? ta.value.length : ta.selectionStart, b = ta.selectionEnd == null ? a : ta.selectionEnd; ta.value = ta.value.slice(0, a) + trecho + ta.value.slice(b); ta.focus(); ta.selectionStart = ta.selectionEnd = a + trecho.length; }
   function formResumo() {
     const d = editandoDoc ? docs.find((x) => x.id === editandoDoc) : null;
     return `<form id="form-resumo" class="panel" style="margin-bottom:12px">
       <div class="row"><input id="r-titulo" maxlength="160" placeholder="Título" style="flex:1 1 220px" value="${esc(d ? d.titulo : "")}" required><input id="r-sessao" class="num" type="number" min="0" placeholder="Sessão" value="${d && d.sessao != null ? d.sessao : ""}"></div>
       <textarea id="r-texto" rows="8" placeholder="Texto do resumo ou da nota" style="width:100%">${esc(d ? d.conteudo : "")}</textarea>
+      <div class="row" style="margin:8px 0 0"><select id="r-link" style="flex:1 1 180px" aria-label="Documento para linkar">${opcoesLink(d ? d.id : null)}</select><button type="button" class="small" id="r-inserir">Inserir link</button><button type="button" class="small" id="r-anexar">Anexar arquivo</button><input id="r-anexo" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.md" hidden></div>
       <div class="row" style="margin:8px 0 0"><label class="inline" style="margin:0"><input id="r-visivel" type="checkbox" style="width:auto;height:auto" ${!d || d.visivel ? "checked" : ""}> Visível para o grupo</label><span class="grow"></span><button type="button" class="small subtle" id="r-cancelar">Cancelar</button><button type="submit" class="primary small">Salvar</button></div>
     </form>`;
   }
@@ -72,10 +86,10 @@
   function itemDoc(d) {
     const titulo = d.tipo === "arquivo" ? (d.titulo || d.arquivo_nome) : (d.sessao != null && d.sessao !== "" ? `Sessão ${d.sessao} · ` : "") + d.titulo;
     const corpo = d.tipo === "arquivo"
-      ? `<div class="row" style="margin:0"><button type="button" class="small primary" data-abrir="${esc(d.id)}">Abrir</button><span class="muted">${esc(d.arquivo_nome || "")} · ${tamanho(d.arquivo_tamanho || 0)}</span></div>`
-      : `<div class="pre">${esc(d.conteudo)}</div>`;
+      ? `<div class="row" style="margin:0"><button type="button" class="small primary" data-doclink="${esc(d.id)}">Abrir</button><span class="muted">${esc(d.arquivo_nome || "")} · ${tamanho(d.arquivo_tamanho || 0)}</span></div>`
+      : `<div class="pre">${renderTexto(d.conteudo)}</div>${anexosDe(d)}`;
     const ferr = mestre() ? `<div class="row" style="margin:8px 0 0">${d.tipo !== "arquivo" ? `<button type="button" class="small" data-editar-doc="${esc(d.id)}">Editar</button>` : ""}<button type="button" class="small" data-vis="${esc(d.id)}">${d.visivel ? "Ocultar do grupo" : "Mostrar ao grupo"}</button><button type="button" class="small danger" data-apagar-doc="${esc(d.id)}">Excluir</button></div>` : "";
-    return `<details class="item"><summary>${esc(titulo)} <span class="muted" style="font-weight:400">· ${d.tipo === "arquivo" ? "Arquivo" : d.tipo === "nota" ? "Nota" : "Resumo"} · ${fmtData(d.criado_em)}</span>${d.visivel ? "" : ' <span class="badge">Oculto</span>'}</summary><div>${corpo}${ferr}</div></details>`;
+    return `<details class="item" data-doc="${esc(d.id)}"><summary>${esc(titulo)} <span class="muted" style="font-weight:400">· ${d.tipo === "arquivo" ? "Arquivo" : d.tipo === "nota" ? "Nota" : "Resumo"} · ${fmtData(d.criado_em)}</span>${d.visivel ? "" : ' <span class="badge">Oculto</span>'}</summary><div>${corpo}${ferr}</div></details>`;
   }
 
   function abaDiario() {
@@ -125,18 +139,51 @@
     } catch (e) { aviso(e.message, true); }
   }
 
+  async function subirArquivo(f, titulo, visivel) {
+    if (f.size > 10 * 1048576) throw new Error("O arquivo passa de 10 MB.");
+    const seguro = f.name.replace(/[^\w.\-]+/g, "_").slice(-80), caminho = `${id}/${crypto.randomUUID()}-${seguro}`;
+    await nuvem.enviarArquivo(caminho, f);
+    try { const r = await nuvem.post("documentos", { campanha_id: id, tipo: "arquivo", titulo: titulo || f.name, arquivo_path: caminho, arquivo_nome: f.name, arquivo_tipo: f.type, arquivo_tamanho: f.size, visivel: visivel }); return r[0]; }
+    catch (e) { try { await nuvem.apagarArquivos([caminho]); } catch (_) {} throw e; }
+  }
   async function enviarArq(ev) {
     ev.preventDefault();
     const f = $("#a-arquivo").files[0]; if (!f) return;
-    if (f.size > 10 * 1048576) { aviso("O arquivo passa de 10 MB.", true); return; }
-    const seguro = f.name.replace(/[^\w.\-]+/g, "_").slice(-80), caminho = `${id}/${crypto.randomUUID()}-${seguro}`;
     aviso("Enviando…");
+    try { await subirArquivo(f, $("#a-titulo").value.trim(), $("#a-visivel").checked); aviso(""); await recarregar(); } catch (e) { aviso(e.message, true); }
+  }
+  async function anexarAoResumo(f) {
+    aviso("Enviando o anexo…");
     try {
-      await nuvem.enviarArquivo(caminho, f);
-      try { await nuvem.post("documentos", { campanha_id: id, tipo: "arquivo", titulo: $("#a-titulo").value.trim() || f.name, arquivo_path: caminho, arquivo_nome: f.name, arquivo_tipo: f.type, arquivo_tamanho: f.size, visivel: $("#a-visivel").checked }); }
-      catch (e) { try { await nuvem.apagarArquivos([caminho]); } catch (_) {} throw e; }
-      aviso(""); await recarregar();
+      const r = await subirArquivo(f, "", $("#r-visivel").checked);
+      docs.unshift(r); $("#r-link").innerHTML = opcoesLink(editandoDoc); inserirNoTexto(`[[${(r.titulo || r.arquivo_nome).replace(/[\]|]/g, "")}|${r.id}]]`); aviso("");
     } catch (e) { aviso(e.message, true); }
+  }
+
+  /* ---------- leitor: abre o documento nesta mesma página ---------- */
+  let pilha = [], blobAtual = null;
+  const soltarBlob = () => { if (blobAtual) { URL.revokeObjectURL(blobAtual); blobAtual = null; } };
+  function fecharLeitor() { $("#leitor").hidden = true; $("#leitor-corpo").innerHTML = ""; soltarBlob(); pilha = []; document.body.style.overflow = ""; }
+  async function abrirDoc(idd, voltando) {
+    const d = docPorId(idd); if (!d) return;
+    if (!voltando) pilha.push(idd);
+    soltarBlob(); $("#leitor").hidden = false; document.body.style.overflow = "hidden"; $("#leitor").scrollTop = 0;
+    $("#leitor-titulo").textContent = d.tipo === "arquivo" ? (d.titulo || d.arquivo_nome) : d.titulo;
+    $("#leitor-voltar").hidden = pilha.length < 2; $("#leitor-baixar").hidden = true;
+    const corpo = $("#leitor-corpo");
+    if (d.tipo !== "arquivo") { corpo.innerHTML = `<div class="pre">${renderTexto(d.conteudo)}</div>${anexosDe(d)}`; return; }
+    corpo.innerHTML = '<span class="muted">Carregando…</span>';
+    try {
+      const url = await nuvem.urlDoArquivo(d.arquivo_path, 300), resp = await fetch(url);
+      if (!resp.ok) throw new Error("Não consegui abrir o arquivo.");
+      const blob = await resp.blob(), tipo = d.arquivo_tipo || blob.type || "";
+      blobAtual = URL.createObjectURL(blob.type ? blob : new Blob([blob], { type: tipo }));
+      const bx = $("#leitor-baixar"); bx.href = blobAtual; bx.download = d.arquivo_nome || "arquivo"; bx.hidden = false;
+      if (/^image\//.test(tipo)) corpo.innerHTML = `<img src="${blobAtual}" alt="${esc(d.titulo || "")}">`;
+      else if (/pdf/.test(tipo)) corpo.innerHTML = `<iframe src="${blobAtual}" title="${esc(d.titulo || "")}"></iframe>`;
+      else if (/^text\//.test(tipo)) corpo.innerHTML = `<div class="pre">${renderTexto(await blob.text())}</div>`;
+      else corpo.innerHTML = '<span class="muted">Este tipo de arquivo não tem pré-visualização. Use “Baixar”.</span>';
+    } catch (e) { corpo.innerHTML = `<span class="err">${esc(e.message)}</span>`; }
   }
 
   document.addEventListener("click", async (e) => {
@@ -158,7 +205,12 @@
         if (d.arquivo_path) { try { await nuvem.apagarArquivos([d.arquivo_path]); } catch (_) {} }
         await nuvem.apagar(`documentos?id=eq.${encodeURIComponent(d.id)}`); return recarregar();
       }
-      if ((b = c("[data-abrir]"))) { const d = docs.find((x) => x.id === b.dataset.abrir); const url = await nuvem.urlDoArquivo(d.arquivo_path, 600); window.open(url, "_blank", "noopener"); return; }
+      if ((b = c("[data-doclink]"))) { e.preventDefault(); return abrirDoc(b.dataset.doclink); }
+      if (c("#leitor-fechar")) return fecharLeitor();
+      if (c("#leitor-voltar")) { pilha.pop(); return abrirDoc(pilha[pilha.length - 1], true); }
+      if (t.id === "leitor") return fecharLeitor();
+      if (c("#r-inserir")) { const v = $("#r-link").value, d = docPorId(v); if (d) inserirNoTexto(`[[${(d.titulo || d.arquivo_nome).replace(/[\]|]/g, "")}|${d.id}]]`); return; }
+      if (c("#r-anexar")) return $("#r-anexo").click();
       if ((b = c("[data-remover]"))) {
         if (!confirm(`Remover ${nomes[b.dataset.remover] || "este jogador"} da campanha?`)) return;
         await nuvem.apagar(`membros?campanha_id=eq.${encodeURIComponent(id)}&usuario_id=eq.${encodeURIComponent(b.dataset.remover)}`); return recarregar();
@@ -167,6 +219,9 @@
       if (c("#novo-cod")) { if (!confirm("Gerar um novo código? O código antigo deixa de valer para novos jogadores.")) return; await nuvem.rpc("novo_codigo_da_campanha", { p_campanha: id }); return mostrarConvite(); }
     } catch (err) { aviso(err.message, true); }
   });
+
+  document.addEventListener("change", (e) => { if (e.target.id === "r-anexo" && e.target.files[0]) { const f = e.target.files[0]; e.target.value = ""; anexarAoResumo(f); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#leitor").hidden) fecharLeitor(); });
 
   document.addEventListener("submit", async (e) => {
     if (e.target.id === "form-resumo") return salvarResumo(e);

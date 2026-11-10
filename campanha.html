@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://pdjzahpxjrlbqqtzkfdr.supabase.co; worker-src 'self'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://pdjzahpxjrlbqqtzkfdr.supabase.co; frame-src blob:; worker-src 'self'; base-uri 'self'; form-action 'self'">
   <title>Campanha — Rastreador D&D</title>
   <meta name="theme-color" content="#111018">
   <link rel="icon" href="favicon.ico" sizes="any">
@@ -23,5 +23,11 @@
     <div class="tabs" id="abas" hidden></div>
     <div id="conteudo"></div>
   </main>
+  <div id="leitor" class="leitor" hidden role="dialog" aria-modal="true" aria-label="Documento">
+    <div class="leitor-caixa">
+      <div class="bar"><button type="button" class="small" id="leitor-voltar" hidden>Voltar</button><b id="leitor-titulo" class="grow"></b><a class="btnlike" id="leitor-baixar" hidden>Baixar</a><button type="button" class="small" id="leitor-fechar">Fechar</button></div>
+      <div id="leitor-corpo"></div>
+    </div>
+  </div>
 </body>
 </html>

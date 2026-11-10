@@ -459,3 +459,12 @@ details.item { border: 1px solid var(--line); border-radius: 9px; margin-bottom:
 details.item > summary { cursor: pointer; padding: 8px 10px; font-weight: 700; list-style: none; }
 details.item > div { padding: 0 10px 10px; }
 .salvo { font-size: 11px; color: var(--muted); }
+
+/* leitor de documentos (abre na mesma página) */
+.leitor { position: fixed; inset: 0; z-index: 60; display: grid; place-items: start center; padding: 14px; background: rgba(8,7,12,.82); overflow-y: auto; }
+.leitor[hidden] { display: none; }
+.leitor-caixa { width: min(900px, 100%); padding: 14px; border: 1px solid var(--gold-dark); border-radius: 12px; background: var(--panel); }
+.leitor-caixa img { max-width: 100%; height: auto; border-radius: 8px; }
+.leitor-caixa iframe { width: 100%; height: 75vh; border: 0; border-radius: 8px; background: #fff; }
+a.doclink { color: var(--gold); text-decoration: underline; cursor: pointer; }
+.anexos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
