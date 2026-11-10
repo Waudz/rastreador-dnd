@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.github.com https://api.open5e.com; worker-src 'self'; base-uri 'self'; form-action 'self'">
+  <title>Iniciativa — D&D 5e</title>
+  <meta name="theme-color" content="#111018">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icones/icone-192.png">
+  <link rel="stylesheet" href="css/estilo.css">
+  <script src="js/iniciativa.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <main class="tracker">
+    <header class="header">
+      <div>
+        <p class="eyebrow">Dungeons & Dragons · 5ª edição</p>
+        <h1>Ordem de Iniciativa</h1>
+        <p class="subtitle">Controle o combate, acompanhe os turnos e gerencie os pontos de vida.</p>
+      </div>
+      <div class="round-box">
+        <span>Rodada</span>
+        <strong id="round">1</strong>
+      </div>
+    </header>
+
+    
+
+    
+
+    <section class="panel">
+      <h2 class="panel-title">＋ Adicionar combatente</h2>
+      <form id="add-form" class="form-grid">
+        <div class="field-name">
+          <label for="name">Nome</label>
+          <input id="name" name="name" placeholder="Nome — digite para buscar no bestiário" maxlength="48" autocomplete="off" required>
+          <div id="sug" class="sug" hidden></div>
+        </div>
+        <div>
+          <label for="kind">Tipo</label>
+          <select id="kind" name="kind">
+            <option>Personagem</option>
+            <option>Monstro</option>
+            <option>NPC</option>
+          </select>
+        </div>
+        <div>
+          <label for="initiative">Iniciativa</label>
+          <input id="initiative" name="initiative" type="number" value="10" step="1" required>
+        </div>
+        <div>
+          <label for="hp">PV atuais</label>
+          <input id="hp" name="hp" type="number" value="10" min="0" step="1" required>
+        </div>
+        <div>
+          <label for="maxHp">PV máximos</label>
+          <input id="maxHp" name="maxHp" type="number" value="10" min="1" step="1" required>
+        </div>
+        <div>
+          <label for="ac">CA</label>
+          <input id="ac" name="ac" type="number" value="10" min="0" step="1" required>
+        </div>
+        <div class="add-wrap">
+          <button class="primary" type="submit">Adicionar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="combat-bar">
+        <div>
+          <h2 class="panel-title" style="margin-bottom:4px">⚔ Ordem do combate</h2>
+          <div class="turn-label" id="current-turn">Adicione os combatentes para começar.</div>
+        </div>
+        <div class="turn-actions">
+          <button id="start" class="primary" type="button">Começar combate</button>
+          <button id="previous" type="button" disabled>← Anterior</button>
+          <button id="next" type="button" disabled>Próximo →</button>
+          <button id="reset" class="subtle" type="button" disabled>Encerrar</button>
+        </div>
+      </div>
+
+      <div id="combatants" class="combatants">
+        <div class="empty">
+          <strong>O campo de batalha está vazio.</strong>
+          Cadastre os personagens e inimigos para montar a ordem de iniciativa.
+        </div>
+      </div>
+      <p class="footer">A iniciativa é ordenada do maior para o menor. Em caso de empate, quem foi adicionado primeiro fica acima.</p>
+    </section>
+    
+    <section class="panel">
+      <h2 class="panel-title">✨ Consultar magias e habilidades</h2>
+      <p class="muted" id="spinfo"></p>
+      <input id="sq" placeholder="Magia ou habilidade de monstro (português ou inglês)" autocomplete="off" style="margin-bottom:10px">
+      <div id="spells"></div>
+    </section>
+
+    <details class="panel" id="cm">
+      <summary class="panel-title">＋ Criar ficha (monstro, personagem ou NPC)</summary>
+      <div class="cmg">
+        <div><label>Categoria</label><select id="cm-cat"><option value="monster">Monstro</option><option value="player">Personagem (jogador)</option><option value="npc">NPC</option></select></div>
+        <div style="grid-column:span 2"><label>Nome</label><input id="cm-name" maxlength="48"></div>
+        <div style="grid-column:span 2"><label>Descrição curta (classe, raça, papel…)</label><input id="cm-sub" maxlength="80"></div>
+        <div><label>Tamanho</label><select id="cm-size"><option value="Tiny">Miúdo</option><option value="Small">Pequeno</option><option value="Medium" selected>Médio</option><option value="Large">Grande</option><option value="Huge">Enorme</option><option value="Gargantuan">Imenso</option></select></div>
+        <div><label>Tipo</label><select id="cm-type"></select></div>
+        <div><label id="cm-crl">ND</label><input id="cm-cr" type="number" step="any" value="1"></div>
+        <div><label>CA</label><input id="cm-ac" type="number" value="12"></div>
+        <div><label>PV</label><input id="cm-hp" type="number" value="20"></div>
+        <div><label>Dados de vida</label><input id="cm-hd" placeholder="4d8 + 8"></div>
+        <div><label>Deslocamento (pés)</label><input id="cm-sp" type="number" value="30"></div>
+      </div>
+      <div class="cmg" id="cm-ab"></div>
+      <label>Foto (opcional)</label>
+      <div class="row"><span id="cm-phv"></span><button type="button" class="small" id="cm-ph">Escolher foto…</button><button type="button" class="small subtle" id="cm-phx">Remover foto</button></div>
+      <label>Características (uma por linha: Nome: descrição)</label>
+      <textarea id="cm-traits"></textarea>
+      <label>Ações (uma por linha: Nome | descrição — ou ataque: Nome | +4 | 1d6+2 | cortante | descrição opcional)</label>
+      <textarea id="cm-acts"></textarea>
+      <label>Magias (busque no banco local; Enter adiciona o texto digitado)</label>
+      <div style="position:relative"><input id="cm-spq" autocomplete="off" placeholder="Ex.: bola de fogo, shield…"><div id="cm-spsug" class="sug" hidden></div></div>
+      <div id="cm-chips" class="row" style="margin:9px 0"></div>
+      <button type="button" class="primary" id="cm-save">Salvar ficha</button>
+      <button type="button" id="cm-cancel" hidden>Cancelar edição</button> <span class="muted" id="cm-msg"></span>
+    </details>
+
+    <section class="panel">
+      <h2 class="panel-title">📚 Meu bestiário</h2>
+      <div class="row">
+        <input id="bq" placeholder="Pesquisar: nome, dragão, imenso, pequeno, fera, humanoide…" autocomplete="off" style="flex:1 1 240px">
+        <select id="bf" style="flex:0 1 260px"></select>
+        <button type="button" class="small" id="ball">Mostrar tudo</button>
+      </div>
+      <div class="muted" id="bcount"></div>
+      <div id="blist"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">💾 Dados locais</h2>
+      <p class="muted" id="dbinfo"></p>
+      <div id="colls"></div>
+      <details id="sync" style="margin-top:14px">
+        <summary class="panel-title" style="font-size:15px">☁️ Sincronizar minhas criações entre aparelhos (GitHub)</summary>
+        <p class="muted">Guarda suas fichas próprias (e as fotos delas) em um arquivo JSON num repositório <b>privado</b> seu. Use o mesmo repositório e token em cada aparelho. O token fica salvo só neste navegador.</p>
+        <div class="cmg">
+          <div style="grid-column:span 2"><label>Repositório (usuario/repositorio)</label><input id="sy-repo" placeholder="seuusuario/dnd-dados" autocomplete="off"></div>
+          <div style="grid-column:span 2"><label>Token (fine-grained, só esse repositório)</label><input id="sy-token" type="password" autocomplete="off"></div>
+          <div><label>Arquivo</label><input id="sy-path" value="criacoes.json"></div>
+        </div>
+        <div class="row"><button type="button" class="primary small" id="sy-save">Salvar e sincronizar</button><button type="button" class="small" id="sy-now">Sincronizar agora</button><button type="button" class="small subtle" id="sy-clear">Esquecer token deste aparelho</button></div>
+        <div id="sy-status" class="muted"></div>
+      </details>
+      <div class="row">
+        <button type="button" class="small" id="dl-open">Baixar / atualizar bestiário</button>
+        <button type="button" class="small subtle" id="tr-exp">Exportar traduções</button>
+        <a class="btnlike muted" href="ferramentas/importar-ldj.html">Importar tradução do LDJ</a>
+        <button type="button" class="small subtle" id="bk-exp">Exportar backup</button>
+        <label class="btnlike muted">Importar backup<input type="file" id="bk-imp" accept=".json" hidden></label>
+        <label class="btnlike muted">Importar traduções<input type="file" id="tr-imp" accept=".json" hidden></label>
+        <span class="muted" id="dl-status"></span>
+      </div>
+      <div id="docs-wrap" hidden>
+        <div id="docs" class="muted">Carregando fontes…</div>
+        <button type="button" class="primary small" id="dl-go">Baixar selecionadas</button>
+      </div>
+    </section>
+    <footer class="muted" style="font-size:11px;margin:26px 0 8px;line-height:1.6">Este site usa material do System Reference Document 5.1 e do System Reference Document 5.2 da Wizards of the Coast LLC, licenciados sob a Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode). Os dados são obtidos da API Open5e (open5e.com). Este é um projeto de fãs, sem vínculo com a Wizards of the Coast.</footer>
+    <input type="file" id="ph-file" accept="image/*" hidden>
+    <div id="dock-l" class="dock" hidden></div>
+    <div id="dock-r" class="dock" hidden>
+      <aside id="sheet" class="drawer" hidden aria-label="Ficha">
+        <div class="sh-top"><span class="muted">Ficha</span><button type="button" class="small" id="sh-close">Fechar (Esc)</button></div>
+        <div id="sheet-body"></div>
+      </aside>
+      <aside id="spd" class="drawer" hidden aria-label="Magia">
+        <div class="sh-top"><span class="muted">Magia</span><button type="button" class="small" id="spd-close">Fechar</button></div>
+        <div id="spd-body"></div>
+      </aside>
+    </div>
+    <div id="tip"></div>
+  </main>
+</body>
+</html>
