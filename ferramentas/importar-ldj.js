@@ -13,7 +13,7 @@ const CAMPOS = [
   ["dur", /^dura[çc][ãa]o\s*:\s*/i],
 ];
 const LIXO = [/^\d{1,3}$/, /^cap[ií]tulo\s+\d+/i, /^parte\s+\d+\s*[|:]/i];
-const MINUSC = new Set(["de", "da", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "para", "com", "contra", "sem"]);
+const MINUSC = new Set(["de", "da", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "nos", "nas", "ao", "à", "para", "com", "contra", "sem", "por"]);
 const titulo = (s) => s.toLowerCase().split(" ").map((p, i) => (i && MINUSC.has(p)) ? p : p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
@@ -49,10 +49,12 @@ async function importar() {
     salvar(d, []); return;
   }
   status("Lendo o arquivo…");
-  const linhas = nome.endsWith(".pdf") ? await linhasDoPdf(arquivo) : (await arquivo.text()).split(/\r?\n/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const estr = nome.endsWith(".pdf") ? await linhasDoPdf(arquivo) : null;
+  const linhas = estr ? estr.map((l) => l.t) : (await arquivo.text()).split(/\r?\n/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
   status("Separando as magias…");
   const { magias, avisos } = separar(linhas, $("#norm").checked);
-  salvar({ v: 1, fonte: arquivo.name, importadoEm: Date.now(), normalizado: $("#norm").checked, magias }, avisos);
+  const cl = estr ? extrairClasses(estr, $("#norm").checked) : { classes: [], avisos: ["Habilidades de classe só são lidas a partir do PDF."] };
+  salvar({ v: 2, fonte: arquivo.name, importadoEm: Date.now(), normalizado: $("#norm").checked, magias, classes: cl.classes }, avisos.concat(cl.avisos));
 }
 
 function salvar(dados, avisos) {
@@ -62,7 +64,8 @@ function salvar(dados, avisos) {
   catch (e) { throw new Error("não consegui salvar no navegador (espaço cheio?): " + e.message); }
   resultado = dados;
   status("Pronto. O rastreador já pode usar a tradução.");
-  $("#resumo").textContent = `${n} magias salvas. Baixe o JSON e guarde-o: ele restaura a tradução sem precisar do PDF.`;
+  const nc = (dados.classes || []).length;
+  $("#resumo").textContent = `${n} magias e ${nc} habilidades de classe salvas. Baixe o JSON e guarde-o: ele restaura a tradução sem precisar do PDF.`;
   $("#amostra").textContent = Object.values(dados.magias).slice(0, 3).map((m) =>
     `${m.n} — ${m.nivel ? m.nivel + "º círculo" : "Truque"} de ${m.escola}${m.ritual ? " (ritual)" : ""}\n` +
     `Tempo: ${m.tempo}\nAlcance: ${m.alcance}\nComponentes: ${m.comp}${m.mat ? " (" + m.mat + ")" : ""}\nDuração: ${m.dur}\n\n${m.d}`
@@ -83,21 +86,28 @@ async function linhasDoPdf(arq) {
     for (const it of items) {
       if (!it.str || !it.str.trim()) continue;
       const x = it.transform[4], y = it.transform[5];
-      cols[x < w / 2 ? 0 : 1].push({ x, y, w: it.width || 0, s: it.str });
+      cols[x < w / 2 ? 0 : 1].push({ x, y, w: it.width || 0, s: it.str, fn: it.fontName, h: it.height || 0 });
     }
     for (const col of cols) {
       col.sort((a, b) => b.y - a.y || a.x - b.x);
       let atual = null;
       for (const it of col) {
         if (atual && Math.abs(atual.y - it.y) < 3) atual.partes.push(it);
-        else { if (atual) linhas.push(fecharLinha(atual.partes)); atual = { y: it.y, partes: [it] }; }
+        else { if (atual) linhas.push(linhaInfo(atual.partes, p)); atual = { y: it.y, partes: [it] }; }
       }
-      if (atual) linhas.push(fecharLinha(atual.partes));
+      if (atual) linhas.push(linhaInfo(atual.partes, p));
     }
     if (p % 10 === 0) status(`Lendo o PDF… página ${p} de ${pdf.numPages}`);
     pg.cleanup();
   }
-  return linhas.filter(Boolean);
+  return linhas.filter((l) => l.t);
+}
+function linhaInfo(partes, p) {
+  const t = fecharLinha(partes), fontes = new Set(partes.map((x) => x.fn));
+  const ord = partes.slice().sort((a, b) => a.x - b.x), mh = Math.max(...ord.map((q) => q.h));
+  // título em versalete: as palavras são separadas por um pequeno espaço entre as peças do texto
+  let tt = "", fim = null; ord.forEach((q) => { if (fim !== null && q.x - fim >= 0.8 && !/[- ]$/.test(tt) && !/^[ -]/.test(q.s)) tt += " "; tt += q.s; fim = q.x + q.w; });
+  return { t, tt: tt.replace(/\s+/g, " ").trim(), f: fontes.size === 1 ? [...fontes][0] : "", h: mh, p, bul: /^[\uE000-\uF8FF]/.test(ord[0].s) };
 }
 function fecharLinha(partes) {
   partes.sort((a, b) => a.x - b.x);
@@ -163,8 +173,61 @@ function juntar(ls) {
     const l = ls[k], ant = ls[k - 1];
     const novoPar = /^em n[ií]veis superiores/i.test(l) || (/[.:!?]$/.test(ant) && ant.length < med * 0.75);
     if (novoPar) out += "\n\n" + l;
-    else if (/[A-Za-zÀ-ÿ]-$/.test(out)) out = out.slice(0, -1) + l; // palavra hifenizada no fim da linha
+    else if (/[A-Za-zÀ-ÿ]-$/.test(out)) out += l; // hífen no fim da linha (ex.: corpo-a-corpo): mantém o hífen, sem espaço
     else out += " " + l;
   }
   return out;
+}
+
+/* ---------- habilidades de classe (capítulo 3) ---------- */
+const CLASSES_PT = new Set(["BÁRBARO", "BARDO", "BRUXO", "CLÉRIGO", "DRUIDA", "FEITICEIRO", "GUERREIRO", "LADINO", "MAGO", "MONGE", "PALADINO", "PATRULHEIRO"]);
+const maiusc = (s) => s === s.toUpperCase() && /[A-ZÀ-Ý]{3}/.test(s);
+function extrairClasses(estr, norm) {
+  const avisos = [];
+  const ini = estr.findIndex((l) => /^CAPÍTULO 3/.test(l.t) && l.h >= 20);
+  if (ini < 0) return { classes: [], avisos: ['Não achei o "CAPÍTULO 3: CLASSES"; habilidades de classe não foram lidas.'] };
+  let fim = estr.findIndex((l, i) => i > ini && /^CAPÍTULO 4/.test(l.t) && l.h >= 20); if (fim < 0) fim = estr.length;
+  const L = estr.slice(ini, fim);
+  const out = []; let cls = "", sub = "", modo = "fora", cur = null;
+  const fecha = () => { if (cur) { const d = juntarClasse(cur.ls); if (d) out.push({ c: cur.c, u: cur.u, n: cur.n, d: norm ? normalizar(d) : d }); } cur = null; };
+  for (const l of L.slice(1)) {
+    if (/^\d{1,3}$/.test(l.t)) continue;                      // número de página
+    if (l.f && l.h >= 10.9 && maiusc(l.t)) {
+      if (l.h >= 13.5) {                                        // título de classe ou de grupo
+        fecha();
+        if (CLASSES_PT.has(l.tt)) { cls = titulo(l.tt); sub = ""; modo = "intro"; }
+        else if (/^CARACTER[ÍI]STICAS DE CLASSE$/.test(l.tt)) { modo = "base"; sub = ""; }
+        else if (cls) { modo = "sub"; sub = ""; }
+        continue;
+      }
+      if (modo === "intro" || modo === "fora") continue;
+      if (modo === "sub" && l.h >= 11.5) { fecha(); sub = titulo(l.tt); continue; }   // nome do caminho, colégio, domínio…
+      fecha(); if (modo === "base" && /^(Pontos de Vida|Proficiências|Equipamento)$/.test(titulo(l.tt))) continue;
+      cur = { c: cls, u: modo === "sub" ? sub : "", n: titulo(l.tt), ls: [] };
+      continue;
+    }
+    if (!cur) continue;
+    if (maiusc(l.t) && l.h <= 10.5) continue;                   // legendas de tabela
+    cur.ls.push({ t: l.t, bul: l.bul });
+  }
+  fecha();
+  const vistos = new Set();
+  const res = out.filter((x) => { const k = fold(x.c + "|" + x.u + "|" + x.n); if (vistos.has(k)) { avisos.push(`Habilidade repetida ignorada: ${x.c} / ${x.n}.`); return false; } vistos.add(k); return true; });
+  if (res.length < 150) avisos.push(`Só ${res.length} habilidades de classe encontradas; confira.`);
+  return { classes: res, avisos };
+}
+function juntarClasse(ls) {
+  if (!ls.length) return "";
+  const tam = ls.map((l) => l.t.length).sort((a, b) => a - b), med = tam[Math.floor(tam.length / 2)] || 60;
+  let out = "";
+  ls.forEach((l, k) => {
+    const t = l.t.replace(/^[\uE000-\uF8FF\s]+/, "");
+    if (!out) { out = (l.bul ? "• " : "") + t; return; }
+    const ant = ls[k - 1].t;
+    if (l.bul) out += "\n• " + t;
+    else if (/[.:!?]$/.test(ant) && ant.length < med * 0.75) out += "\n\n" + t;
+    else if (/[A-Za-zÀ-ÿ]-$/.test(out)) out += t;
+    else out += " " + t;
+  });
+  return out.trim();
 }

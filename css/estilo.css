@@ -408,3 +408,5 @@ body.admin .only-admin { display: block; }
 .dmgby select option { background: #13121a; color: var(--text); font-weight: 400; }
 
 .header h1 { user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+
+[hidden] { display: none !important; }

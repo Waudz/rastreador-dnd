@@ -9,6 +9,9 @@
     try { const r = await fetch("fotos/index.json", { cache: "no-cache" }); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}
     let CF = [];
     try { const r = await fetch("dados/habilidades.json"); if (r.ok) CF = await r.json(); } catch (_) {}
+    let CFT = {}, CFT0 = {};
+    try { const r = await fetch("dados/habilidades-pt.json"); if (r.ok) CFT = await r.json(); } catch (_) {}
+    CFT0 = { ...CFT };
     const pubName = (k) => "fotos/" + String(k).replace(/[^\w.-]/g, "_") + ".jpg";
     const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
     const mod = (n) => (n >= 0 ? "+" : "") + n, FR = { 0.125: "1/8", 0.25: "1/4", 0.5: "1/2" }, cr = (v) => FR[v] || v;
@@ -366,16 +369,35 @@
     const CFCLS = { Barbarian: "Bárbaro", Bard: "Bardo", Cleric: "Clérigo", Druid: "Druida", Fighter: "Guerreiro", Monk: "Monge", Paladin: "Paladino", Ranger: "Patrulheiro", Rogue: "Ladino", Sorcerer: "Feiticeiro", Warlock: "Bruxo", Wizard: "Mago" };
     const cfClass = (f) => { const base = f.u || f.c; return (CFCLS[base] || base) + (f.u ? ` (${f.c})` : ""); };
     const cfLevel = (f) => f.l && f.l.length ? "nível " + (f.l.length > 3 ? f.l[0] + "+" : f.l.join(", ")) : "";
-    const cfTitle = (f) => f.p || f.n;
-    const cfPlain = (f) => String(f.d).replace(/\r/g, "").replace(/\n\s*[*-]\s+/g, " • ").replace(/\n+/g, " ").replace(/[*_#]+/g, "").replace(/\s+/g, " ").trim();
+    const cfTitle = (f) => f.po || f.p || f.n;
+    const cfKey = (f) => `${f.e}|${f.c}|${f.n}`;
+    const cfText = (f) => CFT[cfKey(f)] || f.d;
+    const cfPlain = (f) => String(cfText(f)).replace(/\r/g, "").replace(/\n\s*[*-]\s+/g, " • ").replace(/\n+/g, " ").replace(/[*_#]+/g, "").replace(/\s+/g, " ").trim();
     const cfFind = (q, max) => { const ws = q.split(/\s+/).filter(Boolean); if (!ws.length) return []; return CF.map((f, i) => [f, i]).filter(([f]) => { const hay = nz(`${f.n} ${f.p} ${CFCLS[f.u || f.c] || ""} ${f.u || f.c} ${f.c}`); return ws.every((w) => hay.includes(w)); }).slice(0, max); };
     const classRows = (q, src = "") => cfFind(q, 400).filter(([f]) => !src || f.e === src).slice(0, 12).map(([f, i]) => `<div class="res" data-cfopen="${i}"><span><b>${esc(cfTitle(f))}</b>${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""}<br><span class="muted">${esc(["Habilidade de classe", cfClass(f), cfLevel(f), f.e].filter(Boolean).join(" · "))}</span></span></div>`).join("");
+
+    /* habilidades de classe do Livro do Jogador (vêm do importador; ficam só no navegador e no repositório privado) */
+    const CFL = new Set();
+    function aplicarClassesLDJ(dados) {
+      CF = CF.filter((f) => !f.ldj); CFL.clear(); CFT = { ...CFT0 };
+      for (const f of CF) delete f.po;
+      if (!dados || !Array.isArray(dados.classes) || !dados.classes.length) return;
+      const rev = Object.fromEntries(Object.entries(CFCLS).map(([en, pt]) => [fold(pt), en]));
+      const srd = new Map(), pdf = new Map();
+      for (const f of CF) if (f.e === "2014") for (const nome of new Set([f.p, f.n])) if (nome) { const k = `${f.u || f.c}|${fold(nome)}`; (srd.get(k) || srd.set(k, []).get(k)).push(f); }
+      for (const x of dados.classes) { const en = rev[fold(x.c)]; if (!en) continue; const k = `${en}|${fold(x.n)}`; (pdf.get(k) || pdf.set(k, []).get(k)).push([x, en]); }
+      for (const [k, lista] of pdf) {
+        const alvo = srd.get(k);
+        if (lista.length === 1 && alvo && alvo.length === 1) { const f = alvo[0], x = lista[0][0]; CFT[cfKey(f)] = x.d; CFL.add(cfKey(f)); f.po = x.n; }
+        else for (const [x, en] of lista) CF.push({ e: "2014", c: x.u || en, u: x.u ? en : "", n: x.n, p: "", l: [], d: x.d, ldj: true });
+      }
+    }
     function openClassFeature(i, origin) {
       const f = CF[i]; if (!f) return; spOrigin = origin || "panel";
       $("#spd-body").innerHTML = `<h3>${esc(cfTitle(f))}</h3><div class="muted">${esc(f.n)}</div>
-        <div class="sp-meta"><div><b>Classe:</b> ${esc(cfClass(f))}</div>${f.l && f.l.length ? `<div><b>Níveis:</b> ${esc(f.l.join(", "))}</div>` : ""}<div><b>Regras:</b> SRD ${f.e === "2024" ? "5.2 (2024)" : "5.1 (2014)"}</div></div>
-        <div class="sp-note">Texto original em inglês (SRD).</div>
-        <div class="sp-body">${esc(String(f.d).replace(/\r/g, ""))}</div>`;
+        <div class="sp-meta"><div><b>Classe:</b> ${esc(cfClass(f))}</div>${f.l && f.l.length ? `<div><b>Níveis:</b> ${esc(f.l.join(", "))}</div>` : ""}<div><b>Regras:</b> ${f.ldj ? "Livro do Jogador (2014)" : "SRD " + (f.e === "2024" ? "5.2 (2024)" : "5.1 (2014)")}</div></div>
+        ${f.ldj ? '<div class="sp-note">Texto do Livro do Jogador (tradução pessoal).</div>' : CFL.has(cfKey(f)) ? '<div class="sp-note">Texto do Livro do Jogador (tradução pessoal). O original em inglês (SRD) está no final.</div>' : CFT[cfKey(f)] ? '<div class="sp-note">Tradução própria do SRD (CC-BY-4.0). O original em inglês está no final.</div>' : '<div class="sp-note">Texto original em inglês (SRD); ainda sem tradução.</div>'}
+        <div class="sp-body">${esc(String(cfText(f)).replace(/\r/g, ""))}</div>${!f.ldj && CFT[cfKey(f)] ? `<div class="orig">Original: ${esc(String(f.d).replace(/\r/g, ""))}</div>` : ""}`;
       $("#spd").hidden = false; $("#spd").scrollTop = 0; layout();
     }
     function openAbility(l, ix = 0, origin) {
@@ -421,6 +443,7 @@
       cmSpells.push(ex ? { key: ex.key, name: ex.name } : { key: null, name: v }); spq.value = ""; spsug.hidden = true; chips();
     });
 
+    try { aplicarClassesLDJ(JSON.parse(localStorage.getItem("ini_ldj") || "null")); } catch (_) {}
     /* busca de habilidade de classe no campo de características da ficha */
     const cfq = $("#cm-cfq"), cfsug = $("#cm-cfsug");
     cfq.addEventListener("input", () => {
@@ -474,7 +497,16 @@
 
     /* eventos */
     $("#sq").addEventListener("input", () => { $("#sq-x").hidden = !$("#sq").value; spSearch(); });
-    ["#sf-type", "#sf-src", "#sf-lvl", "#sf-sch", "#sf-ex"].forEach((s) => $(s).addEventListener("change", spSearch));
+    /* filtros: só o tipo fica à vista; o resto abre em "Filtros" e se adapta ao tipo escolhido */
+    const syncFilters = () => {
+      const tipo = $("#sf-type").value, soMagia = tipo === "" || tipo === "spell"; // círculo, escola e ritual só existem em magias
+      for (const id of ["#sf-lvl", "#sf-sch", "#sf-ex"]) { $(id).hidden = !soMagia; if (!soMagia) $(id).value = ""; }
+      const n = ["#sf-src", "#sf-lvl", "#sf-sch", "#sf-ex"].filter((id) => $(id).value).length;
+      $("#sf-more").innerHTML = ico("filter") + "Filtros" + (n ? ` (${n})` : "");
+    };
+    $("#sf-more").onclick = () => { const aberto = $("#sf-adv").hidden; $("#sf-adv").hidden = !aberto; $("#sf-more").setAttribute("aria-expanded", String(aberto)); };
+    ["#sf-type", "#sf-src", "#sf-lvl", "#sf-sch", "#sf-ex"].forEach((s) => $(s).addEventListener("change", () => { syncFilters(); spSearch(); }));
+    syncFilters();
     $("#sq-x").onclick = () => { $("#sq").value = ""; $("#sq-x").hidden = true; spSearch(); $("#sq").focus(); };
     $("#sh-close").onclick = closeSheet; $("#spd-close").onclick = closeSpell;
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") { sug.hidden = true; if (!$("#spd").hidden) closeSpell(); else closeSheet(); } });
@@ -641,7 +673,7 @@
       if (remoto.ldj && (!ldj || (remoto.ldj.importadoEm || 0) > (ldj.importadoEm || 0))) {
         ldj = remoto.ldj;
         try { localStorage.setItem("ini_ldj", JSON.stringify(ldj)); } catch (_) {}
-        aplicarLDJ(ldj); spSearch();
+        aplicarLDJ(ldj); aplicarClassesLDJ(ldj); spSearch();
       }
       const tr = { ...(remoto.tr || {}), ...TR };
       if (JSON.stringify(tr) !== JSON.stringify(TR)) { TR = tr; saveTR(); renderBestiary(); }
@@ -650,7 +682,7 @@
     }
     window.addEventListener("storage", (e) => {
       if (e.key !== "ini_ldj" || !e.newValue) return;
-      try { aplicarLDJ(JSON.parse(e.newValue)); spSearch(); queueSync(); } catch (_) {}
+      try { const n = JSON.parse(e.newValue); aplicarLDJ(n); aplicarClassesLDJ(n); spSearch(); queueSync(); } catch (_) {}
     });
     window.addEventListener("online", () => queueSync());
     const touch = async (k) => { const m = BY[k]; if (m && m.custom) { m.updatedAt = Date.now(); await put("mon", [m]); queueSync(); } };
@@ -769,7 +801,7 @@
         const imgs = (d.img || []).filter((i) => i && typeof i.key === "string" && typeof i.data === "string" && /^data:image\//.test(i.data));
         await put("mon", novos); await put("img", imgs);
         if (d.tr && typeof d.tr === "object") { for (const k in d.tr) TR[k] = String(d.tr[k]); saveTR(); }
-        if (d.ldj) { try { localStorage.setItem("ini_ldj", JSON.stringify(d.ldj)); } catch (_) {} aplicarLDJ(d.ldj); }
+        if (d.ldj) { try { localStorage.setItem("ini_ldj", JSON.stringify(d.ldj)); } catch (_) {} aplicarLDJ(d.ldj); aplicarClassesLDJ(d.ldj); }
         await reload(); queueSync();
         bkMsg(`Importado: ${novos.length} criações novas ou mais recentes e ${imgs.length} fotos.`);
       } catch (err) { bkMsg(`<span class="err">Não consegui importar (${esc(err.message)}).</span>`); }
