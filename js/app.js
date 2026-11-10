@@ -227,7 +227,7 @@
     function rowFull(m) {
       const p = pt(m), k = esc(m.key);
       return `<div class="res"><span class="lft">${av(m, 40)}<span><b>${esc(p || m.name)}</b>${p ? ` <span class="muted">(${esc(m.name)})</span>` : ""}${m.subtitle ? ` <span class="muted">— ${esc(m.subtitle)}</span>` : ""}<br><span class="muted">${CAT[catOf(m)]} · ${esc(tsz(m))} · ${lvl(m)} · CA ${m.armor_class} · PV ${m.hit_points} · ${esc(srcOf(m))}</span></span></span>
-        <span class="acts"><button class="small" data-view="${k}">Ver</button><button class="small" data-ph="${k}" title="Adicionar ou trocar a foto">📷</button><button class="small primary" data-add="${k}">Adicionar</button>${m.custom ? `<button class="small" data-edit="${k}">Editar</button>` : `<button class="small" data-tr="${k}">Traduzir</button>`}<button class="small danger" data-del="${k}">Excluir</button></span></div>`;
+        <span class="acts"><button class="small" data-view="${k}">Ver</button><button class="small" data-ph="${k}" title="Adicionar ou trocar a foto">${ico("camera")}</button><button class="small primary" data-add="${k}">Adicionar</button>${m.custom ? `<button class="small" data-edit="${k}">Editar</button>` : `<button class="small" data-tr="${k}">Traduzir</button>`}<button class="small danger" data-del="${k}">Excluir</button></span></div>`;
     }
     function renderBestiary() {
       const q = nz($("#bq").value.trim()), f = $("#bf").value;
@@ -250,7 +250,9 @@
     }
 
     /* download: uma fonte por vez, com ordenação por nome (paginação estável) */
+    $("#dl-cancel").onclick = () => { $("#docs-wrap").hidden = true; };
     $("#dl-open").onclick = async () => {
+      if (!$("#docs-wrap").hidden) { $("#docs-wrap").hidden = true; return; }
       $("#docs-wrap").hidden = false;
       try {
         const j = await api("/documents/?limit=100");
@@ -375,7 +377,7 @@
     $("#cm-cat").onchange = () => { const mo = $("#cm-cat").value === "monster"; $("#cm-crl").textContent = mo ? "ND" : "Nível"; if (!mo) $("#cm-type").value = "Humanoid"; };
     const lines = (id) => $(id).value.split("\n").map((s) => s.trim()).filter(Boolean);
     const spName = (s) => D.S[String(s.name).toLowerCase()]?.[0] || s.name;
-    const chips = () => { $("#cm-chips").innerHTML = cmSpells.map((s, i) => `<span class="chip">${esc(spName(s))}<b data-chip="${i}" title="Remover">✕</b></span>`).join("") || '<span class="muted">Nenhuma magia adicionada.</span>'; };
+    const chips = () => { $("#cm-chips").innerHTML = cmSpells.map((s, i) => `<span class="chip">${esc(spName(s))}<b data-chip="${i}" title="Remover">${ico("x")}</b></span>`).join("") || '<span class="muted">Nenhuma magia adicionada.</span>'; };
     const spq = $("#cm-spq"), spsug = $("#cm-spsug");
     spq.addEventListener("input", () => {
       const q = nz(spq.value.trim()), r = q.length < 2 ? [] : catalog().filter((s) => nz(s.name + " " + (D.S[s.name.toLowerCase()]?.[0] || "")).includes(q)).slice(0, 10);
@@ -432,10 +434,11 @@
     };
 
     /* eventos */
-    $("#sq").addEventListener("input", spSearch);
+    $("#sq").addEventListener("input", () => { $("#sq-x").hidden = !$("#sq").value; spSearch(); });
+    $("#sq-x").onclick = () => { $("#sq").value = ""; $("#sq-x").hidden = true; spSearch(); $("#sq").focus(); };
     $("#sh-close").onclick = closeSheet; $("#spd-close").onclick = closeSpell;
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") { sug.hidden = true; if (!$("#spd").hidden) closeSpell(); else closeSheet(); } });
-    $("#combatants").addEventListener("click", (e) => { if (e.target.closest("button,input")) return; const a = e.target.closest(".combatant"); if (a && a.dataset.key) openSheet(a.dataset.key); });
+    $("#combatants").addEventListener("click", (e) => { if (e.target.closest("button,input,select,.fx-form,.fxchip")) return; const a = e.target.closest(".combatant"); if (a && a.dataset.key) openSheet(a.dataset.key); });
     document.addEventListener("click", async (e) => {
       const t = e.target, d = t.dataset, sg = t.closest("[data-sug]");
       tip.style.display = "none";
@@ -480,11 +483,58 @@
     window.__ini.avatar = (key, name, size) => av(BY[key] || { name }, size);
     const fileIn = $("#ph-file");
     const toSquare = (file, size) => new Promise((ok, no) => { const url = URL.createObjectURL(file), im = new Image(); im.onload = () => { const c = document.createElement("canvas"); c.width = c.height = size; const q = Math.min(im.width, im.height); c.getContext("2d").drawImage(im, (im.width - q) / 2, (im.height - q) / 2, q, q, 0, 0, size, size); URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", 0.85)); }; im.onerror = () => no(new Error("imagem inválida")); im.src = url; });
+
+    /* recorte da foto: zoom, arrastar e prévia do ícone redondo */
+    function cropPhoto(file) {
+      return new Promise((ok, no) => {
+        const url = URL.createObjectURL(file), im = new Image();
+        im.onerror = () => { URL.revokeObjectURL(url); no(new Error("imagem inválida")); };
+        im.onload = () => {
+          const S = 260, base = S / Math.min(im.width, im.height);
+          let zoom = 1, ox = 0, oy = 0;
+          const ov = document.createElement("div"); ov.className = "crop-ov";
+          ov.innerHTML = `<div class="crop-box" role="dialog" aria-label="Ajustar foto">
+            <h3>Ajustar foto</h3>
+            <canvas class="crop-stage" width="${S}" height="${S}"></canvas>
+            <div class="crop-zoom"><span>−</span><input type="range" min="1" max="4" step="0.01" value="1" aria-label="Zoom"><span>+</span></div>
+            <div class="crop-prev"><span class="muted">Como vai aparecer:</span><canvas width="72" height="72"></canvas><canvas width="34" height="34"></canvas></div>
+            <p class="muted" style="font-size:11px;margin:6px 0 10px">Arraste a imagem para posicionar. Use o controle ou a roda do mouse para o zoom.</p>
+            <div class="row" style="justify-content:flex-end;margin:0"><button type="button" class="small subtle" data-c="no">Cancelar</button><button type="button" class="small primary" data-c="ok">Usar foto</button></div></div>`;
+          document.body.appendChild(ov);
+          const stage = ov.querySelector(".crop-stage"), [p72, p34] = ov.querySelectorAll(".crop-prev canvas"), rg = ov.querySelector("input");
+          const clamp = () => { const sc = base * zoom, mx = Math.max(0, (im.width * sc - S) / 2), my = Math.max(0, (im.height * sc - S) / 2); ox = Math.max(-mx, Math.min(mx, ox)); oy = Math.max(-my, Math.min(my, oy)); };
+          const paint = (cv, size) => { const c = cv.getContext("2d"), k = size / S, sc = base * zoom; c.clearRect(0, 0, size, size); c.fillStyle = "#000"; c.fillRect(0, 0, size, size); c.drawImage(im, (S / 2 + ox - im.width * sc / 2) * k, (S / 2 + oy - im.height * sc / 2) * k, im.width * sc * k, im.height * sc * k); };
+          const draw = () => {
+            clamp(); paint(stage, S);
+            const c = stage.getContext("2d"); c.save(); c.fillStyle = "rgba(10,9,14,.62)"; c.beginPath(); c.rect(0, 0, S, S); c.arc(S / 2, S / 2, S / 2 - 2, 0, Math.PI * 2, true); c.fill("evenodd");
+            c.strokeStyle = "#9f7940"; c.lineWidth = 2; c.beginPath(); c.arc(S / 2, S / 2, S / 2 - 2, 0, Math.PI * 2); c.stroke(); c.restore();
+            for (const [cv, sz] of [[p72, 72], [p34, 34]]) { paint(cv, sz); const c2 = cv.getContext("2d"); c2.globalCompositeOperation = "destination-in"; c2.beginPath(); c2.arc(sz / 2, sz / 2, sz / 2, 0, Math.PI * 2); c2.fill(); c2.globalCompositeOperation = "source-over"; }
+          };
+          let drag = null;
+          stage.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, ox, oy }; stage.setPointerCapture(e.pointerId); });
+          stage.addEventListener("pointermove", (e) => { if (!drag) return; const r = stage.getBoundingClientRect(), k = S / r.width; ox = drag.ox + (e.clientX - drag.x) * k; oy = drag.oy + (e.clientY - drag.y) * k; draw(); });
+          stage.addEventListener("pointerup", () => { drag = null; });
+          const setZoom = (z) => { zoom = Math.max(1, Math.min(4, z)); rg.value = zoom; draw(); };
+          rg.addEventListener("input", () => setZoom(+rg.value));
+          stage.addEventListener("wheel", (e) => { e.preventDefault(); setZoom(zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08)); }, { passive: false });
+          const fim = (data) => { document.removeEventListener("keydown", esc, true); ov.remove(); URL.revokeObjectURL(url); ok(data); };
+          const esc = (e) => { if (e.key === "Escape") { e.stopPropagation(); fim(null); } };
+          document.addEventListener("keydown", esc, true);
+          ov.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-c]"); if (!b) return;
+            if (b.dataset.c === "no") return fim(null);
+            const out = document.createElement("canvas"); out.width = out.height = 192; paint(out, 192); fim(out.toDataURL("image/jpeg", 0.85));
+          });
+          draw();
+        };
+        im.src = url;
+      });
+    }
     const askPhoto = (k) => { phKey = k; fileIn.value = ""; fileIn.click(); };
     const formPv = () => { const m = editKey && BY[editKey]; const src = formPhoto === undefined ? (m && (PH[m.key])) : formPhoto; $("#cm-phv").innerHTML = src ? `<img class="av" style="width:48px;height:48px" src="${esc(src)}" alt="">` : '<span class="muted">sem foto</span>'; };
     fileIn.onchange = async () => {
       const f = fileIn.files[0]; if (!f) return;
-      try { const data = await toSquare(f, 192); if (phKey === "form") { formPhoto = data; formPv(); return; } PH[phKey] = data; await put("img", [{ key: phKey, data }]); touch(phKey); renderBestiary(); window.__ini.render(); if (curSheet === phKey) openSheet(phKey); } catch (e) { alert("Não consegui usar essa imagem: " + e.message); }
+      try { const data = await cropPhoto(f); if (!data) return; if (phKey === "form") { formPhoto = data; formPv(); return; } PH[phKey] = data; await put("img", [{ key: phKey, data }]); touch(phKey); renderBestiary(); window.__ini.render(); if (curSheet === phKey) openSheet(phKey); } catch (e) { alert("Não consegui usar essa imagem: " + e.message); }
     };
     $("#cm-ph").onclick = () => askPhoto("form");
     $("#cm-phx").onclick = () => { formPhoto = null; formPv(); };
@@ -600,6 +650,7 @@
     }
     $("#sy-save").onclick = () => { SY = { repo: $("#sy-repo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/+$/, ""), token: $("#sy-token").value.trim(), path: $("#sy-path").value.trim() || "criacoes.json" }; saveSY(); syncNow(); };
     $("#sy-now").onclick = () => { syncNow(); };
+    $("#sy-save").addEventListener("click", () => { $("#sync").open = false; });
     $("#sy-clear").onclick = () => { SY.token = ""; $("#sy-token").value = ""; saveSY(); syMsg("Token removido deste aparelho."); };
     document.addEventListener("visibilitychange", () => { if (!document.hidden) queueSync(); });
 

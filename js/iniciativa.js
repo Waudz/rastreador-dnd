@@ -7,10 +7,12 @@
       let round = 1;
       let nextOrder = 0;
       let editId = null;
+      let stats = {};
+      let report = null;
 
       function save() {
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ combatants, currentId, round, nextOrder }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ combatants, currentId, round, nextOrder, stats, report }));
         } catch (_) {
           // O preview incorporado pode bloquear armazenamento local; o rastreador continua funcionando nesta sessão.
         }
@@ -24,6 +26,8 @@
           currentId = saved.currentId || null;
           round = Number(saved.round) > 0 ? Number(saved.round) : 1;
           nextOrder = Number(saved.nextOrder) || combatants.length;
+          stats = saved.stats || {};
+          report = saved.report || null;
         } catch (_) {
           combatants = [];
         }
@@ -46,10 +50,108 @@
         return `<article class="combatant editing">${f("name", "Nome", "text", c.name)}${f("initiative", "Iniciativa", "number", Number(c.initiative))}${f("ac", "CA", "number", Number(c.ac))}${f("hp", "PV", "number", Number(c.hp))}${f("maxHp", "PV máx.", "number", Number(c.maxHp))}<div class="row-actions" style="align-self:end"><button class="small primary" type="button" data-save="${c.id}">Salvar</button><button class="small subtle" type="button" data-cancel="1">Cancelar</button></div></article>`;
       }
 
+      /* efeitos (condições, fogo, gelo…) */
+      const FX = [
+        ["fire", "Queimando", "#e5533d"], ["ice", "Congelado", "#5ec8f2"], ["poison", "Envenenado", "#7bc043"],
+        ["paralyzed", "Paralisado", "#e8c33c"], ["stunned", "Atordoado", "#c79bff"], ["frightened", "Amedrontado", "#9b8cff"],
+        ["charmed", "Enfeitiçado", "#ff7eb6"], ["blinded", "Cego", "#a0a0b0"], ["deafened", "Surdo", "#a0a0b0"],
+        ["prone", "Caído", "#b08a5a"], ["restrained", "Contido", "#b8b8c8"], ["grappled", "Agarrado", "#d49a5a"],
+        ["invisible", "Invisível", "#9ad7ff"], ["unconscious", "Inconsciente", "#6c7bd6"], ["bless", "Abençoado", "#f2d36b"],
+        ["curse", "Amaldiçoado", "#a64ca6"], ["slow", "Lento", "#7fb0a0"], ["haste", "Acelerado", "#5fd3a0"],
+        ["conc", "Concentrando", "#d7ad65"], ["custom", "Personalizado…", "#d7ad65"]
+      ];
+      const FXI = {
+        fire: '<path d="M12 2c1 3.5 5 5.5 5 10.5a5 5 0 0 1-10 0c0-2 1-3.2 2.2-4.2.2 1.8 1 2.7 2 2.7 0-3-.8-5.5.8-9z"/>',
+        ice: '<path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9.5 3.8L12 6l2.5-2.2M9.5 20.2L12 18l2.5 2.2"/>',
+        poison: '<path d="M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
+        paralyzed: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+        stunned: '<path d="M12 3l2 7 7 2-7 2-2 7-2-7-7-2 7-2z"/>',
+        frightened: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
+        charmed: '<path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11z"/>',
+        blinded: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/><path d="M3 3l18 18"/>',
+        deafened: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/>',
+        prone: '<path d="M12 4v15M6 13l6 7 6-7"/>',
+        restrained: '<path d="M9.5 14.5l5-5M8 11l-2 2a3.5 3.5 0 0 0 5 5l2-2M16 13l2-2a3.5 3.5 0 0 0-5-5l-2 2"/>',
+        grappled: '<path d="M6 10h12v6a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/><path d="M9 10V6M12 10V5M15 10V6"/>',
+        invisible: '<path d="M5 21V11a7 7 0 0 1 14 0v10l-3-2-2 2-2-2-2 2-2-2z"/><path d="M9 11h.01M15 11h.01"/>',
+        unconscious: '<path d="M20 14A8 8 0 1 1 10 4a6.5 6.5 0 0 0 10 10z"/>',
+        bless: '<circle cx="12" cy="12" r="3.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/>',
+        curse: '<path d="M12 3a8 8 0 0 0-5 14v3h10v-3a8 8 0 0 0-5-14z"/><path d="M9 12h.01M15 12h.01M10 20v-3M14 20v-3"/>',
+        slow: '<path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/>',
+        haste: '<path d="M5 6l6 6-6 6M12 6l6 6-6 6"/>',
+        conc: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+        custom: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'
+      };
+      const fxIcon = (t) => `<svg class="fxi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${FXI[t] || FXI.custom}</svg>`;
+      let fxFor = null;
+      const fxNote = document.createElement("div");
+      fxNote.className = "fx-note";
+      $("current-turn").after(fxNote);
+
+      function fxRing(effects) {
+        if (!effects || !effects.length) return "";
+        if (effects.length === 1) return effects[0].color;
+        const n = effects.length;
+        return `conic-gradient(${effects.map((e, i) => `${e.color} ${(i * 100 / n).toFixed(1)}% ${((i + 1) * 100 / n).toFixed(1)}%`).join(",")})`;
+      }
+      function fxLeft(e) { return e.rounds == null ? "∞" : e.rounds; }
+      function fxFormTpl(c) {
+        return `<div class="fx-form"><select data-fxsel="${c.id}">${FX.map((f) => `<option value="${f[0]}">${f[1]}</option>`).join("")}</select>
+          <input type="text" maxlength="24" placeholder="Nome do efeito" data-fxname="${c.id}" hidden>
+          <input type="number" min="1" step="1" placeholder="Rodadas (vazio = sem fim)" data-fxr="${c.id}">
+          <button class="small primary" type="button" data-fxadd="${c.id}">Adicionar</button><button class="small subtle" type="button" data-fxcancel="1">Cancelar</button></div>`;
+      }
+
+      function statOf(id, name) {
+        return (stats[id] = stats[id] || { name, dealt: 0, taken: 0, healed: 0, kills: 0 });
+      }
+
+      function renderDmgBy(ordered) {
+        const sel = $("dmg-by"), cur = sel.value;
+        sel.innerHTML = '<option value="">Quem está na vez</option>' + ordered.map((c) => `<option value="${c.id}">${escapeText(c.name)}</option>`).join("");
+        sel.value = ordered.some((c) => c.id === cur) ? cur : "";
+      }
+
+      function attacker() {
+        const id = $("dmg-by").value || currentId;
+        const c = combatants.find((x) => x.id === id);
+        return c ? { id: c.id, name: c.name } : { id: "_none", name: "Sem atribuição" };
+      }
+
+      function renderReport() {
+        const box = $("report");
+        if (!report) { box.hidden = true; box.innerHTML = ""; return; }
+        const rows = report.rows;
+        const top = rows[0];
+        box.hidden = false;
+        box.innerHTML = `
+          <div class="report-head">
+            <div>
+              <h3>Relatório do combate</h3>
+              <div class="muted">${report.rounds} ${report.rounds === 1 ? "rodada" : "rodadas"}${top && top.dealt > 0 ? ` · Maior dano causado: <strong style="color:var(--gold)">${escapeText(top.name)}</strong> (${top.dealt})` : ""}</div>
+            </div>
+            <button class="small subtle" type="button" id="report-close">Fechar</button>
+          </div>
+          <div class="tbl"><table>
+            <tr><th>Combatente</th><th>Dano causado</th><th>Dano sofrido</th><th>Cura feita</th><th>Abates</th></tr>
+            ${rows.map((r, i) => `<tr class="${i === 0 && r.dealt > 0 ? "top" : ""}"><td>${escapeText(r.name)}</td><td>${r.dealt}</td><td>${r.taken}</td><td>${r.healed}</td><td>${r.kills}</td></tr>`).join("")}
+          </table></div>
+          <p class="muted" style="font-size:11px;margin:8px 0 0">O dano é atribuído a quem estava na vez, ou a quem você escolher em “Dano causado por”.</p>`;
+      }
+
+      function buildReport() {
+        const rows = Object.values(stats).filter((r) => r.dealt || r.taken || r.healed || r.kills)
+          .sort((a, b) => b.dealt - a.dealt || b.kills - a.kills || a.name.localeCompare(b.name));
+        return rows.length ? { rounds: round, rows } : null;
+      }
+
       function render() {
         const list = $("combatants");
         const ordered = sorted();
         $("round").textContent = round;
+        document.querySelector(".round-box").hidden = !currentId;
+        renderDmgBy(ordered);
+        renderReport();
 
         const active = combatants.find((c) => c.id === currentId);
         $("current-turn").innerHTML = active
@@ -77,8 +179,9 @@
             <article class="combatant ${isActive ? "active" : ""} ${isDefeated ? "defeated" : ""}" data-key="${escapeText(c.key || "")}">
               <div class="initiative">${Number(c.initiative)}</div>
               <div>
-                <div class="name">${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 34) : ""}${escapeText(c.name)}${isActive ? " <span aria-label='turno atual'>◀</span>" : ""}</div>
+                <div class="name"><span class="avfx" ${c.effects && c.effects.length ? `style="background:${fxRing(c.effects)}"` : ""}>${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 34) : ""}${c.effects && c.effects.length ? `<span class="fxb" style="--c:${c.effects[0].color}" title="${escapeText(c.effects[0].name)}">${fxIcon(c.effects[0].type)}<b>${fxLeft(c.effects[0])}</b></span>` : ""}</span>${escapeText(c.name)}${isActive ? ` <span aria-label="turno atual" class="turn-mark">${ico("turn")}</span>` : ""}</div>
                 <div class="kind">${escapeText(c.kind)}${isDefeated ? " · Inconsciente/derrotado" : ""}</div>
+                ${c.effects && c.effects.length ? `<div class="fxchips">${c.effects.map((e) => `<span class="fxchip" style="--c:${e.color}" title="${e.rounds == null ? "sem duração definida" : e.rounds + " rodada(s) restante(s)"}">${fxIcon(e.type)}${escapeText(e.name)} <b>${fxLeft(e)}</b><button type="button" data-fxdel="${c.id}|${e.id}" aria-label="Remover ${escapeText(e.name)}">${ico("x")}</button></span>`).join("")}</div>` : ""}
               </div>
               <div class="stat">CA<strong>${Number(c.ac)}</strong></div>
               <div class="stat">PV<strong>${Number(c.hp)}</strong></div>
@@ -88,14 +191,16 @@
                 <div class="hp-track"><div class="hp-fill ${hpClass}" style="width:${pct}%"></div></div>
                 <div class="hp-controls">
                   <input type="number" min="1" step="1" value="1" aria-label="Quantidade de PV para alterar" data-amount="${c.id}">
-                  <button class="small danger" type="button" data-damage="${c.id}">− Dano</button>
-                  <button class="small" type="button" data-heal="${c.id}">＋ Cura</button>
+                  <button class="small danger" type="button" data-damage="${c.id}">${ico("minus")}Dano</button>
+                  <button class="small" type="button" data-heal="${c.id}">${ico("plus")}Cura</button>
                 </div>
               </div>
               <div class="row-actions">
+                <button class="small subtle" type="button" data-fxopen="${c.id}">${ico("sparkles")}Efeito</button>
                 <button class="small subtle" type="button" data-edit="${c.id}">Editar</button>
                 <button class="small subtle" type="button" data-remove="${c.id}" aria-label="Remover ${escapeText(c.name)}">Remover</button>
               </div>
+              ${fxFor === c.id ? fxFormTpl(c) : ""}
             </article>`;
         }).join("");
 
@@ -131,6 +236,22 @@
         const button = event.target.closest("button");
         if (!button) return;
 
+        if (button.dataset.fxopen) { fxFor = fxFor === button.dataset.fxopen ? null : button.dataset.fxopen; render(); return; }
+        if (button.dataset.fxcancel) { fxFor = null; render(); return; }
+        if (button.dataset.fxadd) {
+          const id = button.dataset.fxadd, p = combatants.find((c) => c.id === id);
+          const q = (a) => document.querySelector(`#combatants [data-${a}="${id}"]`);
+          const f = FX.find((x) => x[0] === q("fxsel").value) || FX[0];
+          const nome = f[0] === "custom" ? (q("fxname").value.trim() || "Efeito") : f[1];
+          const r = Math.floor(Number(q("fxr").value));
+          if (p) { (p.effects = p.effects || []).push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), type: f[0], name: nome, color: f[2], rounds: r > 0 ? r : null }); }
+          fxFor = null; render(); return;
+        }
+        if (button.dataset.fxdel) {
+          const [cid, eid] = button.dataset.fxdel.split("|"), p = combatants.find((c) => c.id === cid);
+          if (p) p.effects = (p.effects || []).filter((e) => e.id !== eid);
+          render(); return;
+        }
         if (button.dataset.edit) { editId = button.dataset.edit; render(); return; }
         if (button.dataset.cancel) { editId = null; render(); return; }
         if (button.dataset.save) {
@@ -150,9 +271,17 @@
           const amountInput = document.querySelector(`[data-amount="${id}"]`);
           const amount = Math.max(1, Math.floor(Number(amountInput?.value) || 1));
           if (!person) return;
+          const antes = Number(person.hp), quem = attacker();
           person.hp = button.dataset.damage
-            ? Math.max(0, Number(person.hp) - amount)
-            : Math.min(Number(person.maxHp), Number(person.hp) + amount);
+            ? Math.max(0, antes - amount)
+            : Math.min(Number(person.maxHp), antes + amount);
+          if (button.dataset.damage) {
+            const a = statOf(quem.id, quem.name); a.dealt += amount;
+            if (antes > 0 && person.hp === 0) a.kills++;
+            statOf(person.id, person.name).taken += amount;
+          } else if (person.hp > antes) {
+            statOf(quem.id, quem.name).healed += person.hp - antes;
+          }
           render();
           return;
         }
@@ -172,11 +301,22 @@
         }
       });
 
+      $("combatants").addEventListener("change", (e) => {
+        const id = e.target.dataset && e.target.dataset.fxsel;
+        if (!id) return;
+        const nm = document.querySelector(`#combatants [data-fxname="${id}"]`);
+        nm.hidden = e.target.value !== "custom";
+        if (!nm.hidden) nm.focus();
+      });
+
       $("start").addEventListener("click", () => {
         const first = sorted()[0];
         if (!first) return;
         currentId = first.id;
         round = 1;
+        stats = {};
+        report = null;
+        fxNote.textContent = "";
         render();
       });
 
@@ -189,6 +329,13 @@
         let index = ordered.findIndex((c) => c.id === currentId);
         if (index < 0) index = 0;
         const nextIndex = (index + direction + ordered.length) % ordered.length;
+        fxNote.textContent = "";
+        const atual = ordered[index];
+        if (direction > 0 && atual && atual.effects && atual.effects.length) {
+          const fim = [];
+          atual.effects = atual.effects.filter((e) => { if (e.rounds == null) return true; e.rounds--; if (e.rounds <= 0) { fim.push(e.name); return false; } return true; });
+          if (fim.length) fxNote.textContent = `Terminou em ${atual.name}: ${fim.join(", ")}.`;
+        }
         if (direction > 0 && nextIndex === 0) round++;
         if (direction < 0 && index === 0 && round > 1) round--;
         currentId = ordered[nextIndex].id;
@@ -197,9 +344,15 @@
 
       $("reset").addEventListener("click", () => {
         if (round > 1 && !confirm("Encerrar o combate na rodada " + round + "?")) return;
+        report = buildReport();
         currentId = null;
         round = 1;
+        stats = {};
         render();
+      });
+
+      $("report").addEventListener("click", (e) => {
+        if (e.target.id === "report-close") { report = null; render(); }
       });
 
       window.__ini = {

@@ -9,6 +9,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icones/icone-192.png">
   <link rel="stylesheet" href="css/estilo.css">
+  <script src="js/icones.js" defer></script>
   <script src="js/iniciativa.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
@@ -20,7 +21,7 @@
         <h1>Ordem de Iniciativa</h1>
         <p class="subtitle">Controle o combate, acompanhe os turnos e gerencie os pontos de vida.</p>
       </div>
-      <div class="round-box">
+      <div class="round-box" hidden>
         <span>Rodada</span>
         <strong id="round">1</strong>
       </div>
@@ -31,7 +32,7 @@
     
 
     <section class="panel">
-      <h2 class="panel-title">＋ Adicionar combatente</h2>
+      <h2 class="panel-title"><i data-i="plus"></i>Adicionar combatente</h2>
       <form id="add-form" class="form-grid">
         <div class="field-name">
           <label for="name">Nome</label>
@@ -71,13 +72,14 @@
     <section class="panel">
       <div class="combat-bar">
         <div>
-          <h2 class="panel-title" style="margin-bottom:4px">⚔ Ordem do combate</h2>
+          <h2 class="panel-title" style="margin-bottom:4px"><i data-i="swords"></i>Ordem do combate</h2>
           <div class="turn-label" id="current-turn">Adicione os combatentes para começar.</div>
         </div>
         <div class="turn-actions">
+          <label class="muted" style="margin:0;font-size:11px" for="dmg-by">Dano causado por</label><select id="dmg-by" style="width:auto;height:33px"><option value="">Quem está na vez</option></select>
           <button id="start" class="primary" type="button">Começar combate</button>
-          <button id="previous" type="button" disabled>← Anterior</button>
-          <button id="next" type="button" disabled>Próximo →</button>
+          <button id="previous" type="button" disabled><i data-i="left"></i>Anterior</button>
+          <button id="next" type="button" disabled>Próximo<i data-i="right"></i></button>
           <button id="reset" class="subtle" type="button" disabled>Encerrar</button>
         </div>
       </div>
@@ -88,18 +90,19 @@
           Cadastre os personagens e inimigos para montar a ordem de iniciativa.
         </div>
       </div>
+      <div id="report" class="report" hidden></div>
       <p class="footer">A iniciativa é ordenada do maior para o menor. Em caso de empate, quem foi adicionado primeiro fica acima.</p>
     </section>
     
     <section class="panel">
-      <h2 class="panel-title">✨ Consultar magias e habilidades</h2>
+      <h2 class="panel-title"><i data-i="sparkles"></i>Consultar magias e habilidades</h2>
       <p class="muted" id="spinfo"></p>
-      <input id="sq" placeholder="Magia ou habilidade de monstro (português ou inglês)" autocomplete="off" style="margin-bottom:10px">
+      <div class="clearable"><input id="sq" placeholder="Magia ou habilidade de monstro (português ou inglês)" autocomplete="off"><button type="button" class="xbtn" id="sq-x" hidden aria-label="Limpar pesquisa" title="Limpar pesquisa"><i data-i="x"></i></button></div>
       <div id="spells"></div>
     </section>
 
     <details class="panel" id="cm">
-      <summary class="panel-title">＋ Criar ficha (monstro, personagem ou NPC)</summary>
+      <summary class="panel-title"><i data-i="plus"></i>Criar ficha (monstro, personagem ou NPC)</summary>
       <div class="cmg">
         <div><label>Categoria</label><select id="cm-cat"><option value="monster">Monstro</option><option value="player">Personagem (jogador)</option><option value="npc">NPC</option></select></div>
         <div style="grid-column:span 2"><label>Nome</label><input id="cm-name" maxlength="48"></div>
@@ -127,7 +130,7 @@
     </details>
 
     <section class="panel">
-      <h2 class="panel-title">📚 Meu bestiário</h2>
+      <h2 class="panel-title"><i data-i="book"></i>Meu bestiário</h2>
       <div class="row">
         <input id="bq" placeholder="Pesquisar: nome, dragão, imenso, pequeno, fera, humanoide…" autocomplete="off" style="flex:1 1 240px">
         <select id="bf" style="flex:0 1 260px"></select>
@@ -138,33 +141,43 @@
     </section>
 
     <section class="panel">
-      <h2 class="panel-title">💾 Dados locais</h2>
+      <h2 class="panel-title"><i data-i="database"></i>Dados locais e bestiário</h2>
       <p class="muted" id="dbinfo"></p>
       <div id="colls"></div>
-      <details id="sync" style="margin-top:14px">
-        <summary class="panel-title" style="font-size:15px">☁️ Sincronizar minhas criações entre aparelhos (GitHub)</summary>
-        <p class="muted">Guarda suas fichas próprias (e as fotos delas) em um arquivo JSON num repositório <b>privado</b> seu. Use o mesmo repositório e token em cada aparelho. O token fica salvo só neste navegador.</p>
+      <div class="sub">Bestiário</div>
+      <div class="row">
+        <button type="button" class="small" id="dl-open">Baixar / atualizar bestiário</button>
+        <span class="muted" id="dl-status"></span>
+      </div>
+      <div id="docs-wrap" class="dl-box" hidden>
+        <div id="docs" class="muted">Carregando fontes…</div>
+        <div class="row" style="margin:0"><button type="button" class="primary small" id="dl-go">Baixar selecionadas</button><button type="button" class="small subtle" id="dl-cancel">Fechar</button></div>
+      </div>
+      <div class="sub">Traduções e backup</div>
+      <div class="row">
+        <a class="btnlike muted" href="ferramentas/importar-ldj.html">Importar tradução do LDJ</a>
+        <button type="button" class="small subtle" id="tr-exp">Exportar traduções</button>
+        <label class="btnlike muted">Importar traduções<input type="file" id="tr-imp" accept=".json" hidden></label>
+        <button type="button" class="small subtle" id="bk-exp">Exportar backup</button>
+        <label class="btnlike muted">Importar backup<input type="file" id="bk-imp" accept=".json" hidden></label>
+      </div>
+    </section>
+
+    <section class="panel syncbar">
+      <div class="syncbar-top">
+        <h2 class="panel-title"><i data-i="cloud"></i>Sincronização entre aparelhos</h2>
+        <div class="syncbar-actions"><span class="muted" id="sy-status"></span><button type="button" class="primary small" id="sy-now">Sincronizar agora</button></div>
+      </div>
+      <details id="sync">
+        <summary>Configurar repositório e token</summary>
+        <p class="muted">Guarda suas fichas próprias (e as fotos delas) e a tradução do livro em arquivos JSON num repositório <b>privado</b> seu. Use o mesmo repositório e token em cada aparelho. O token fica salvo só neste navegador.</p>
         <div class="cmg">
           <div style="grid-column:span 2"><label>Repositório (usuario/repositorio)</label><input id="sy-repo" placeholder="seuusuario/dnd-dados" autocomplete="off"></div>
           <div style="grid-column:span 2"><label>Token (fine-grained, só esse repositório)</label><input id="sy-token" type="password" autocomplete="off"></div>
           <div><label>Arquivo</label><input id="sy-path" value="criacoes.json"></div>
         </div>
-        <div class="row"><button type="button" class="primary small" id="sy-save">Salvar e sincronizar</button><button type="button" class="small" id="sy-now">Sincronizar agora</button><button type="button" class="small subtle" id="sy-clear">Esquecer token deste aparelho</button></div>
-        <div id="sy-status" class="muted"></div>
+        <div class="row"><button type="button" class="primary small" id="sy-save">Salvar e sincronizar</button><button type="button" class="small subtle" id="sy-clear">Esquecer token deste aparelho</button></div>
       </details>
-      <div class="row">
-        <button type="button" class="small" id="dl-open">Baixar / atualizar bestiário</button>
-        <button type="button" class="small subtle" id="tr-exp">Exportar traduções</button>
-        <a class="btnlike muted" href="ferramentas/importar-ldj.html">Importar tradução do LDJ</a>
-        <button type="button" class="small subtle" id="bk-exp">Exportar backup</button>
-        <label class="btnlike muted">Importar backup<input type="file" id="bk-imp" accept=".json" hidden></label>
-        <label class="btnlike muted">Importar traduções<input type="file" id="tr-imp" accept=".json" hidden></label>
-        <span class="muted" id="dl-status"></span>
-      </div>
-      <div id="docs-wrap" hidden>
-        <div id="docs" class="muted">Carregando fontes…</div>
-        <button type="button" class="primary small" id="dl-go">Baixar selecionadas</button>
-      </div>
     </section>
     <footer class="muted" style="font-size:11px;margin:26px 0 8px;line-height:1.6">Este site usa material do System Reference Document 5.1 e do System Reference Document 5.2 da Wizards of the Coast LLC, licenciados sob a Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode). Os dados são obtidos da API Open5e (open5e.com). Este é um projeto de fãs, sem vínculo com a Wizards of the Coast.</footer>
     <input type="file" id="ph-file" accept="image/*" hidden>
