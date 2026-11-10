@@ -474,3 +474,15 @@ a.doclink { color: var(--gold); text-decoration: underline; cursor: pointer; }
 .chip-x:hover { color: var(--text); background: rgba(255,255,255,.08); }
 .clipe { display: inline-flex; align-items: center; gap: 3px; color: var(--gold); font-weight: 700; font-size: 12px; vertical-align: middle; }
 .clipe .ico { width: 14px; height: 14px; }
+
+/* ficha automática */
+.grade2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px 14px; }
+.lin { display: flex; align-items: center; gap: 8px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.lin b { min-width: 32px; text-align: right; color: var(--gold); }
+.pbol { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--gold-dark); flex: 0 0 auto; }
+.pbol.on { background: var(--gold); }
+.pbol.dup { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--gold); }
+.panel2 { padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #201e2a; margin-bottom: 8px; }
+.atk-res { color: var(--gold); margin-top: 4px; }
+.inv-h { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.num-h { width: 76px; text-align: center; }
