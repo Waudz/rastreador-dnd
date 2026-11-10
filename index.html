@@ -18,6 +18,7 @@
 </head>
 <body>
   <main class="tracker">
+    <div id="synctop" class="synctop" hidden><i data-i="cloud"></i><span class="muted" id="sy-status"></span><button type="button" class="small" id="sy-now">Sincronizar</button></div>
     <header class="header">
       <div>
         <p class="eyebrow">Dungeons & Dragons · 5ª edição</p>
@@ -79,7 +80,7 @@
           <div class="turn-label" id="current-turn">Adicione os combatentes para começar.</div>
         </div>
         <div class="turn-actions">
-          <label class="muted" style="margin:0;font-size:11px" for="dmg-by">Dano causado por</label><select id="dmg-by" style="width:auto;height:33px"><option value="">Quem está na vez</option></select>
+          <div class="dmgby"><label for="dmg-by">Dano causado por</label><select id="dmg-by"><option value="">Quem está na vez</option></select></div>
           <button id="start" class="primary" type="button">Começar combate</button>
           <button id="previous" type="button" disabled><i data-i="left"></i>Anterior</button>
           <button id="next" type="button" disabled>Próximo<i data-i="right"></i></button>
@@ -175,7 +176,6 @@
     <section class="panel syncbar only-admin">
       <div class="syncbar-top">
         <h2 class="panel-title"><i data-i="cloud"></i>Sincronização entre aparelhos</h2>
-        <div class="syncbar-actions"><span class="muted" id="sy-status"></span><button type="button" class="primary small" id="sy-now">Sincronizar agora</button></div>
       </div>
       <details id="sync">
         <summary>Configurar repositório e token</summary>

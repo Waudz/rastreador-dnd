@@ -394,3 +394,15 @@ button .ico:last-child:not(:first-child) { margin: 0 0 0 4px; }
 /* painéis de administração: só aparecem em /?admin */
 .only-admin { display: none; }
 body.admin .only-admin { display: block; }
+
+/* botão de sincronizar: só aparece onde a sincronização já foi configurada */
+.synctop { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 12px; }
+.synctop[hidden] { display: none; }
+.synctop .ico { color: var(--gold); margin: 0; }
+
+/* seletor "Dano causado por": mesmo formato dos botões */
+.dmgby { display: inline-flex; align-items: center; gap: 6px; min-height: 37px; padding: 0 4px 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); font-weight: 700; }
+.dmgby:hover, .dmgby:focus-within { border-color: var(--gold-dark); }
+.dmgby label { margin: 0; color: var(--muted); font: inherit; font-weight: 700; white-space: nowrap; }
+.dmgby select { width: auto; height: 31px; padding: 0 6px; border: 0; background: transparent; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; box-shadow: none; }
+.dmgby select option { background: #13121a; color: var(--text); font-weight: 400; }

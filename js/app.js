@@ -661,7 +661,10 @@
     }
     $("#sy-save").onclick = () => { SY = { repo: $("#sy-repo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/+$/, ""), token: $("#sy-token").value.trim(), path: $("#sy-path").value.trim() || "criacoes.json" }; saveSY(); syncNow(); };
     $("#sy-now").onclick = () => { syncNow(); };
-    $("#sy-save").addEventListener("click", () => { $("#sync").open = false; });
+    const showSyncTop = () => { $("#synctop").hidden = !(SY.repo && SY.token); };
+    showSyncTop();
+    $("#sy-save").addEventListener("click", () => { $("#sync").open = false; setTimeout(showSyncTop, 0); });
+    $("#sy-clear").addEventListener("click", () => setTimeout(showSyncTop, 0));
     $("#sy-clear").onclick = () => { SY.token = ""; $("#sy-token").value = ""; saveSY(); syMsg("Token removido deste aparelho."); };
     document.addEventListener("visibilitychange", () => { if (!document.hidden) queueSync(); });
 
