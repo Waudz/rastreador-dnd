@@ -1,9 +1,9 @@
-/* Página da campanha: personagens, diário (resumos e arquivos) e membros */
+/* Página da campanha: personagens, diário (anotações), documentos e membros */
 (() => {
   "use strict";
   const $ = (s) => document.querySelector(s), esc = nuvem.esc;
   const id = new URLSearchParams(location.search).get("id");
-  let camp = null, papel = "", membros = [], nomes = {}, pers = [], docs = [], aba = "pers", editandoDoc = null;
+  let camp = null, papel = "", membros = [], nomes = {}, pers = [], docs = [], aba = "pers", editandoDoc = null, anexosForm = [], formAberto = false;
   const mestre = () => papel === "mestre";
   const meuId = () => nuvem.usuario().id;
   const pct = (a, m) => (m > 0 ? Math.max(0, Math.min(100, (a / m) * 100)) : 0);
@@ -11,16 +11,26 @@
   const tamanho = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB");
   const aviso = (t, erro) => { const e = $("#erro"); e.innerHTML = t ? (erro ? `<span class="err">${esc(t)}</span>` : esc(t)) : ""; };
 
-  /* texto dos resumos: [[Título|id]] vira link para outro documento; endereços http(s) viram links */
+  /* anotações: os documentos anexados ficam numa última linha "@@anexos:id,id" (não aparece no texto);
+     [[Título|id]] no meio do texto continua funcionando como link; endereços http(s) viram links */
   const docPorId = (i) => docs.find((x) => x.id === i);
+  const MARCA = "\n\n@@anexos:";
+  function partes(d) {
+    const c = String(d.conteudo || ""), p = c.lastIndexOf(MARCA);
+    if (p < 0) return { texto: c, ids: [] };
+    return { texto: c.slice(0, p), ids: c.slice(p + MARCA.length).split(",").map((x) => x.trim().toLowerCase()).filter((x) => /^[0-9a-f-]{36}$/.test(x)) };
+  }
+  const montar = (texto, ids) => texto + (ids.length ? MARCA + ids.join(",") : "");
   function renderTexto(txt) {
     let h = esc(txt);
     h = h.replace(/\[\[([^\]|]+)\|([0-9a-f-]{36})\]\]/gi, (_, t, i) => { const d = docPorId(i.toLowerCase()); return d ? `<a class="doclink" href="#" data-doclink="${esc(d.id)}">${t}</a>` : `<span class="muted" title="Documento indisponível">${t}</span>`; });
     h = h.replace(/(https?:\/\/[^\s<]+)/g, (m) => { const fim = (m.match(/[.,;:!?)]+$/) || [""])[0], u = m.slice(0, m.length - fim.length); return `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>${fim}`; });
     return h;
   }
-  const idsCitados = (txt) => [...new Set([...String(txt).matchAll(/\[\[[^\]|]+\|([0-9a-f-]{36})\]\]/gi)].map((m) => m[1].toLowerCase()))].filter((i) => docPorId(i));
-  const anexosDe = (d) => { const ids = idsCitados(d.conteudo); return ids.length ? `<div class="anexos"><span class="muted">Documentos:</span>${ids.map((i) => `<a class="btnlike small doclink" href="#" data-doclink="${esc(i)}">${esc(docPorId(i).titulo)}</a>`).join("")}</div>` : ""; };
+  const idsDe = (d) => { const p = partes(d), inline = [...p.texto.matchAll(/\[\[[^\]|]+\|([0-9a-f-]{36})\]\]/gi)].map((m) => m[1].toLowerCase()); return [...new Set(p.ids.concat(inline))].filter((i) => docPorId(i)); };
+  const nomeDoc = (d) => d.titulo || d.arquivo_nome || "Documento";
+  const anexosDe = (d) => { const ids = idsDe(d); return ids.length ? `<div class="anexos"><span class="muted">Documentos:</span>${ids.map((i) => `<a class="btnlike small doclink" href="#" data-doclink="${esc(i)}">${ico("clip")} ${esc(nomeDoc(docPorId(i)))}</a>`).join("")}</div>` : ""; };
+  const usadoEm = (arq) => docs.filter((x) => x.tipo !== "arquivo" && idsDe(x).includes(arq.id));
 
   async function carregar() {
     const [c, m, pf, ps, ds] = await Promise.all([
@@ -41,7 +51,7 @@
     $("#titulo").textContent = camp.nome; document.title = camp.nome + " — Rastreador D&D";
     $("#papel").textContent = mestre() ? "Mestre" : "Jogador";
     $("#lnk-combate").hidden = !mestre();
-    const abas = [["pers", "Personagens"], ["diario", "Diário"]].concat(mestre() ? [["membros", "Grupo"]] : []);
+    const abas = [["pers", "Personagens"], ["diario", "Diário"], ["docs", "Documentos"]].concat(mestre() ? [["membros", "Grupo"]] : []);
     $("#abas").hidden = false;
     $("#abas").innerHTML = abas.map(([k, t]) => `<button type="button" data-aba="${k}" class="${aba === k ? "on" : ""}">${t}</button>`).join("");
   }
@@ -67,14 +77,16 @@
       <div class="cards">${pers.length ? pers.map(cartaoPers).join("") : '<span class="muted">Nenhum personagem aqui ainda.</span>'}</div>`;
   }
 
-  const opcoesLink = (excluir) => { const l = docs.filter((x) => x.id !== excluir); return l.length ? l.map((x) => `<option value="${esc(x.id)}">${esc((x.tipo === "arquivo" ? "Arquivo: " : x.tipo === "nota" ? "Nota: " : "Resumo: ") + (x.titulo || x.arquivo_nome))}</option>`).join("") : '<option value="">(nenhum documento ainda)</option>'; };
-  function inserirNoTexto(trecho) { const ta = $("#r-texto"), a = ta.selectionStart == null ? ta.value.length : ta.selectionStart, b = ta.selectionEnd == null ? a : ta.selectionEnd; ta.value = ta.value.slice(0, a) + trecho + ta.value.slice(b); ta.focus(); ta.selectionStart = ta.selectionEnd = a + trecho.length; }
+  const opcoesLink = () => { const l = docs.filter((x) => x.tipo === "arquivo" && !anexosForm.includes(x.id)); return l.length ? l.map((x) => `<option value="${esc(x.id)}">${esc(nomeDoc(x))}</option>`).join("") : '<option value="">(nenhum documento disponível)</option>'; };
+  const chipsForm = () => anexosForm.map((i) => { const d = docPorId(i); return d ? `<span class="chip">${ico("clip")} ${esc(nomeDoc(d))}<button type="button" class="chip-x" data-tirar="${esc(i)}" aria-label="Tirar o anexo">${ico("x")}</button></span>` : ""; }).join("");
+  function atualizarAnexosForm() { const c = $("#r-chips"), s = $("#r-link"); if (c) c.innerHTML = chipsForm(); if (s) s.innerHTML = opcoesLink(); }
   function formResumo() {
     const d = editandoDoc ? docs.find((x) => x.id === editandoDoc) : null;
     return `<form id="form-resumo" class="panel" style="margin-bottom:12px">
       <div class="row"><input id="r-titulo" maxlength="160" placeholder="Título" style="flex:1 1 220px" value="${esc(d ? d.titulo : "")}" required><input id="r-sessao" class="num" type="number" min="0" placeholder="Sessão" value="${d && d.sessao != null ? d.sessao : ""}"></div>
-      <textarea id="r-texto" rows="8" placeholder="Texto do resumo ou da nota" style="width:100%">${esc(d ? d.conteudo : "")}</textarea>
-      <div class="row" style="margin:8px 0 0"><select id="r-link" style="flex:1 1 180px" aria-label="Documento para linkar">${opcoesLink(d ? d.id : null)}</select><button type="button" class="small" id="r-inserir">Inserir link</button><button type="button" class="small" id="r-anexar">Anexar arquivo</button><input id="r-anexo" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.md" hidden></div>
+      <textarea id="r-texto" rows="8" placeholder="Escreva a anotação" style="width:100%">${esc(d ? partes(d).texto : "")}</textarea>
+      <div id="r-chips" class="anexos">${chipsForm()}</div>
+      <div class="row" style="margin:8px 0 0"><select id="r-link" style="flex:1 1 180px" aria-label="Documento para vincular">${opcoesLink()}</select><button type="button" class="small" id="r-inserir">Vincular documento</button><button type="button" class="small" id="r-anexar">Enviar novo arquivo</button><input id="r-anexo" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.md" hidden></div>
       <div class="row" style="margin:8px 0 0"><label class="inline" style="margin:0"><input id="r-visivel" type="checkbox" style="width:auto;height:auto" ${!d || d.visivel ? "checked" : ""}> Visível para o grupo</label><span class="grow"></span><button type="button" class="small subtle" id="r-cancelar">Cancelar</button><button type="submit" class="primary small">Salvar</button></div>
     </form>`;
   }
@@ -84,12 +96,15 @@
     </form>`;
 
   function itemDoc(d) {
-    const titulo = d.tipo === "arquivo" ? (d.titulo || d.arquivo_nome) : (d.sessao != null && d.sessao !== "" ? `Sessão ${d.sessao} · ` : "") + d.titulo;
-    const corpo = d.tipo === "arquivo"
-      ? `<div class="row" style="margin:0"><button type="button" class="small primary" data-doclink="${esc(d.id)}">Abrir</button><span class="muted">${esc(d.arquivo_nome || "")} · ${tamanho(d.arquivo_tamanho || 0)}</span></div>`
-      : `<div class="pre">${renderTexto(d.conteudo)}</div>${anexosDe(d)}`;
-    const ferr = mestre() ? `<div class="row" style="margin:8px 0 0">${d.tipo !== "arquivo" ? `<button type="button" class="small" data-editar-doc="${esc(d.id)}">Editar</button>` : ""}<button type="button" class="small" data-vis="${esc(d.id)}">${d.visivel ? "Ocultar do grupo" : "Mostrar ao grupo"}</button><button type="button" class="small danger" data-apagar-doc="${esc(d.id)}">Excluir</button></div>` : "";
-    return `<details class="item" data-doc="${esc(d.id)}"><summary>${esc(titulo)} <span class="muted" style="font-weight:400">· ${d.tipo === "arquivo" ? "Arquivo" : d.tipo === "nota" ? "Nota" : "Resumo"} · ${fmtData(d.criado_em)}</span>${d.visivel ? "" : ' <span class="badge">Oculto</span>'}</summary><div>${corpo}${ferr}</div></details>`;
+    const arq = d.tipo === "arquivo", n = arq ? 0 : idsDe(d).length;
+    const titulo = arq ? nomeDoc(d) : (d.sessao != null && d.sessao !== "" ? `Sessão ${d.sessao} · ` : "") + d.titulo;
+    const usos = arq ? usadoEm(d) : [];
+    const corpo = arq
+      ? `<div class="row" style="margin:0"><button type="button" class="small primary" data-doclink="${esc(d.id)}">Abrir</button><span class="muted">${esc(d.arquivo_nome || "")} · ${tamanho(d.arquivo_tamanho || 0)}</span></div>${usos.length ? `<div class="muted" style="margin-top:6px">Usado em: ${usos.map((u) => esc(u.titulo)).join(", ")}</div>` : ""}`
+      : `<div class="pre">${renderTexto(partes(d).texto)}</div>${anexosDe(d)}`;
+    const ferr = mestre() ? `<div class="row" style="margin:8px 0 0">${!arq ? `<button type="button" class="small" data-editar-doc="${esc(d.id)}">Editar</button>` : ""}<button type="button" class="small" data-vis="${esc(d.id)}">${d.visivel ? "Ocultar do grupo" : "Mostrar ao grupo"}</button><button type="button" class="small danger" data-apagar-doc="${esc(d.id)}">Excluir</button></div>` : "";
+    const clipe = n ? ` <span class="clipe" title="${n === 1 ? "1 documento anexado" : n + " documentos anexados"}">${ico("clip")}${n}</span>` : "";
+    return `<details class="item" data-doc="${esc(d.id)}"><summary>${esc(titulo)}${clipe} <span class="muted" style="font-weight:400">· ${arq ? "Documento" : "Anotação"} · ${fmtData(d.criado_em)}</span>${d.visivel ? "" : ' <span class="badge">Oculto</span>'}</summary><div>${corpo}${ferr}</div></details>`;
   }
 
   /* ordem do diário: mais novos primeiro, mais antigos primeiro ou pelo número da sessão (a escolha fica guardada neste aparelho) */
@@ -103,9 +118,15 @@
     return l.sort((a, b) => tempo(b) - tempo(a));
   }
   function abaDiario() {
-    const botoes = mestre() ? '<button type="button" class="small" id="abre-resumo">Novo resumo</button><button type="button" class="small" id="abre-arq">Enviar arquivo</button>' : "";
-    const topo = `<div class="bar"><select id="ordem" style="width:auto;height:33px" aria-label="Ordem do diário"><option value="novos"${ordem === "novos" ? " selected" : ""}>Mais novos primeiro</option><option value="antigos"${ordem === "antigos" ? " selected" : ""}>Mais antigos primeiro</option><option value="sessao"${ordem === "sessao" ? " selected" : ""}>Por número da sessão</option></select><span class="grow"></span>${botoes}</div>${mestre() ? `<div id="forms">${editandoDoc ? formResumo() : ""}</div>` : ""}`;
-    return topo + (docs.length ? docsOrdenados().map(itemDoc).join("") : '<span class="muted">Nada aqui ainda.</span>');
+    const botoes = mestre() ? '<button type="button" class="small" id="abre-resumo">Nova anotação</button>' : "";
+    const lista = docsOrdenados().filter((d) => d.tipo !== "arquivo");
+    const topo = `<div class="bar"><select id="ordem" style="width:auto;height:33px" aria-label="Ordem do diário"><option value="novos"${ordem === "novos" ? " selected" : ""}>Mais novas primeiro</option><option value="antigos"${ordem === "antigos" ? " selected" : ""}>Mais antigas primeiro</option><option value="sessao"${ordem === "sessao" ? " selected" : ""}>Por número da sessão</option></select><span class="grow"></span>${botoes}</div>${mestre() ? `<div id="forms">${editandoDoc || formAberto ? formResumo() : ""}</div>` : ""}`;
+    return topo + (lista.length ? lista.map(itemDoc).join("") : '<span class="muted">Nenhuma anotação ainda.</span>');
+  }
+  function abaDocs() {
+    const botoes = mestre() ? '<button type="button" class="small" id="abre-arq">Enviar arquivo</button>' : "";
+    const lista = docs.filter((d) => d.tipo === "arquivo").sort((a, b) => tempo(b) - tempo(a));
+    return `<div class="bar"><span class="muted">Mapas, PDFs e imagens da campanha. Para ligar um a uma anotação, use “Vincular documento” ao editá-la.</span><span class="grow"></span>${botoes}</div>${mestre() ? '<div id="forms"></div>' : ""}` + (lista.length ? lista.map(itemDoc).join("") : '<span class="muted">Nenhum documento ainda.</span>');
   }
 
   function abaMembros() {
@@ -114,7 +135,7 @@
 
   async function desenhar() {
     cabecalho();
-    $("#conteudo").innerHTML = aba === "pers" ? abaPers() : aba === "diario" ? abaDiario() : abaMembros();
+    $("#conteudo").innerHTML = aba === "pers" ? abaPers() : aba === "diario" ? abaDiario() : aba === "docs" ? abaDocs() : abaMembros();
   }
 
   async function mostrarConvite() {
@@ -137,16 +158,16 @@
     catch (e) { aviso(e.message, true); await recarregar(); }
   }
 
-  const assinatura = () => JSON.stringify([pers.map((p) => [p.id, p.nome, p.pv_atual, p.pv_max, p.pv_temp, p.ca]), docs.map((d) => [d.id, d.titulo, d.visivel, d.conteudo.length]), membros.map((m) => m.usuario_id)]);
+  const assinatura = () => JSON.stringify([pers.map((p) => [p.id, p.nome, p.pv_atual, p.pv_max, p.pv_temp, p.ca]), docs.map((d) => [d.id, d.tipo, d.titulo, d.visivel, d.conteudo.length]), membros.map((m) => m.usuario_id)]);
   async function recarregar() { try { await carregar(); desenhar(); } catch (e) { aviso(e.message, true); } }
 
   async function salvarResumo(ev) {
     ev.preventDefault();
-    const dados = { titulo: $("#r-titulo").value.trim(), conteudo: $("#r-texto").value, sessao: $("#r-sessao").value === "" ? null : Number($("#r-sessao").value), visivel: $("#r-visivel").checked };
+    const dados = { titulo: $("#r-titulo").value.trim(), conteudo: montar($("#r-texto").value.replace(/\s+$/, ""), anexosForm), sessao: $("#r-sessao").value === "" ? null : Number($("#r-sessao").value), visivel: $("#r-visivel").checked };
     try {
       if (editandoDoc) await nuvem.patch(`documentos?id=eq.${encodeURIComponent(editandoDoc)}`, dados);
       else await nuvem.post("documentos", { campanha_id: id, tipo: "resumo", ...dados });
-      editandoDoc = null; await recarregar();
+      editandoDoc = null; formAberto = false; anexosForm = []; await recarregar();
     } catch (e) { aviso(e.message, true); }
   }
 
@@ -167,7 +188,7 @@
     aviso("Enviando o anexo…");
     try {
       const r = await subirArquivo(f, "", $("#r-visivel").checked);
-      docs.unshift(r); $("#r-link").innerHTML = opcoesLink(editandoDoc); inserirNoTexto(`[[${(r.titulo || r.arquivo_nome).replace(/[\]|]/g, "")}|${r.id}]]`); aviso("");
+      docs.unshift(r); anexosForm.push(r.id); atualizarAnexosForm(); aviso("");
     } catch (e) { aviso(e.message, true); }
   }
 
@@ -201,18 +222,18 @@
     const t = e.target, c = (s) => t.closest(s);
     try {
       let b;
-      if ((b = c("[data-aba]"))) { aba = b.dataset.aba; editandoDoc = null; return desenhar(); }
+      if ((b = c("[data-aba]"))) { aba = b.dataset.aba; editandoDoc = null; formAberto = false; anexosForm = []; return desenhar(); }
       if ((b = c("[data-dano]"))) return mudarPV(c(".card"), true);
       if ((b = c("[data-cura]"))) return mudarPV(c(".card"), false);
       if (c("#abre-novo")) { const f = $("#form-novo"); f.hidden = !f.hidden; if (!f.hidden) $("#n-nome").focus(); return; }
-      if (c("#abre-resumo")) { editandoDoc = null; $("#forms").innerHTML = formResumo(); $("#r-titulo").focus(); return; }
+      if (c("#abre-resumo")) { editandoDoc = null; formAberto = true; anexosForm = []; $("#forms").innerHTML = formResumo(); $("#r-titulo").focus(); return; }
       if (c("#abre-arq")) { $("#forms").innerHTML = formArquivo(); return; }
-      if (c("#r-cancelar") || c("#a-cancelar")) { editandoDoc = null; return desenhar(); }
-      if ((b = c("[data-editar-doc]"))) { editandoDoc = b.dataset.editarDoc; return desenhar(); }
+      if (c("#r-cancelar") || c("#a-cancelar")) { editandoDoc = null; formAberto = false; anexosForm = []; return desenhar(); }
+      if ((b = c("[data-editar-doc]"))) { editandoDoc = b.dataset.editarDoc; anexosForm = idsDe(docPorId(editandoDoc)); return desenhar(); }
       if ((b = c("[data-vis]"))) { const d = docs.find((x) => x.id === b.dataset.vis); await nuvem.patch(`documentos?id=eq.${encodeURIComponent(d.id)}`, { visivel: !d.visivel }); return recarregar(); }
       if ((b = c("[data-apagar-doc]"))) {
         const d = docs.find((x) => x.id === b.dataset.apagarDoc);
-        if (!confirm(`Excluir “${d.titulo}”?`)) return;
+        if (!confirm(`Excluir “${nomeDoc(d)}”?`)) return;
         if (d.arquivo_path) { try { await nuvem.apagarArquivos([d.arquivo_path]); } catch (_) {} }
         await nuvem.apagar(`documentos?id=eq.${encodeURIComponent(d.id)}`); return recarregar();
       }
@@ -220,7 +241,8 @@
       if (c("#leitor-fechar")) return fecharLeitor();
       if (c("#leitor-voltar")) { pilha.pop(); return abrirDoc(pilha[pilha.length - 1], true); }
       if (t.id === "leitor") return fecharLeitor();
-      if (c("#r-inserir")) { const v = $("#r-link").value, d = docPorId(v); if (d) inserirNoTexto(`[[${(d.titulo || d.arquivo_nome).replace(/[\]|]/g, "")}|${d.id}]]`); return; }
+      if (c("#r-inserir")) { const v = $("#r-link").value; if (v && docPorId(v) && !anexosForm.includes(v)) { anexosForm.push(v); atualizarAnexosForm(); } return; }
+      if ((b = c("[data-tirar]"))) { anexosForm = anexosForm.filter((x) => x !== b.dataset.tirar); atualizarAnexosForm(); return; }
       if (c("#r-anexar")) return $("#r-anexo").click();
       if ((b = c("[data-remover]"))) {
         if (!confirm(`Remover ${nomes[b.dataset.remover] || "este jogador"} da campanha?`)) return;
