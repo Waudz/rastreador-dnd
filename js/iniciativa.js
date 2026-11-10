@@ -94,6 +94,30 @@
         const n = effects.length;
         return `conic-gradient(${effects.map((e, i) => `${e.color} ${(i * 100 / n).toFixed(1)}% ${((i + 1) * 100 / n).toFixed(1)}%`).join(",")})`;
       }
+
+      const FXD = {
+        fire: "Sofre dano de fogo no início ou no fim do turno (o valor depende da fonte do fogo). Apagar as chamas costuma gastar uma ação.",
+        ice: "Preso no gelo: deslocamento 0 e desvantagem em ataques e testes de Destreza até o gelo ser quebrado ou derreter (o Mestre pode ajustar).",
+        poison: "Desvantagem em jogadas de ataque e em testes de atributo.",
+        paralyzed: "Incapacitado, não se move nem fala. Falha automática em salvaguardas de Força e Destreza. Ataques contra ele têm vantagem, e acertos a 1,5 m são críticos.",
+        stunned: "Incapacitado, não se move e só fala de forma hesitante. Falha automática em salvaguardas de Força e Destreza. Ataques contra ele têm vantagem.",
+        frightened: "Desvantagem em testes de atributo e ataques enquanto a fonte do medo estiver à vista. Não pode se aproximar dela por vontade própria.",
+        charmed: "Não pode atacar quem o enfeitiçou nem mirá-lo com efeitos nocivos. Quem o enfeitiçou tem vantagem em testes sociais contra ele.",
+        blinded: "Não enxerga: falha em testes que dependem da visão. Ataques contra ele têm vantagem e os ataques dele têm desvantagem.",
+        deafened: "Não ouve e falha automaticamente em testes que dependem da audição.",
+        prone: "Só se move rastejando. Desvantagem nos próprios ataques. Ataques corpo a corpo contra ele têm vantagem; à distância, desvantagem.",
+        restrained: "Deslocamento 0. Ataques contra ele têm vantagem, os dele têm desvantagem, e tem desvantagem em salvaguardas de Destreza.",
+        grappled: "Deslocamento 0. O efeito termina se quem agarra ficar incapacitado ou se ele for afastado.",
+        invisible: "Ataques contra ele têm desvantagem e os dele têm vantagem. Só pode ser percebido por magia ou sentidos especiais.",
+        unconscious: "Incapacitado, caído, solta o que segura e não percebe nada. Falha automática em salvaguardas de Força e Destreza. Ataques contra ele têm vantagem, e acertos a 1,5 m são críticos.",
+        bless: "Soma 1d4 às jogadas de ataque e às salvaguardas.",
+        curse: "Sofre a penalidade definida pela maldição (a critério do Mestre).",
+        slow: "Deslocamento pela metade, −2 na CA e nas salvaguardas de Destreza, e não pode usar reações.",
+        haste: "Deslocamento dobrado, +2 na CA, vantagem em salvaguardas de Destreza e uma ação adicional limitada.",
+        conc: "Mantém uma magia de concentração. Ao sofrer dano, faz salvaguarda de Constituição (CD 10 ou metade do dano, o que for maior) para não perdê-la.",
+        custom: "Efeito personalizado."
+      };
+      const fxTip = (e) => `${e.name} — ${e.rounds == null ? "sem duração definida" : e.rounds + (e.rounds === 1 ? " rodada restante" : " rodadas restantes")}. ${FXD[e.type] || FXD.custom}`;
       function fxLeft(e) { return e.rounds == null ? "∞" : e.rounds; }
       function fxFormTpl(c) {
         return `<div class="fx-form"><select data-fxsel="${c.id}">${FX.map((f) => `<option value="${f[0]}">${f[1]}</option>`).join("")}</select>
@@ -177,11 +201,11 @@
           const hpClass = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
           return `
             <article class="combatant ${isActive ? "active" : ""} ${isDefeated ? "defeated" : ""}" data-key="${escapeText(c.key || "")}">
+              ${c.effects && c.effects.length ? `<div class="fxbar">${c.effects.map((e) => `<span class="fxchip" style="--c:${e.color}" data-fxtip="${escapeText(fxTip(e))}">${fxIcon(e.type)}${escapeText(e.name)} <b>${fxLeft(e)}</b><button type="button" data-fxdel="${c.id}|${e.id}" aria-label="Remover ${escapeText(e.name)}">${ico("x")}</button></span>`).join("")}</div>` : ""}
               <div class="initiative">${Number(c.initiative)}</div>
               <div>
-                <div class="name"><span class="avfx" ${c.effects && c.effects.length ? `style="background:${fxRing(c.effects)}"` : ""}>${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 34) : ""}${c.effects && c.effects.length ? `<span class="fxb" style="--c:${c.effects[0].color}" title="${escapeText(c.effects[0].name)}">${fxIcon(c.effects[0].type)}<b>${fxLeft(c.effects[0])}</b></span>` : ""}</span>${escapeText(c.name)}${isActive ? ` <span aria-label="turno atual" class="turn-mark">${ico("turn")}</span>` : ""}</div>
-                <div class="kind">${escapeText(c.kind)}${isDefeated ? " · Inconsciente/derrotado" : ""}</div>
-                ${c.effects && c.effects.length ? `<div class="fxchips">${c.effects.map((e) => `<span class="fxchip" style="--c:${e.color}" title="${e.rounds == null ? "sem duração definida" : e.rounds + " rodada(s) restante(s)"}">${fxIcon(e.type)}${escapeText(e.name)} <b>${fxLeft(e)}</b><button type="button" data-fxdel="${c.id}|${e.id}" aria-label="Remover ${escapeText(e.name)}">${ico("x")}</button></span>`).join("")}</div>` : ""}
+                <div class="name"><span class="avfx" ${c.effects && c.effects.length ? `style="--ring:${fxRing(c.effects)}"` : ""}>${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 34) : ""}${c.effects && c.effects.length ? `<span class="fxb" style="--c:${c.effects[0].color}" data-fxtip="${escapeText(fxTip(c.effects[0]))}">${fxIcon(c.effects[0].type)}<b>${fxLeft(c.effects[0])}</b></span>` : ""}</span>${escapeText(c.name)}${isActive ? ` <span aria-label="turno atual" class="turn-mark">${ico("turn")}</span>` : ""}</div>
+                <div class="kind${c.effects && c.effects.length ? " has-fx" : ""}">${escapeText(c.kind)}${isDefeated ? " · Inconsciente/derrotado" : ""}</div>
               </div>
               <div class="stat">CA<strong>${Number(c.ac)}</strong></div>
               <div class="stat">PV<strong>${Number(c.hp)}</strong></div>

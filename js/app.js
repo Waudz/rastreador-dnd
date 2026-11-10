@@ -474,9 +474,9 @@
       const hb = t.closest(".hab"); if (hb && !t.closest(".roll")) hb.classList.toggle("open");
     });
     const tip = $("#tip");
-    document.addEventListener("mouseover", (e) => { if (matchMedia("(hover: none)").matches) return; const h = e.target.closest(".hab"); if (!h || h.classList.contains("open")) { tip.style.display = "none"; return; } const s = h.dataset.desc || ""; tip.textContent = s.length > 260 ? s.slice(0, 260) + "… (clique para ler tudo)" : s; tip.style.display = s ? "block" : "none"; });
+    document.addEventListener("mouseover", (e) => { if (matchMedia("(hover: none)").matches) return; const h = e.target.closest(".hab,[data-fxtip]"); if (!h || h.classList.contains("open")) { tip.style.display = "none"; return; } const s = h.dataset.desc || h.dataset.fxtip || ""; tip.textContent = s.length > 260 ? s.slice(0, 260) + "… (clique para ler tudo)" : s; tip.style.display = s ? "block" : "none"; });
     document.addEventListener("mousemove", (e) => { tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - 340)) + "px"; tip.style.top = e.clientY + 14 + "px"; });
-    document.addEventListener("mouseout", (e) => { if (!e.relatedTarget?.closest?.(".hab")) tip.style.display = "none"; });
+    document.addEventListener("mouseout", (e) => { if (!e.relatedTarget?.closest?.(".hab,[data-fxtip]")) tip.style.display = "none"; });
     $("#tr-exp").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify({ ...D.M, ...TR }, null, 1)], { type: "application/json" })); a.download = "traducoes-monstros.json"; a.click(); };
     $("#tr-imp").onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { const o = JSON.parse(await f.text()); for (const k in o) TR[k.toLowerCase()] = String(o[k]); saveTR(); renderBestiary(); } catch (_) { alert("Arquivo JSON inválido."); } e.target.value = ""; };
 

@@ -348,16 +348,14 @@ select{width:100%;min-width:0;height:39px;padding:0 10px;border:1px solid var(--
 .crop-prev canvas { border-radius: 50%; border: 1px solid var(--gold-dark); }
 
 /* efeitos */
-.avfx { position: relative; display: inline-flex; padding: 3px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+.avfx { position: relative; display: inline-flex; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
 .name .avfx .av { margin-right: 0; display: block; }
-.avfx:not([style]) { padding: 0; }
 .fxb { position: absolute; right: -9px; bottom: -5px; display: flex; align-items: center; gap: 1px; height: 18px; padding: 0 5px; border: 1px solid var(--c); border-radius: 99px; background: #15131c; font-size: 11px; line-height: 1; white-space: nowrap; }
 .fxb { color: var(--c); }
 .fxb b { font-size: 10px; color: var(--text); }
 .fxi { width: 12px; height: 12px; flex: 0 0 auto; }
 .fxchip { color: var(--c); }
 .fxchip .fxi { margin-right: 1px; }
-.fxchips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
 .fxchip { display: inline-flex; align-items: center; gap: 3px; padding: 1px 3px 1px 7px; border: 1px solid var(--c); border-radius: 99px; background: rgba(255,255,255,.04); font-size: 11px; font-weight: 600; }
 .fxchip b { color: var(--c); }
 .fxchip button { min-height: 0; width: 17px; height: 17px; padding: 0; border: 0; background: transparent; color: var(--muted); font-size: 10px; }
@@ -376,3 +374,12 @@ button .ico:last-child:not(:first-child) { margin: 0 0 0 4px; }
 .fxchip button .ico { width: 10px; height: 10px; margin: 0; vertical-align: middle; }
 .clearable .xbtn .ico { width: 15px; height: 15px; margin: 0; }
 .chip b .ico { width: 11px; height: 11px; margin: 0; vertical-align: middle; }
+
+/* efeitos: o anel fica por fora da foto (não muda o tamanho nem a posição dela) */
+.avfx[style]::before { content: ""; position: absolute; inset: -3px; border-radius: 50%; background: var(--ring); }
+.avfx .av { position: relative; z-index: 1; }
+.fxb { z-index: 2; }
+.kind.has-fx { margin-top: 10px; }
+.fxbar { grid-column: 1 / -1; display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.fxbar .fxchip { flex: 0 0 auto; cursor: help; }
+.fxb { cursor: help; }
