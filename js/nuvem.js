@@ -120,12 +120,22 @@
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
+  /* botão de mostrar/ocultar senha: <div class="pw"><input type="password"><button type="button" class="pw-eye"></button></div> */
+  function olhos(raiz) {
+    (raiz || document).querySelectorAll(".pw-eye").forEach((b) => {
+      const i = b.parentNode.querySelector("input"), pinta = () => { b.innerHTML = window.ico ? window.ico(i.type === "password" ? "eye" : "eyeoff") : "Ver"; b.title = i.type === "password" ? "Mostrar a senha" : "Ocultar a senha"; b.setAttribute("aria-label", b.title); };
+      b.onclick = () => { i.type = i.type === "password" ? "text" : "password"; pinta(); };
+      pinta();
+    });
+  }
+  const copiar = async (t) => { try { await navigator.clipboard.writeText(t); return true; } catch (_) { return false; } };
+
   window.nuvem = {
     usuario: () => (sessao && sessao.user) || null,
     aoMudar: (f) => ouvintes.push(f),
     cadastrar, entrar, linkMagico, retornoDoLink, sair, trocarSenha,
     get: (c) => rest("GET", c), post: (c, o) => rest("POST", c, o), patch: (c, o) => rest("PATCH", c, o), apagar: (c) => rest("DELETE", c),
     rpc: (nome, args) => rest("POST", "rpc/" + nome, args || {}),
-    enviarArquivo, urlDoArquivo, apagarArquivos, observar, esc
+    enviarArquivo, urlDoArquivo, apagarArquivos, observar, esc, olhos, copiar
   };
 })();

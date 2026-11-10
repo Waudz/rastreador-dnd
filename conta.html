@@ -19,66 +19,65 @@
     <header class="header">
       <div>
         <p class="eyebrow">Dungeons &amp; Dragons · 5ª edição</p>
-        <h1>Minha conta</h1>
-        <p class="subtitle">Entre para ver as suas campanhas e os seus personagens.</p>
+        <h1>Minhas campanhas</h1>
       </div>
     </header>
 
+    <!-- entrar -->
     <section class="panel" id="entrar" hidden>
-      <h2 class="panel-title"><i data-i="plus"></i><span id="ent-titulo">Entrar</span></h2>
       <div class="seg" style="margin-bottom:12px">
         <button type="button" class="small on" id="aba-entrar">Entrar</button>
         <button type="button" class="small" id="aba-criar">Criar conta</button>
       </div>
       <form id="form-login" class="cmg" autocomplete="on">
-        <div id="campo-nome" style="grid-column:span 2" hidden><label for="l-nome">Seu nome (como o grupo vai ver)</label><input id="l-nome" name="nome" maxlength="60" autocomplete="nickname"></div>
+        <div id="campo-nome" style="grid-column:span 2" hidden><label for="l-nome">Seu nome</label><input id="l-nome" name="nome" maxlength="60" autocomplete="nickname"></div>
         <div style="grid-column:span 2"><label for="l-email">E-mail</label><input id="l-email" name="email" type="email" autocomplete="username" required></div>
-        <div style="grid-column:span 2"><label for="l-senha">Senha (mínimo 8 caracteres)</label><input id="l-senha" name="senha" type="password" minlength="8" autocomplete="current-password" required></div>
+        <div style="grid-column:span 2"><label for="l-senha">Senha</label><div class="pw"><input id="l-senha" name="senha" type="password" minlength="8" autocomplete="current-password" required><button type="button" class="pw-eye"></button></div></div>
       </form>
       <div class="row" style="margin:10px 0 0">
         <button type="button" class="primary" id="btn-login">Entrar</button>
-        <button type="button" class="small subtle" id="btn-link" title="Envia um link para o seu e-mail; exige que o administrador tenha configurado o envio de e-mails">Receber link por e-mail</button>
+        <button type="button" class="small subtle" id="btn-link" title="Envia um link de acesso para o seu e-mail">Entrar por link no e-mail</button>
       </div>
       <div class="muted" id="msg-login" style="margin-top:8px"></div>
     </section>
 
+    <!-- logado -->
     <div id="area" hidden>
-      <div class="synctop" style="justify-content:space-between">
-        <span class="muted" id="quem"></span>
-        <button type="button" class="small" id="btn-sair">Sair</button>
-      </div>
+      <div class="bar"><span class="muted grow" id="quem"></span><button type="button" class="small" id="btn-sair">Sair</button></div>
 
       <section class="panel">
-        <h2 class="panel-title"><i data-i="swords"></i>Minhas campanhas</h2>
-        <div id="campanhas" class="muted">Carregando…</div>
-        <div class="sub">Criar uma campanha (você será o mestre)</div>
-        <form id="form-camp" class="row" style="margin:0"><input id="c-nome" maxlength="80" placeholder="Nome da campanha" style="flex:1 1 220px" required><button type="submit" class="primary small">Criar campanha</button></form>
-        <div class="sub">Entrar em uma campanha com um código de convite</div>
-        <form id="form-entrar" class="row" style="margin:0"><input id="e-codigo" maxlength="20" placeholder="Código de convite" autocomplete="off" style="flex:1 1 220px" required><button type="submit" class="small">Entrar na campanha</button></form>
-        <div class="muted" id="msg-camp" style="margin-top:8px"></div>
+        <div class="bar"><h2 class="panel-title grow" style="margin:0">Campanhas</h2>
+          <button type="button" class="small" id="abre-camp">Nova</button>
+          <button type="button" class="small" id="abre-codigo">Entrar com código</button>
+        </div>
+        <form id="form-camp" class="row" hidden><input id="c-nome" maxlength="80" placeholder="Nome da campanha" style="flex:1 1 220px" required><button type="submit" class="primary small">Criar</button></form>
+        <form id="form-entrar" class="row" hidden><input id="e-codigo" maxlength="20" placeholder="Código de convite" autocomplete="off" style="flex:1 1 220px" required><button type="submit" class="primary small">Entrar</button></form>
+        <div class="muted" id="msg-camp" style="margin-bottom:8px"></div>
+        <div id="campanhas" class="cards"></div>
       </section>
 
       <section class="panel">
-        <h2 class="panel-title"><i data-i="book"></i>Meus personagens</h2>
-        <div id="personagens" class="muted">Carregando…</div>
-        <div class="sub">Novo personagem</div>
-        <form id="form-pers" class="row" style="margin:0">
-          <select id="p-camp" style="flex:1 1 180px" required></select>
+        <div class="bar"><h2 class="panel-title grow" style="margin:0">Personagens</h2>
+          <button type="button" class="small" id="abre-pers">Novo</button>
+        </div>
+        <form id="form-pers" class="row" hidden>
+          <select id="p-camp" style="flex:1 1 170px" required></select>
           <input id="p-nome" maxlength="80" placeholder="Nome do personagem" style="flex:1 1 200px" required>
-          <button type="submit" class="primary small">Criar personagem</button>
+          <button type="submit" class="primary small">Criar</button>
         </form>
-        <div class="muted" id="msg-pers" style="margin-top:8px"></div>
+        <div class="muted" id="msg-pers" style="margin-bottom:8px"></div>
+        <div id="personagens" class="cards"></div>
       </section>
 
-      <section class="panel">
-        <h2 class="panel-title"><i data-i="database"></i>Conta</h2>
-        <div class="row"><input id="a-nome" maxlength="60" placeholder="Seu nome" style="flex:1 1 220px"><button type="button" class="small" id="btn-nome">Salvar nome</button></div>
-        <div class="row"><input id="a-senha" type="password" minlength="8" autocomplete="new-password" placeholder="Nova senha (mínimo 8)" style="flex:1 1 220px"><button type="button" class="small" id="btn-senha">Trocar senha</button></div>
+      <details class="panel">
+        <summary class="panel-title" style="font-size:14px">Conta</summary>
+        <div class="row" style="margin-top:10px"><input id="a-nome" maxlength="60" placeholder="Seu nome" style="flex:1 1 220px"><button type="button" class="small" id="btn-nome">Salvar nome</button></div>
+        <div class="row"><div class="pw" style="flex:1 1 220px"><input id="a-senha" type="password" minlength="8" autocomplete="new-password" placeholder="Nova senha"><button type="button" class="pw-eye"></button></div><button type="button" class="small" id="btn-senha">Trocar senha</button></div>
         <div class="muted" id="msg-conta"></div>
-      </section>
+      </details>
     </div>
 
-    <p><a class="btnlike muted" href="./">Voltar ao rastreador</a></p>
+    <p><a class="btnlike muted" href="./">Rastreador de combate</a></p>
   </main>
 </body>
 </html>
