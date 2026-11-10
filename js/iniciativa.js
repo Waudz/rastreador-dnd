@@ -242,7 +242,7 @@
           id: (Date.now().toString(36) + Math.random().toString(36).slice(2, 7)),
           name,
           kind: $("kind").value,
-          initiative: Number($("initiative").value) || 0,
+          initiative: (Number($("initiative").value) || 0) + (Number($("ini-mod").value) || 0),   // d20 + modificador
           hp: Math.min(hp, maxHp),
           maxHp,
           ac: Math.max(0, Number($("ac").value) || 0),
@@ -250,6 +250,7 @@
           key: (window.__ini && window.__ini.pending) || ""
         });
         if (window.__ini) window.__ini.pending = "";
+        $("ini-mod").value = 0;
 
         $("name").value = "";
         $("name").focus();

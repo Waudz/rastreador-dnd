@@ -199,7 +199,7 @@
       sug.innerHTML = r.map((m) => `<div data-sug="${esc(m.key)}">${av(m, 22)}${esc(pt(m) || m.name)}${pt(m) ? ` <span class="muted">(${esc(m.name)})</span>` : ""} <span class="muted">· ${CAT[catOf(m)]} · ${lvl(m)} · CA ${m.armor_class} · PV ${m.hit_points} · ${esc(srcOf(m))}</span></div>`).join("")
         + (q.length > 2 ? `<div data-online="1" class="muted">${r.length ? "Não é este? " : "Nada no bestiário local. "}Buscar “${esc(raw)}” na Open5e (online)</div>` : "");
     }
-    $("#name").addEventListener("input", () => { window.__ini.pending = ""; sugg(); });
+    $("#name").addEventListener("input", () => { if (window.__ini.pending) $("#ini-mod").value = 0; window.__ini.pending = ""; sugg(); });
     $("#name").addEventListener("focus", sugg);
     const uniq = (base) => {
       const re = new RegExp("^" + rx(base) + "(?: (\\d+))?$");
@@ -207,10 +207,12 @@
       for (const c of window.__ini.list()) { const m = c.name.match(re); if (m) maior = Math.max(maior, m[1] ? +m[1] : 1); }
       return maior ? `${base} ${maior + 1}` : base;
     };
-    const rollInit = (m) => 1 + Math.floor(Math.random() * 20) + (m.initiative_bonus ?? Math.floor(((m.ability_scores?.dexterity ?? 10) - 10) / 2));
+    const iniBonus = (m) => m.initiative_bonus ?? Math.floor(((m.ability_scores?.dexterity ?? 10) - 10) / 2);
+    const rollInit = (m) => 1 + Math.floor(Math.random() * 20) + iniBonus(m);
     function pick(k) {
       const m = ALL.find((x) => x.key === k); if (!m) return;
-      $("#name").value = uniq(pt(m) || m.name); $("#kind").value = CAT[catOf(m)]; $("#initiative").value = rollInit(m);
+      $("#name").value = uniq(pt(m) || m.name); $("#kind").value = CAT[catOf(m)]; $("#initiative").value = 1 + Math.floor(Math.random() * 20); // só o d20 (você pode trocar pelo seu); o modificador vai no campo ao lado
+      $("#ini-mod").value = iniBonus(m);
       $("#hp").value = $("#maxHp").value = m.hit_points; $("#ac").value = m.armor_class;
       window.__ini.pending = m.key; sug.hidden = true;
     }
@@ -311,15 +313,16 @@
     const speed = (sp) => sp ? Object.entries(sp).filter(([k, v]) => k !== "unit" && v).map(([k, v]) => k === "walk" ? fm(v) : `${SPD[k] || k} ${fm(v)}`).join(", ") : "—";
     const habD = (n, i, x = "", pre = "") => `<div class="hab" data-desc="${esc(i.plain)}"><b>${esc(n)}</b>${x}${pre}<div class="full">${i.html}${i.tr && i.orig && i.orig !== i.plain ? `<div class="orig">Original: ${esc(i.orig)}</div>` : ""}</div></div>`;
     const spRow = (name, key, x = "") => { const d = D.S[String(name).toLowerCase()]; return `<div class="hab" data-spopen="${esc(key || String(name).toLowerCase())}" data-desc="${esc(d ? d[1] : "")}" style="cursor:pointer"><b>${esc(d ? d[0] : name)}</b>${d ? ` <span class="muted">(${esc(d[3] || name)})</span>` : ""}${x}</div>`; };
-    const rmBtn = (m, t, ix) => m.custom ? ` <button type="button" class="small subtle rm" data-rm="${t}:${ix}" data-rmk="${esc(m.key)}" title="Remover desta ficha" aria-label="Remover desta ficha">${ico("x")}</button>` : "";
+    const rmBtn = (m, t, ix, cf) => m.custom ? (cf ? ` <button type="button" class="small subtle" data-cfk="${esc(cf)}" title="Abrir a habilidade no catálogo">Abrir</button>` : "") + ` <button type="button" class="small subtle rm" data-rm="${t}:${ix}" data-rmk="${esc(m.key)}" title="Remover desta ficha" aria-label="Remover desta ficha">${ico("x")}</button>` : "";
 
     /* remove uma característica, ação ou magia de uma ficha própria */
+    let ultimo = null;
     async function rmItem(b) {
       const [tipo, ix] = b.dataset.rm.split(":"), m = BY[b.dataset.rmk], i = +ix;
       if (!m || !m.custom) return;
       const lista = tipo === "t" ? m.traits : tipo === "a" ? m.actions : m.spells, item = lista && lista[i];
       if (!item) return;
-      if (!confirm(`Remover “${item.name}” de ${m.name}?`)) return;
+      ultimo = JSON.parse(JSON.stringify(m)); const nome = item.name;
       lista.splice(i, 1);
       if (tipo !== "s" && m.raw) {
         const campo = tipo === "t" ? "traits" : "actions", ls = String(m.raw[campo] || "").split("\n");
@@ -328,6 +331,13 @@
         m.raw[campo] = ls.join("\n");
       }
       m.updatedAt = Date.now();
+      await put("mon", [m]); await reload(); queueSync();
+      if (editKey === m.key) { $("#cm-traits").value = m.raw?.traits ?? ""; $("#cm-acts").value = m.raw?.actions ?? ""; cmSpells = (m.spells || []).slice(); chips(); }
+      openSheet(m.key);
+      $("#sheet-body").insertAdjacentHTML("afterbegin", `<div class="undo">“${esc(nome)}” removida de ${esc(m.name)}. <button type="button" class="small" data-undo="1">Desfazer</button></div>`);
+    }
+    async function desfazer() {
+      if (!ultimo) return; const m = ultimo; ultimo = null; m.updatedAt = Date.now();
       await put("mon", [m]); await reload(); queueSync();
       if (editKey === m.key) { $("#cm-traits").value = m.raw?.traits ?? ""; $("#cm-acts").value = m.raw?.actions ?? ""; cmSpells = (m.spells || []).slice(); chips(); }
       openSheet(m.key);
@@ -350,7 +360,7 @@
         <div class="stats"><span>CA <b>${m.armor_class}</b>${m.armor_detail ? " (" + esc(tr(m.armor_detail)) + ")" : ""}</span><span>PV <b>${m.hit_points}</b> ${esc(m.hit_dice || "")}</span><span>Deslocamento <b>${esc(speed(m.speed))}</b></span><span>${cat === "monster" ? "ND" : "Nível"} <b>${cat === "monster" ? CRV(m) : (m.level ?? "—")}</b></span></div>
         <table class="ab"><tr>${ABIL.map((a) => `<th>${a[1]}</th>`).join("")}</tr><tr>${ABIL.map((a) => `<td>${m.ability_scores?.[a[0]]} (${mod(m.modifiers?.[a[0]])})</td>`).join("")}</tr></table>
         ${ln("Salvaguardas", saves)}${ln("Perícias", skills)}${ln("Resistências", tr(r.damage_resistances_display))}${ln("Imunidades", tr(r.damage_immunities_display))}${ln("Vulnerabilidades", tr(r.damage_vulnerabilities_display))}${ln("Imunidades a condições", tr(r.condition_immunities_display))}${ln("Sentidos", senses)}${ln("Idiomas", tr(m.languages?.as_string))}
-        ${(m.traits || []).length ? '<div class="grp">Características</div>' + m.traits.map((t, ix) => habD(nm(t.name), descInfo(t.name, t.desc, m), rmBtn(m, "t", ix))).join("") : ""}${acts}${spl ? '<div class="grp">Magias</div>' + spl : ""}
+        ${(m.traits || []).length ? '<div class="grp">Características</div>' + m.traits.map((t, ix) => habD(nm(t.name), descInfo(t.name, t.desc, m), rmBtn(m, "t", ix, t.cf))).join("") : ""}${acts}${spl ? '<div class="grp">Magias</div>' + spl : ""}
         <p class="muted" style="font-size:11px;margin-top:14px">Descrições traduzidas quando há tradução confiável; o restante segue em inglês. Clique em uma descrição para ver o original.</p>`;
       $("#sheet").hidden = false; $("#sheet").scrollTop = 0; layout();
     }
@@ -393,6 +403,8 @@
     const cfTitle = (f) => f.po || f.p || f.n;
     const cfKey = (f) => `${f.e}|${f.c}|${f.n}`;
     const cfText = (f) => CFT[cfKey(f)] || f.d;
+    const cfBody = (f) => String(cfText(f)).replace(/\r/g, "").replace(/^\s*#{1,6}\s*(.+)$/gm, "$1").replace(/^\s*[*-]\s+/gm, "• ").replace(/[*_]+/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    const encP = (s) => String(s).replace(/\n/g, " ¶ "), decP = (s) => String(s).replace(/\s*¶\s*/g, "\n");
     const cfPlain = (f) => String(cfText(f)).replace(/\r/g, "").replace(/\n\s*[*-]\s+/g, " • ").replace(/\n+/g, " ").replace(/[*_#]+/g, "").replace(/\s+/g, " ").trim();
     const cfFind = (q, max) => { const ws = q.split(/\s+/).filter(Boolean); if (!ws.length) return []; return CF.map((f, i) => [f, i]).filter(([f]) => { const hay = nz(`${f.n} ${f.p} ${CFCLS[f.u || f.c] || ""} ${f.u || f.c} ${f.c}`); return ws.every((w) => hay.includes(w)); }).slice(0, max); };
     const classRows = (q, src = "") => cfFind(q, 400).filter(([f]) => !src || f.e === src).slice(0, 12).map(([f, i]) => `<div class="res" data-cfopen="${i}"><span><b>${esc(cfTitle(f))}</b>${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""}<br><span class="muted">${esc(["Habilidade de classe", cfClass(f), cfLevel(f), f.e].filter(Boolean).join(" · "))}</span></span></div>`).join("");
@@ -428,8 +440,8 @@
       if ((m.traits || []).some((t) => t.name === nome)) { msg(`${esc(m.name)} já tem “${esc(nome)}”.`); return; }
       const traitsRaw = m.raw?.traits ?? (m.traits || []).map((t) => `${t.name}: ${t.desc}`).join("\n");
       const actsRaw = m.raw?.actions ?? (m.actions || []).map((x) => `${x.name} | ${x.desc}`).join("\n");
-      const linha = `${nome}: ${cfPlain(f)}`;
-      m.traits = [...(m.traits || []), { name: nome, desc: cfPlain(f) }];
+      const linha = `${nome}: ${encP(cfBody(f))}`;
+      m.traits = [...(m.traits || []), { name: nome, desc: cfBody(f), cf: cfKey(f) }];
       m.raw = { traits: (traitsRaw.trim() ? traitsRaw.replace(/\s+$/, "") + "\n" : "") + linha, actions: actsRaw };
       m.updatedAt = Date.now();
       await put("mon", [m]); await reload(); queueSync();
@@ -496,7 +508,9 @@
       cfsug.hidden = !r.length;
       cfsug.innerHTML = r.map(([f, i]) => `<div data-cfadd="${i}">${esc(cfTitle(f))}${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""} <span class="muted">· ${esc([cfClass(f), cfLevel(f), f.e].filter(Boolean).join(" · "))}</span></div>`).join("");
     });
+    let cfPend = {};
     function resetForm() {
+      cfPend = {};
       editKey = null; cmSpells = []; formPhoto = undefined; chips();
       ["#cm-name", "#cm-sub", "#cm-traits", "#cm-acts"].forEach((s) => ($(s).value = "")); ABIL.forEach(([k]) => ($("#ab-" + k).value = 10));
       $("#cm-save").textContent = "Salvar ficha"; $("#cm-cancel").hidden = true; formPv();
@@ -532,7 +546,7 @@
         speed: { walk: parseInt($("#cm-sp").value) || 0, unit: "feet" }, ability_scores: ab, modifiers: md, saving_throws: {}, skill_bonuses: {},
         initiative_bonus: md.dexterity, passive_perception: 10 + md.wisdom, resistances_and_immunities: {}, spells: cmSpells.slice(),
         raw: { traits: $("#cm-traits").value, actions: $("#cm-acts").value },
-        traits: lines("#cm-traits").map((l) => { const i = l.indexOf(":"); return i < 0 ? { name: l, desc: "" } : { name: l.slice(0, i).trim(), desc: l.slice(i + 1).trim() }; }),
+        traits: lines("#cm-traits").map((l) => { const i = l.indexOf(":"), t = i < 0 ? { name: l, desc: "" } : { name: l.slice(0, i).trim(), desc: decP(l.slice(i + 1).trim()) }, ref = ((editKey && BY[editKey]?.traits) || []).find((x) => x.name === t.name && x.cf)?.cf || cfPend[t.name]; return ref ? { ...t, cf: ref } : t; }),
         actions: lines("#cm-acts").map(parseAct) };
       const edited = !!editKey; await put("mon", [m]);
       if (typeof formPhoto === "string") await put("img", [{ key: m.key, data: formPhoto }]); else if (formPhoto === null) await del("img", m.key);
@@ -569,10 +583,12 @@
       const pb = t.closest("[data-ph]"); if (pb) return askPhoto(pb.dataset.ph);
       const px = t.closest("[data-phx]"); if (px) { const k = px.dataset.phx; delete PH[k]; await del("img", k); touch(k); renderBestiary(); window.__ini.render(); return openSheet(k); }
       const rmb = t.closest("[data-rm]"); if (rmb) return rmItem(rmb);
+      const und = t.closest("[data-undo]"); if (und) return desfazer();
+      const ck = t.closest("[data-cfk]"); if (ck) { const ix = CF.findIndex((f) => cfKey(f) === ck.dataset.cfk); if (ix >= 0) openClassFeature(ix, "sheet"); return; }
       const ct = t.closest("[data-cfto]"); if (ct) return cfAdicionar(+ct.dataset.cfto);
       const co = t.closest("[data-cfopen]"); if (co) return openClassFeature(+co.dataset.cfopen, t.closest("#sheet") ? "sheet" : "panel");
       const ca = t.closest("[data-cfadd]");
-      if (ca) { const f = CF[+ca.dataset.cfadd]; if (f) { const ta = $("#cm-traits"); ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, "") + "\n" : "") + `${cfTitle(f)}: ${cfPlain(f)}`; } cfq.value = ""; cfsug.hidden = true; return; }
+      if (ca) { const f = CF[+ca.dataset.cfadd]; if (f) { const ta = $("#cm-traits"); ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, "") + "\n" : "") + `${cfTitle(f)}: ${encP(cfBody(f))}`; cfPend[cfTitle(f)] = cfKey(f); } cfq.value = ""; cfsug.hidden = true; return; }
       const so = t.closest("[data-spopen]"); if (so) return openSpell(so.dataset.spopen, t.closest("#sheet") ? "sheet" : "panel");
       const sa = t.closest("[data-spadd]");
       if (sa) { const s = catalog().find((x) => x.key === sa.dataset.spadd); if (s && !cmSpells.some((c) => c.key === s.key)) cmSpells.push({ key: s.key, name: s.name }); spq.value = ""; spsug.hidden = true; return chips(); }
