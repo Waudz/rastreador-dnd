@@ -310,7 +310,28 @@
     /* ficha do monstro */
     const speed = (sp) => sp ? Object.entries(sp).filter(([k, v]) => k !== "unit" && v).map(([k, v]) => k === "walk" ? fm(v) : `${SPD[k] || k} ${fm(v)}`).join(", ") : "—";
     const habD = (n, i, x = "", pre = "") => `<div class="hab" data-desc="${esc(i.plain)}"><b>${esc(n)}</b>${x}${pre}<div class="full">${i.html}${i.tr && i.orig && i.orig !== i.plain ? `<div class="orig">Original: ${esc(i.orig)}</div>` : ""}</div></div>`;
-    const spRow = (name, key) => { const d = D.S[String(name).toLowerCase()]; return `<div class="hab" data-spopen="${esc(key || String(name).toLowerCase())}" data-desc="${esc(d ? d[1] : "")}" style="cursor:pointer"><b>${esc(d ? d[0] : name)}</b>${d ? ` <span class="muted">(${esc(d[3] || name)})</span>` : ""}</div>`; };
+    const spRow = (name, key, x = "") => { const d = D.S[String(name).toLowerCase()]; return `<div class="hab" data-spopen="${esc(key || String(name).toLowerCase())}" data-desc="${esc(d ? d[1] : "")}" style="cursor:pointer"><b>${esc(d ? d[0] : name)}</b>${d ? ` <span class="muted">(${esc(d[3] || name)})</span>` : ""}${x}</div>`; };
+    const rmBtn = (m, t, ix) => m.custom ? ` <button type="button" class="small subtle rm" data-rm="${t}:${ix}" data-rmk="${esc(m.key)}" title="Remover desta ficha" aria-label="Remover desta ficha">${ico("x")}</button>` : "";
+
+    /* remove uma característica, ação ou magia de uma ficha própria */
+    async function rmItem(b) {
+      const [tipo, ix] = b.dataset.rm.split(":"), m = BY[b.dataset.rmk], i = +ix;
+      if (!m || !m.custom) return;
+      const lista = tipo === "t" ? m.traits : tipo === "a" ? m.actions : m.spells, item = lista && lista[i];
+      if (!item) return;
+      if (!confirm(`Remover “${item.name}” de ${m.name}?`)) return;
+      lista.splice(i, 1);
+      if (tipo !== "s" && m.raw) {
+        const campo = tipo === "t" ? "traits" : "actions", ls = String(m.raw[campo] || "").split("\n");
+        let n = -1; const pos = ls.findIndex((l) => l.trim() && ++n === i);
+        if (pos >= 0) ls.splice(pos, 1);
+        m.raw[campo] = ls.join("\n");
+      }
+      m.updatedAt = Date.now();
+      await put("mon", [m]); await reload(); queueSync();
+      if (editKey === m.key) { $("#cm-traits").value = m.raw?.traits ?? ""; $("#cm-acts").value = m.raw?.actions ?? ""; cmSpells = (m.spells || []).slice(); chips(); }
+      openSheet(m.key);
+    }
     function openSheet(k) {
       const m = ALL.find((x) => x.key === k), el = $("#sheet-body"); curSheet = k;
       if (!m) { el.innerHTML = '<span class="muted">Ficha indisponível: não está no bestiário local.</span>'; $("#sheet").hidden = false; layout(); return; }
@@ -321,15 +342,15 @@
       const g = {}; (m.actions || []).forEach((a) => (g[a.action_type || "ACTION"] ??= []).push(a));
       const acts = Object.entries(g).map(([t, arr]) => `<div class="grp">${esc(GRP[t] || t)}</div>` + arr.map((a) => {
         const ri = rollInfo(a);
-        return habD(nmA(a), descInfo(a.name, a.desc, m), ri ? ` <button class="small roll" data-roll="${esc(JSON.stringify(ri))}">Rolar</button>` : "", ri ? `<div class="ln muted">${esc(rollLine(ri))}</div><div class="rr"></div>` : "");
+        return habD(nmA(a), descInfo(a.name, a.desc, m), (ri ? ` <button class="small roll" data-roll="${esc(JSON.stringify(ri))}">Rolar</button>` : "") + rmBtn(m, "a", m.actions.indexOf(a)), ri ? `<div class="ln muted">${esc(rollLine(ri))}</div><div class="rr"></div>` : "");
       }).join("")).join("");
-      const spl = (m.spells || []).map((s) => spRow(s.name, s.key)).join("");
+      const spl = (m.spells || []).map((s, ix) => spRow(s.name, s.key, rmBtn(m, "s", ix))).join("");
       const p = pt(m), cat = catOf(m);
-      el.innerHTML = `<div class="row" style="gap:12px">${av(m, 72)}<span><button class="small" data-ph="${esc(m.key)}">${PH[m.key] ? "Trocar foto" : "Adicionar foto"}</button>${PH[m.key] ? ` <button class="small subtle" data-phx="${esc(m.key)}">${m.custom ? "Remover foto" : "Voltar à foto padrão"}</button>` : ""}</span></div><h3>${esc(p || m.name)}</h3><div class="muted">${[p ? m.name : "", cat !== "monster" || m.custom ? CAT[cat] : "", tsz(m), m.alignment && m.alignment !== "—" ? AL(m.alignment) : "", m.subtitle || "", srcOf(m)].filter(Boolean).map(esc).join(" · ")}</div>
+      el.innerHTML = `<div class="row" style="gap:12px">${av(m, 72)}<span>${m.custom ? `<button class="small primary" data-edit="${esc(m.key)}">Editar ficha</button> ` : ""}<button class="small" data-ph="${esc(m.key)}">${PH[m.key] ? "Trocar foto" : "Adicionar foto"}</button>${PH[m.key] ? ` <button class="small subtle" data-phx="${esc(m.key)}">${m.custom ? "Remover foto" : "Voltar à foto padrão"}</button>` : ""}</span></div><h3>${esc(p || m.name)}</h3><div class="muted">${[p ? m.name : "", cat !== "monster" || m.custom ? CAT[cat] : "", tsz(m), m.alignment && m.alignment !== "—" ? AL(m.alignment) : "", m.subtitle || "", srcOf(m)].filter(Boolean).map(esc).join(" · ")}</div>
         <div class="stats"><span>CA <b>${m.armor_class}</b>${m.armor_detail ? " (" + esc(tr(m.armor_detail)) + ")" : ""}</span><span>PV <b>${m.hit_points}</b> ${esc(m.hit_dice || "")}</span><span>Deslocamento <b>${esc(speed(m.speed))}</b></span><span>${cat === "monster" ? "ND" : "Nível"} <b>${cat === "monster" ? CRV(m) : (m.level ?? "—")}</b></span></div>
         <table class="ab"><tr>${ABIL.map((a) => `<th>${a[1]}</th>`).join("")}</tr><tr>${ABIL.map((a) => `<td>${m.ability_scores?.[a[0]]} (${mod(m.modifiers?.[a[0]])})</td>`).join("")}</tr></table>
         ${ln("Salvaguardas", saves)}${ln("Perícias", skills)}${ln("Resistências", tr(r.damage_resistances_display))}${ln("Imunidades", tr(r.damage_immunities_display))}${ln("Vulnerabilidades", tr(r.damage_vulnerabilities_display))}${ln("Imunidades a condições", tr(r.condition_immunities_display))}${ln("Sentidos", senses)}${ln("Idiomas", tr(m.languages?.as_string))}
-        ${(m.traits || []).length ? '<div class="grp">Características</div>' + m.traits.map((t) => habD(nm(t.name), descInfo(t.name, t.desc, m))).join("") : ""}${acts}${spl ? '<div class="grp">Magias</div>' + spl : ""}
+        ${(m.traits || []).length ? '<div class="grp">Características</div>' + m.traits.map((t, ix) => habD(nm(t.name), descInfo(t.name, t.desc, m), rmBtn(m, "t", ix))).join("") : ""}${acts}${spl ? '<div class="grp">Magias</div>' + spl : ""}
         <p class="muted" style="font-size:11px;margin-top:14px">Descrições traduzidas quando há tradução confiável; o restante segue em inglês. Clique em uma descrição para ver o original.</p>`;
       $("#sheet").hidden = false; $("#sheet").scrollTop = 0; layout();
     }
@@ -547,6 +568,7 @@
       const ax = t.closest("[data-abix]"); if (ax) return openAbility(ax.dataset.l, +ax.dataset.abix);
       const pb = t.closest("[data-ph]"); if (pb) return askPhoto(pb.dataset.ph);
       const px = t.closest("[data-phx]"); if (px) { const k = px.dataset.phx; delete PH[k]; await del("img", k); touch(k); renderBestiary(); window.__ini.render(); return openSheet(k); }
+      const rmb = t.closest("[data-rm]"); if (rmb) return rmItem(rmb);
       const ct = t.closest("[data-cfto]"); if (ct) return cfAdicionar(+ct.dataset.cfto);
       const co = t.closest("[data-cfopen]"); if (co) return openClassFeature(+co.dataset.cfopen, t.closest("#sheet") ? "sheet" : "panel");
       const ca = t.closest("[data-cfadd]");
@@ -558,7 +580,7 @@
       if (d.chip) { cmSpells.splice(+d.chip, 1); return chips(); }
       if (d.more) { shown += 40; return renderBestiary(); }
       if (d.view) return openSheet(d.view);
-      if (d.edit) return editCustom(d.edit);
+      if (d.edit) { if (innerWidth < 700) closeSheet(); return editCustom(d.edit); }
       if (d.add) { const m = ALL.find((x) => x.key === d.add); if (m) addMon(m); return; }
       if (d.tr) { const m = ALL.find((x) => x.key === d.tr), v = prompt("Nome em português para “" + m.name + "” (vazio remove):", pt(m) || m.name); if (v === null) return; v.trim() ? (TR[m.name.toLowerCase()] = v.trim()) : delete TR[m.name.toLowerCase()]; saveTR(); return renderBestiary(); }
       if (d.del) {
