@@ -313,35 +313,9 @@
     const speed = (sp) => sp ? Object.entries(sp).filter(([k, v]) => k !== "unit" && v).map(([k, v]) => k === "walk" ? fm(v) : `${SPD[k] || k} ${fm(v)}`).join(", ") : "—";
     const habD = (n, i, x = "", pre = "") => `<div class="hab" data-desc="${esc(i.plain)}"><b>${esc(n)}</b>${x}${pre}<div class="full">${i.html}${i.tr && i.orig && i.orig !== i.plain ? `<div class="orig">Original: ${esc(i.orig)}</div>` : ""}</div></div>`;
     const spRow = (name, key, x = "") => { const d = D.S[String(name).toLowerCase()]; return `<div class="hab" data-spopen="${esc(key || String(name).toLowerCase())}" data-desc="${esc(d ? d[1] : "")}" style="cursor:pointer"><b>${esc(d ? d[0] : name)}</b>${d ? ` <span class="muted">(${esc(d[3] || name)})</span>` : ""}${x}</div>`; };
-    const rmBtn = (m, t, ix, cf) => m.custom ? (cf ? ` <button type="button" class="small subtle" data-cfk="${esc(cf)}" title="Abrir a habilidade no catálogo">Abrir</button>` : "") + ` <button type="button" class="small subtle rm" data-rm="${t}:${ix}" data-rmk="${esc(m.key)}" title="Remover desta ficha" aria-label="Remover desta ficha">${ico("x")}</button>` : "";
+    const rmBtn = (m, t, ix, cf) => m.custom && cf ? ` <button type="button" class="small subtle" data-cfk="${esc(cf)}" title="Abrir a habilidade no catálogo">Abrir</button>` : "";
 
     /* remove uma característica, ação ou magia de uma ficha própria */
-    let ultimo = null;
-    async function rmItem(b) {
-      const [tipo, ix] = b.dataset.rm.split(":"), m = BY[b.dataset.rmk], i = +ix;
-      if (!m || !m.custom) return;
-      const lista = tipo === "t" ? m.traits : tipo === "a" ? m.actions : m.spells, item = lista && lista[i];
-      if (!item) return;
-      ultimo = JSON.parse(JSON.stringify(m)); const nome = item.name;
-      lista.splice(i, 1);
-      if (tipo !== "s" && m.raw) {
-        const campo = tipo === "t" ? "traits" : "actions", ls = String(m.raw[campo] || "").split("\n");
-        let n = -1; const pos = ls.findIndex((l) => l.trim() && ++n === i);
-        if (pos >= 0) ls.splice(pos, 1);
-        m.raw[campo] = ls.join("\n");
-      }
-      m.updatedAt = Date.now();
-      await put("mon", [m]); await reload(); queueSync();
-      if (editKey === m.key) { $("#cm-traits").value = m.raw?.traits ?? ""; $("#cm-acts").value = m.raw?.actions ?? ""; cmSpells = (m.spells || []).slice(); chips(); }
-      openSheet(m.key);
-      $("#sheet-body").insertAdjacentHTML("afterbegin", `<div class="undo">“${esc(nome)}” removida de ${esc(m.name)}. <button type="button" class="small" data-undo="1">Desfazer</button></div>`);
-    }
-    async function desfazer() {
-      if (!ultimo) return; const m = ultimo; ultimo = null; m.updatedAt = Date.now();
-      await put("mon", [m]); await reload(); queueSync();
-      if (editKey === m.key) { $("#cm-traits").value = m.raw?.traits ?? ""; $("#cm-acts").value = m.raw?.actions ?? ""; cmSpells = (m.spells || []).slice(); chips(); }
-      openSheet(m.key);
-    }
     function openSheet(k) {
       const m = ALL.find((x) => x.key === k), el = $("#sheet-body"); curSheet = k;
       if (!m) { el.innerHTML = '<span class="muted">Ficha indisponível: não está no bestiário local.</span>'; $("#sheet").hidden = false; layout(); return; }
@@ -487,6 +461,13 @@
     $("#cm-cat").onchange = () => { const mo = $("#cm-cat").value === "monster"; $("#cm-crl").textContent = mo ? "ND" : "Nível"; if (!mo) $("#cm-type").value = "Humanoid"; };
     const lines = (id) => $(id).value.split("\n").map((s) => s.trim()).filter(Boolean);
     const spName = (s) => D.S[String(s.name).toLowerCase()]?.[0] || s.name;
+    /* características e ações da ficha, uma etiqueta por linha, com ✕ para remover (a mudança só vale quando você salva) */
+    const refreshLineChips = () => {
+      for (const [ta, box, campo] of [["#cm-traits", "#cm-tchips", "t"], ["#cm-acts", "#cm-achips", "a"]]) {
+        const ls = $(ta).value.split("\n").filter((l) => l.trim());
+        $(box).innerHTML = ls.map((l, i) => `<span class="chip">${esc(l.split(/[:|]/)[0].trim().slice(0, 40) || "(sem nome)")}<b data-ldel="${campo}:${i}" title="Remover (vale ao salvar)">${ico("x")}</b></span>`).join("");
+      }
+    };
     const chips = () => { $("#cm-chips").innerHTML = cmSpells.map((s, i) => `<span class="chip">${esc(spName(s))}<b data-chip="${i}" title="Remover">${ico("x")}</b></span>`).join("") || '<span class="muted">Nenhuma magia adicionada.</span>'; };
     const spq = $("#cm-spq"), spsug = $("#cm-spsug");
     spq.addEventListener("input", () => {
@@ -503,6 +484,7 @@
     try { aplicarClassesLDJ(JSON.parse(localStorage.getItem("ini_ldj") || "null")); } catch (_) {}
     /* busca de habilidade de classe no campo de características da ficha */
     const cfq = $("#cm-cfq"), cfsug = $("#cm-cfsug");
+    setTimeout(() => { $("#cm-traits").addEventListener("input", refreshLineChips); $("#cm-acts").addEventListener("input", refreshLineChips); refreshLineChips(); }, 0);
     cfq.addEventListener("input", () => {
       const r = cfFind(nz(cfq.value.trim()), 10);
       cfsug.hidden = !r.length;
@@ -510,7 +492,7 @@
     });
     let cfPend = {};
     function resetForm() {
-      cfPend = {};
+      cfPend = {}; setTimeout(refreshLineChips, 0);
       editKey = null; cmSpells = []; formPhoto = undefined; chips();
       ["#cm-name", "#cm-sub", "#cm-traits", "#cm-acts"].forEach((s) => ($(s).value = "")); ABIL.forEach(([k]) => ($("#ab-" + k).value = 10));
       $("#cm-save").textContent = "Salvar ficha"; $("#cm-cancel").hidden = true; formPv();
@@ -524,7 +506,7 @@
       $("#cm-hd").value = m.hit_dice || ""; $("#cm-sp").value = m.speed?.walk ?? 30; ABIL.forEach(([a]) => ($("#ab-" + a).value = m.ability_scores?.[a] ?? 10));
       $("#cm-traits").value = m.raw?.traits ?? (m.traits || []).map((t) => `${t.name}: ${t.desc}`).join("\n");
       $("#cm-acts").value = m.raw?.actions ?? (m.actions || []).map((a) => `${a.name} | ${a.desc}`).join("\n");
-      $("#cm-save").textContent = "Salvar alterações"; $("#cm-cancel").hidden = false; $("#cm-msg").textContent = "";
+      refreshLineChips(); $("#cm-save").textContent = "Salvar alterações"; $("#cm-cancel").hidden = false; $("#cm-msg").textContent = "";
       $("#cm").open = true; $("#cm").scrollIntoView({ behavior: "smooth" });
     }
     $("#cm-cancel").onclick = () => { resetForm(); $("#cm-msg").textContent = "Edição cancelada."; };
@@ -582,18 +564,18 @@
       const ax = t.closest("[data-abix]"); if (ax) return openAbility(ax.dataset.l, +ax.dataset.abix);
       const pb = t.closest("[data-ph]"); if (pb) return askPhoto(pb.dataset.ph);
       const px = t.closest("[data-phx]"); if (px) { const k = px.dataset.phx; delete PH[k]; await del("img", k); touch(k); renderBestiary(); window.__ini.render(); return openSheet(k); }
-      const rmb = t.closest("[data-rm]"); if (rmb) return rmItem(rmb);
-      const und = t.closest("[data-undo]"); if (und) return desfazer();
       const ck = t.closest("[data-cfk]"); if (ck) { const ix = CF.findIndex((f) => cfKey(f) === ck.dataset.cfk); if (ix >= 0) openClassFeature(ix, "sheet"); return; }
       const ct = t.closest("[data-cfto]"); if (ct) return cfAdicionar(+ct.dataset.cfto);
       const co = t.closest("[data-cfopen]"); if (co) return openClassFeature(+co.dataset.cfopen, t.closest("#sheet") ? "sheet" : "panel");
       const ca = t.closest("[data-cfadd]");
-      if (ca) { const f = CF[+ca.dataset.cfadd]; if (f) { const ta = $("#cm-traits"); ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, "") + "\n" : "") + `${cfTitle(f)}: ${encP(cfBody(f))}`; cfPend[cfTitle(f)] = cfKey(f); } cfq.value = ""; cfsug.hidden = true; return; }
+      if (ca) { const f = CF[+ca.dataset.cfadd]; if (f) { const ta = $("#cm-traits"); ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, "") + "\n" : "") + `${cfTitle(f)}: ${encP(cfBody(f))}`; cfPend[cfTitle(f)] = cfKey(f); refreshLineChips(); } cfq.value = ""; cfsug.hidden = true; return; }
       const so = t.closest("[data-spopen]"); if (so) return openSpell(so.dataset.spopen, t.closest("#sheet") ? "sheet" : "panel");
       const sa = t.closest("[data-spadd]");
       if (sa) { const s = catalog().find((x) => x.key === sa.dataset.spadd); if (s && !cmSpells.some((c) => c.key === s.key)) cmSpells.push({ key: s.key, name: s.name }); spq.value = ""; spsug.hidden = true; return chips(); }
       const rb = t.closest("[data-roll]"); if (rb) { rb.closest(".hab").querySelector(".rr").innerHTML = doRoll(JSON.parse(rb.dataset.roll)); return; }
-      if (d.chip) { cmSpells.splice(+d.chip, 1); return chips(); }
+      const ld = t.closest("[data-ldel]");
+      if (ld) { const [campo, n] = ld.dataset.ldel.split(":"), ta = $(campo === "t" ? "#cm-traits" : "#cm-acts"); let k = -1; const ls = ta.value.split("\n"), pos = ls.findIndex((l) => l.trim() && ++k === +n); if (pos >= 0) ls.splice(pos, 1); ta.value = ls.join("\n"); return refreshLineChips(); }
+      const chp = t.closest("[data-chip]"); if (chp) { cmSpells.splice(+chp.dataset.chip, 1); return chips(); }
       if (d.more) { shown += 40; return renderBestiary(); }
       if (d.view) return openSheet(d.view);
       if (d.edit) { if (innerWidth < 700) closeSheet(); return editCustom(d.edit); }
