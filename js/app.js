@@ -340,19 +340,26 @@
         document: LDJ.novos.has(k) ? { display_name: "Livro do Jogador (pessoal)", key: "ldj" } : { display_name: "SRD 5.1", key: "srd-2014" }
       })));
     };
+    const edOf = (doc) => { const k = String(doc?.key || ""); return /2014/.test(k) || k === "ldj" ? "2014" : /2024/.test(k) ? "2024" : ""; };
     function spSearch() {
       const q = nz($("#sq").value.trim()), box = $("#spells"); if (!q) { box.innerHTML = ""; return; }
+      const tipo = $("#sf-type").value, src = $("#sf-src").value, lv = $("#sf-lvl").value, sch = $("#sf-sch").value, ex = $("#sf-ex").value;
+      const soMagia = tipo === "spell" || !!(lv || sch || ex); // círculo, escola e ritual só existem em magias
       const kOf = (s) => s.key.startsWith("ds:") ? s.key.slice(3) : s.name.toLowerCase();
-      const r = catalog().filter((s) => { const k = kOf(s); return nz(s.name + " " + (D.S[k]?.[0] || "") + " " + (LDJ.alias[k] || "")).includes(q); }).slice(0, 30);
+      const r = (tipo && tipo !== "spell" ? [] : catalog()).filter((s) => !src || edOf(s.document) === src)
+        .filter((s) => lv === "" || (s.level != null && String(s.level) === lv))
+        .filter((s) => !sch || (SCH[s.school?.name] || LDJ.meta[kOf(s)]?.escola || "") === sch)
+        .filter((s) => !ex || (ex === "ritual" ? !!(s.ritual || LDJ.meta[kOf(s)]?.ritual) : !!s.concentration))
+        .filter((s) => { const k = kOf(s); return nz(s.name + " " + (D.S[k]?.[0] || "") + " " + (LDJ.alias[k] || "")).includes(q); }).slice(0, 30);
       box.innerHTML = r.map((s) => {
         const k = kOf(s), d = D.S[k], pm = LDJ.meta[k];
         const al = LDJ.alias[k] && d && nz(LDJ.alias[k]) !== nz(d[0]) ? ` · no LDJ: ${esc(LDJ.alias[k])}` : "";
         const info = [s.level == null ? "" : s.level ? s.level + "º círculo" : "Truque", SCH[s.school?.name] || pm?.escola || "", srcOf(s)].filter(Boolean).join(" · ");
         return `<div class="res" data-spopen="${esc(s.key)}"><span><b>${esc(d ? d[0] : s.name)}</b>${d && d[0] !== s.name ? ` <span class="muted">(${esc(s.name)})</span>` : ""}<br><span class="muted">${info}${al}</span></span></div>`;
-      }).join("") + abilityRows(q) + classRows(q) || '<span class="muted">Nada encontrado.</span>';
+      }).join("") + (soMagia || (tipo && tipo !== "monster") ? "" : abilityRows(q, src)) + (soMagia || (tipo && tipo !== "class") ? "" : classRows(q, src)) || '<span class="muted">Nada encontrado.</span>';
     }
-    function abilityRows(q) {
-      return [...ABI.entries()].filter(([l, v]) => nz(v.name + " " + nm(v.name)).includes(q)).slice(0, 15).map(([l, v]) => `<div class="res" data-abopen="${esc(l)}"><span><b>${esc(nm(v.name))}</b> <span class="muted">(${esc(v.name)})</span><br><span class="muted">Habilidade de monstro · ${v.items.length} ${v.items.length > 1 ? "monstros" : "monstro"}: ${esc(v.items.slice(0, 3).map((x) => pt(x.m) || x.m.name).join(", "))}${v.items.length > 3 ? "…" : ""}</span></span></div>`).join("");
+    function abilityRows(q, src = "") {
+      return [...ABI.entries()].map(([l, v]) => [l, v, src ? v.items.filter((x) => edOf(x.m.document) === src) : v.items]).filter(([l, v, its]) => its.length && nz(v.name + " " + nm(v.name)).includes(q)).slice(0, 15).map(([l, v, its]) => `<div class="res" data-abopen="${esc(l)}"><span><b>${esc(nm(v.name))}</b> <span class="muted">(${esc(v.name)})</span><br><span class="muted">Habilidade de monstro · ${its.length} ${its.length > 1 ? "monstros" : "monstro"}: ${esc(its.slice(0, 3).map((x) => pt(x.m) || x.m.name).join(", "))}${its.length > 3 ? "…" : ""}</span></span></div>`).join("");
     }
 
     /* habilidades de classe (SRD 2014 e 2024, via Open5e; texto em inglês) */
@@ -362,7 +369,7 @@
     const cfTitle = (f) => f.p || f.n;
     const cfPlain = (f) => String(f.d).replace(/\r/g, "").replace(/\n\s*[*-]\s+/g, " • ").replace(/\n+/g, " ").replace(/[*_#]+/g, "").replace(/\s+/g, " ").trim();
     const cfFind = (q, max) => { const ws = q.split(/\s+/).filter(Boolean); if (!ws.length) return []; return CF.map((f, i) => [f, i]).filter(([f]) => { const hay = nz(`${f.n} ${f.p} ${CFCLS[f.u || f.c] || ""} ${f.u || f.c} ${f.c}`); return ws.every((w) => hay.includes(w)); }).slice(0, max); };
-    const classRows = (q) => cfFind(q, 12).map(([f, i]) => `<div class="res" data-cfopen="${i}"><span><b>${esc(cfTitle(f))}</b>${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""}<br><span class="muted">Habilidade de classe · ${esc(cfClass(f))} · ${esc(cfLevel(f))} · ${f.e}</span></span></div>`).join("");
+    const classRows = (q, src = "") => cfFind(q, 400).filter(([f]) => !src || f.e === src).slice(0, 12).map(([f, i]) => `<div class="res" data-cfopen="${i}"><span><b>${esc(cfTitle(f))}</b>${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""}<br><span class="muted">${esc(["Habilidade de classe", cfClass(f), cfLevel(f), f.e].filter(Boolean).join(" · "))}</span></span></div>`).join("");
     function openClassFeature(i, origin) {
       const f = CF[i]; if (!f) return; spOrigin = origin || "panel";
       $("#spd-body").innerHTML = `<h3>${esc(cfTitle(f))}</h3><div class="muted">${esc(f.n)}</div>
@@ -419,7 +426,7 @@
     cfq.addEventListener("input", () => {
       const r = cfFind(nz(cfq.value.trim()), 10);
       cfsug.hidden = !r.length;
-      cfsug.innerHTML = r.map(([f, i]) => `<div data-cfadd="${i}">${esc(cfTitle(f))}${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""} <span class="muted">· ${esc(cfClass(f))} · ${esc(cfLevel(f))} · ${f.e}</span></div>`).join("");
+      cfsug.innerHTML = r.map(([f, i]) => `<div data-cfadd="${i}">${esc(cfTitle(f))}${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""} <span class="muted">· ${esc([cfClass(f), cfLevel(f), f.e].filter(Boolean).join(" · "))}</span></div>`).join("");
     });
     function resetForm() {
       editKey = null; cmSpells = []; formPhoto = undefined; chips();
@@ -467,6 +474,7 @@
 
     /* eventos */
     $("#sq").addEventListener("input", () => { $("#sq-x").hidden = !$("#sq").value; spSearch(); });
+    ["#sf-type", "#sf-src", "#sf-lvl", "#sf-sch", "#sf-ex"].forEach((s) => $(s).addEventListener("change", spSearch));
     $("#sq-x").onclick = () => { $("#sq").value = ""; $("#sq-x").hidden = true; spSearch(); $("#sq").focus(); };
     $("#sh-close").onclick = closeSheet; $("#spd-close").onclick = closeSpell;
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") { sug.hidden = true; if (!$("#spd").hidden) closeSpell(); else closeSheet(); } });
