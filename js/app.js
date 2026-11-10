@@ -552,7 +552,7 @@
     }, true);
 
     /* sincronização das criações com um repositório privado do GitHub */
-    let TOMB = {}, SY = {}, syncing = false, syncDeNovo = false, syTimer = null;
+    let repoOk = null, TOMB = {}, SY = {}, syncing = false, syncDeNovo = false, syTimer = null;
     try { TOMB = JSON.parse(localStorage.getItem("ini_tomb") || "{}"); SY = JSON.parse(localStorage.getItem("ini_sync") || "{}"); } catch (_) {}
     const saveTomb = () => { try { localStorage.setItem("ini_tomb", JSON.stringify(TOMB)); } catch (_) {} };
     const saveSY = () => { try { localStorage.setItem("ini_sync", JSON.stringify(SY)); } catch (_) {} };
@@ -620,6 +620,11 @@
       if (!/^[\w.-]+\/[\w.-]+$/.test(SY.repo)) { syMsg('<span class="err">Use o formato usuario/repositorio.</span>'); return; }
       syncing = true; syMsg("Sincronizando…");
       try {
+        if (repoOk !== SY.repo) { // trava de segurança: suas criações nunca vão para um repositório público
+          const rr = await fetch(ghUrl(), { headers: ghHead("application/vnd.github+json"), cache: "no-store" });
+          if (rr.ok && (await rr.json()).private === false) throw new Error("este repositório é PÚBLICO e suas criações ficariam visíveis para todos. Use um repositório privado (por exemplo, dnd-dados)");
+          if (rr.ok) repoOk = SY.repo;
+        }
         for (const m of ALL.filter((x) => x.custom && !x.updatedAt)) { m.updatedAt = Date.now(); await put("mon", [m]); }
         for (let attempt = 0; attempt < 2; attempt++) {
           const { sha, doc } = await pullRemote();
