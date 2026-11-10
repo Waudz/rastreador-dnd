@@ -23,13 +23,14 @@
     <section class="panel">
       <h2 class="panel-title"><i data-i="cloud"></i>Publicação</h2>
       <p class="muted" id="resumo">Lendo os dados deste navegador…</p>
-      <p class="muted" style="font-size:12px">Suas criações nunca são enviadas. Use um token separado, só para o repositório do site (Contents: leitura e escrita). Ele não é salvo.</p>
+      <p class="muted" style="font-size:12px">Suas criações nunca são enviadas. Use um token separado, só para o repositório do site (Contents: leitura e escrita). Por padrão ele não é salvo; marque a opção abaixo se quiser que este aparelho se lembre dele.</p>
       <div class="cmg">
         <div><label>Repositório do site</label><input id="pub-repo" name="pub-repo" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
         <div><label>Token de publicação</label><input id="pub-token" name="pub-token" type="password" autocomplete="new-password" data-lpignore="true" data-1p-ignore></div>
       </div>
+      <label class="muted" style="display:flex;gap:8px;align-items:center;margin:8px 0 0;font-size:12px"><input type="checkbox" id="pub-lembrar" style="width:auto;height:auto"> Lembrar o token neste aparelho (fica guardado sem criptografia no navegador)</label>
       <div class="row" style="margin:8px 0 0"><button type="button" class="primary small" id="pub-go">Publicar fotos e bestiário</button><span class="muted" id="pub-status"></span></div>
-      <p style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btnlike muted" href="./?admin">Sincronização, dados locais e traduções</a><a class="btnlike muted" href="./">Voltar ao rastreador</a></p>
+      <p style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btnlike muted" href="./?admin">Configurar sincronização e dados locais</a><a class="btnlike muted" href="./">Voltar ao rastreador</a></p>
     </section>
   </main>
 </body>

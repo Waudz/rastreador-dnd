@@ -58,12 +58,17 @@
       const tree = await gh("/git/trees", { method: "POST", body: JSON.stringify({ base_tree: base, tree: files.map((f) => ({ path: f.path, mode: "100644", type: "blob", sha: f.sha })) }) });
       const commit = await gh("/git/commits", { method: "POST", body: JSON.stringify({ message: "Fotos e bestiário SRD (publicado pelo site)", tree: tree.sha, parents: [parent] }) });
       await gh(`/git/refs/heads/${branch}`, { method: "PATCH", body: JSON.stringify({ sha: commit.sha }) });
-      $("#pub-token").value = "";
+      try { if ($("#pub-lembrar").checked) localStorage.setItem("ini_pub", JSON.stringify({ repo, token: tok })); else { localStorage.removeItem("ini_pub"); $("#pub-token").value = ""; } } catch (_) {}
       msg(`Publicado: ${fotos.length} fotos e ${keys.length} pacotes. O site atualiza em 1 a 2 minutos.`);
     } catch (e) { console.error(e); msg(`<span class="err">Falha ao publicar: ${esc(e.message)}</span>`); }
     $("#pub-go").disabled = false;
   };
 
   $("#pub-repo").value = siteRepo();
+  try {
+    const salvo = JSON.parse(localStorage.getItem("ini_pub") || "null");
+    if (salvo && salvo.token) { $("#pub-repo").value = salvo.repo || $("#pub-repo").value; $("#pub-token").value = salvo.token; $("#pub-lembrar").checked = true; }
+  } catch (_) {}
+  $("#pub-lembrar").onchange = () => { if (!$("#pub-lembrar").checked) { try { localStorage.removeItem("ini_pub"); } catch (_) {} } };
   carregar().catch((e) => { $("#resumo").innerHTML = `<span class="err">Não consegui ler os dados deste navegador (${esc(e.message)}).</span>`; });
 })();
