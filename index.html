@@ -135,7 +135,7 @@
     <section class="panel">
       <h2 class="panel-title"><i data-i="book"></i>Meu bestiário</h2>
       <div class="row">
-        <input id="bq" placeholder="Pesquisar: nome, dragão, imenso, pequeno, fera, humanoide…" autocomplete="off" style="flex:1 1 240px">
+        <input id="bq" type="search" name="busca-bestiario" data-lpignore="true" data-1p-ignore placeholder="Pesquisar: nome, dragão, imenso, pequeno, fera, humanoide…" autocomplete="off" style="flex:1 1 240px">
         <select id="bf" style="flex:0 1 260px"></select>
         <button type="button" class="small" id="ball">Mostrar tudo</button>
       </div>
@@ -152,6 +152,7 @@
         <button type="button" class="small" id="dl-open">Baixar / atualizar bestiário</button>
         <span class="muted" id="dl-status"></span>
       </div>
+      <div id="packs"></div>
       <div id="docs-wrap" class="dl-box" hidden>
         <div id="docs" class="muted">Carregando fontes…</div>
         <div class="row" style="margin:0"><button type="button" class="primary small" id="dl-go">Baixar selecionadas</button><button type="button" class="small subtle" id="dl-cancel">Fechar</button></div>
@@ -162,6 +163,8 @@
         <button type="button" class="small subtle" id="tr-exp">Exportar traduções</button>
         <label class="btnlike muted">Importar traduções<input type="file" id="tr-imp" accept=".json" hidden></label>
         <button type="button" class="small subtle" id="bk-exp">Exportar backup</button>
+        <button type="button" class="small" id="pub-exp" hidden>Exportar fotos públicas</button>
+        <button type="button" class="small" id="pack-exp" hidden>Exportar bestiário embutido</button>
         <label class="btnlike muted">Importar backup<input type="file" id="bk-imp" accept=".json" hidden></label>
       </div>
     </section>
@@ -175,11 +178,11 @@
         <summary>Configurar repositório e token</summary>
         <p class="muted">Guarda suas fichas próprias (e as fotos delas) e a tradução do livro em arquivos JSON num repositório <b>privado</b> seu. Use o mesmo repositório e token em cada aparelho. O token fica salvo só neste navegador.</p>
         <div class="cmg">
-          <div style="grid-column:span 2"><label>Repositório (usuario/repositorio)</label><input id="sy-repo" placeholder="seuusuario/dnd-dados" autocomplete="off"></div>
-          <div style="grid-column:span 2"><label>Token (fine-grained, só esse repositório)</label><input id="sy-token" type="password" autocomplete="off"></div>
+          <div style="grid-column:span 2"><label>Repositório (usuario/repositorio)</label><input id="sy-repo" name="sync-repositorio" placeholder="seuusuario/dnd-dados" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
+          <div style="grid-column:span 2"><label>Token (fine-grained, só esse repositório)</label><input id="sy-token" name="sync-token" type="password" autocomplete="new-password" data-lpignore="true" data-1p-ignore></div>
           <div><label>Arquivo</label><input id="sy-path" value="criacoes.json"></div>
         </div>
-        <div class="row"><button type="button" class="primary small" id="sy-save">Salvar e sincronizar</button><button type="button" class="small subtle" id="sy-clear">Esquecer token deste aparelho</button></div>
+                <div class="row"><button type="button" class="primary small" id="sy-save">Salvar e sincronizar</button><button type="button" class="small subtle" id="sy-clear">Esquecer token deste aparelho</button></div>
       </details>
     </section>
     <footer class="muted" style="font-size:11px;margin:26px 0 8px;line-height:1.6">Este site usa material do System Reference Document 5.1 e do System Reference Document 5.2 da Wizards of the Coast LLC, licenciados sob a Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode). Os dados são obtidos da API Open5e (open5e.com). Este é um projeto de fãs, sem vínculo com a Wizards of the Coast.</footer>

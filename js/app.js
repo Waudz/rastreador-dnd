@@ -3,6 +3,10 @@
     let D;
     try { D = await fetch("dados/srd-pt.json").then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }); }
     catch (e) { $("#dbinfo").innerHTML = `<span class="err">Não consegui carregar as traduções (${e.message}). Abra o site por um endereço http(s), não direto do arquivo.</span>`; throw e; }
+    /* fotos públicas dos monstros da API (pasta fotos/ do site); as criações próprias nunca entram aqui */
+    let PUB = new Set();
+    try { const r = await fetch("fotos/index.json"); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}
+    const pubName = (k) => "fotos/" + String(k).replace(/[^\w.-]/g, "_") + ".jpg";
     const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
     const mod = (n) => (n >= 0 ? "+" : "") + n, FR = { 0.125: "1/8", 0.25: "1/4", 0.5: "1/2" }, cr = (v) => FR[v] || v;
     const nz = (s) => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -149,7 +153,7 @@
     const lvl = (m) => catOf(m) === "monster" ? "ND " + CRV(m) : "Nível " + (m.level ?? "—");
     const srcOf = (m) => m.document?.display_name || m.document?.key || "?";
     const illu = (m) => typeof m.illustration === "string" ? m.illustration : (m.illustration && (m.illustration.url || m.illustration.image)) || "";
-    const av = (m, size = 36) => { const src = m && ((PH[m.key]) || illu(m)); const st = `width:${size}px;height:${size}px`; return src ? `<img class="av" style="${st}" src="${esc(src)}" alt="" loading="lazy">` : `<span class="av av0" style="${st};font-size:${Math.round(size * 0.45)}px">${esc(((m && (pt(m) || m.name)) || "?").charAt(0).toUpperCase())}</span>`; };
+    const av = (m, size = 36) => { const src = m && ((PH[m.key]) || (!m.custom && PUB.has(m.key) ? pubName(m.key) : "") || illu(m)); const st = `width:${size}px;height:${size}px`; return src ? `<img class="av" style="${st}" src="${esc(src)}" alt="" loading="lazy">` : `<span class="av av0" style="${st};font-size:${Math.round(size * 0.45)}px">${esc(((m && (pt(m) || m.name)) || "?").charAt(0).toUpperCase())}</span>`; };
     const tsz = (m) => { const t = TP[m.type?.name] || m.type?.name || "", z = SZ[m.size?.name] || m.size?.name || ""; return t && z ? `${t} (${z})` : t || z; };
 
     let TR = {}; try { TR = JSON.parse(localStorage.getItem("ini_tr") || "{}"); } catch (_) {}
@@ -263,7 +267,7 @@
       let url = API + path, n = 0, total = 0;
       while (url) {
         const j = await getPage(url.replace(/^http:/, "https:")); total = j.count ?? total;
-        await put(store, j.results || []); n += (j.results || []).length; status(`${label}: ${n} de ${total}…`); url = j.next;
+        await put(store, j.results || []); n += (j.results || []).length; status(`${esc(label)}: ${n} de ${total}…`); url = j.next;
       }
       return [n, total];
     }
@@ -309,7 +313,7 @@
       const skills = Object.entries(m.skill_bonuses || {}).map(([a, v]) => `${SK[a] || a} ${mod(v)}`).join(", ");
       const senses = [["darkvision_range", "visão no escuro"], ["blindsight_range", "percepção às cegas"], ["tremorsense_range", "sentido sísmico"], ["truesight_range", "visão verdadeira"]].filter(([a]) => m[a]).map(([a, l]) => `${l} ${fm(m[a])}`).concat("Percepção passiva " + m.passive_perception).join(", ");
       const g = {}; (m.actions || []).forEach((a) => (g[a.action_type || "ACTION"] ??= []).push(a));
-      const acts = Object.entries(g).map(([t, arr]) => `<div class="grp">${GRP[t] || t}</div>` + arr.map((a) => {
+      const acts = Object.entries(g).map(([t, arr]) => `<div class="grp">${esc(GRP[t] || t)}</div>` + arr.map((a) => {
         const ri = rollInfo(a);
         return habD(nmA(a), descInfo(a.name, a.desc, m), ri ? ` <button class="small roll" data-roll="${esc(JSON.stringify(ri))}">Rolar</button>` : "", ri ? `<div class="ln muted">${esc(rollLine(ri))}</div><div class="rr"></div>` : "");
       }).join("")).join("");
@@ -552,6 +556,7 @@
     try { TOMB = JSON.parse(localStorage.getItem("ini_tomb") || "{}"); SY = JSON.parse(localStorage.getItem("ini_sync") || "{}"); } catch (_) {}
     const saveTomb = () => { try { localStorage.setItem("ini_tomb", JSON.stringify(TOMB)); } catch (_) {} };
     const saveSY = () => { try { localStorage.setItem("ini_sync", JSON.stringify(SY)); } catch (_) {} };
+    [300, 1200, 3000].forEach((ms) => setTimeout(() => { const b = $("#bq"); if (b && SY.repo && b.value === SY.repo && document.activeElement !== b) { b.value = ""; renderBestiary(); } }, ms));
     $("#sy-repo").value = SY.repo || ""; $("#sy-token").value = SY.token || ""; $("#sy-path").value = SY.path || "criacoes.json";
     const syMsg = (h) => { $("#sy-status").innerHTML = h; };
     const b64d = (b) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), (c) => c.charCodeAt(0)));
@@ -654,6 +659,80 @@
     $("#sy-clear").onclick = () => { SY.token = ""; $("#sy-token").value = ""; saveSY(); syMsg("Token removido deste aparelho."); };
     document.addEventListener("visibilitychange", () => { if (!document.hidden) queueSync(); });
 
+    /* administrador: exporta as fotos dos monstros da API para a pasta fotos/ do site */
+    const showAdm = () => { $("#pub-exp").hidden = $("#pack-exp").hidden = !(SY.repo && SY.token); };
+    showAdm();
+    $("#sy-save").addEventListener("click", () => setTimeout(showAdm, 0));
+    $("#sy-clear").addEventListener("click", () => setTimeout(showAdm, 0));
+    $("#pub-exp").onclick = async () => {
+      if (!window.showDirectoryPicker) { alert("Use o Chrome ou o Edge no computador para exportar as fotos."); return; }
+      const lista = ALL.filter((m) => !m.custom && PH[m.key]);
+      if (!lista.length) { status("Nenhum monstro da API com foto sua para exportar."); return; }
+      try {
+        const dir = await showDirectoryPicker({ mode: "readwrite" });
+        let chaves = new Set();
+        try { const h = await dir.getFileHandle("index.json"); chaves = new Set(JSON.parse(await (await h.getFile()).text())); } catch (_) {}
+        for (const m of lista) {
+          const blob = await (await fetch(PH[m.key])).blob();
+          const w = await (await dir.getFileHandle(pubName(m.key).slice(6), { create: true })).createWritable();
+          await w.write(blob); await w.close(); chaves.add(m.key);
+        }
+        const wi = await (await dir.getFileHandle("index.json", { create: true })).createWritable();
+        await wi.write(JSON.stringify([...chaves].sort())); await wi.close();
+        status(`${lista.length} fotos exportadas (${chaves.size} no total). Envie a pasta fotos/ para o GitHub com git add, commit e push.`);
+      } catch (e) { if (e.name !== "AbortError") status(`<span class="err">Não consegui exportar (${esc(e.message)}).</span>`); }
+    };
+
+
+    /* pacotes embutidos no site (SRD 2014 e 2024): funcionam sem a API; ela só é usada para outras fontes */
+    let PACKS = [], LP = {};
+    try { LP = JSON.parse(localStorage.getItem("ini_packs") || "{}"); } catch (_) {}
+    const saveLP = () => { try { localStorage.setItem("ini_packs", JSON.stringify(LP)); } catch (_) {} };
+    function renderPacks() {
+      $("#packs").innerHTML = PACKS.length ? '<div class="sub">Incluídos no site (não usam a API)</div>' + PACKS.map((p) =>
+        `<div class="res"><span><b>${esc(p.name)}</b> <span class="muted">${+p.monsters || 0} monstros · ${+p.spells || 0} magias</span></span><button class="small" data-pack="${esc(p.key)}">${LP[p.key] === p.v ? "Recarregar" : "Carregar"}</button></div>`).join("") : "";
+    }
+    async function loadPack(p) {
+      status(`Carregando ${esc(p.name)}…`);
+      const r = await fetch("dados/bestiario/" + encodeURIComponent(p.key) + ".json");
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const d = await r.json();
+      await put("mon", d.monsters || []); await put("spl", d.spells || []);
+      LP[p.key] = p.v; saveLP(); renderPacks(); await reload();
+      status(`${esc(p.name)}: ${(d.monsters || []).length} monstros e ${(d.spells || []).length} magias carregados.`);
+    }
+    $("#packs").addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-pack]"); if (!b) return;
+      const p = PACKS.find((x) => x.key === b.dataset.pack); if (!p) return;
+      b.disabled = true;
+      try { await loadPack(p); } catch (err) { status(`<span class="err">Falha ao carregar (${esc(err.message)}).</span>`); }
+      b.disabled = false;
+    });
+    async function initPacks() {
+      try { const r = await fetch("dados/bestiario/index.json"); if (r.ok) PACKS = await r.json(); } catch (_) {}
+      renderPacks();
+      for (const p of PACKS) if (LP[p.key] !== p.v) { try { await loadPack(p); } catch (err) { console.error(err); } }
+    }
+
+    /* administrador: grava os pacotes SRD (monstros e magias já baixados) na pasta dados/bestiario do site */
+    $("#pack-exp").onclick = async () => {
+      if (!window.showDirectoryPicker) { alert("Use o Chrome ou o Edge no computador para exportar."); return; }
+      const keys = [...new Set([...ALL.filter((m) => !m.custom).map((m) => m.document?.key), ...SP.map((s) => s.document?.key)])].filter((k) => /^srd-20/.test(k || ""));
+      if (!keys.length) { status("Baixe antes as coleções SRD 2014 e 2024 em “Baixar / atualizar bestiário”."); return; }
+      try {
+        const dir = await showDirectoryPicker({ mode: "readwrite" }), idx = [], v = Date.now();
+        const grava = async (nome, texto) => { const w = await (await dir.getFileHandle(nome, { create: true })).createWritable(); await w.write(texto); await w.close(); };
+        for (const k of keys) {
+          const monsters = ALL.filter((m) => !m.custom && m.document?.key === k), spells = SP.filter((s) => s.document?.key === k);
+          const name = srcOf(monsters[0] || spells[0]);
+          await grava(encodeURIComponent(k) + ".json", JSON.stringify({ v: 1, key: k, name, monsters, spells }));
+          idx.push({ key: k, name, monsters: monsters.length, spells: spells.length, v });
+        }
+        await grava("index.json", JSON.stringify(idx));
+        status(`Exportado: ${idx.map((i) => `${esc(i.name)} (${i.monsters} monstros, ${i.spells} magias)`).join("; ")}. Envie a pasta com git add, commit e push.`);
+      } catch (e) { if (e.name !== "AbortError") status(`<span class="err">Não consegui exportar (${esc(e.message)}).</span>`); }
+    };
+
     /* backup local (sem GitHub) */
     $("#bk-exp").onclick = () => {
       const mon = ALL.filter((m) => m.custom), img = mon.filter((m) => PH[m.key]).map((m) => ({ key: m.key, data: PH[m.key] }));
@@ -683,6 +762,6 @@
     const o = indexedDB.open("bestiario", 3);
     o.onupgradeneeded = () => { const d = o.result; ["mon", "spl", "img"].forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "key" }); }); };
     o.onblocked = () => { $("#dbinfo").innerHTML = '<span class="err">Atualização do banco bloqueada: feche as outras abas deste rastreador e recarregue a página.</span>'; };
-    o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(queueSync); };
+    o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(queueSync).then(initPacks); };
     o.onerror = () => { $("#dbinfo").innerHTML = '<span class="err">Este navegador bloqueou o armazenamento local (IndexedDB).</span>'; };
   })();
