@@ -139,41 +139,38 @@
         <select id="bf" style="flex:0 1 260px"></select>
         <button type="button" class="small" id="ball">Mostrar tudo</button>
       </div>
+      <div class="row">
+        <button type="button" class="small" id="bk-exp" title="Salva suas criações, as fotos que você colocou e os nomes traduzidos num arquivo">Exportar meu bestiário</button>
+        <label class="btnlike muted" title="Traz criações, fotos e nomes de um arquivo exportado em outro navegador">Importar<input type="file" id="bk-imp" accept=".json" hidden></label>
+        <span class="muted" id="bk-msg"></span>
+      </div>
       <div class="muted" id="bcount"></div>
       <div id="blist"></div>
     </section>
 
     <section class="panel">
       <h2 class="panel-title"><i data-i="database"></i>Dados locais e bestiário</h2>
-      <p class="muted" id="dbinfo"></p>
-      <div id="colls"></div>
-      <div class="sub">Bestiário</div>
-      <div class="row">
-        <button type="button" class="small" id="dl-open">Baixar / atualizar bestiário</button>
-        <span class="muted" id="dl-status"></span>
-      </div>
       <div id="packs"></div>
-      <div id="docs-wrap" class="dl-box" hidden>
-        <div id="docs" class="muted">Carregando fontes…</div>
-        <div class="row" style="margin:0"><button type="button" class="primary small" id="dl-go">Baixar selecionadas</button><button type="button" class="small subtle" id="dl-cancel">Fechar</button></div>
-      </div>
-      <div class="sub">Traduções e backup</div>
-      <div class="row">
-        <a class="btnlike muted" href="ferramentas/importar-ldj.html">Importar tradução do LDJ</a>
-        <button type="button" class="small subtle" id="tr-exp">Exportar traduções</button>
-        <label class="btnlike muted">Importar traduções<input type="file" id="tr-imp" accept=".json" hidden></label>
-        <button type="button" class="small subtle" id="bk-exp">Exportar backup</button>
-        <label class="btnlike muted">Importar backup<input type="file" id="bk-imp" accept=".json" hidden></label>
-      </div>
-      <div id="pubpanel" class="dl-box" hidden>
-        <div class="sub" style="margin-top:0">Publicar no site (administrador)</div>
-        <p class="muted" style="font-size:12px;margin:0 0 8px">Envia as fotos dos monstros da API e os pacotes SRD direto para o repositório do site, sem usar nenhuma pasta deste computador. Suas criações nunca são enviadas. Use um token separado, só para o repositório do site (Contents: leitura e escrita). Ele não é salvo.</p>
-        <div class="cmg">
-          <div><label>Repositório do site</label><input id="pub-repo" name="pub-repo" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
-          <div><label>Token de publicação</label><input id="pub-token" name="pub-token" type="password" autocomplete="new-password" data-lpignore="true" data-1p-ignore></div>
+      <div class="muted" id="dl-status"></div>
+      <details id="mais" class="more">
+        <summary>Mais opções: outras fontes, traduções e backup</summary>
+        <p class="muted" id="dbinfo"></p>
+        <div id="colls"></div>
+        <div class="sub">Outras fontes (Open5e)</div>
+        <div class="row">
+          <button type="button" class="small" id="dl-open">Baixar / atualizar bestiário</button>
         </div>
-        <div class="row" style="margin:8px 0 0"><button type="button" class="primary small" id="pub-go">Publicar fotos e bestiário</button><span class="muted" id="pub-status"></span></div>
-      </div>
+        <div id="docs-wrap" class="dl-box" hidden>
+          <div id="docs" class="muted">Carregando fontes…</div>
+          <div class="row" style="margin:0"><button type="button" class="primary small" id="dl-go">Baixar selecionadas</button><button type="button" class="small subtle" id="dl-cancel">Fechar</button></div>
+        </div>
+        <div class="sub">Traduções e backup</div>
+        <div class="row">
+          <a class="btnlike muted" href="ferramentas/importar-ldj.html">Importar tradução do LDJ</a>
+          <button type="button" class="small subtle" id="tr-exp">Exportar traduções</button>
+          <label class="btnlike muted">Importar traduções<input type="file" id="tr-imp" accept=".json" hidden></label>
+        </div>
+      </details>
     </section>
 
     <section class="panel syncbar">

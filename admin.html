@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.github.com https://api.open5e.com; worker-src 'self'; base-uri 'self'; form-action 'self'">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Administração — Rastreador D&D</title>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="stylesheet" href="css/estilo.css">
+  <script src="js/icones.js" defer></script>
+  <script src="js/admin.js" defer></script>
+</head>
+<body>
+  <main class="tracker">
+    <header class="header">
+      <div>
+        <p class="eyebrow">Administração</p>
+        <h1>Publicar no site</h1>
+        <p class="subtitle">Envia as fotos dos monstros da API e os pacotes SRD guardados neste navegador para o repositório do site.</p>
+      </div>
+    </header>
+    <section class="panel">
+      <h2 class="panel-title"><i data-i="cloud"></i>Publicação</h2>
+      <p class="muted" id="resumo">Lendo os dados deste navegador…</p>
+      <p class="muted" style="font-size:12px">Suas criações nunca são enviadas. Use um token separado, só para o repositório do site (Contents: leitura e escrita). Ele não é salvo.</p>
+      <div class="cmg">
+        <div><label>Repositório do site</label><input id="pub-repo" name="pub-repo" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
+        <div><label>Token de publicação</label><input id="pub-token" name="pub-token" type="password" autocomplete="new-password" data-lpignore="true" data-1p-ignore></div>
+      </div>
+      <div class="row" style="margin:8px 0 0"><button type="button" class="primary small" id="pub-go">Publicar fotos e bestiário</button><span class="muted" id="pub-status"></span></div>
+      <p style="margin-top:16px"><a class="btnlike muted" href="./">Voltar ao rastreador</a></p>
+    </section>
+  </main>
+</body>
+</html>

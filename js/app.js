@@ -2,7 +2,7 @@
     const API = "https://api.open5e.com/v2", $ = (s) => document.querySelector(s);
     let D;
     try { D = await fetch("dados/srd-pt.json").then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }); }
-    catch (e) { $("#dbinfo").innerHTML = `<span class="err">Não consegui carregar as traduções (${e.message}). Abra o site por um endereço http(s), não direto do arquivo.</span>`; throw e; }
+    catch (e) { $("#mais").open = true; $("#dbinfo").innerHTML = `<span class="err">Não consegui carregar as traduções (${e.message}). Abra o site por um endereço http(s), não direto do arquivo.</span>`; throw e; }
     /* fotos públicas dos monstros da API (pasta fotos/ do site); as criações próprias nunca entram aqui */
     let PUB = new Set();
     try { const r = await fetch("fotos/index.json", { cache: "no-cache" }); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}
@@ -319,7 +319,7 @@
       }).join("")).join("");
       const spl = (m.spells || []).map((s) => spRow(s.name, s.key)).join("");
       const p = pt(m), cat = catOf(m);
-      el.innerHTML = `<div class="row" style="gap:12px">${av(m, 72)}<span><button class="small" data-ph="${esc(m.key)}">${PH[m.key] ? "Trocar foto" : "Adicionar foto"}</button>${PH[m.key] ? ` <button class="small subtle" data-phx="${esc(m.key)}">Remover foto</button>` : ""}</span></div><h3>${esc(p || m.name)}</h3><div class="muted">${[p ? m.name : "", cat !== "monster" || m.custom ? CAT[cat] : "", tsz(m), m.alignment && m.alignment !== "—" ? AL(m.alignment) : "", m.subtitle || "", srcOf(m)].filter(Boolean).map(esc).join(" · ")}</div>
+      el.innerHTML = `<div class="row" style="gap:12px">${av(m, 72)}<span><button class="small" data-ph="${esc(m.key)}">${PH[m.key] ? "Trocar foto" : "Adicionar foto"}</button>${PH[m.key] ? ` <button class="small subtle" data-phx="${esc(m.key)}">${m.custom ? "Remover foto" : "Voltar à foto padrão"}</button>` : ""}</span></div><h3>${esc(p || m.name)}</h3><div class="muted">${[p ? m.name : "", cat !== "monster" || m.custom ? CAT[cat] : "", tsz(m), m.alignment && m.alignment !== "—" ? AL(m.alignment) : "", m.subtitle || "", srcOf(m)].filter(Boolean).map(esc).join(" · ")}</div>
         <div class="stats"><span>CA <b>${m.armor_class}</b>${m.armor_detail ? " (" + esc(tr(m.armor_detail)) + ")" : ""}</span><span>PV <b>${m.hit_points}</b> ${esc(m.hit_dice || "")}</span><span>Deslocamento <b>${esc(speed(m.speed))}</b></span><span>${cat === "monster" ? "ND" : "Nível"} <b>${cat === "monster" ? CRV(m) : (m.level ?? "—")}</b></span></div>
         <table class="ab"><tr>${ABIL.map((a) => `<th>${a[1]}</th>`).join("")}</tr><tr>${ABIL.map((a) => `<td>${m.ability_scores?.[a[0]]} (${mod(m.modifiers?.[a[0]])})</td>`).join("")}</tr></table>
         ${ln("Salvaguardas", saves)}${ln("Perícias", skills)}${ln("Resistências", tr(r.damage_resistances_display))}${ln("Imunidades", tr(r.damage_immunities_display))}${ln("Vulnerabilidades", tr(r.damage_vulnerabilities_display))}${ln("Imunidades a condições", tr(r.condition_immunities_display))}${ln("Sentidos", senses)}${ln("Idiomas", tr(m.languages?.as_string))}
@@ -694,80 +694,37 @@
       for (const p of PACKS) if (LP[p.key] !== p.v) { try { await loadPack(p); } catch (err) { console.error(err); } }
     }
 
-    /* administrador: publica fotos e pacotes SRD direto no repositório do site (sem pasta do computador) */
-    const siteRepo = () => { const p = location.pathname.split("/")[1]; return /\.github\.io$/.test(location.hostname) && p ? `${location.hostname.split(".")[0]}/${p}` : ""; };
-    const showAdm = () => { const on = !!(SY.repo && SY.token); $("#pubpanel").hidden = !on; if (on && !$("#pub-repo").value) $("#pub-repo").value = siteRepo(); };
-    showAdm();
-    $("#sy-save").addEventListener("click", () => setTimeout(showAdm, 0));
-    $("#sy-clear").addEventListener("click", () => setTimeout(showAdm, 0));
-    $("#pub-go").onclick = async () => {
-      const repo = $("#pub-repo").value.trim(), tok = $("#pub-token").value.trim(), msg = (t) => { $("#pub-status").innerHTML = t; };
-      if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !tok) { msg("Informe o repositório do site e o token de publicação."); return; }
-      const H = { Authorization: "Bearer " + tok, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" };
-      const gh = async (path, opt = {}) => {
-        const r = await fetch("https://api.github.com/repos/" + repo + path, { ...opt, headers: H, cache: "no-store" });
-        if (!r.ok) throw new Error(`GitHub respondeu ${r.status}` + (r.status === 401 || r.status === 403 || r.status === 404 ? ": confira se o token vale para este repositório e tem Contents (leitura e escrita)" : ""));
-        return r.json();
-      };
-      $("#pub-go").disabled = true;
-      try {
-        const files = [], chaves = new Set(PUB);
-        const fotos = ALL.filter((m) => !m.custom && PH[m.key]);
-        for (const m of fotos) { files.push({ path: pubName(m.key), b64: PH[m.key].split(",")[1] }); chaves.add(m.key); }
-        if (fotos.length) files.push({ path: "fotos/index.json", b64: b64e(JSON.stringify([...chaves].sort()) + "\n") });
-        const keys = [...new Set([...ALL.filter((m) => !m.custom).map((m) => m.document?.key), ...SP.map((s) => s.document?.key)])].filter((k) => /^srd-20/.test(k || ""));
-        const idx = PACKS.filter((p) => !keys.includes(p.key)), v = Date.now();
-        for (const k of keys) {
-          const monsters = ALL.filter((m) => !m.custom && m.document?.key === k), spells = SP.filter((s) => s.document?.key === k), name = srcOf(monsters[0] || spells[0]);
-          files.push({ path: "dados/bestiario/" + encodeURIComponent(k) + ".json", b64: b64e(JSON.stringify({ v: 1, key: k, name, monsters, spells })) });
-          idx.push({ key: k, name, monsters: monsters.length, spells: spells.length, v });
-        }
-        if (keys.length) files.push({ path: "dados/bestiario/index.json", b64: b64e(JSON.stringify(idx) + "\n") });
-        if (!files.length) { msg("Nada para publicar: não há fotos suas de monstros da API nem coleções SRD baixadas."); $("#pub-go").disabled = false; return; }
-        msg("Conectando ao GitHub…");
-        const info = await gh(""), branch = info.default_branch;
-        const parent = (await gh(`/git/ref/heads/${branch}`)).object.sha, base = (await gh(`/git/commits/${parent}`)).tree.sha;
-        let feitos = 0, prox = 0;
-        const worker = async () => { while (prox < files.length) { const f = files[prox++]; f.sha = (await gh("/git/blobs", { method: "POST", body: JSON.stringify({ content: f.b64, encoding: "base64" }) })).sha; msg(`Enviando arquivos… ${++feitos} de ${files.length}`); } };
-        await Promise.all([worker(), worker(), worker(), worker()]);
-        const tree = await gh("/git/trees", { method: "POST", body: JSON.stringify({ base_tree: base, tree: files.map((f) => ({ path: f.path, mode: "100644", type: "blob", sha: f.sha })) }) });
-        const commit = await gh("/git/commits", { method: "POST", body: JSON.stringify({ message: "Fotos e bestiário SRD (publicado pelo site)", tree: tree.sha, parents: [parent] }) });
-        await gh(`/git/refs/heads/${branch}`, { method: "PATCH", body: JSON.stringify({ sha: commit.sha }) });
-        $("#pub-token").value = "";
-        msg(`Publicado: ${fotos.length} fotos e ${keys.length} pacotes. O site atualiza em 1 a 2 minutos.`);
-      } catch (e) { console.error(e); msg(`<span class="err">Falha ao publicar: ${esc(e.message)}</span>`); }
-      $("#pub-go").disabled = false;
-    };
-
-    /* backup local (sem GitHub) */
+    /* exportar / importar o meu bestiário (criações, todas as fotos que você colocou e nomes traduzidos) */
+    const bkMsg = (t) => { $("#bk-msg").innerHTML = t; };
     $("#bk-exp").onclick = () => {
-      const mon = ALL.filter((m) => m.custom), img = mon.filter((m) => PH[m.key]).map((m) => ({ key: m.key, data: PH[m.key] }));
-      let ldj = null; try { ldj = JSON.parse(localStorage.getItem("ini_ldj") || "null"); } catch (_) {}
-      const dados = { v: 1, em: new Date().toISOString(), mon, img, tr: TR, ldj };
+      const mon = ALL.filter((m) => m.custom), img = Object.entries(PH).map(([key, data]) => ({ key, data }));
+      const dados = { v: 2, em: new Date().toISOString(), mon, img, tr: TR };
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([JSON.stringify(dados)], { type: "application/json" }));
-      a.download = `rastreador-backup-${dados.em.slice(0, 10)}.json`; a.click();
+      a.download = `meu-bestiario-${dados.em.slice(0, 10)}.json`; a.click();
+      bkMsg(`Exportado: ${mon.length} criações, ${img.length} fotos e ${Object.keys(TR).length} nomes traduzidos.`);
     };
     $("#bk-imp").onchange = async (e) => {
       const f = e.target.files[0]; if (!f) return;
       try {
         const d = JSON.parse(await f.text());
-        if (!d || !Array.isArray(d.mon)) throw new Error("formato inesperado");
-        const novos = d.mon.filter((m) => !BY[m.key] || (m.updatedAt || 0) > (BY[m.key].updatedAt || 0));
-        await put("mon", novos);
-        await put("img", (d.img || []).filter((i) => novos.some((m) => m.key === i.key)));
-        Object.assign(TR, d.tr || {}); saveTR();
+        if (!d || !Array.isArray(d.mon)) throw new Error("não parece um arquivo exportado por este rastreador");
+        const mons = d.mon.filter((m) => m && typeof m.key === "string" && typeof m.name === "string" && m.custom);
+        const novos = mons.filter((m) => !BY[m.key] || (m.updatedAt || 0) > (BY[m.key].updatedAt || 0));
+        const imgs = (d.img || []).filter((i) => i && typeof i.key === "string" && typeof i.data === "string" && /^data:image\//.test(i.data));
+        await put("mon", novos); await put("img", imgs);
+        if (d.tr && typeof d.tr === "object") { for (const k in d.tr) TR[k] = String(d.tr[k]); saveTR(); }
         if (d.ldj) { try { localStorage.setItem("ini_ldj", JSON.stringify(d.ldj)); } catch (_) {} aplicarLDJ(d.ldj); }
         await reload(); queueSync();
-        status(`Backup importado: ${novos.length} fichas novas ou mais recentes.`);
-      } catch (err) { alert("Não consegui importar o backup: " + err.message); }
+        bkMsg(`Importado: ${novos.length} criações novas ou mais recentes e ${imgs.length} fotos.`);
+      } catch (err) { bkMsg(`<span class="err">Não consegui importar (${esc(err.message)}).</span>`); }
       e.target.value = "";
     };
     if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
 
     const o = indexedDB.open("bestiario", 3);
     o.onupgradeneeded = () => { const d = o.result; ["mon", "spl", "img"].forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "key" }); }); };
-    o.onblocked = () => { $("#dbinfo").innerHTML = '<span class="err">Atualização do banco bloqueada: feche as outras abas deste rastreador e recarregue a página.</span>'; };
+    o.onblocked = () => { $("#mais").open = true; $("#dbinfo").innerHTML = '<span class="err">Atualização do banco bloqueada: feche as outras abas deste rastreador e recarregue a página.</span>'; };
     o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(queueSync).then(initPacks); };
-    o.onerror = () => { $("#dbinfo").innerHTML = '<span class="err">Este navegador bloqueou o armazenamento local (IndexedDB).</span>'; };
+    o.onerror = () => { $("#mais").open = true; $("#dbinfo").innerHTML = '<span class="err">Este navegador bloqueou o armazenamento local (IndexedDB).</span>'; };
   })();

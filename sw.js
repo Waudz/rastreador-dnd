@@ -1,4 +1,4 @@
-const CACHE = "rastreador-v13"; // mude o número quando quiser forçar todos os aparelhos a baixar tudo de novo
+const CACHE = "rastreador-v15"; // mude o número quando quiser forçar todos os aparelhos a baixar tudo de novo
 const ESSENCIAIS = ["./", "index.html", "manifest.json", "css/estilo.css", "js/icones.js", "js/iniciativa.js", "js/app.js", "dados/srd-pt.json", "icones/icone-192.png", "icones/favicon-32.png", "favicon.ico"];
 self.addEventListener("install", (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ESSENCIAIS.map((u) => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting())));
 self.addEventListener("activate", (e) => e.waitUntil(

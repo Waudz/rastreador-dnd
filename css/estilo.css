@@ -386,3 +386,7 @@ button .ico:last-child:not(:first-child) { margin: 0 0 0 4px; }
 
 /* letra do avatar sem foto: continua centralizada dentro do anel */
 .name .avfx .av0 { display: grid; place-items: center; line-height: 1; }
+
+/* painel de dados: opções extras recolhidas */
+.more { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.more > summary { cursor: pointer; color: var(--muted); font-size: 12px; }
