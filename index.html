@@ -163,9 +163,16 @@
         <button type="button" class="small subtle" id="tr-exp">Exportar traduções</button>
         <label class="btnlike muted">Importar traduções<input type="file" id="tr-imp" accept=".json" hidden></label>
         <button type="button" class="small subtle" id="bk-exp">Exportar backup</button>
-        <button type="button" class="small" id="pub-exp" hidden>Exportar fotos públicas</button>
-        <button type="button" class="small" id="pack-exp" hidden>Exportar bestiário embutido</button>
         <label class="btnlike muted">Importar backup<input type="file" id="bk-imp" accept=".json" hidden></label>
+      </div>
+      <div id="pubpanel" class="dl-box" hidden>
+        <div class="sub" style="margin-top:0">Publicar no site (administrador)</div>
+        <p class="muted" style="font-size:12px;margin:0 0 8px">Envia as fotos dos monstros da API e os pacotes SRD direto para o repositório do site, sem usar nenhuma pasta deste computador. Suas criações nunca são enviadas. Use um token separado, só para o repositório do site (Contents: leitura e escrita). Ele não é salvo.</p>
+        <div class="cmg">
+          <div><label>Repositório do site</label><input id="pub-repo" name="pub-repo" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
+          <div><label>Token de publicação</label><input id="pub-token" name="pub-token" type="password" autocomplete="new-password" data-lpignore="true" data-1p-ignore></div>
+        </div>
+        <div class="row" style="margin:8px 0 0"><button type="button" class="primary small" id="pub-go">Publicar fotos e bestiário</button><span class="muted" id="pub-status"></span></div>
       </div>
     </section>
 

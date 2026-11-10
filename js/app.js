@@ -5,7 +5,7 @@
     catch (e) { $("#dbinfo").innerHTML = `<span class="err">Não consegui carregar as traduções (${e.message}). Abra o site por um endereço http(s), não direto do arquivo.</span>`; throw e; }
     /* fotos públicas dos monstros da API (pasta fotos/ do site); as criações próprias nunca entram aqui */
     let PUB = new Set();
-    try { const r = await fetch("fotos/index.json"); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}
+    try { const r = await fetch("fotos/index.json", { cache: "no-cache" }); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}
     const pubName = (k) => "fotos/" + String(k).replace(/[^\w.-]/g, "_") + ".jpg";
     const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
     const mod = (n) => (n >= 0 ? "+" : "") + n, FR = { 0.125: "1/8", 0.25: "1/4", 0.5: "1/2" }, cr = (v) => FR[v] || v;
@@ -659,31 +659,6 @@
     $("#sy-clear").onclick = () => { SY.token = ""; $("#sy-token").value = ""; saveSY(); syMsg("Token removido deste aparelho."); };
     document.addEventListener("visibilitychange", () => { if (!document.hidden) queueSync(); });
 
-    /* administrador: exporta as fotos dos monstros da API para a pasta fotos/ do site */
-    const showAdm = () => { $("#pub-exp").hidden = $("#pack-exp").hidden = !(SY.repo && SY.token); };
-    showAdm();
-    $("#sy-save").addEventListener("click", () => setTimeout(showAdm, 0));
-    $("#sy-clear").addEventListener("click", () => setTimeout(showAdm, 0));
-    $("#pub-exp").onclick = async () => {
-      if (!window.showDirectoryPicker) { alert("Use o Chrome ou o Edge no computador para exportar as fotos."); return; }
-      const lista = ALL.filter((m) => !m.custom && PH[m.key]);
-      if (!lista.length) { status("Nenhum monstro da API com foto sua para exportar."); return; }
-      try {
-        const dir = await showDirectoryPicker({ mode: "readwrite" });
-        let chaves = new Set();
-        try { const h = await dir.getFileHandle("index.json"); chaves = new Set(JSON.parse(await (await h.getFile()).text())); } catch (_) {}
-        for (const m of lista) {
-          const blob = await (await fetch(PH[m.key])).blob();
-          const w = await (await dir.getFileHandle(pubName(m.key).slice(6), { create: true })).createWritable();
-          await w.write(blob); await w.close(); chaves.add(m.key);
-        }
-        const wi = await (await dir.getFileHandle("index.json", { create: true })).createWritable();
-        await wi.write(JSON.stringify([...chaves].sort())); await wi.close();
-        status(`${lista.length} fotos exportadas (${chaves.size} no total). Envie a pasta fotos/ para o GitHub com git add, commit e push.`);
-      } catch (e) { if (e.name !== "AbortError") status(`<span class="err">Não consegui exportar (${esc(e.message)}).</span>`); }
-    };
-
-
     /* pacotes embutidos no site (SRD 2014 e 2024): funcionam sem a API; ela só é usada para outras fontes */
     let PACKS = [], LP = {};
     try { LP = JSON.parse(localStorage.getItem("ini_packs") || "{}"); } catch (_) {}
@@ -694,7 +669,7 @@
     }
     async function loadPack(p) {
       status(`Carregando ${esc(p.name)}…`);
-      const r = await fetch("dados/bestiario/" + encodeURIComponent(p.key) + ".json");
+      const r = await fetch("dados/bestiario/" + encodeURIComponent(p.key) + ".json?v=" + p.v, { cache: "no-cache" });
       if (!r.ok) throw new Error("HTTP " + r.status);
       const d = await r.json();
       await put("mon", d.monsters || []); await put("spl", d.spells || []);
@@ -709,28 +684,54 @@
       b.disabled = false;
     });
     async function initPacks() {
-      try { const r = await fetch("dados/bestiario/index.json"); if (r.ok) PACKS = await r.json(); } catch (_) {}
+      try { const r = await fetch("dados/bestiario/index.json", { cache: "no-cache" }); if (r.ok) PACKS = await r.json(); } catch (_) {}
       renderPacks();
       for (const p of PACKS) if (LP[p.key] !== p.v) { try { await loadPack(p); } catch (err) { console.error(err); } }
     }
 
-    /* administrador: grava os pacotes SRD (monstros e magias já baixados) na pasta dados/bestiario do site */
-    $("#pack-exp").onclick = async () => {
-      if (!window.showDirectoryPicker) { alert("Use o Chrome ou o Edge no computador para exportar."); return; }
-      const keys = [...new Set([...ALL.filter((m) => !m.custom).map((m) => m.document?.key), ...SP.map((s) => s.document?.key)])].filter((k) => /^srd-20/.test(k || ""));
-      if (!keys.length) { status("Baixe antes as coleções SRD 2014 e 2024 em “Baixar / atualizar bestiário”."); return; }
+    /* administrador: publica fotos e pacotes SRD direto no repositório do site (sem pasta do computador) */
+    const siteRepo = () => { const p = location.pathname.split("/")[1]; return /\.github\.io$/.test(location.hostname) && p ? `${location.hostname.split(".")[0]}/${p}` : ""; };
+    const showAdm = () => { const on = !!(SY.repo && SY.token); $("#pubpanel").hidden = !on; if (on && !$("#pub-repo").value) $("#pub-repo").value = siteRepo(); };
+    showAdm();
+    $("#sy-save").addEventListener("click", () => setTimeout(showAdm, 0));
+    $("#sy-clear").addEventListener("click", () => setTimeout(showAdm, 0));
+    $("#pub-go").onclick = async () => {
+      const repo = $("#pub-repo").value.trim(), tok = $("#pub-token").value.trim(), msg = (t) => { $("#pub-status").innerHTML = t; };
+      if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !tok) { msg("Informe o repositório do site e o token de publicação."); return; }
+      const H = { Authorization: "Bearer " + tok, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" };
+      const gh = async (path, opt = {}) => {
+        const r = await fetch("https://api.github.com/repos/" + repo + path, { ...opt, headers: H, cache: "no-store" });
+        if (!r.ok) throw new Error(`GitHub respondeu ${r.status}` + (r.status === 401 || r.status === 403 || r.status === 404 ? ": confira se o token vale para este repositório e tem Contents (leitura e escrita)" : ""));
+        return r.json();
+      };
+      $("#pub-go").disabled = true;
       try {
-        const dir = await showDirectoryPicker({ mode: "readwrite" }), idx = [], v = Date.now();
-        const grava = async (nome, texto) => { const w = await (await dir.getFileHandle(nome, { create: true })).createWritable(); await w.write(texto); await w.close(); };
+        const files = [], chaves = new Set(PUB);
+        const fotos = ALL.filter((m) => !m.custom && PH[m.key]);
+        for (const m of fotos) { files.push({ path: pubName(m.key), b64: PH[m.key].split(",")[1] }); chaves.add(m.key); }
+        if (fotos.length) files.push({ path: "fotos/index.json", b64: b64e(JSON.stringify([...chaves].sort()) + "\n") });
+        const keys = [...new Set([...ALL.filter((m) => !m.custom).map((m) => m.document?.key), ...SP.map((s) => s.document?.key)])].filter((k) => /^srd-20/.test(k || ""));
+        const idx = PACKS.filter((p) => !keys.includes(p.key)), v = Date.now();
         for (const k of keys) {
-          const monsters = ALL.filter((m) => !m.custom && m.document?.key === k), spells = SP.filter((s) => s.document?.key === k);
-          const name = srcOf(monsters[0] || spells[0]);
-          await grava(encodeURIComponent(k) + ".json", JSON.stringify({ v: 1, key: k, name, monsters, spells }));
+          const monsters = ALL.filter((m) => !m.custom && m.document?.key === k), spells = SP.filter((s) => s.document?.key === k), name = srcOf(monsters[0] || spells[0]);
+          files.push({ path: "dados/bestiario/" + encodeURIComponent(k) + ".json", b64: b64e(JSON.stringify({ v: 1, key: k, name, monsters, spells })) });
           idx.push({ key: k, name, monsters: monsters.length, spells: spells.length, v });
         }
-        await grava("index.json", JSON.stringify(idx));
-        status(`Exportado: ${idx.map((i) => `${esc(i.name)} (${i.monsters} monstros, ${i.spells} magias)`).join("; ")}. Envie a pasta com git add, commit e push.`);
-      } catch (e) { if (e.name !== "AbortError") status(`<span class="err">Não consegui exportar (${esc(e.message)}).</span>`); }
+        if (keys.length) files.push({ path: "dados/bestiario/index.json", b64: b64e(JSON.stringify(idx) + "\n") });
+        if (!files.length) { msg("Nada para publicar: não há fotos suas de monstros da API nem coleções SRD baixadas."); $("#pub-go").disabled = false; return; }
+        msg("Conectando ao GitHub…");
+        const info = await gh(""), branch = info.default_branch;
+        const parent = (await gh(`/git/ref/heads/${branch}`)).object.sha, base = (await gh(`/git/commits/${parent}`)).tree.sha;
+        let feitos = 0, prox = 0;
+        const worker = async () => { while (prox < files.length) { const f = files[prox++]; f.sha = (await gh("/git/blobs", { method: "POST", body: JSON.stringify({ content: f.b64, encoding: "base64" }) })).sha; msg(`Enviando arquivos… ${++feitos} de ${files.length}`); } };
+        await Promise.all([worker(), worker(), worker(), worker()]);
+        const tree = await gh("/git/trees", { method: "POST", body: JSON.stringify({ base_tree: base, tree: files.map((f) => ({ path: f.path, mode: "100644", type: "blob", sha: f.sha })) }) });
+        const commit = await gh("/git/commits", { method: "POST", body: JSON.stringify({ message: "Fotos e bestiário SRD (publicado pelo site)", tree: tree.sha, parents: [parent] }) });
+        await gh(`/git/refs/heads/${branch}`, { method: "PATCH", body: JSON.stringify({ sha: commit.sha }) });
+        $("#pub-token").value = "";
+        msg(`Publicado: ${fotos.length} fotos e ${keys.length} pacotes. O site atualiza em 1 a 2 minutos.`);
+      } catch (e) { console.error(e); msg(`<span class="err">Falha ao publicar: ${esc(e.message)}</span>`); }
+      $("#pub-go").disabled = false;
     };
 
     /* backup local (sem GitHub) */
