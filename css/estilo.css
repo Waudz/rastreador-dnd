@@ -412,3 +412,5 @@ body.admin .only-admin { display: block; }
 [hidden] { display: none !important; }
 
 .undo { margin: 0 0 10px; padding: 8px 10px; border: 1px solid var(--gold-dark); border-radius: 9px; background: rgba(215,173,101,.1); font-size: 12px; }
+
+#blist .av { cursor: pointer; }
