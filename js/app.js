@@ -1,4 +1,5 @@
   (async () => {
+    if (/[?&]admin(=|&|$)/.test(location.search)) document.body.classList.add("admin");
     const API = "https://api.open5e.com/v2", $ = (s) => document.querySelector(s);
     let D;
     try { D = await fetch("dados/srd-pt.json").then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }); }

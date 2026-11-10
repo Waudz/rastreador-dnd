@@ -390,3 +390,7 @@ button .ico:last-child:not(:first-child) { margin: 0 0 0 4px; }
 /* painel de dados: opções extras recolhidas */
 .more { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
 .more > summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+
+/* painéis de administração: só aparecem em /?admin */
+.only-admin { display: none; }
+body.admin .only-admin { display: block; }

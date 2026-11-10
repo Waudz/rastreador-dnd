@@ -140,6 +140,14 @@
         <button type="button" class="small" id="ball">Mostrar tudo</button>
       </div>
       <div class="row">
+        <button type="button" class="small" id="dl-open" title="Baixa monstros e magias de outras fontes da Open5e">Baixar outras fontes</button>
+        <span class="muted" id="dl-status"></span>
+      </div>
+      <div id="docs-wrap" class="dl-box" hidden>
+        <div id="docs" class="muted">Carregando fontes…</div>
+        <div class="row" style="margin:0"><button type="button" class="primary small" id="dl-go">Baixar selecionadas</button><button type="button" class="small subtle" id="dl-cancel">Fechar</button></div>
+      </div>
+      <div class="row">
         <button type="button" class="small" id="bk-exp" title="Salva suas criações, as fotos que você colocou e os nomes traduzidos num arquivo">Exportar meu bestiário</button>
         <label class="btnlike muted" title="Traz criações, fotos e nomes de um arquivo exportado em outro navegador">Importar<input type="file" id="bk-imp" accept=".json" hidden></label>
         <span class="muted" id="bk-msg"></span>
@@ -148,22 +156,13 @@
       <div id="blist"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel only-admin">
       <h2 class="panel-title"><i data-i="database"></i>Dados locais e bestiário</h2>
       <div id="packs"></div>
-      <div class="muted" id="dl-status"></div>
       <details id="mais" class="more">
         <summary>Mais opções: outras fontes, traduções e backup</summary>
         <p class="muted" id="dbinfo"></p>
         <div id="colls"></div>
-        <div class="sub">Outras fontes (Open5e)</div>
-        <div class="row">
-          <button type="button" class="small" id="dl-open">Baixar / atualizar bestiário</button>
-        </div>
-        <div id="docs-wrap" class="dl-box" hidden>
-          <div id="docs" class="muted">Carregando fontes…</div>
-          <div class="row" style="margin:0"><button type="button" class="primary small" id="dl-go">Baixar selecionadas</button><button type="button" class="small subtle" id="dl-cancel">Fechar</button></div>
-        </div>
         <div class="sub">Traduções e backup</div>
         <div class="row">
           <a class="btnlike muted" href="ferramentas/importar-ldj.html">Importar tradução do LDJ</a>
@@ -173,7 +172,7 @@
       </details>
     </section>
 
-    <section class="panel syncbar">
+    <section class="panel syncbar only-admin">
       <div class="syncbar-top">
         <h2 class="panel-title"><i data-i="cloud"></i>Sincronização entre aparelhos</h2>
         <div class="syncbar-actions"><span class="muted" id="sy-status"></span><button type="button" class="primary small" id="sy-now">Sincronizar agora</button></div>
@@ -186,7 +185,7 @@
           <div style="grid-column:span 2"><label>Token (fine-grained, só esse repositório)</label><input id="sy-token" name="sync-token" type="password" autocomplete="new-password" data-lpignore="true" data-1p-ignore></div>
           <div><label>Arquivo</label><input id="sy-path" value="criacoes.json"></div>
         </div>
-                <div class="row"><button type="button" class="primary small" id="sy-save">Salvar e sincronizar</button><button type="button" class="small subtle" id="sy-clear">Esquecer token deste aparelho</button></div>
+                <div class="row"><button type="button" class="primary small" id="sy-save">Salvar e sincronizar</button><button type="button" class="small subtle" id="sy-clear">Esquecer token deste aparelho</button><a class="btnlike muted" href="admin.html">Publicar fotos e bestiário</a></div>
       </details>
     </section>
     <footer class="muted" style="font-size:11px;margin:26px 0 8px;line-height:1.6">Este site usa material do System Reference Document 5.1 e do System Reference Document 5.2 da Wizards of the Coast LLC, licenciados sob a Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode). Os dados são obtidos da API Open5e (open5e.com). Este é um projeto de fãs, sem vínculo com a Wizards of the Coast.</footer>
