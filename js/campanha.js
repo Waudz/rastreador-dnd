@@ -92,9 +92,20 @@
     return `<details class="item" data-doc="${esc(d.id)}"><summary>${esc(titulo)} <span class="muted" style="font-weight:400">· ${d.tipo === "arquivo" ? "Arquivo" : d.tipo === "nota" ? "Nota" : "Resumo"} · ${fmtData(d.criado_em)}</span>${d.visivel ? "" : ' <span class="badge">Oculto</span>'}</summary><div>${corpo}${ferr}</div></details>`;
   }
 
+  /* ordem do diário: mais novos primeiro, mais antigos primeiro ou pelo número da sessão (a escolha fica guardada neste aparelho) */
+  let ordem = "novos";
+  try { ordem = localStorage.getItem("campanha_ordem") || "novos"; } catch (_) {}
+  const tempo = (d) => new Date(d.criado_em).getTime();
+  function docsOrdenados() {
+    const l = docs.slice();
+    if (ordem === "antigos") return l.sort((a, b) => tempo(a) - tempo(b));
+    if (ordem === "sessao") return l.sort((a, b) => { const x = a.sessao, y = b.sessao; if (x == null && y == null) return tempo(a) - tempo(b); if (x == null) return 1; if (y == null) return -1; return x - y || tempo(a) - tempo(b); });
+    return l.sort((a, b) => tempo(b) - tempo(a));
+  }
   function abaDiario() {
-    const topo = mestre() ? `<div class="bar"><span class="grow"></span><button type="button" class="small" id="abre-resumo">Novo resumo</button><button type="button" class="small" id="abre-arq">Enviar arquivo</button></div><div id="forms">${editandoDoc ? formResumo() : ""}</div>` : "";
-    return topo + (docs.length ? docs.map(itemDoc).join("") : '<span class="muted">Nada aqui ainda.</span>');
+    const botoes = mestre() ? '<button type="button" class="small" id="abre-resumo">Novo resumo</button><button type="button" class="small" id="abre-arq">Enviar arquivo</button>' : "";
+    const topo = `<div class="bar"><select id="ordem" style="width:auto;height:33px" aria-label="Ordem do diário"><option value="novos"${ordem === "novos" ? " selected" : ""}>Mais novos primeiro</option><option value="antigos"${ordem === "antigos" ? " selected" : ""}>Mais antigos primeiro</option><option value="sessao"${ordem === "sessao" ? " selected" : ""}>Por número da sessão</option></select><span class="grow"></span>${botoes}</div>${mestre() ? `<div id="forms">${editandoDoc ? formResumo() : ""}</div>` : ""}`;
+    return topo + (docs.length ? docsOrdenados().map(itemDoc).join("") : '<span class="muted">Nada aqui ainda.</span>');
   }
 
   function abaMembros() {
@@ -220,7 +231,9 @@
     } catch (err) { aviso(err.message, true); }
   });
 
-  document.addEventListener("change", (e) => { if (e.target.id === "r-anexo" && e.target.files[0]) { const f = e.target.files[0]; e.target.value = ""; anexarAoResumo(f); } });
+  document.addEventListener("change", (e) => {
+    if (e.target.id === "ordem") { ordem = e.target.value; try { localStorage.setItem("campanha_ordem", ordem); } catch (_) {} desenhar(); return; }
+ if (e.target.id === "r-anexo" && e.target.files[0]) { const f = e.target.files[0]; e.target.value = ""; anexarAoResumo(f); } });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#leitor").hidden) fecharLeitor(); });
 
   document.addEventListener("submit", async (e) => {
