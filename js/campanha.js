@@ -60,7 +60,7 @@
     const f = p.ficha || {}, sub = [f.classe, f.nivel ? "nível " + f.nivel : ""].filter(Boolean).join(" · "), v = pct(p.pv_atual, p.pv_max);
     return `<div class="card" data-id="${esc(p.id)}">
       <a href="personagem.html?id=${encodeURIComponent(p.id)}" style="color:inherit;text-decoration:none"><b>${esc(p.nome)}</b>
-      <div class="meta">${esc(sub)}${sub ? " · " : ""}${esc(nomes[p.dono_id] || "Sem dono")} · CA ${p.ca}</div></a>
+      <div class="meta">${esc(sub)}${sub ? " · " : ""}${f.npc ? "" : esc(nomes[p.dono_id] || "Sem dono") + " · "}CA ${p.ca}</div></a>
       <div class="hpline"><div class="hp-top"><span>PV${p.pv_temp ? ` (+${p.pv_temp} temp.)` : ""}</span><strong>${p.pv_atual} / ${p.pv_max}</strong></div><div class="hp-track"><div class="hp-fill ${v <= 25 ? "low" : v <= 50 ? "mid" : ""}" style="width:${v}%"></div></div></div>
       <div class="inline" style="margin-top:8px"><input class="num" type="number" min="1" value="1" aria-label="Quantidade"><button type="button" class="small danger" data-dano="1">Dano</button><button type="button" class="small" data-cura="1">Cura</button></div>
     </div>`;
@@ -68,13 +68,58 @@
 
   function abaPers() {
     const donos = membros.map((m) => `<option value="${esc(m.usuario_id)}"${m.usuario_id === meuId() ? " selected" : ""}>${esc(nomes[m.usuario_id] || "Jogador")}</option>`).join("");
-    return `<div class="bar"><span class="grow"></span><button type="button" class="small" id="abre-novo">Novo personagem</button></div>
+    const jog = pers.filter((p) => !(p.ficha || {}).npc), npcs = pers.filter((p) => (p.ficha || {}).npc);
+    return `<div class="bar"><span class="grow"></span><button type="button" class="small" id="abre-imp">Importar do bestiário</button><button type="button" class="small" id="abre-novo">Novo personagem</button></div>
       <form id="form-novo" class="row" hidden>
         <input id="n-nome" maxlength="80" placeholder="Nome" style="flex:1 1 200px" required>
         ${mestre() ? `<select id="n-dono" style="flex:0 1 180px" aria-label="Dono">${donos}</select>` : ""}
         <button type="submit" class="primary small">Criar</button>
       </form>
-      <div class="cards">${pers.length ? pers.map(cartaoPers).join("") : '<span class="muted">Nenhum personagem aqui ainda.</span>'}</div>`;
+      <div id="imp"></div>
+      <div class="cards">${jog.length ? jog.map(cartaoPers).join("") : '<span class="muted">Nenhum personagem aqui ainda.</span>'}</div>
+      ${npcs.length ? `<h2 class="panel-title" style="margin:16px 0 8px">NPCs</h2><div class="cards">${npcs.map(cartaoPers).join("")}</div>` : ""}`;
+  }
+
+  /* ---------- importar criações do bestiário deste navegador ---------- */
+  function lerCriacoes() {
+    return new Promise((ok, falha) => {
+      const o = indexedDB.open("bestiario", 3);
+      o.onupgradeneeded = () => { const d = o.result; ["mon", "spl", "img"].forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "key" }); }); };
+      o.onerror = () => falha(new Error("Não consegui abrir o bestiário deste navegador."));
+      o.onsuccess = () => { const r = o.result.transaction("mon").objectStore("mon").getAll(); r.onsuccess = () => ok((r.result || []).filter((m) => m && m.custom)); r.onerror = () => falha(r.error); };
+    });
+  }
+  const CATROT = { player: "Personagem", npc: "NPC", monster: "Monstro" };
+  function fichaDe(m, npc) {
+    const ab = m.ability_scores || {}, ft = (m.speed && m.speed.walk) || 30;
+    const lista = (a) => (a || []).filter((x) => x && x.name).map((x) => ({ nome: String(x.name).slice(0, 120), desc: String(x.desc || "").slice(0, 4000) }));
+    const magias = (m.spells || []).map((s) => (typeof s === "string" ? s : s && (s.name || s.nome))).filter(Boolean);
+    const notas = [m.subtitle, magias.length ? "Magias: " + magias.join(", ") : ""].filter(Boolean).join("\n");
+    return {
+      npc: npc || undefined, origem: m.key, classe: m.cat === "player" ? (m.subtitle || "") : (m.type && m.type.name) || "", nivel: m.level || null, deslocamento: Math.round(ft * 0.3 * 10) / 10,
+      atributos: { for: ab.strength || 10, des: ab.dexterity || 10, con: ab.constitution || 10, int: ab.intelligence || 10, sab: ab.wisdom || 10, car: ab.charisma || 10 },
+      caracteristicas: lista(m.traits).concat(lista(m.actions)), notas
+    };
+  }
+  async function painelImportar() {
+    const box = $("#imp"); box.innerHTML = '<span class="muted">Lendo o bestiário…</span>';
+    let lista;
+    try { lista = await lerCriacoes(); } catch (e) { box.innerHTML = `<span class="err">${esc(e.message)}</span>`; return; }
+    const ja = new Set(pers.map((p) => (p.ficha || {}).origem).filter(Boolean));
+    lista.sort((a, b) => a.name.localeCompare(b.name));
+    window.__criacoes = Object.fromEntries(lista.map((m) => [m.key, m]));
+    box.innerHTML = `<div class="panel" style="margin-bottom:12px"><div class="bar"><b class="grow">Suas criações neste navegador</b><button type="button" class="small subtle" id="fecha-imp">Fechar</button></div>` +
+      (lista.length ? lista.map((m) => `<div class="res" data-k="${esc(m.key)}"><span><b>${esc(m.name)}</b> <span class="badge jog">${CATROT[m.cat] || "Monstro"}</span>${ja.has(m.key) ? ' <span class="muted">· já importado</span>' : ""}</span><span class="inline"><select class="imp-dest" aria-label="Importar como"><option value="p"${m.cat === "player" || !mestre() ? " selected" : ""}>Personagem</option>${mestre() ? `<option value="n"${m.cat !== "player" ? " selected" : ""}>NPC</option>` : ""}</select><button type="button" class="small primary" data-imp="${esc(m.key)}">Importar</button></span></div>`).join("") : '<span class="muted">Você não tem criações neste navegador. Crie no bestiário do rastreador.</span>') + "</div>";
+  }
+  async function importar(chave, botao) {
+    const m = (window.__criacoes || {})[chave]; if (!m) return;
+    const npc = botao.closest(".res").querySelector(".imp-dest").value === "n";
+    botao.disabled = true; botao.textContent = "Importando…";
+    try {
+      const hp = Math.max(1, m.hit_points || 1);
+      await nuvem.post("personagens", { campanha_id: id, dono_id: meuId(), nome: String(m.name).slice(0, 80), pv_max: hp, pv_atual: hp, ca: m.armor_class || 10, ficha: fichaDe(m, npc), inventario: [] });
+      await recarregar(); aba = "pers"; await desenhar(); painelImportar(); aviso(`“${m.name}” importado como ${npc ? "NPC" : "personagem"}.`);
+    } catch (e) { botao.disabled = false; botao.textContent = "Importar"; aviso(e.message, true); }
   }
 
   const opcoesLink = () => { const l = docs.filter((x) => x.tipo === "arquivo" && !anexosForm.includes(x.id)); return l.length ? l.map((x) => `<option value="${esc(x.id)}">${esc(nomeDoc(x))}</option>`).join("") : '<option value="">(nenhum documento disponível)</option>'; };
@@ -225,6 +270,9 @@
       if ((b = c("[data-aba]"))) { aba = b.dataset.aba; editandoDoc = null; formAberto = false; anexosForm = []; return desenhar(); }
       if ((b = c("[data-dano]"))) return mudarPV(c(".card"), true);
       if ((b = c("[data-cura]"))) return mudarPV(c(".card"), false);
+      if (c("#abre-imp")) return painelImportar();
+      if (c("#fecha-imp")) { $("#imp").innerHTML = ""; return; }
+      if ((b = c("[data-imp]"))) return importar(b.dataset.imp, b);
       if (c("#abre-novo")) { const f = $("#form-novo"); f.hidden = !f.hidden; if (!f.hidden) $("#n-nome").focus(); return; }
       if (c("#abre-resumo")) { editandoDoc = null; formAberto = true; anexosForm = []; $("#forms").innerHTML = formResumo(); $("#r-titulo").focus(); return; }
       if (c("#abre-arq")) { $("#forms").innerHTML = formArquivo(); return; }
@@ -279,7 +327,7 @@
     nuvem.observar(async () => {
       const ativo = document.activeElement;
       if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;     // não interrompe quem está digitando
-      if (document.querySelector("#forms form")) return;
+      if (document.querySelector("#forms form") || document.querySelector("#imp .panel")) return;
       const antes = assinatura(); await carregar();
       if (assinatura() !== antes) desenhar();     // só redesenha se algo mudou (não fecha o que o usuário abriu)
     }, 6000);
