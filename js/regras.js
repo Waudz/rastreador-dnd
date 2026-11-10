@@ -129,5 +129,61 @@ window.REGRAS = (() => {
     return { nc, slots, pact: pact ? { qtd: pact[0], nivel: pact[1] } : null, habilidades };
   }
 
-  return { ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+
+
+  function melhoriasDisponiveis(cls){
+    return (cls||[]).flatMap(c=>(c.c==="Fighter"?[4,6,8,12,14,16,19]:c.c==="Rogue"?[4,8,10,12,16,19]:[4,8,12,16,19]).filter(n=>n<=c.n).map(n=>({id:c.c+":"+n,n,classe:(classe(c.c)||{}).n||c.c})));
+  }
+  function aplicarMelhorias(f){
+    const disponiveis=new Set(melhoriasDisponiveis(f.classes).map(x=>x.id)), antes=f.bonusMelhorias||{}, depois={};
+    Object.entries(f.melhorias||{}).forEach(([id,escolhas])=>{if(disponiveis.has(id))escolhas.slice(0,2).forEach(k=>{if(ATR.includes(k))depois[k]=(depois[k]||0)+1;});});
+    f.atributos ||= {};
+    ATR.forEach(k=>{const base=(Number(f.atributos[k])||10)-(antes[k]||0);const b=Math.min(depois[k]||0,Math.max(0,20-base));f.atributos[k]=base+b;depois[k]=b;});f.bonusMelhorias=depois;
+  }
+  // Escolhas de proficiência têm fontes distintas; bônus nunca se somam duas vezes.
+  const normalizar = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  function racial(nome) {
+    const r = RACAS.find(r => r[0] === nome), b = {}, n = normalizar(nome);
+    if (!r) return { bonus: b, fixas: [], escolhas: 0, atributos: 0, tracos: [] };
+    for (const m of r[2].matchAll(/(FOR|DES|CON|INT|SAB|CAR) ([+-]\d+)/g)) b[m[1].toLowerCase()] = +m[2];
+    if (nome === "Humano") ATR.forEach(k => b[k] = 1);
+    if (nome === "Tritão") ["for", "con", "car"].forEach(k => b[k] = 1);
+    const fixas = n.startsWith("elfo") ? ["percepcao"] : n === "meio-orc" ? ["intimidacao"] : n === "goliath" ? ["atletismo"] : n === "tabaxi" ? ["percepcao", "furtividade"] : n === "bugbear" ? ["furtividade"] : n.startsWith("satyr") ? ["atuacao", "persuasao"] : [];
+    const escolhas = n === "meio-elfo" || n.startsWith("lizardfolk") || n==="kenku" || n.startsWith("metamorfo") ? 2 : n === "humano (variante)" || n==="centauro" ? 1 : 0;
+    const opcoes = n==="kenku" ? ["acrobacia","enganacao","furtividade","prestidigitacao"] : n.startsWith("metamorfo") ? ["enganacao","intuicao","intimidacao","persuasao"] : n==="centauro" ? ["adestrar","medicina","natureza","sobrevivencia"] : n.startsWith("lizardfolk") ? ["adestrar","natureza","percepcao","furtividade","sobrevivencia"] : TODAS;
+    const atributos = /em dois|dois atributos/.test(r[2]) ? 2 : /escolha/.test(r[2]) ? 2 : 0;
+    let tracos = r[3].split(";").map(t => t.trim());
+    if (n.startsWith("elfo")) tracos = [...new Set([...tracos, "Ancestral feérico: vantagem contra enfeitiçamento; magia não pode fazer você dormir.", "Sentidos aguçados: proficiência em Percepção."])];
+    if (n === "meio-elfo") tracos = ["Visão no escuro: 18 m.", "Ancestral feérico: vantagem contra enfeitiçamento; magia não pode fazer você dormir.", "Versatilidade em perícias: escolha duas perícias diferentes."];
+    return { bonus: b, fixas, escolhas, opcoes, atributos, tracos };
+  }
+  function limiteEspecializacao(cls) {
+    return (cls || []).reduce((s,c) => s + (c.c === "Rogue" ? (c.n >= 6 ? 4 : c.n >= 1 ? 2 : 0) : c.c === "Bard" ? (c.n >= 10 ? 4 : c.n >= 3 ? 2 : 0) : 0), 0);
+  }
+  function fontesPericias(f) {
+    const cls = f.classes || [], r = racial(f.raca), c = cls[0] && classe(cls[0].c);
+    const fixas = r.fixas;
+    const raciais = [...new Set(f.perRaca || [])].filter(k => r.opcoes && r.opcoes.includes(k) && !fixas.includes(k)).slice(0,r.escolhas);
+    const classePer = [...new Set(f.perClasse || [])].filter(k => c && c.per[1].includes(k) && !fixas.includes(k) && !raciais.includes(k)).slice(0,c ? c.per[0] : 0);
+    const multi = cls.slice(1).flatMap(x => { const d = classe(x.c); return d && ["Bard","Ranger","Rogue"].includes(x.c) ? [...new Set(x.per || [])].filter(k=>d.per[1].includes(k)).slice(0,1) : []; });
+    const basicas = [...new Set([...fixas,...raciais,...classePer,...multi])];
+    const especializadas = [...new Set(f.especializacoes || [])].filter(k=>basicas.includes(k)).slice(0,limiteEspecializacao(cls));
+    return { fixas, raciais, classePer, basicas, especializadas, valores: Object.fromEntries(basicas.map(k=>[k,especializadas.includes(k)?2:1])) };
+  }
+  function aplicarRaca(f, anterior) {
+    f.atributos ||= {};
+    const antes = anterior || {}, r = racial(f.raca), depois = {...r.bonus};
+    const escolhas = [...new Set(f.atrRaca || [])].filter(k=>ATR.includes(k) && !(k in r.bonus)).slice(0,r.atributos);
+    escolhas.forEach((k,i)=>depois[k]=(depois[k]||0)+(/\+2 e \+1/.test((RACAS.find(r=>r[0]===f.raca)||[])[2]||"") && i===0 ? 2 : 1));
+    ATR.forEach(k=> { f.atributos[k] = (Number(f.atributos[k]) || 10) - (antes[k] || 0) + (depois[k] || 0); });
+    f.bonusRaca = depois;
+  }
+  const SUB_CATALOGO = {"Trilha do Berserker":"Path of the Berserker","Colégio do Conhecimento":"College of Lore","Domínio da Vida":"Life Domain","Círculo da Terra":"Circle of the Land","Campeão":"Champion","Caminho da Mão Espalmada":"Way of the Open Hand","Juramento de Devoção":"Oath of Devotion","Caçador":"Hunter","Ladrão":"Thief","Linhagem Dracônica":"Draconic Bloodline","O Corruptor":"The Fiend","Escola de Evocação":"School of Evocation"};
+  function habilidadesAutomaticas(f, itens, pt) {
+    return itens.filter(h=>h.e==="2014" && (f.classes||[]).some(c=>(h.u||h.c)===c.c && (!h.u || h.c===(SUB_CATALOGO[c.sub]||c.sub)) && h.l && h.l.length && Math.min(...h.l)<=c.n))
+      .sort((a,b)=>Math.min(...a.l)-Math.min(...b.l)||(a.p||a.n).localeCompare(b.p||b.n,"pt-BR"))
+      .map(h=>{const cf=h.e+"|"+h.c+"|"+h.n;return {nome:h.p||h.n,desc:pt[cf]||h.d,cf,auto:"classe"};});
+  }
+
+  return { melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();

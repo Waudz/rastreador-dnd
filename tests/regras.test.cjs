@@ -1,0 +1,15 @@
+const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm"),assert=require("node:assert/strict");
+const root=path.resolve(__dirname,".."),ctx=vm.createContext({window:{}});
+vm.runInContext(fs.readFileSync(path.join(root,"js/regras.js"),"utf8"),ctx);
+const R=ctx.window.REGRAS, feats=JSON.parse(fs.readFileSync(path.join(root,"dados/habilidades.json"),"utf8"));
+let count=0;const test=(nome,fn)=>{fn();console.log("OK "+nome);count++;};
+test("Bônus racial não acumula ao editar",()=>{const f={raca:"Meio-elfo",atributos:{car:10},atrRaca:["for","des"]};R.aplicarRaca(f);R.aplicarRaca(f,f.bonusRaca);assert.equal(f.atributos.car,12);assert.equal(f.atributos.for,11);f.raca="Humano";f.atrRaca=[];R.aplicarRaca(f,f.bonusRaca);assert.equal(f.atributos.car,11);});
+test("Raça e classe nunca duplicam proficiência",()=>{const f={raca:"Elfo (Alto)",classes:[{c:"Fighter",n:1}],perClasse:["percepcao","atletismo","sobrevivencia"],especializacoes:["atletismo"]};const p=R.fontesPericias(f);assert.equal(p.valores.percepcao,1);assert.equal(p.valores.atletismo,1);assert.equal(p.classePer.length,2);});
+test("Meio-elfo só escolhe duas perícias diferentes",()=>{const p=R.fontesPericias({raca:"Meio-elfo",classes:[{c:"Rogue",n:1}],perRaca:["historia","historia","arcanismo","percepcao"],perClasse:["historia","furtividade"],especializacoes:["furtividade","arcanismo","historia"]});assert.equal(p.raciais.length,2);assert.equal(p.classePer.length,1);assert.equal(p.especializadas.length,2);});
+test("Especialização respeita classe e nível",()=>{assert.equal(R.limiteEspecializacao([{c:"Fighter",n:20}]),0);assert.equal(R.limiteEspecializacao([{c:"Rogue",n:1}]),2);assert.equal(R.limiteEspecializacao([{c:"Rogue",n:6}]),4);assert.equal(R.limiteEspecializacao([{c:"Bard",n:2}]),0);assert.equal(R.limiteEspecializacao([{c:"Bard",n:3}]),2);});
+test("Proficiência considera nível total",()=>{assert.equal(R.prof(R.nivelTotal([{c:"Rogue",n:3},{c:"Fighter",n:2}])),3);assert.equal(R.prof(17),6);});
+test("Magia de classe e de arquétipo",()=>{assert.equal(R.conjuracao([{c:"Fighter",n:3}]).slots.length,0);assert.equal(R.conjuracao([{c:"Fighter",n:3,sub:"Cavaleiro Místico"}]).slots[0],2);assert.equal(R.conjuracao([{c:"Paladin",n:1}]).slots.length,0);});
+test("Habilidades acompanham nível e não misturam arquétipos",()=>{const h=R.habilidadesAutomaticas({classes:[{c:"Barbarian",n:1}]},feats,{});assert(h.some(x=>x.cf.endsWith("|Rage")));assert(!h.some(x=>x.cf.endsWith("|Danger Sense")));assert(!h.some(x=>x.cf.includes("Berserker")));});
+test("Melhorias são idempotentes, limitadas a 20 e reversíveis",()=>{const f={classes:[{c:"Fighter",n:4}],atributos:{for:19},melhorias:{"Fighter:4":["for","for"]}};R.aplicarMelhorias(f);assert.equal(f.atributos.for,20);R.aplicarMelhorias(f);assert.equal(f.atributos.for,20);f.classes[0].n=3;R.aplicarMelhorias(f);assert.equal(f.atributos.for,19);});
+test("Todos os scripts passam na análise sintática",()=>{for(const n of fs.readdirSync(path.join(root,"js")).filter(n=>n.endsWith(".js")))new vm.Script(fs.readFileSync(path.join(root,"js",n),"utf8"),{filename:n});});
+console.log(count+" testes aprovados");

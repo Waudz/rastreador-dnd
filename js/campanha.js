@@ -50,7 +50,7 @@
   function cabecalho() {
     $("#titulo").textContent = camp.nome; document.title = camp.nome + " — Rastreador D&D";
     $("#papel").textContent = mestre() ? "Mestre" : "Jogador";
-    $("#lnk-combate").hidden = !mestre();
+    $("#lnk-combate").hidden = false; $("#lnk-combate").textContent=mestre()?"Combate e consultas":"Consultar monstros e habilidades";
     const abas = [["pers", "Personagens"], ["diario", "Diário"], ["docs", "Documentos"]].concat(mestre() ? [["membros", "Grupo"]] : []);
     $("#abas").hidden = false;
     $("#abas").innerHTML = abas.map(([k, t]) => `<button type="button" data-aba="${k}" class="${aba === k ? "on" : ""}">${t}</button>`).join("");
@@ -61,6 +61,7 @@
     return `<div class="card" data-id="${esc(p.id)}">
       <a href="personagem.html?id=${encodeURIComponent(p.id)}" style="color:inherit;text-decoration:none;display:flex;gap:10px;align-items:center">${f.foto && /^data:image\//.test(f.foto) ? `<img class="av" style="width:44px;height:44px" src="${esc(f.foto)}" alt="">` : `<span class="av av0" style="width:44px;height:44px;font-size:20px">${esc((p.nome || "?").charAt(0).toUpperCase())}</span>`}<span><b>${esc(p.nome)}</b>
       <div class="meta">${esc(sub)}${sub ? " · " : ""}${f.npc ? "" : esc(nomes[p.dono_id] || "Sem dono") + " · "}CA ${p.ca}</div></span></a>
+      ${mestre()?`<div class="row"><label>Jogador responsável<select data-dono="${esc(p.id)}"><option value="">Sem jogador</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?"selected":""}>${esc(nomes[m.usuario_id]||"Jogador")}</option>`).join("")}</select></label></div>`:""}
       <div class="hpline"><div class="hp-top"><span>PV${p.pv_temp ? ` (+${p.pv_temp} temp.)` : ""}</span><strong>${p.pv_atual} / ${p.pv_max}</strong></div><div class="hp-track"><div class="hp-fill ${v <= 25 ? "low" : v <= 50 ? "mid" : ""}" style="width:${v}%"></div></div></div>
       <div class="inline" style="margin-top:8px"><input class="num" type="number" min="1" value="1" aria-label="Quantidade"><button type="button" class="small danger" data-dano="1">Dano</button><button type="button" class="small" data-cura="1">Cura</button></div>
     </div>`;
@@ -69,7 +70,7 @@
   function abaPers() {
     const donos = membros.map((m) => `<option value="${esc(m.usuario_id)}"${m.usuario_id === meuId() ? " selected" : ""}>${esc(nomes[m.usuario_id] || "Jogador")}</option>`).join("");
     const jog = pers.filter((p) => !(p.ficha || {}).npc), npcs = pers.filter((p) => (p.ficha || {}).npc);
-    return `<div class="bar"><span class="grow"></span><button type="button" class="small" id="abre-imp">Importar do bestiário</button><button type="button" class="small" id="abre-novo">Novo personagem</button></div>
+    return `<div class="bar"><span class="grow"></span><button type="button" class="small" id="recupera-fotos">Recuperar fotos importadas</button><button type="button" class="small" id="abre-imp">Importar do bestiário</button><button type="button" class="small" id="abre-novo">Novo personagem</button></div>
       <form id="form-novo" class="row" hidden>
         <input id="n-nome" maxlength="80" placeholder="Nome" style="flex:1 1 200px" required>
         ${mestre() ? `<select id="n-dono" style="flex:0 1 180px" aria-label="Dono">${donos}</select>` : ""}
@@ -80,10 +81,27 @@
       ${npcs.length ? `<h2 class="panel-title" style="margin:16px 0 8px">NPCs</h2><div class="cards">${npcs.map(cartaoPers).join("")}</div>` : ""}`;
   }
 
+
+  document.addEventListener("change", async e=>{
+    const t=e.target;if(!t.dataset.dono||!mestre())return;
+    t.disabled=true;
+    try{await nuvem.patch("personagens?id=eq."+encodeURIComponent(t.dataset.dono),{dono_id:t.value||null});await recarregar();await desenhar();aviso("Personagem atribuído ao jogador.");}
+    catch(err){aviso(err.message,true);}finally{t.disabled=false;}
+  });
+
+
+  async function recuperarFotos(){
+    try{
+      await acervo.baixar();const lista=await lerCriacoes(), porOrigem=Object.fromEntries(lista.map(m=>[m.key,m]));let n=0;
+      for(const p of pers){const f=p.ficha||{}, m=porOrigem[f.origem];if(!m||f.foto)continue;const foto=await reduzir((window.__fotos||{})[m.key]||m.photo);if(!foto)continue;await nuvem.patch("personagens?id=eq."+encodeURIComponent(p.id),{ficha:{...f,foto}});n++;}
+      await recarregar();await desenhar();aviso(n+" foto(s) recuperada(s). Fotos já existentes foram preservadas.");
+    }catch(e){aviso(e.message,true);}
+  }
+  document.addEventListener("click",e=>{if(e.target.closest("#recupera-fotos"))recuperarFotos();});
   /* ---------- importar criações do bestiário deste navegador ---------- */
   function lerCriacoes() {
     return new Promise((ok, falha) => {
-      const o = indexedDB.open("bestiario", 3);
+      const o = indexedDB.open(acervo.banco(), 3);
       o.onupgradeneeded = () => { const d = o.result; ["mon", "spl", "img"].forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "key" }); }); };
       o.onerror = () => falha(new Error("Não consegui abrir o bestiário deste navegador."));
       o.onsuccess = () => { const tx = o.result.transaction(["mon", "img"]), r = tx.objectStore("mon").getAll(), im = tx.objectStore("img").getAll(); tx.oncomplete = () => { window.__fotos = Object.fromEntries((im.result || []).filter((x) => x && typeof x.data === "string").map((x) => [x.key, x.data])); ok((r.result || []).filter((m) => m && m.custom)); }; tx.onerror = () => falha(tx.error); };
@@ -113,15 +131,15 @@
   async function painelImportar() {
     const box = $("#imp"); box.innerHTML = '<span class="muted">Lendo o bestiário…</span>';
     let lista;
-    try { lista = await lerCriacoes(); } catch (e) { box.innerHTML = `<span class="err">${esc(e.message)}</span>`; return; }
+    try { if(nuvem.usuario())await acervo.baixar(); lista = await lerCriacoes(); } catch (e) { box.innerHTML = `<span class="err">${esc(e.message)}</span>`; return; }
     const ja = new Set(pers.map((p) => (p.ficha || {}).origem).filter(Boolean));
     lista.sort((a, b) => a.name.localeCompare(b.name));
     window.__criacoes = Object.fromEntries(lista.map((m) => [m.key, m]));
     box.innerHTML = `<div class="panel" style="margin-bottom:12px"><div class="bar"><b class="grow">Suas criações neste navegador</b><button type="button" class="small subtle" id="fecha-imp">Fechar</button></div>` +
-      (lista.length ? lista.map((m) => `<div class="res" data-k="${esc(m.key)}"><span><b>${esc(m.name)}</b> <span class="badge jog">${CATROT[m.cat] || "Monstro"}</span>${ja.has(m.key) ? ' <span class="muted">· já importado</span>' : ""}${(window.__fotos || {})[m.key] ? "" : ' <span class="muted">· sem foto</span>'}</span><span class="inline">${ja.has(m.key) && (window.__fotos || {})[m.key] ? `<button type="button" class="small" data-foto="${esc(m.key)}">Atualizar foto</button>` : ""}<select class="imp-dest" aria-label="Importar como"><option value="p"${m.cat === "player" || !mestre() ? " selected" : ""}>Personagem</option>${mestre() ? `<option value="n"${m.cat !== "player" ? " selected" : ""}>NPC</option>` : ""}</select><button type="button" class="small primary" data-imp="${esc(m.key)}">Importar</button></span></div>`).join("") : '<span class="muted">Você não tem criações neste navegador. Crie no bestiário do rastreador.</span>') + "</div>";
+      (lista.length ? lista.map((m) => `<div class="res" data-k="${esc(m.key)}"><span><b>${esc(m.name)}</b> <span class="badge jog">${CATROT[m.cat] || "Monstro"}</span>${ja.has(m.key) ? ' <span class="muted">· já importado</span>' : ""}${((window.__fotos || {})[m.key] || m.photo) ? "" : ' <span class="muted">· sem foto</span>'}</span><span class="inline">${ja.has(m.key) && ((window.__fotos || {})[m.key] || m.photo) ? `<button type="button" class="small" data-foto="${esc(m.key)}">Atualizar foto</button>` : ""}<select class="imp-dest" aria-label="Importar como"><option value="p"${m.cat === "player" || !mestre() ? " selected" : ""}>Personagem</option>${mestre() ? `<option value="n"${m.cat !== "player" ? " selected" : ""}>NPC</option>` : ""}</select><button type="button" class="small primary" data-imp="${esc(m.key)}">Importar</button></span></div>`).join("") : '<span class="muted">Você não tem criações neste navegador. Crie no bestiário do rastreador.</span>') + "</div>";
   }
   async function atualizarFoto(chave, botao) {
-    const foto = await reduzir((window.__fotos || {})[chave]), alvos = pers.filter((p) => (p.ficha || {}).origem === chave);
+    const foto = await reduzir((window.__criacoes?.[chave]?.photo || (window.__fotos || {})[chave])), alvos = pers.filter((p) => (p.ficha || {}).origem === chave);
     if (!foto || !alvos.length) { aviso("Não encontrei foto ou personagem importado.", true); return; }
     botao.disabled = true;
     try { for (const p of alvos) await nuvem.patch(`personagens?id=eq.${encodeURIComponent(p.id)}`, { ficha: { ...p.ficha, foto } }); await recarregar(); await desenhar(); painelImportar(); aviso("Foto atualizada."); }
@@ -132,7 +150,7 @@
     const npc = botao.closest(".res").querySelector(".imp-dest").value === "n";
     botao.disabled = true; botao.textContent = "Importando…";
     try {
-      const hp = Math.max(1, m.hit_points || 1), foto = await reduzir((window.__fotos || {})[m.key]);
+      const hp = Math.max(1, m.hit_points || 1), foto = await reduzir((window.__fotos || {})[m.key] || m.photo);
       await nuvem.post("personagens", { campanha_id: id, dono_id: meuId(), nome: String(m.name).slice(0, 80), pv_max: hp, pv_atual: hp, ca: m.armor_class || 10, ficha: fichaDe(m, npc, foto), inventario: [] });
       await recarregar(); aba = "pers"; await desenhar(); painelImportar(); aviso(`“${m.name}” importado como ${npc ? "NPC" : "personagem"}.`);
     } catch (e) { botao.disabled = false; botao.textContent = "Importar"; aviso(e.message, true); }

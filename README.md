@@ -117,3 +117,19 @@ Abra `http://localhost:8000`. Módulos, `fetch` e service worker não funcionam 
 - Sem servidor: cada pessoa só vê os próprios dados. Para compartilhar, use um repositório de sincronização comum ou o arquivo de exportação.
 - A tradução das habilidades de classe cobre o SRD 2014; as de 2024 ficam em inglês.
 - A extração do PDF depende do formato do livro usado no desenvolvimento e pode precisar de ajuste para outras edições.
+
+## Atualização: contas, fichas e migração
+
+A entrada agora é `index.html` (login ou campanhas da conta conectada). O combate e as consultas públicas estão em `iniciativa.html`; jogadores acessam monstros, magias e habilidades pelo link de consultas na conta ou campanha.
+
+Aplique `supabase/02-acervos-e-transferencia.sql` após o schema inicial **antes de publicar**. O acervo sincroniza pela conta Supabase, com controle de acesso por usuário e mesclagem de criações/exclusões por data. O IndexedDB e as traduções são separados por conta. O token GitHub legado é removido do navegador após uma importação ou sincronização bem-sucedida.
+
+Para migrar do repositório privado:
+1. Faça login na conta de destino.
+2. Em **Importar dados antigos**, importe o backup combinado ou os arquivos originais `criacoes.json` e `traducoes.json`, um de cada vez.
+3. Na campanha, use **Importar do bestiário** para os personagens ainda não importados e **Recuperar fotos importadas** para os existentes.
+4. Depois que o jogador entrar na campanha com o código, o mestre escolhe o **Jogador responsável** no cartão. Não é necessário recriar a ficha.
+
+As automações seguem os dados de classe SRD 2014 do projeto. Atributos iniciais e escolhas de talento, estilo de luta, perícias e melhorias continuam sendo escolhas do jogador; os bônus e recursos derivados são calculados. As melhorias permitem escolher +1 duas vezes, inclusive no mesmo atributo, até 20. As descrições das raças expandidas continuam sendo resumos do catálogo existente, sem reprodução de livros.
+
+Validação local: `node tests/regras.test.cjs`. A validação de permissões e concorrência do banco está em `supabase/VALIDACAO.md`.
