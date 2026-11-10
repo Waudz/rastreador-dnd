@@ -1,5 +1,5 @@
   (async () => {
-    if (/[?&]admin(=|&|$)/.test(location.search)) document.body.classList.add("admin");
+    try { if (/[?&]admin(=|&|$)/.test(location.search) || localStorage.getItem("ini_admin") === "1") document.body.classList.add("admin"); } catch (_) {}
     const API = "https://api.open5e.com/v2", $ = (s) => document.querySelector(s);
     let D;
     try { D = await fetch("dados/srd-pt.json").then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }); }
@@ -661,6 +661,18 @@
     }
     $("#sy-save").onclick = () => { SY = { repo: $("#sy-repo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/+$/, ""), token: $("#sy-token").value.trim(), path: $("#sy-path").value.trim() || "criacoes.json" }; saveSY(); syncNow(); };
     $("#sy-now").onclick = () => { syncNow(); };
+    /* modo administrador no app instalado: 5 toques seguidos no título ligam ou desligam os painéis de administração */
+    let toques = [];
+    document.querySelector(".header h1").addEventListener("click", () => {
+      const n = Date.now(); toques = toques.filter((t) => n - t < 2500); toques.push(n);
+      if (toques.length < 5) return;
+      toques = [];
+      const on = !document.body.classList.contains("admin");
+      document.body.classList.toggle("admin", on);
+      try { localStorage.setItem("ini_admin", on ? "1" : "0"); } catch (_) {}
+      status(on ? "Modo administrador ligado neste aparelho." : "Modo administrador desligado.");
+      if (on) document.querySelector(".syncbar").scrollIntoView({ behavior: "smooth", block: "center" });
+    });
     const showSyncTop = () => { $("#synctop").hidden = !(SY.repo && SY.token); };
     showSyncTop();
     $("#sy-save").addEventListener("click", () => { $("#sync").open = false; setTimeout(showSyncTop, 0); });
