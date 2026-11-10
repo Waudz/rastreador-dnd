@@ -7,6 +7,8 @@
     /* fotos públicas dos monstros da API (pasta fotos/ do site); as criações próprias nunca entram aqui */
     let PUB = new Set();
     try { const r = await fetch("fotos/index.json", { cache: "no-cache" }); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}
+    let CF = [];
+    try { const r = await fetch("dados/habilidades.json"); if (r.ok) CF = await r.json(); } catch (_) {}
     const pubName = (k) => "fotos/" + String(k).replace(/[^\w.-]/g, "_") + ".jpg";
     const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
     const mod = (n) => (n >= 0 ? "+" : "") + n, FR = { 0.125: "1/8", 0.25: "1/4", 0.5: "1/2" }, cr = (v) => FR[v] || v;
@@ -347,10 +349,27 @@
         const al = LDJ.alias[k] && d && nz(LDJ.alias[k]) !== nz(d[0]) ? ` · no LDJ: ${esc(LDJ.alias[k])}` : "";
         const info = [s.level == null ? "" : s.level ? s.level + "º círculo" : "Truque", SCH[s.school?.name] || pm?.escola || "", srcOf(s)].filter(Boolean).join(" · ");
         return `<div class="res" data-spopen="${esc(s.key)}"><span><b>${esc(d ? d[0] : s.name)}</b>${d && d[0] !== s.name ? ` <span class="muted">(${esc(s.name)})</span>` : ""}<br><span class="muted">${info}${al}</span></span></div>`;
-      }).join("") + abilityRows(q) || '<span class="muted">Nada encontrado.</span>';
+      }).join("") + abilityRows(q) + classRows(q) || '<span class="muted">Nada encontrado.</span>';
     }
     function abilityRows(q) {
       return [...ABI.entries()].filter(([l, v]) => nz(v.name + " " + nm(v.name)).includes(q)).slice(0, 15).map(([l, v]) => `<div class="res" data-abopen="${esc(l)}"><span><b>${esc(nm(v.name))}</b> <span class="muted">(${esc(v.name)})</span><br><span class="muted">Habilidade de monstro · ${v.items.length} ${v.items.length > 1 ? "monstros" : "monstro"}: ${esc(v.items.slice(0, 3).map((x) => pt(x.m) || x.m.name).join(", "))}${v.items.length > 3 ? "…" : ""}</span></span></div>`).join("");
+    }
+
+    /* habilidades de classe (SRD 2014 e 2024, via Open5e; texto em inglês) */
+    const CFCLS = { Barbarian: "Bárbaro", Bard: "Bardo", Cleric: "Clérigo", Druid: "Druida", Fighter: "Guerreiro", Monk: "Monge", Paladin: "Paladino", Ranger: "Patrulheiro", Rogue: "Ladino", Sorcerer: "Feiticeiro", Warlock: "Bruxo", Wizard: "Mago" };
+    const cfClass = (f) => { const base = f.u || f.c; return (CFCLS[base] || base) + (f.u ? ` (${f.c})` : ""); };
+    const cfLevel = (f) => f.l && f.l.length ? "nível " + (f.l.length > 3 ? f.l[0] + "+" : f.l.join(", ")) : "";
+    const cfTitle = (f) => f.p || f.n;
+    const cfPlain = (f) => String(f.d).replace(/\r/g, "").replace(/\n\s*[*-]\s+/g, " • ").replace(/\n+/g, " ").replace(/[*_#]+/g, "").replace(/\s+/g, " ").trim();
+    const cfFind = (q, max) => { const ws = q.split(/\s+/).filter(Boolean); if (!ws.length) return []; return CF.map((f, i) => [f, i]).filter(([f]) => { const hay = nz(`${f.n} ${f.p} ${CFCLS[f.u || f.c] || ""} ${f.u || f.c} ${f.c}`); return ws.every((w) => hay.includes(w)); }).slice(0, max); };
+    const classRows = (q) => cfFind(q, 12).map(([f, i]) => `<div class="res" data-cfopen="${i}"><span><b>${esc(cfTitle(f))}</b>${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""}<br><span class="muted">Habilidade de classe · ${esc(cfClass(f))} · ${esc(cfLevel(f))} · ${f.e}</span></span></div>`).join("");
+    function openClassFeature(i, origin) {
+      const f = CF[i]; if (!f) return; spOrigin = origin || "panel";
+      $("#spd-body").innerHTML = `<h3>${esc(cfTitle(f))}</h3><div class="muted">${esc(f.n)}</div>
+        <div class="sp-meta"><div><b>Classe:</b> ${esc(cfClass(f))}</div>${f.l && f.l.length ? `<div><b>Níveis:</b> ${esc(f.l.join(", "))}</div>` : ""}<div><b>Regras:</b> SRD ${f.e === "2024" ? "5.2 (2024)" : "5.1 (2014)"}</div></div>
+        <div class="sp-note">Texto original em inglês (SRD).</div>
+        <div class="sp-body">${esc(String(f.d).replace(/\r/g, ""))}</div>`;
+      $("#spd").hidden = false; $("#spd").scrollTop = 0; layout();
     }
     function openAbility(l, ix = 0, origin) {
       const v = ABI.get(l); if (!v) return; spOrigin = origin || spOrigin; const it = v.items[ix] || v.items[0], info = descInfo(it.a.name, it.a.desc, it.m);
@@ -393,6 +412,14 @@
       if (e.key !== "Enter") return; e.preventDefault(); const v = spq.value.trim(); if (!v) return;
       const ex = catalog().find((s) => s.name.toLowerCase() === v.toLowerCase() || nz(D.S[s.name.toLowerCase()]?.[0] || "") === nz(v));
       cmSpells.push(ex ? { key: ex.key, name: ex.name } : { key: null, name: v }); spq.value = ""; spsug.hidden = true; chips();
+    });
+
+    /* busca de habilidade de classe no campo de características da ficha */
+    const cfq = $("#cm-cfq"), cfsug = $("#cm-cfsug");
+    cfq.addEventListener("input", () => {
+      const r = cfFind(nz(cfq.value.trim()), 10);
+      cfsug.hidden = !r.length;
+      cfsug.innerHTML = r.map(([f, i]) => `<div data-cfadd="${i}">${esc(cfTitle(f))}${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""} <span class="muted">· ${esc(cfClass(f))} · ${esc(cfLevel(f))} · ${f.e}</span></div>`).join("");
     });
     function resetForm() {
       editKey = null; cmSpells = []; formPhoto = undefined; chips();
@@ -449,12 +476,16 @@
       tip.style.display = "none";
       if (!t.closest(".field-name")) sug.hidden = true;
       if (!t.closest("#cm-spq,#cm-spsug")) spsug.hidden = true;
+      if (!t.closest("#cm-cfq,#cm-cfsug")) cfsug.hidden = true;
       if (sg) return pick(sg.dataset.sug);
       if (t.closest("[data-online]")) return online();
       const ao = t.closest("[data-abopen]"); if (ao) return openAbility(ao.dataset.abopen, 0, "panel");
       const ax = t.closest("[data-abix]"); if (ax) return openAbility(ax.dataset.l, +ax.dataset.abix);
       const pb = t.closest("[data-ph]"); if (pb) return askPhoto(pb.dataset.ph);
       const px = t.closest("[data-phx]"); if (px) { const k = px.dataset.phx; delete PH[k]; await del("img", k); touch(k); renderBestiary(); window.__ini.render(); return openSheet(k); }
+      const co = t.closest("[data-cfopen]"); if (co) return openClassFeature(+co.dataset.cfopen, t.closest("#sheet") ? "sheet" : "panel");
+      const ca = t.closest("[data-cfadd]");
+      if (ca) { const f = CF[+ca.dataset.cfadd]; if (f) { const ta = $("#cm-traits"); ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, "") + "\n" : "") + `${cfTitle(f)}: ${cfPlain(f)}`; } cfq.value = ""; cfsug.hidden = true; return; }
       const so = t.closest("[data-spopen]"); if (so) return openSpell(so.dataset.spopen, t.closest("#sheet") ? "sheet" : "panel");
       const sa = t.closest("[data-spadd]");
       if (sa) { const s = catalog().find((x) => x.key === sa.dataset.spadd); if (s && !cmSpells.some((c) => c.key === s.key)) cmSpells.push({ key: s.key, name: s.name }); spq.value = ""; spsug.hidden = true; return chips(); }
