@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.github.com https://api.open5e.com; worker-src 'self'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.github.com https://api.open5e.com https://pdjzahpxjrlbqqtzkfdr.supabase.co; worker-src 'self'; base-uri 'self'; form-action 'self'">
   <title>Iniciativa — D&D 5e</title>
   <meta name="theme-color" content="#111018">
   <link rel="manifest" href="manifest.json">
@@ -15,6 +15,9 @@
   <script src="js/icones.js" defer></script>
   <script src="js/iniciativa.js" defer></script>
   <script src="js/app.js" defer></script>
+  <script src="js/config-nuvem.js" defer></script>
+  <script src="js/nuvem.js" defer></script>
+  <script src="js/campanha-ini.js" defer></script>
 </head>
 <body>
   <main class="tracker">
@@ -77,6 +80,13 @@
         </div>
       </form>
     </section>
+
+    <details class="panel" id="camp-ini" hidden>
+      <summary class="panel-title" style="cursor:pointer">Personagens da campanha</summary>
+      <div class="bar"><select id="ci-camp" aria-label="Campanha" style="width:auto"></select><span class="grow"></span><button type="button" class="small" id="ci-recarregar">Atualizar</button><button type="button" class="small primary" id="ci-todos">Adicionar todos</button></div>
+      <div id="ci-msg" class="muted"></div>
+      <div id="ci-lista"></div>
+    </details>
 
     <section class="panel">
       <div class="combat-bar">
