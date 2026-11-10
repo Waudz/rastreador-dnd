@@ -392,12 +392,36 @@
         else for (const [x, en] of lista) CF.push({ e: "2014", c: x.u || en, u: x.u ? en : "", n: x.n, p: "", l: [], d: x.d, ldj: true });
       }
     }
+
+    /* adiciona uma habilidade de classe a uma ficha própria (personagem, NPC ou monstro criado por você) */
+    const cfAlvos = (i) => {
+      const alvos = ALL.filter((m) => m.custom).sort((x, y) => x.name.localeCompare(y.name));
+      return alvos.length
+        ? `<div class="sp-meta"><b>Adicionar a uma ficha sua:</b><div class="row" style="margin:6px 0 0"><select id="cf-alvo" style="flex:1 1 150px">${alvos.map((m) => `<option value="${esc(m.key)}">${esc(m.name)}</option>`).join("")}</select><button type="button" class="small primary" data-cfto="${i}">Adicionar à ficha</button></div><div class="muted" id="cf-msg" style="margin-top:4px"></div></div>`
+        : '<div class="sp-meta muted">Para adicionar esta habilidade a um personagem, crie antes uma ficha própria em “Criar ficha”.</div>';
+    };
+    async function cfAdicionar(i) {
+      const f = CF[i], m = BY[$("#cf-alvo")?.value], msg = (t) => { const e = $("#cf-msg"); if (e) e.innerHTML = t; };
+      if (!f || !m) return;
+      const nome = cfTitle(f);
+      if ((m.traits || []).some((t) => t.name === nome)) { msg(`${esc(m.name)} já tem “${esc(nome)}”.`); return; }
+      const traitsRaw = m.raw?.traits ?? (m.traits || []).map((t) => `${t.name}: ${t.desc}`).join("\n");
+      const actsRaw = m.raw?.actions ?? (m.actions || []).map((x) => `${x.name} | ${x.desc}`).join("\n");
+      const linha = `${nome}: ${cfPlain(f)}`;
+      m.traits = [...(m.traits || []), { name: nome, desc: cfPlain(f) }];
+      m.raw = { traits: (traitsRaw.trim() ? traitsRaw.replace(/\s+$/, "") + "\n" : "") + linha, actions: actsRaw };
+      m.updatedAt = Date.now();
+      await put("mon", [m]); await reload(); queueSync();
+      msg(`“${esc(nome)}” adicionada a ${esc(m.name)}.`);
+      if (curSheet === m.key) openSheet(m.key);
+    }
     function openClassFeature(i, origin) {
       const f = CF[i]; if (!f) return; spOrigin = origin || "panel";
       $("#spd-body").innerHTML = `<h3>${esc(cfTitle(f))}</h3><div class="muted">${esc(f.n)}</div>
         <div class="sp-meta"><div><b>Classe:</b> ${esc(cfClass(f))}</div>${f.l && f.l.length ? `<div><b>Níveis:</b> ${esc(f.l.join(", "))}</div>` : ""}<div><b>Regras:</b> ${f.ldj ? "Livro do Jogador (2014)" : "SRD " + (f.e === "2024" ? "5.2 (2024)" : "5.1 (2014)")}</div></div>
         ${f.ldj ? '<div class="sp-note">Texto do Livro do Jogador (tradução pessoal).</div>' : CFL.has(cfKey(f)) ? '<div class="sp-note">Texto do Livro do Jogador (tradução pessoal). O original em inglês (SRD) está no final.</div>' : CFT[cfKey(f)] ? '<div class="sp-note">Tradução própria do SRD (CC-BY-4.0). O original em inglês está no final.</div>' : '<div class="sp-note">Texto original em inglês (SRD); ainda sem tradução.</div>'}
-        <div class="sp-body">${esc(String(cfText(f)).replace(/\r/g, ""))}</div>${!f.ldj && CFT[cfKey(f)] ? `<div class="orig">Original: ${esc(String(f.d).replace(/\r/g, ""))}</div>` : ""}`;
+        <div class="sp-body">${esc(String(cfText(f)).replace(/\r/g, ""))}</div>${!f.ldj && CFT[cfKey(f)] ? `<div class="orig">Original: ${esc(String(f.d).replace(/\r/g, ""))}</div>` : ""}
+        ${cfAlvos(i)}`;
       $("#spd").hidden = false; $("#spd").scrollTop = 0; layout();
     }
     function openAbility(l, ix = 0, origin) {
@@ -523,6 +547,7 @@
       const ax = t.closest("[data-abix]"); if (ax) return openAbility(ax.dataset.l, +ax.dataset.abix);
       const pb = t.closest("[data-ph]"); if (pb) return askPhoto(pb.dataset.ph);
       const px = t.closest("[data-phx]"); if (px) { const k = px.dataset.phx; delete PH[k]; await del("img", k); touch(k); renderBestiary(); window.__ini.render(); return openSheet(k); }
+      const ct = t.closest("[data-cfto]"); if (ct) return cfAdicionar(+ct.dataset.cfto);
       const co = t.closest("[data-cfopen]"); if (co) return openClassFeature(+co.dataset.cfopen, t.closest("#sheet") ? "sheet" : "panel");
       const ca = t.closest("[data-cfadd]");
       if (ca) { const f = CF[+ca.dataset.cfadd]; if (f) { const ta = $("#cm-traits"); ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, "") + "\n" : "") + `${cfTitle(f)}: ${cfPlain(f)}`; } cfq.value = ""; cfsug.hidden = true; return; }
