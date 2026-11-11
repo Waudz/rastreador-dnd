@@ -144,7 +144,7 @@
     const pt = (m) => { const k = m.name.toLowerCase(); return TR[k] || D.M[k] || ""; };
 
     /* banco local (IndexedDB) */
-    let db, ALL = [], SP = [], PH = {}, BY = {}, ABI = new Map(), curSheet = null, phKey = null, formPhoto, shown = 40, showAll = false, editKey = null, cmSpells = [], spOrigin = "panel";
+    let db, ALL = [], SP = [], PH = {}, BY = {}, ABI = new Map(), curSheet = null, phKey = null, formPhoto, shown = 40, showAll = false, editKey = null, cmSpells = [];
     const rq = (r) => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
     const done = (t) => new Promise((ok, no) => { t.oncomplete = ok; t.onerror = () => no(t.error); });
     const put = async (store, arr) => { const t = db.transaction(store, "readwrite"); arr.forEach((x) => t.objectStore(store).put(x)); await done(t); };
@@ -215,15 +215,13 @@
     $("#ball").onclick = () => { showAll = !showAll; shown = 40; renderBestiary(); };
 
     /* abas laterais: ficha (direita) e magia (esquerda, ou empilhada na direita) */
-    function layout() {
-      const sp=$("#spd"),dest=$(innerWidth<1600||spOrigin==="sheet"?"#dock-r":"#dock-l");
-      if(sp.parentNode!==dest)dest.appendChild(sp);
-      window.PAINEIS_LAYOUT.aplicar();
-    }
+    function layout() { window.PAINEIS_LAYOUT.aplicar(); }
     window.reorganizarPaineis=layout;
     let focoFicha = null;
-    const closeSheet = () => { $("#sheet").hidden = true; $("#tip").style.display = "none"; layout(); focoFicha?.focus?.(); };
-    const closeSpell = () => { $("#spd").hidden = true; $("#tip").style.display = "none"; layout(); };
+    /* painel único: window.PAINEL (js/painel-detalhes.js) decide qual vista aparece e como voltar */
+    const closeSheet = () => { window.PAINEL.fechar(); $("#tip").style.display = "none"; focoFicha?.focus?.(); };
+    const voltarPainel = () => { window.PAINEL.voltar(); $("#tip").style.display = "none"; };
+    window.abrirMagiaNoPainel = (id) => openSpell(id);
 
     /* ficha do monstro */
     const speed = (sp) => sp ? Object.entries(sp).filter(([k, v]) => k !== "unit" && v).map(([k, v]) => k === "walk" ? fm(v) : `${SPD[k] || k} ${fm(v)}`).join(", ") : "—";
@@ -258,7 +256,7 @@
         gerenciar:(m.custom?'<button class="small primary" data-edit="'+esc(m.key)+'">Editar ficha</button> ':'')+'<button class="small" data-ph="'+esc(m.key)+'">'+(PH[m.key]?'Trocar foto':'Adicionar foto')+'</button>'+(PH[m.key]?'<button class="small subtle" data-phx="'+esc(m.key)+'">'+(m.custom?'Remover foto':'Voltar à foto padrão')+'</button>':'')
       });
       document.dispatchEvent(new Event('ficha:fechar-personagem'));
-      $("#sheet").hidden = false; $("#sheet-body").scrollTop = 0; layout(); $("#sh-close").focus();
+      window.PAINEL.mostrar("sheet"); $("#sheet").scrollTop = 0; $("#sheet-body").scrollTop = 0; $("#sh-close").focus();
     }
 
     /* magias: lista no painel, texto na aba lateral */
@@ -330,27 +328,27 @@
       if (curSheet === m.key) openSheet(m.key);
     }
     function openClassFeature(i, origin) {
-      const f = CF[i]; if (!f) return; spOrigin = origin || "panel";
+      const f = CF[i]; if (!f) return;
       $("#spd-body").innerHTML = `<h3>${esc(cfTitle(f))}</h3><div class="muted">${esc(f.n)}</div>
         <div class="sp-meta"><div><b>Classe:</b> ${esc(cfClass(f))}</div>${f.l && f.l.length ? `<div><b>Níveis:</b> ${esc(f.l.join(", "))}</div>` : ""}<div><b>Regras:</b> ${f.ldj ? "Livro do Jogador (2014)" : "SRD " + (f.e === "2024" ? "5.2 (2024)" : "5.1 (2014)")}</div></div>
         ${f.ldj ? '<div class="sp-note">Texto do Livro do Jogador (tradução pessoal).</div>' : CFL.has(cfKey(f)) ? '<div class="sp-note">Texto do Livro do Jogador (tradução pessoal). O original em inglês (SRD) está no final.</div>' : CFT[cfKey(f)] ? '<div class="sp-note">Tradução própria do SRD (CC-BY-4.0). O original em inglês está no final.</div>' : '<div class="sp-note">Texto original em inglês (SRD); ainda sem tradução.</div>'}
         <div class="sp-body">${esc(String(cfText(f)).replace(/\r/g, ""))}</div>${!f.ldj && CFT[cfKey(f)] ? `<div class="orig">Original: ${esc(String(f.d).replace(/\r/g, ""))}</div>` : ""}
         ${cfAlvos(i)}`;
-      $("#spd").hidden = false; $("#spd").scrollTop = 0; layout();
+      window.PAINEL.empilhar("spd");
     }
     function openAbility(l, ix = 0, origin) {
-      const v = ABI.get(l); if (!v) return; spOrigin = origin || spOrigin; const it = v.items[ix] || v.items[0], info = descInfo(it.a.name, it.a.desc, it.m);
+      const v = ABI.get(l); if (!v) return; const it = v.items[ix] || v.items[0], info = descInfo(it.a.name, it.a.desc, it.m);
       $("#spd-body").innerHTML = `<h3>${esc(nmA(it.a))}</h3><div class="muted">${esc(it.a.name)}</div>
         <div class="sp-meta"><div><b>Tipo:</b> Habilidade de monstro (${esc(it.k.toLowerCase())})</div><div><b>Exemplo de:</b> ${esc(pt(it.m) || it.m.name)} <button class="small" data-view="${esc(it.m.key)}">Abrir ficha</button></div></div>
         <div class="sp-body">${info.html}</div>${info.tr && info.orig !== info.plain ? `<div class="orig">Original: ${esc(info.orig)}</div>` : ""}
         ${v.items.length > 1 ? `<div class="sp-meta"><b>Também em:</b> ${v.items.map((x, i) => `<a class="splink" data-abix="${i}" data-l="${esc(l)}">${esc(pt(x.m) || x.m.name)}</a>`).join(" · ")}<br><span class="muted">O texto muda conforme o monstro (números e alcances).</span></div>` : ""}`;
-      $("#spd").hidden = false; $("#spd").scrollTop = 0; layout();
+      window.PAINEL.empilhar("spd");
     }
     function openSpell(id, origin) {
       const key = String(id), l = key.replace(/^ds:/, "").toLowerCase();
       const rec = SP.find((s) => s.key === key) || SP.filter((s) => s.name.toLowerCase() === l).sort((a, b) => (b.document?.key === "srd-2014") - (a.document?.key === "srd-2014"))[0];
       const d = D.S[rec ? rec.name.toLowerCase() : l]; if (!rec && !d) return;
-      spOrigin = origin || "panel";
+     
       const pm = LDJ.meta[rec ? rec.name.toLowerCase() : l];
       const meta = rec ? [["Círculo", rec.level ? rec.level + "º círculo" : "Truque"], ["Escola", SCH[rec.school?.name] || rec.school?.name], ["Tempo de conjuração", cap(tr(rec.casting_time || ""))], ["Alcance", tr(rec.range_text || "")], ["Componentes", [rec.verbal && "V", rec.somatic && "S", rec.material && "M"].filter(Boolean).join(", ")], ["Duração", cap(tr(rec.duration || "")) + (rec.concentration ? " (concentração)" : "")], ["Ritual", rec.ritual ? "Sim" : ""], ["Fonte", srcOf(rec)]] : pm ? [["Círculo", pm.nivel ? pm.nivel + "º círculo" : "Truque"], ["Escola", pm.escola], ["Tempo de conjuração", pm.tempo], ["Alcance", pm.alcance], ["Componentes", pm.comp], ["Duração", pm.dur], ["Ritual", pm.ritual ? "Sim" : ""], ["Fonte", "Livro do Jogador (tradução pessoal)"]] : [];
       const mat = d?.[2] || rec?.material_specified || "", en = rec ? (rec.desc || "") + (rec.higher_level ? "\n\n" + rec.higher_level : "") : "";
@@ -359,7 +357,7 @@
         <div class="sp-meta">${meta.filter(([, v]) => v).map(([k, v]) => `<div><b>${k}:</b> ${esc(v)}</div>`).join("")}</div>
         ${other ? '<div class="sp-note">Texto em português do SRD 5.1 (2014). A versão desta fonte pode ter diferenças; o original está no final.</div>' : ""}
         <div class="sp-body">${esc(d ? d[1] : en)}</div>${mat ? `<div class="sp-body"><b>Materiais:</b> ${esc(mat)}</div>` : ""}${other && en ? `<div class="orig">Original: ${esc(en)}</div>` : ""}`;
-      $("#spd").hidden = false; $("#spd").scrollTop = 0; layout();
+      window.PAINEL.empilhar("spd");
     }
 
     /* criar / editar ficha (monstro, personagem ou NPC) */
@@ -455,8 +453,8 @@
     ["#sf-type", "#sf-lvl", "#sf-sch", "#sf-ex"].forEach((s) => $(s).addEventListener("change", () => { syncFilters(); spSearch(); }));
     syncFilters();
     $("#sq-x").onclick = () => { $("#sq").value = ""; $("#sq-x").hidden = true; spSearch(); $("#sq").focus(); };
-    $("#sh-close").onclick = closeSheet; $("#spd-close").onclick = closeSpell;
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { sug.hidden = true; if (!$("#spd").hidden) closeSpell(); else closeSheet(); } });
+    $("#sh-close").onclick = closeSheet; $("#spd-close").onclick = closeSheet; $("#spd-voltar").onclick = voltarPainel;
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { sug.hidden = true; if (!$("#spd").hidden) voltarPainel(); else if (!$("#sheet").hidden) closeSheet(); } });
     $("#combatants").addEventListener("click", (e) => { if (e.target.closest("button,input,select,.fx-form,.fxchip")) return; const a = e.target.closest(".combatant"); if (a && a.dataset.key) openSheet(a.dataset.key); });
     document.addEventListener("click", async (e) => {
       const t = e.target, d = t.dataset, sg = t.closest("[data-sug]");

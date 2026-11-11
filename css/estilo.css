@@ -275,7 +275,7 @@ select{width:100%;min-width:0;height:39px;padding:0 10px;border:1px solid var(--
 :root{--dw:420px}
 .dock{position:fixed;top:0;bottom:0;width:var(--dw);z-index:20;display:flex;flex-direction:column;background:var(--panel);box-shadow:0 0 30px rgba(0,0,0,.45)}
 .dock[hidden],.drawer[hidden]{display:none}
-#dock-r{right:0;border-left:1px solid var(--gold-dark)}#dock-l{left:0;border-right:1px solid var(--gold-dark)}
+#dock-r{right:0;border-left:1px solid var(--gold-dark)}
 .drawer{flex:1 1 0;min-height:0;overflow:auto;padding:18px}
 .drawer+.drawer:not([hidden]){border-top:2px solid var(--gold-dark)}
 .sh-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
@@ -546,5 +546,5 @@ input.iniciativa-valor{display:block;padding:0!important;text-align:center;line-
 #paineis-globais{position:fixed;top:0;right:0;bottom:0;z-index:60;width:min(440px,100%);display:flex;flex-direction:column;background:var(--panel)}#paineis-globais[hidden]{display:none}#paineis-globais>.painel-global{position:static;width:100%;flex:1 1 0;min-height:0}#paineis-globais>.painel-global+.painel-global{border-top:2px solid var(--line)}
 
 /* Painéis reservam espaço no desktop; descrições compactas por foco ou mouse. */
-@media(min-width:700px){body:has(#ci-resumo:not([hidden])),body:has(#paineis-globais:not([hidden])){padding-right:calc(min(440px,100vw) + 22px)!important}}
+@media(min-width:700px){body:has(#paineis-globais:not([hidden])){padding-right:calc(min(440px,100vw) + 22px)!important}}
 .ci-lista-compacta{display:flex;flex-wrap:wrap;gap:8px 14px;margin:8px 0 16px}.ci-dica{position:relative;cursor:help;border-bottom:1px dotted var(--gold-dark);font-size:14px}.ci-dica>[role=tooltip]{display:none;position:absolute;z-index:80;right:0;top:100%;width:min(320px,75vw);padding:12px;background:var(--panel);border:1px solid var(--gold-dark);box-shadow:0 5px 18px #0007;white-space:normal;font-weight:400}.ci-dica:hover>[role=tooltip],.ci-dica:focus>[role=tooltip]{display:block}.ci-atributos{margin-top:18px}.ci-resumo h3{margin:18px 0 8px}

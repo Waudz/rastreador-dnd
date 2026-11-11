@@ -252,7 +252,7 @@
     const info = c.habilidades.map((h) => { const m = modA(h.atr), prep = h.id === "Cleric" || h.id === "Druid" ? niv(h.id) + m : h.id === "Wizard" ? niv(h.id) + m : h.id === "Paladin" ? Math.floor(niv(h.id) / 2) + m : h.id === "Artificer" ? Math.floor(niv(h.id) / 2) + m : null; return `<div class="muted">${esc(h.classe)}: atributo ${R.ATR_NOME[h.atr]} · CD ${8 + pb + m} · ataque ${fm(pb + m)}${prep != null ? ` · preparar até ${Math.max(1, prep)} magias` : ""}</div>`; }).join("");
     return '<div class="conjuracao-info">'+info+'</div><h3 class="sub">Espaços de magia</h3>' + (partes.join("") || '<span class="muted">Sem espaços de magia para esta combinação de classes.</span>');
   }
-  const linhaMag = (m, i) => `<details class="item"><summary>${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${m.l===0?' <span class="badge">Truque</span>':m.semprePreparada?' <span class="badge">Sempre Preparada</span>':m.origem==='Raça'?' <span class="badge">Magia Racial</span>':R.preparacao(F()).some(x=>x.pertence(m))?(m.prep?' <span class="badge">Preparada</span>':' <span class="muted">Não Preparada</span>'):' <span class="badge">Conhecida</span>'}</summary><div>${m.conc ? '<span class="badge">Concentração</span>' : ""}${m.ritual ? '<span class="badge">Ritual</span>' : ""}${m.cab ? `<div class="muted" style="margin-bottom:6px">${esc(m.cab)}</div>` : ""}<div class="pre">${esc(m.d || "")}</div><div class="row" style="margin:8px 0 0">${m.l > 0 && !m.semprePreparada && m.origem!=="Raça" && R.preparacao(F()).some(x=>x.pertence(m)) ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span><button type="button" class="small danger" data-rm-mag="${i}">Remover</button></div></div></details>`;
+  const linhaMag = (m, i) => `<details class="item"${m.en?` data-mag-en="${esc(m.en)}"`:""}><summary>${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${m.l===0?' <span class="badge">Truque</span>':m.semprePreparada?' <span class="badge">Sempre Preparada</span>':m.origem==='Raça'?' <span class="badge">Magia Racial</span>':R.preparacao(F()).some(x=>x.pertence(m))?(m.prep?' <span class="badge">Preparada</span>':' <span class="muted">Não Preparada</span>'):' <span class="badge">Conhecida</span>'}</summary><div>${m.conc ? '<span class="badge">Concentração</span>' : ""}${m.ritual ? '<span class="badge">Ritual</span>' : ""}${m.cab ? `<div class="muted" style="margin-bottom:6px">${esc(m.cab)}</div>` : ""}<div class="pre">${esc(m.d || "")}</div><div class="row" style="margin:8px 0 0">${m.l > 0 && !m.semprePreparada && m.origem!=="Raça" && R.preparacao(F()).some(x=>x.pertence(m)) ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span><button type="button" class="small danger" data-rm-mag="${i}">Remover</button></div></div></details>`;
   function listaMagias() {
     const l = MAG().map((m, i) => ({ m, i })).sort((a, b) => a.m.l - b.m.l || a.m.n.localeCompare(b.m.n));
     return l.length ? R.preparacao(F()).map(x=>`<p class="muted">${esc(x.nome)}: ${x.usadas} de ${x.limite} magias preparadas. Truques e magias sempre preparadas não contam nesse limite.</p>`).join("")+l.map((x,i) => (i===0 || l[i-1].m.l!==x.m.l ? '<h3 class="circulo-titulo">'+(x.m.l?x.m.l+"º círculo":"Truques")+'</h3>':'')+linhaMag(x.m,x.i)).join("") : '<div class="estado-vazio"><strong>Seu repertório começa aqui</strong><p>Busque no catálogo abaixo para adicionar as magias conhecidas e preparar as disponíveis para sua classe.</p><button type="button" class="small" id="focar-catalogo-magias">Buscar uma magia</button></div>';
@@ -430,6 +430,14 @@
     if (t.id === "in-foto" && t.files[0]) { trocarFoto(t.files[0]); t.value = ""; }
   });
 
+  /* na ficha embutida na iniciativa, a magia abre no painel de detalhes do rastreador (e "Voltar" retorna a esta ficha) */
+  document.addEventListener("click", (e) => {
+    if (!emPainel || window.parent === window) return;
+    const s = e.target.closest("summary"), d = s && s.parentElement && s.parentElement.dataset && s.parentElement.dataset.magEn;
+    if (!d || !s.closest("#lista-mag")) return;
+    e.preventDefault();
+    window.parent.postMessage({ tipo: "ficha-magia", id, en: d }, location.origin);
+  }, true);
   document.addEventListener("click", async (e) => {
     const t = e.target, c = (s) => t.closest(s); if (!P) return;
     if(c("#focar-catalogo-magias")){ $("#mag-q").focus();buscarMagias();return;}

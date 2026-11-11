@@ -32,10 +32,10 @@
     if($('#ci-ficha-frame')?.dataset?.personagem !== p.id) $("#ci-resumo-corpo").innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(p.id)+'" title="Ficha de '+esc(p.nome)+'" src="personagem.html?id='+encodeURIComponent(p.id)+'&modo=painel"></iframe>';
     $('#ci-ficha-completa').href='personagem.html?id='+encodeURIComponent(p.id);
     document.body.classList.add('com-ficha-lateral');
-    if(window.reorganizarPaineis){$("#sheet").hidden=true;}
-    $("#ci-resumo").hidden=false;window.reorganizarPaineis?.();$("#ci-resumo-fechar").focus?.();
+    if(window.PAINEL)window.PAINEL.mostrar("ci-resumo");else{if(window.reorganizarPaineis)$("#sheet").hidden=true;$("#ci-resumo").hidden=false;}
+    window.reorganizarPaineis?.();$("#ci-resumo-fechar").focus?.();
   }
-  function fecharResumo(){$("#ci-resumo").hidden=true;document.body.classList.remove('com-ficha-lateral');window.reorganizarPaineis?.();focoAnterior?.focus?.();}
+  function fecharResumo(){if(window.PAINEL)window.PAINEL.fechar();$("#ci-resumo").hidden=true;document.body.classList.remove('com-ficha-lateral');window.reorganizarPaineis?.();focoAnterior?.focus?.();}
 
   function adicionar(p) {
     if (!podeUsar() || emCombate(p)) return;
@@ -123,6 +123,7 @@
     const frame=$('#ci-ficha-frame');
     if(!podeUsar() || e.origin!==location.origin || !frame?.contentWindow || e.source!==frame.contentWindow || e.data?.id!==frame.dataset.personagem)return;
     if(e.data.tipo==='ficha-fechar'){fecharResumo();return;}
+    if(e.data.tipo==='ficha-magia'){if(typeof e.data.en==='string'&&e.data.en.length<120)window.abrirMagiaNoPainel?.(e.data.en);return;}
     if(e.data.tipo==='ficha-salvando'){
       if(!ocupadas.has(e.data.id))basesPV.set(e.data.id,window.__ini.list().find(c=>c.pid===e.data.id)?.hp);
       ocupadas.add(e.data.id);return;

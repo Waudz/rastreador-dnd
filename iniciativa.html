@@ -28,6 +28,7 @@
   <script src="js/rolagens.js" defer></script>
   <script src="js/ficha-monstro.js" defer></script>
   <script src="js/paineis-layout.js" defer></script>
+  <script src="js/painel-detalhes.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/origens.js" defer></script>
   <script src="js/texto-regras.js" defer></script>
@@ -196,18 +197,17 @@
 
     <footer class="muted" style="font-size:11px;margin:26px 0 8px;line-height:1.6">Este site usa material do System Reference Document 5.1 da Wizards of the Coast LLC, licenciados sob a Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode). Os dados são obtidos da API Open5e (open5e.com). Este é um projeto de fãs, sem vínculo com a Wizards of the Coast.</footer>
     <input type="file" id="ph-file" accept="image/*" hidden>
-    <div id="dock-l" class="dock" hidden></div>
     <div id="dock-r" class="dock" hidden>
       <aside id="sheet" class="drawer" hidden aria-label="Ficha">
         <div class="sh-top"><span class="muted">Ficha</span><button type="button" class="small" id="sh-close">Fechar (Esc)</button></div>
         <div id="sheet-body"></div>
       </aside>
       <aside id="spd" class="drawer" hidden aria-label="Magia">
-        <div class="sh-top"><span class="muted">Magia</span><button type="button" class="small" id="spd-close">Fechar</button></div>
+        <div class="sh-top"><button type="button" class="small" id="spd-voltar" hidden>Voltar</button><span class="muted">Magia ou habilidade</span><button type="button" class="small" id="spd-close">Fechar</button></div>
         <div id="spd-body"></div>
       </aside>
+      <aside id="ci-resumo" class="ci-resumo" aria-label="Ficha do personagem" hidden><div class="ci-resumo-topo"><strong>Ficha do personagem</strong><a id="ci-ficha-completa" class="btnlike small" target="_blank" rel="noopener" href="personagem.html">Ficha completa ↗</a><button type="button" id="ci-resumo-fechar">Fechar</button></div><div id="ci-resumo-corpo"></div></aside>
     </div>
-    <aside id="ci-resumo" class="ci-resumo" aria-label="Ficha do personagem" hidden><div class="ci-resumo-topo"><strong>Ficha do personagem</strong><a id="ci-ficha-completa" class="btnlike small" target="_blank" rel="noopener" href="personagem.html">Ficha completa ↗</a><button type="button" id="ci-resumo-fechar">Fechar</button></div><div id="ci-resumo-corpo"></div></aside>
     <div id="tip"></div>
   </main>
 </body>

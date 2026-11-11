@@ -117,7 +117,7 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 
 /* Um único tamanho e cabeçalho para personagens, monstros e NPCs. */
 .ci-resumo, .dock { width:var(--ficha-painel); max-width:100%; top:0; bottom:0; right:0; border-radius:0; background:var(--bg); border-color:var(--line); }
-.dock#dock-r, .dock#dock-l { border-color:var(--line); }
+.dock#dock-r { border-color:var(--line); }
 .ci-resumo { display:flex; flex-direction:column; padding:0; overflow:hidden; right:0; border-top:0; border-bottom:0; }
 #ci-resumo-corpo { flex:1; min-height:0; }
 #ci-ficha-frame { display:block; border:0; width:100%; height:100%; background:var(--bg); }
@@ -170,10 +170,10 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
   .inspiracao-ficha { flex-wrap:wrap; }
 }
 @media(min-width:1200px) {
-  body[data-app-view] { padding-left:calc(24px + var(--painel-reserva-esquerda,0px)); padding-right:calc(24px + var(--painel-reserva-direita,0px)); }
+  body[data-app-view] { padding-right:calc(24px + var(--painel-reserva-direita,0px)); }
 }
 @media(max-width:1199px) {
-  #dock-l, #dock-r, .ci-resumo {
+  #dock-r, .ci-resumo {
     position:relative;
     inset:auto;
     z-index:auto;
@@ -196,3 +196,9 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
   .ci-resumo-topo button, .sh-top button { min-height:44px; }
   .ficha-acoes .btnlike, .ficha-acoes button { min-height:36px; }
 }
+
+/* a ficha do personagem (iframe) vive dentro do painel único, como as outras vistas */
+#dock-r > .ci-resumo { position:static; inset:auto; flex:1 1 0; width:auto; max-width:none; min-height:0; height:auto; margin:0; border:0; border-radius:0; box-shadow:none; z-index:auto; }
+#dock-r > .ci-resumo[hidden], #dock-r > .drawer[hidden] { display:none; }
+#dock-r > .drawer { flex:1 1 0; min-height:0; }
+.sh-top #spd-voltar { margin-right:8px; }
