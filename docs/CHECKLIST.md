@@ -1,6 +1,6 @@
 # Acompanhamento dos ajustes
 
-As correções da interface usam o banco atual. A migração do acervo por conta permanece separada e desativada até o SQL 02 ser aplicado. Este documento separa implementação, testes e tarefas de produção.
+As correções da interface estão publicadas na main. A migração 02 foi aplicada no Supabase real e o acervo foi importado para a conta de destino; a sincronização por conta foi ativada. Este documento separa implementação, testes e tarefas de produção.
 
 | Pedido | Preparado no código | Verificação |
 |---|---|---|
@@ -24,13 +24,15 @@ As correções da interface usam o banco atual. A migração do acervo por conta
 | D&D 2024 desabilitado | Não carrega o pacote; filtra monstros, magias, habilidades e fontes já baixados | Testes da edição; dados pessoais mantidos |
 | Trocar token GitHub por acervo da conta | Acervo privado, importação validada, sincronização e separação por usuário | PostgreSQL: RLS, exclusões e duas gravações concorrentes; testes de troca de conta e falha remota |
 
-## Ainda depende de produção
+## Migração de produção
 
-1. Aplicar a migração 02 no projeto Supabase real.
-2. Habilitar NUVEM_CONFIG.acervoPorConta e publicar a ativação após a migração.
-3. Entrar na conta de destino e importar o backup privado.
-4. Recuperar as fotos das fichas já importadas e atribuir os responsáveis quando os jogadores entrarem na campanha.
-5. Conferir login, sessões, fotos e edição em aparelhos reais após a publicação.
+A estrutura privada de acervos foi criada no projeto real. Foram importadas 8 criações, 6 fotos e 361 magias pessoais, preservando os 8 personagens existentes. Antes da migração foi salva uma cópia das fichas.
+
+A leitura foi verificada com a identidade da conta de destino, com uma identidade diferente e com as permissões anônimas. A configuração do site ativa a sincronização por conta. O token legado só é removido do navegador depois de uma sincronização bem-sucedida.
+
+Os personagens existentes estão sem jogador atribuído. Quando os jogadores criarem suas contas e entrarem na campanha, o mestre escolhe o responsável pelo personagem existente. Não é necessário recriar as fichas.
+
+Ainda falta conferir o funcionamento nas sessões e aparelhos reais após recarregar a atualização; duas criações não tinham foto no backup original.
 
 ## Cobertura das regras
 
