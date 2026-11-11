@@ -27,7 +27,7 @@
   }
   function filtrarPersonagens(lista,filtro){
     const normal=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-    return lista.filter(p=>{const r=resumoPersonagem(p.ficha);return normal(p.nome).includes(normal(filtro.nome))&&(!filtro.classe||r.ids.includes(filtro.classe))&&(!filtro.nivel||r.nivel===Number(filtro.nivel));});
+    return lista.filter(p=>{const r=resumoPersonagem(p.ficha);return normal(p.nome).includes(normal(filtro.nome))&&(!filtro.campanha||(p.campanha||{}).id===filtro.campanha)&&(!filtro.classe||r.ids.includes(filtro.classe))&&(!filtro.nivel||r.nivel===Number(filtro.nivel));});
   }
   window.FICHA_COMPONENTES={esc,icone,estatistica,atributo,cabecalho,vidaBase,espacos,retrato,resumoPersonagem,filtrarPersonagens};
 })();

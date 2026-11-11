@@ -5,7 +5,7 @@
   const msg = (el, t, erro) => { el.innerHTML = t ? (erro ? `<span class="err">${esc(t)}</span>` : esc(t)) : ""; };
   let modoCriar = false;
   let personagensConta=[],podeCriarPersonagem=false;
-  const filtros={nome:'',classe:'',nivel:''};
+  const filtros={nome:'',classe:'',nivel:'',campanha:''};let filtroCampanhaIniciado=false;
   const alterna = (sel) => { const f = $(sel); f.hidden = !f.hidden; if (!f.hidden) { const i = f.querySelector("input"); if (i) i.focus(); } };
 
   /* ---------- login ---------- */
@@ -52,11 +52,12 @@
     }).join(''):personagensConta.length?'<div class="estado-vazio"><strong>Nenhum personagem corresponde aos filtros</strong><p>Altere a busca ou use Limpar filtros para ver sua biblioteca.</p></div>':`<div class="estado-vazio"><strong>Sua biblioteca de personagens</strong><p>Seus personagens como jogador aparecem aqui. Como mestre, acesse os personagens dentro da campanha.</p>${podeCriarPersonagem?'<button type="button" class="small primary" id="biblioteca-primeiro">Criar meu primeiro personagem</button>':'<a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1">Ver campanhas</a>'}</div>`;
     const primeiro=$('#biblioteca-primeiro');if(primeiro)primeiro.onclick=()=>{$('#form-pers').hidden=false;$('#p-nome').focus();};
   }
-  for(const [id,k] of [['biblioteca-busca','nome'],['biblioteca-classe','classe'],['biblioteca-nivel','nivel']]){
+  for(const [id,k] of [['biblioteca-busca','nome'],['biblioteca-campanha','campanha'],['biblioteca-classe','classe'],['biblioteca-nivel','nivel']]){
     $('#'+id).addEventListener(k==='nome'?'input':'change',e=>{filtros[k]=e.target.value;biblioteca();});
   }
-  $('#biblioteca-limpar').onclick=()=>{for(const [id,k] of [['biblioteca-busca','nome'],['biblioteca-classe','classe'],['biblioteca-nivel','nivel']]){filtros[k]='';$('#'+id).value='';}biblioteca();};
+  $('#biblioteca-limpar').onclick=()=>{for(const [id,k] of [['biblioteca-busca','nome'],['biblioteca-campanha','campanha'],['biblioteca-classe','classe'],['biblioteca-nivel','nivel']]){filtros[k]='';$('#'+id).value='';}biblioteca();};
 
+  const liberar = () => document.body.removeAttribute?.('data-entrada');   // mostra a página (ver CSS body[data-entrada])
   async function carregar() {
     const u = nuvem.usuario(); if (!u) return;
     const [perfil, membros, pers] = await Promise.all([
@@ -67,6 +68,7 @@
     if(nuvem.usuario()?.id !== u.id) return;
     const destino=window.CAMPANHAS_UI?.entrada(membros,location.search);
     if(destino){location.replace(destino);return;}
+    liberar();
     const nome = (perfil[0] && perfil[0].nome) || u.nome || u.email.split("@")[0];
     $("#quem").textContent = nome; $("#a-nome").value = nome;
 
@@ -86,6 +88,11 @@
     const ids=[...new Set(personagensConta.flatMap(p=>C.resumoPersonagem(p.ficha).ids))].sort();
     $('#biblioteca-classe').innerHTML='<option value="">Todas as classes</option>'+ids.map(k=>'<option value="'+esc(k)+'">'+esc(window.REGRAS.classe(k)?.n||k)+'</option>').join('');
     $('#biblioteca-nivel').innerHTML='<option value="">Todos os níveis</option>'+[...new Set(personagensConta.map(p=>C.resumoPersonagem(p.ficha).nivel).filter(Boolean))].sort((a,b)=>a-b).map(n=>'<option value="'+n+'">Nível '+n+'</option>').join('');
+    /* a biblioteca começa na campanha ativa, para não misturar personagens de campanhas diferentes */
+    const camps=[...new Map(personagensConta.filter(p=>p.campanha?.id).map(p=>[p.campanha.id,p.campanha.nome])).entries()];
+    if(!filtroCampanhaIniciado){filtroCampanhaIniciado=true;const ativa=window.CAMPANHAS_UI?.ativaId?.()||'';filtros.campanha=camps.some(([cid])=>cid===ativa)?ativa:'';}
+    else if(filtros.campanha&&!camps.some(([cid])=>cid===filtros.campanha))filtros.campanha='';
+    $('#biblioteca-campanha').innerHTML='<option value="">Todas as campanhas</option>'+camps.map(([cid,nome])=>'<option value="'+esc(cid)+'">'+esc(nome)+'</option>').join('');$('#biblioteca-campanha').value=filtros.campanha;
     $('#biblioteca-classe').value=filtros.classe;$('#biblioteca-nivel').value=filtros.nivel;biblioteca();
   }
 
@@ -99,9 +106,9 @@
   async function mostrarArea() {
     $("#campanhas").innerHTML = '<p class="carregando" role="status">Carregando suas campanhas…</p>'; $("#personagens").innerHTML = '<p class="carregando" role="status">Carregando seus personagens…</p>';
     $("#entrar").hidden = true; $("#area").hidden = false;
-    try { await carregar(); if(acervo.ativo())await sincronizarConta(); } catch (e) { const erro=`<p class="err" role="alert">Não foi possível carregar seus dados: ${esc(e.message)}. Recarregue para tentar novamente.</p>`;$("#campanhas").innerHTML = erro;$('#personagens').innerHTML=erro; }
+    try { await carregar(); if(acervo.ativo())await sincronizarConta(); } catch (e) { liberar();const erro=`<p class="err" role="alert">Não foi possível carregar seus dados: ${esc(e.message)}. Recarregue para tentar novamente.</p>`;$("#campanhas").innerHTML = erro;$('#personagens').innerHTML=erro; }
   }
-  function mostrarLogin() { personagensConta=[];podeCriarPersonagem=false;$("#entrar").hidden = false; $("#area").hidden = true; $("#l-senha").value = ""; $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = ""; $("#quem").textContent = "";$('#biblioteca-contagem').textContent=''; }
+  function mostrarLogin() { liberar();personagensConta=[];podeCriarPersonagem=false;$("#entrar").hidden = false; $("#area").hidden = true; $("#l-senha").value = ""; $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = ""; $("#quem").textContent = "";$('#biblioteca-contagem').textContent=''; }
 
   $("#btn-sair").onclick = async () => { await nuvem.sair(); mostrarLogin(); };
   $("#abre-camp").onclick = () => { $("#form-entrar").hidden = true; alterna("#form-camp"); };
@@ -144,6 +151,8 @@
   (async () => {
     nuvem.olhos();
     try { await nuvem.retornoDoLink(); } catch (e) { mostrarLogin(); msg($("#msg-login"), e.message, true); return; }
+    const rapido = nuvem.usuario() ? window.CAMPANHAS_UI?.entradaRapida(location.search) : '';
+    if (rapido) { location.replace(rapido); return; }
     if (nuvem.usuario()) await mostrarArea(); else mostrarLogin();
   })();
 })();

@@ -509,7 +509,7 @@ body{background:var(--bg)}button,.btnlike,.round-box{background:var(--panel-2);b
 .appnav{position:static;max-width:980px;margin:0 auto 24px;padding:0 0 14px;backdrop-filter:none;background:transparent;align-items:stretch;gap:8px}
 .appnav a{flex:0 0 auto;white-space:nowrap;display:flex;align-items:center;justify-content:center;text-align:center;min-height:44px}
 .nav-legado{display:none!important}.estado-ficha{justify-content:flex-end;min-height:20px}
-body[data-app-view=consulta] .vista-iniciativa,body[data-app-view=iniciativa] .vista-consulta{display:none!important}
+body[data-app-view=iniciativa] :is(.vista-monstros,.vista-magias),body[data-app-view=monstros] :is(.vista-iniciativa,.vista-magias),body[data-app-view=magias] :is(.vista-iniciativa,.vista-monstros){display:none!important}
 body[data-conta-aba=conta] [data-conta-painel]:not([data-conta-painel=conta]),body[data-conta-aba=campanhas] [data-conta-painel]:not([data-conta-painel=campanhas]),body[data-conta-aba=personagens] [data-conta-painel]:not([data-conta-painel=personagens]){display:none}
 .item{margin:10px 0;padding:0;overflow-wrap:anywhere}.item>summary{padding:12px 14px}.item>div,.item>p,.item>.descricao-regra{margin:0;padding:12px 14px}.item .item{margin:8px}.descricao-regra{line-height:1.65}
 .personagem-card{display:flex;flex-direction:column}.personagem-card>a{min-height:70px}.personagem-card .cartao-vida{margin-top:auto;padding-top:14px}
@@ -548,3 +548,8 @@ input.iniciativa-valor{display:block;padding:0!important;text-align:center;line-
 /* Painéis reservam espaço no desktop; descrições compactas por foco ou mouse. */
 @media(min-width:700px){body:has(#paineis-globais:not([hidden])){padding-right:calc(min(440px,100vw) + 22px)!important}}
 .ci-lista-compacta{display:flex;flex-wrap:wrap;gap:8px 14px;margin:8px 0 16px}.ci-dica{position:relative;cursor:help;border-bottom:1px dotted var(--gold-dark);font-size:14px}.ci-dica>[role=tooltip]{display:none;position:absolute;z-index:80;right:0;top:100%;width:min(320px,75vw);padding:12px;background:var(--panel);border:1px solid var(--gold-dark);box-shadow:0 5px 18px #0007;white-space:normal;font-weight:400}.ci-dica:hover>[role=tooltip],.ci-dica:focus>[role=tooltip]{display:block}.ci-atributos{margin-top:18px}.ci-resumo h3{margin:18px 0 8px}
+
+/* enquanto se decide se abre direto a campanha ativa, a lista de campanhas não aparece (evita o "pisca");
+   se o script falhar, o conteúdo volta sozinho depois de 2,5 s */
+body[data-entrada=verificando] main { visibility:hidden; animation:entrada-ok 0s 2.5s forwards; }
+@keyframes entrada-ok { to { visibility:visible; } }

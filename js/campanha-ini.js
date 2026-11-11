@@ -85,9 +85,11 @@
 
       if (!camps.length) { box.hidden=true; msg("Você pode consultar o bestiário. Para adicionar o grupo à iniciativa, abra uma campanha onde você é mestre."); return; }
       $("#ci-camp").innerHTML = camps.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join("");
-      let anterior = ""; try { anterior = localStorage.getItem("ini_campanha") || ""; } catch (_) {}
+      let anterior = ""; try { anterior = (window.CAMPANHAS_UI ? window.CAMPANHAS_UI.ativaId() : localStorage.getItem("ini_campanha")) || ""; } catch (_) {}
       atual = camps.find(c=>c.id===pedido)?.id || camps.find(c=>c.id===anterior)?.id || camps[0].id;
       $("#ci-camp").value = atual;
+      if(window.CAMPANHAS_UI)window.CAMPANHAS_UI.lembrar(atual);
+      window.__ini.trocarContexto?.(atual);
       await carregar();
       nuvem.observar?.(carregar,5000);
     } catch(e) { msg("Não foi possível carregar as campanhas: "+e.message,true); }
@@ -101,7 +103,8 @@
   });
   box.addEventListener("change",e=>{
     if(e.target.id!=="ci-camp" || !camps.some(c=>c.id===e.target.value))return;atual=e.target.value;carregou=false;if(resumoId)fecharResumo();
-    try{localStorage.setItem("ini_campanha",atual);}catch(_){}
+    if(window.CAMPANHAS_UI)window.CAMPANHAS_UI.lembrar(atual);else try{localStorage.setItem("ini_campanha",atual);}catch(_){}
+    window.__ini.trocarContexto?.(atual);
     carregar();
   });
   document.addEventListener("ficha:fechar-personagem",()=>{if(!$("#ci-resumo").hidden)fecharResumo();});

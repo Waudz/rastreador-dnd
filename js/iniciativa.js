@@ -1,6 +1,8 @@
     (() => {
-      const STORAGE_KEY = "dnd5e_initiative_tracker_v1";
+      const STORAGE_KEY = "dnd5e_initiative_tracker_v1";   // chave antiga (sem campanha); cada campanha ativa usa a sua: STORAGE_KEY + ":" + id
       const $ = (id) => document.getElementById(id);
+      let contexto = "";                                   // id da campanha ativa; "" = rastreador avulso
+      const chaveAtual = () => (contexto ? STORAGE_KEY + ":" + contexto : STORAGE_KEY);
 
       let combatants = [];
       let currentId = null;
@@ -14,15 +16,36 @@
 
       function save() {
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ combatants, currentId, round, nextOrder, stats, report }));
+          localStorage.setItem(chaveAtual(), JSON.stringify({ combatants, currentId, round, nextOrder, stats, report }));
         } catch (_) {
           // O preview incorporado pode bloquear armazenamento local; o rastreador continua funcionando nesta sessão.
         }
       }
 
+      /* primeira vez numa campanha: traz do rastreador antigo só o que é desta campanha ou não tem campanha; o resto fica onde estava */
+      function adotarEstadoAntigo() {
+        try {
+          if (localStorage.getItem(chaveAtual()) !== null) return;
+          const antigo = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+          if (!antigo || !Array.isArray(antigo.combatants)) return;
+          const meus = antigo.combatants.filter((c) => !c.campanhaId || c.campanhaId === contexto), outros = antigo.combatants.filter((c) => c.campanhaId && c.campanhaId !== contexto);
+          localStorage.setItem(chaveAtual(), JSON.stringify({ ...antigo, combatants: meus, currentId: meus.some((c) => c.id === antigo.currentId) ? antigo.currentId : null }));
+          if (outros.length) localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...antigo, combatants: outros, currentId: outros.some((c) => c.id === antigo.currentId) ? antigo.currentId : null }));
+          else localStorage.removeItem(STORAGE_KEY);
+        } catch (_) {}
+      }
+      function zerar() { combatants = []; currentId = null; round = 1; nextOrder = 0; editId = null; stats = {}; report = null; edicaoIniciativa = null; }
+      /* troca a campanha ativa: guarda o combate atual na chave da campanha antiga e carrega o da nova, sem misturar */
+      function trocarContexto(novo) {
+        novo = novo || "";
+        if (novo === contexto) return;
+        save(); contexto = novo; zerar(); load(); render(); notificar();
+      }
+
       function load() {
         try {
-          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+          if (contexto) adotarEstadoAntigo();
+          const saved = JSON.parse(localStorage.getItem(chaveAtual()) || "null");
           if (!saved || !Array.isArray(saved.combatants)) return;
           combatants = saved.combatants;
           currentId = saved.currentId || null;
@@ -408,8 +431,11 @@
         aoAlterar:fn=>ouvintes.push(fn),
         render: () => render(),
         list: () => combatants,
+        trocarContexto,
+        contexto: () => contexto,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }
       };
+      try { const q = new URLSearchParams(location.search).get("campanha"), u = window.nuvem && window.nuvem.usuario && window.nuvem.usuario(); contexto = u ? (q || (window.CAMPANHAS_UI && window.CAMPANHAS_UI.ativaId()) || "") : ""; } catch (_) { contexto = ""; }
       load();
       render();
     })();

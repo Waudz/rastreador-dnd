@@ -27,7 +27,7 @@
   <script src="js/conta.js" defer></script>
   <script src="js/interface.js" defer></script>
 </head>
-<body>
+<body data-entrada="verificando">
   <main class="tracker">
     <header class="header">
       <div>
@@ -79,7 +79,7 @@
           <button type="submit" class="primary small">Criar</button>
         </form>
         <div class="muted" id="msg-pers" style="margin-bottom:8px"></div>
-        <div class="biblioteca-filtros" role="search" aria-label="Filtrar personagens"><label>Buscar personagem<input type="search" id="biblioteca-busca" placeholder="Nome do personagem" autocomplete="off"></label><label>Classe<select id="biblioteca-classe"><option value="">Todas as classes</option></select></label><label>Nível<select id="biblioteca-nivel"><option value="">Todos os níveis</option></select></label><button type="button" class="small subtle" id="biblioteca-limpar">Limpar filtros</button></div>
+        <div class="biblioteca-filtros" role="search" aria-label="Filtrar personagens"><label>Campanha<select id="biblioteca-campanha"><option value="">Todas as campanhas</option></select></label><label>Buscar personagem<input type="search" id="biblioteca-busca" placeholder="Nome do personagem" autocomplete="off"></label><label>Classe<select id="biblioteca-classe"><option value="">Todas as classes</option></select></label><label>Nível<select id="biblioteca-nivel"><option value="">Todos os níveis</option></select></label><button type="button" class="small subtle" id="biblioteca-limpar">Limpar filtros</button></div>
         <p id="biblioteca-contagem" class="muted" role="status" aria-live="polite"></p><div id="personagens" class="cards"></div>
       </section>
       <details class="panel" data-conta-painel="conta" open>

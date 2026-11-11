@@ -117,3 +117,18 @@ O envio `b3f1b51` passou em Actions/Pages. Foi possível acessar a versão publi
 No painel real de Goblin, medições durante redimensionamento entre 1920 e 320 px confirmaram posição fixa com espaço reservado nas larguras a partir de 1200 px e posição relativa abaixo disso, com rolagem interna `auto`. Em 320 px foi identificado um pequeno overflow na faixa de ações do resultado do bestiário, independente da navegação. A correção permite que esses botões quebrem dentro do cartão (a navegação superior continua em uma única linha). O cache seguinte foi incrementado para v59.
 
 Esta verificação não equivale a teste em PWA instalado ou sessão autenticada de mestre/jogador. Permanecem pendentes os fluxos reais de campanha/biblioteca, o painel de personagem com permissões e comparação em dispositivo físico.
+
+## Campanha ativa e navegação
+
+- **Ordem do menu:** Campanhas → Iniciativa → Personagens → Monstros → Magias → Minha conta. `?aba=consulta` (endereço antigo de "Monstros e Magias") abre Monstros.
+- **Campanha ativa:** fica no `localStorage` deste aparelho em `ini_campanha:<id do usuário>` (a chave antiga `ini_campanha` continua sendo escrita e lida como reserva). A preferência só vale se o usuário ainda for membro da campanha; nunca concede acesso.
+- **Ao abrir o aplicativo:** `conta.html`/`index.html` abrem direto a campanha ativa (`campanhas-ui.js › entrada`). Sem preferência nenhuma e com uma única campanha, ela abre direto. Com várias campanhas e sem preferência, ou com preferência inacessível, aparece a lista (criar/entrar continuam disponíveis). `?gerenciar=1`, `?aba=conta` e `?aba=personagens` nunca redirecionam.
+- **Campanha inacessível:** `campanha.html` esquece a preferência e mostra "Escolher outra campanha".
+- **Combate por campanha:** cada campanha guarda o seu combate em `dnd5e_initiative_tracker_v1:<id da campanha>`. Trocar a campanha na iniciativa salva o combate atual e carrega o da nova (`__ini.trocarContexto`). Sem campanha ou sem login, o rastreador avulso usa a chave antiga. Na primeira vez em uma campanha, entram os combatentes do estado antigo que são dela ou não têm campanha; os de outras campanhas ficam na chave antiga.
+- **Personagens:** a biblioteca começa filtrada pela campanha ativa; "Todas as campanhas" mostra tudo.
+
+### Não implementado (precisa de decisão ou de mudança no banco)
+
+- A "última campanha" é por aparelho. Para lembrá-la entre aparelhos seria preciso uma coluna no perfil (por exemplo `perfis.ultima_campanha`) com política de acesso própria, e rodar um SQL no Supabase. Não foi feito.
+- O menu não mostra o nome da campanha ativa; o seletor está na página da campanha.
+- Combates e encontros só existem no navegador (como antes); não há tabela de encontros no banco.

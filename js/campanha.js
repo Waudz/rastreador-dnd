@@ -349,7 +349,7 @@
     try { await nuvem.retornoDoLink(); } catch (_) {}
     if (!nuvem.usuario() || !id) { location.replace("conta.html"); return; }
     aviso('Carregando a campanha…');
-    try { await carregar(); await desenhar();aviso('');await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre()}); await mostrarConvite(); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); } catch (e) { aviso(e.message, true); return; }
+    try { await carregar(); await desenhar();aviso('');await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre()}); await mostrarConvite(); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); } catch (e) { aviso(e.message, true); if (/não encontrada|não participa/.test(e.message)) { window.CAMPANHAS_UI?.esquecer(id); $("#erro").insertAdjacentHTML("beforeend", ' <a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1">Escolher outra campanha</a>'); } return; }
     nuvem.observar(async () => {
       const ativo = document.activeElement;
       if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;     // não interrompe quem está digitando
