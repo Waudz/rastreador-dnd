@@ -14,6 +14,11 @@ CSP por `<meta>`: `script-src 'self'`; Supabase só em `https://pdjzahpxjrlbqqtz
 - `js/regras.js` regras de classes/raças/magias; `js/personagem.js` ficha; `dados/` SRD em português (`magias.json`, `bestiario/`, `srd-pt.json`).
 - `supabase/` SQL; mudar o banco exige o William rodar o SQL no Supabase.
 
+## Decisões de produto (11/11/2026)
+- O Rastreador D&D é **totalmente gratuito**.
+- **Modo visitante:** quem não tem conta pode pesquisar monstros, consultar magias e usar todo o rastreador de iniciativa. Login só para o que depende de conta: criar ou entrar em campanhas, personagens vinculados à conta e sincronização. Os dados locais do visitante devem ser preservados, inclusive se ele entrar na conta depois. **Ainda não implementado** (planejado na Fase B; o visitante nunca deve precisar de acesso ao Supabase).
+- Fase A (cadastro com confirmação de e-mail, recuperação/troca de senha, backup, testes de permissões) publicada. Fase B: SDK oficial de autenticação, CAPTCHA e modo visitante.
+
 ## Regras de trabalho
 - pt-BR, respostas curtas. **Sem emojis; usar ícones SVG** (`js/icones.js`).
 - Vocabulário do site: salvaguarda, círculo, metros.
