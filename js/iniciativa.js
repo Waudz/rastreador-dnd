@@ -33,9 +33,10 @@
         }
       }
 
+      const pendente = c => c.initiative == null || c.initiative === "" || !Number.isFinite(Number(c.initiative));
       function sorted() {
         return [...combatants].sort((a, b) =>
-          Number(b.initiative) - Number(a.initiative) || a.order - b.order
+          Number(pendente(a)) - Number(pendente(b)) || (pendente(a) ? 0 : Number(b.initiative) - Number(a.initiative)) || a.order - b.order
         );
       }
 
@@ -47,7 +48,7 @@
 
       function editTpl(c) {
         const f = (k, l, t, v) => `<div><label>${l}</label><input data-f="${k}" type="${t}" value="${escapeText(v)}"></div>`;
-        return `<article class="combatant editing">${f("name", "Nome", "text", c.name)}${f("initiative", "Iniciativa", "number", Number(c.initiative))}${f("ac", "CA", "number", Number(c.ac))}${f("hp", "PV", "number", Number(c.hp))}${f("maxHp", "PV máx.", "number", Number(c.maxHp))}<div class="row-actions" style="align-self:end"><button class="small primary" type="button" data-save="${c.id}">Salvar</button><button class="small subtle" type="button" data-cancel="1">Cancelar</button></div></article>`;
+        return `<article class="combatant editing">${f("name", "Nome", "text", c.name)}${f("initiative", "Iniciativa", "number", pendente(c) ? "" : Number(c.initiative))}${f("ac", "CA", "number", Number(c.ac))}${f("hp", "PV", "number", Number(c.hp))}${f("maxHp", "PV máx.", "number", Number(c.maxHp))}<div class="row-actions" style="align-self:end"><button class="small primary" type="button" data-save="${c.id}">Salvar</button><button class="small subtle" type="button" data-cancel="1">Cancelar</button></div></article>`;
       }
 
       /* efeitos (condições, fogo, gelo…) */
@@ -182,7 +183,8 @@
           ? `Vez de: <strong>${escapeText(active.name)}</strong>`
           : "Nenhum turno ativo. Comece o combate quando estiver pronto.";
 
-        $("start").disabled = ordered.length === 0;
+        $("start").disabled = ordered.length === 0 || ordered.some(pendente);
+        $("start").title = ordered.some(pendente) ? "Preencha as iniciativas após as rolagens." : "";
         $("previous").disabled = ordered.length < 2 || !currentId;
         $("next").disabled = ordered.length < 2 || !currentId;
         $("reset").disabled = !currentId;
@@ -200,9 +202,9 @@
           const pct = Math.max(0, Math.min(100, (Number(c.hp) / Number(c.maxHp)) * 100));
           const hpClass = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
           return `
-            <article class="combatant ${isActive ? "active" : ""} ${isDefeated ? "defeated" : ""}" data-key="${escapeText(c.key || "")}">
+            <article class="combatant ${isActive ? "active" : ""} ${isDefeated ? "defeated" : ""}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
               ${c.effects && c.effects.length ? `<div class="fxbar">${c.effects.map((e) => `<span class="fxchip" style="--c:${e.color}" data-fxtip="${escapeText(fxTip(e))}">${fxIcon(e.type)}${escapeText(e.name)} <b>${fxLeft(e)}</b><button type="button" data-fxdel="${c.id}|${e.id}" aria-label="Remover ${escapeText(e.name)}">${ico("x")}</button></span>`).join("")}</div>` : ""}
-              <div class="initiative">${Number(c.initiative)}</div>
+              <input class="initiative iniciativa-valor" type="number" step="1" data-iniciativa="${c.id}" value="${pendente(c) ? "" : Number(c.initiative)}" placeholder="—" aria-label="Iniciativa de ${escapeText(c.name)}" title="Informe o resultado da rolagem do jogador, incluindo o modificador">
               <div>
                 <div class="name"><span class="avfx" ${c.effects && c.effects.length ? `style="--ring:${fxRing(c.effects)}"` : ""}>${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 34, c.foto) : ""}${c.effects && c.effects.length ? `<span class="fxb" style="--c:${c.effects[0].color}" data-fxtip="${escapeText(fxTip(c.effects[0]))}">${fxIcon(c.effects[0].type)}<b>${fxLeft(c.effects[0])}</b></span>` : ""}</span>${escapeText(c.name)}${isActive ? ` <span aria-label="turno atual" class="turn-mark">${ico("turn")}</span>` : ""}</div>
                 <div class="kind${c.effects && c.effects.length ? " has-fx" : ""}">${escapeText(c.kind)}${isDefeated ? " · Inconsciente/derrotado" : ""}</div>
@@ -284,7 +286,7 @@
           const g = (k) => document.querySelector(`#combatants [data-f="${k}"]`).value;
           const maxHp = Number(g("maxHp")), hp = Number(g("hp"));
           if (p && g("name").trim() && Number.isFinite(maxHp) && maxHp >= 1 && Number.isFinite(hp) && hp >= 0) {
-            p.name = g("name").trim(); p.initiative = Number(g("initiative")) || 0; p.ac = Math.max(0, Number(g("ac")) || 0);
+            p.name = g("name").trim(); p.initiative = g("initiative").trim()==="" ? null : Number(g("initiative")); p.ac = Math.max(0, Number(g("ac")) || 0);
             p.maxHp = maxHp; p.hp = Math.min(hp, maxHp); editId = null; render();
           }
           return;
@@ -334,7 +336,16 @@
         if (!nm.hidden) nm.focus();
       });
 
+      $("combatants").addEventListener("change", e => {
+        const id=e.target.dataset.iniciativa;if(!id)return;
+        const c=combatants.find(c=>c.id===id);if(!c)return;
+        const valor=e.target.value.trim();
+        if(valor!==""&&!Number.isFinite(Number(valor)))return;
+        c.initiative=valor===""?null:Number(valor);render();
+      });
+      $("combatants").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset.iniciativa){e.preventDefault();e.target.blur();}});
       $("start").addEventListener("click", () => {
+        if(combatants.some(pendente))return;
         const first = sorted()[0];
         if (!first) return;
         currentId = first.id;

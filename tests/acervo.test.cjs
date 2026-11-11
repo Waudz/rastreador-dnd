@@ -9,6 +9,12 @@ function fixture(){
   return {acervo:c.window.acervo,localStorage,indexedDB,trocar:u=>user=u,rpc:f=>rpc=f};
 }
 const backup=()=>({items:{heroi:{key:"heroi",name:"Herói",custom:true,updatedAt:10,photo:"data:image/png;base64,TESTE"}},tr:{dragon:"dragão"},ldj:{meta:{a:"texto"}}});
+test("sincronização da conta envia criação local e confirma resultado remoto",async()=>{
+ const f=fixture();await f.acervo.importar(backup());const db=f.indexedDB.bancos.get('bestiario_a');db.mon.set('novo',{key:'novo',name:'Novo',custom:true,updatedAt:20});let recebido;
+ f.rpc(async(_n,{p_dados})=>{recebido=p_dados;return p_dados;});await f.acervo.sincronizar();assert.equal(recebido.items.novo.name,'Novo');assert.equal(recebido.items.heroi.photo,'data:image/png;base64,TESTE');assert.match(f.localStorage.getItem('ini_sync_status_a'),/Sincronizado/);
+});
+test("falha de sincronização não registra sucesso",async()=>{const f=fixture();await f.acervo.importar(backup());f.rpc(async()=>{throw Error('Sem conexão');});await assert.rejects(f.acervo.sincronizar(),/Sem conexão/);assert.equal(f.localStorage.getItem('ini_sync_status_a'),null);});
+test("troca de conta durante sincronização impede aplicar dados à nova conta",async()=>{const f=fixture();await f.acervo.importar(backup());f.rpc(async(_n,{p_dados})=>{f.trocar({id:'b'});return p_dados;});await assert.rejects(f.acervo.sincronizar(),/conta mudou/);assert.equal(f.localStorage.getItem('ini_sync_status_b'),null);assert.equal(f.indexedDB.bancos.has('bestiario_b'),false);});
 test("importação preserva criação, foto e tradução na conta certa",async()=>{
   const f=fixture();f.localStorage.setItem("ini_sync","token-legado");
   assert.equal(await f.acervo.importar(backup()),1);

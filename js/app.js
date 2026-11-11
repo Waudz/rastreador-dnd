@@ -1,18 +1,17 @@
   (async () => {
     const contaInicial=window.nuvem&&nuvem.usuario()?.id;
     if(window.nuvem)nuvem.aoMudar(u=>{if(u?.id!==contaInicial)location.reload();});
-    const API = "https://api.open5e.com/v2", $ = (s) => document.querySelector(s);
+    const $ = (s) => document.querySelector(s);
     let D;
     try { D = await fetch("dados/srd-pt.json").then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }); }
-    catch (e) { $("#mais").open = true; $("#dbinfo").innerHTML = `<span class="err">Não consegui carregar as traduções (${e.message}). Abra o site por um endereço http(s), não direto do arquivo.</span>`; throw e; }
+    catch (e) { $("#blist").textContent="Não consegui carregar o catálogo 2014. Recarregue quando houver conexão."; throw e; }
     /* fotos públicas dos monstros da API (pasta fotos/ do site); as criações próprias nunca entram aqui */
     let PUB = new Set();
     try { const r = await fetch("fotos/index.json", { cache: "no-cache" }); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}
     let CF = [];
     try { const r = await fetch("dados/habilidades.json"); if (r.ok) CF = (await r.json()).filter(EDICOES.permitida); } catch (_) {}
-    let CFT = {}, CFT0 = {};
+    let CFT = {};
     try { const r = await fetch("dados/habilidades-pt.json"); if (r.ok) CFT = await r.json(); } catch (_) {}
-    CFT0 = { ...CFT };
     const pubName = (k) => "fotos/" + String(k).replace(/[^\w.-]/g, "_") + ".jpg";
     const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
     const mod = (n) => (n >= 0 ? "+" : "") + n, FR = { 0.125: "1/8", 0.25: "1/4", 0.5: "1/2" }, cr = (v) => FR[v] || v;
@@ -40,30 +39,7 @@
     const trW = mk(W);
     /* ===== Tradução pessoal do Livro do Jogador (vem do importador, fica em localStorage e no repositório privado) ===== */
     // nome no PDF (sem acento, minúsculo, sem "de Bigby" etc.) → nome em inglês; tem prioridade sobre a comparação de nomes
-    const LDJ_NOMES = Object.fromEntries(("contramagica=Counterspell;controlar a agua=Control Water;protecao contra a morte=Death Ward;riso histerico=Hideous Laughter;ataque certeiro=True Strike;globos de luz=Dancing Lights;consertar=Mending;zombaria viciosa=Vicious Mockery;riso historico=Hideous Laughter;identificacao=Identify;passos longos=Longstrider;ampliar plantas=Plant Growth;dificultar deteccao=Nondetection;enviar mensagem=Sending;idiomas=Tongues;nevoa fetida=Stinking Cloud;pequena cabana=Tiny Hut;terreno alucinogeno=Hallucinatory Terrain;conhecimento lendario=Legend Lore;ataque visual=Eyebite;danca irresistivel=Irresistible Dance;espada=Arcane Sword;miragem=Mirage Arcane;prisao de energia=Forcecage;metamorfose=Polymorph;alterar forma=Shapechange;metamorfose verdadeira=True Polymorph;conjurar fada=Conjure Fey;carne para pedra=Flesh to Stone;viagem planar=Plane Shift;estabilizar=Spare the Dying;detectar o bem e mal=Detect Evil and Good;infringir ferimentos=Inflict Wounds;protecao contra o bem e mal=Protection from Evil and Good;purificar alimentos=Purify Food and Drink;raio guiador=Guiding Bolt;ajuda=Aid;aprimorar habilidade=Enhance Ability;oracao curativa=Prayer of Healing;vinculo protetor=Warding Bond;andar na agua=Water Walk;criar alimentos=Create Food and Water;espiritos guardioes=Spirit Guardians;falar com os mortos=Speak with Dead;glifo de vigilancia=Glyph of Warding;adivinhacao=Divination;guardiao da fe=Guardian of Faith;dissipar o bem e mal=Dispel Evil and Good;praga=Contagion;aliado planar=Planar Ally;doenca plena=Harm;banquete dos herois=Heroes' Feast;palavra de recordacao=Word of Recall;conjurar celestial=Conjure Celestial;palavra divina=Divine Word;druidismo=Druidcraft;constricao=Entangle;passos sem pegadas=Pass without Trace;pele de arvore=Barkskin;conjurar elementais menores=Conjure Minor Elementals;conjurar seres da floresta=Conjure Woodland Beings;dominar besta=Dominate Beast;pele de pedra=Stoneskin;tempestade de gelo=Ice Storm;caminhar em arvores=Tree Stride;conjurar elemental=Conjure Elemental;reencarnacao=Reincarnate;teletransporte por arvores=Transport via Plants;espirro acido=Acid Splash;toque arrepiante=Chill Touch;escudo arcano=Shield;vitalidade falsa=False Life;recuo acelerado=Expeditious Retreat;nublar=Blur;patas de aranha=Spider Climb;velocidade=Haste;telecinesia=Telekinesis;bola de fogo controlavel=Delayed Blast Fireball;teletransporte=Teleport;area escorregadia=Grease;aura magica=Arcanist's Magic Aura;truque de corda=Rope Trick;escudo de fogo=Fire Shield;mao=Arcane Hand;invocacao instantanea=Instant Summons;recipiente arcano=Magic Jar;isolamento=Sequester;auxilio divino=Divine Favor;marca do cacador=Hunter's Mark;rajada mistica=Eldritch Blast;repreensao infernal=Hellish Rebuke;prestidigitacao=Prestidigitation;circulo de teletransporte=Teleportation Circle;" +
-      "forjar morte=Feign Death;forca fantasmagorica=Phantasmal Force;portal arcano=Arcane Gate;telepatia=Telepathy;palavra de poder curar=Power Word Heal;amizade=Friends;protecao contra laminas=Blade Ward;chicote de espinhos=Thorn Whip;armadura de agathys=Armor of Agathys;bracos de hadar=Arms of Hadar;fome de hadar=Hunger of Hadar;bruxaria=Hex;raio de bruxa=Witch Bolt;sussurros dissonantes=Dissonant Whispers;orbe cromatica=Chromatic Orb;raio adoecente=Ray of Sickness;destruicao colerica=Wrathful Smite;destruicao lancinante=Searing Smite;destruicao trovejante=Thunderous Smite;destruicao cegante=Blinding Smite;destruicao estonteante=Staggering Smite;destruicao banidora=Banishing Smite;duelo compelido=Compelled Duel;golpe constritor=Ensnaring Strike;saraivada de espinhos=Hail of Thorns;coroa da loucura=Crown of Madness;nuvem de adagas=Cloud of Daggers;cordao de flechas=Cordon of Arrows;sentido bestial=Beast Sense;arma elemental=Elemental Weapon;aura de vitalidade=Aura of Vitality;manto do cruzado=Crusader's Mantle;conjurar rajada=Conjure Barrage;flecha relampejante=Lightning Arrow;aura de pureza=Aura of Purity;aura de vida=Aura of Life;vinha esmagadora=Grasping Vine;circulo de poder=Circle of Power;onda destrutiva=Destructive Wave;aljava veloz=Swift Quiver;conjurar saraivada=Conjure Volley;tsunami=Tsunami"
-    ).split(";").map((p) => p.split("=")));
-    const LDJ_PREFERIR = new Set(["arcane sword"]); // texto do D.S ruim: usa o do LDJ mesmo havendo tradução
-    const POSSES = / de (bigby|tasha|otto|leomund|mordenkainen|otiluke|evard|tenser|nystul|melf|drawmij|rary)$/;
-    const fold = (s) => nz(s).replace(/[:.,!?]/g, "").replace(/\s+/g, " ").trim().replace(POSSES, "");
     const LDJ = { meta: {}, alias: {}, novos: new Set(), semPar: [] };
-    function aplicarLDJ(dados) {
-      if (!dados || !dados.magias) return;
-      const porPt = {};
-      for (const [k, v] of Object.entries(D.S)) if (!k.startsWith("pt:")) porPt[fold(v[0])] ??= k;
-      LDJ.semPar = [];
-      for (const [f, m] of Object.entries(dados.magias)) {
-        const en = LDJ_NOMES[f], key = en ? en.toLowerCase() : porPt[f] || "pt:" + f;
-        if (key.startsWith("pt:")) LDJ.semPar.push(m.n);
-        LDJ.meta[key] = m; LDJ.alias[key] = m.n;
-        if (!D.S[key] || LDJ_PREFERIR.has(key) || LDJ.novos.has(key)) {
-          D.S[key] = [m.n, m.d, m.mat || "", en || D.S[key]?.[3] || m.n];
-          LDJ.novos.add(key);
-        }
-      }
-      if (LDJ.semPar.length) console.info("LDJ sem correspondência em inglês:", LDJ.semPar);
-    }
-    try { aplicarLDJ(JSON.parse(localStorage.getItem(acervo.chave("ini_ldj")) || "null")); } catch (_) {}
     const tr = (s) => trW(s).replace(/(\d+(?:\.\d+)?)\s*(?:ft\.?|feet)/gi, (_, n) => fm(+n)).replace(/, (e|ou) /g, " $1 ");
     const trAL = mk({ unaligned: "sem tendência", "any alignment": "qualquer tendência", "any non-good alignment": "qualquer tendência não boa", "any non-lawful alignment": "qualquer tendência não leal", "any chaotic alignment": "qualquer tendência caótica", "any evil alignment": "qualquer tendência má", "non-good": "não bom", "non-lawful": "não leal", typically: "geralmente", usually: "geralmente", or: "ou", and: "e", lawful: "leal", chaotic: "caótico", neutral: "neutro", good: "bom", evil: "mau", alignment: "tendência" });
     const AL = (s) => { s = String(s || "").toLowerCase().trim(); if (!s || s === "—") return s || ""; return cap(trAL(s.replace(/\b(lawful|chaotic|neutral) (good|evil|neutral)\b/g, "$1 e $2"))); };
@@ -175,21 +151,14 @@
     const del = async (store, key) => { const t = db.transaction(store, "readwrite"); t.objectStore(store).delete(key); await done(t); };
     const status = (h) => { $("#dl-status").innerHTML = h; };
     async function reload() {
-      ALL = (await rq(db.transaction("mon").objectStore("mon").getAll())).filter(EDICOES.permitida);
-      SP = (await rq(db.transaction("spl").objectStore("spl").getAll())).filter(EDICOES.permitida);
+      ALL = (await rq(db.transaction("mon").objectStore("mon").getAll())).filter(EDICOES.catalogo2014);
+      SP = (await rq(db.transaction("spl").objectStore("spl").getAll())).filter(EDICOES.catalogo2014);
       PH = Object.fromEntries((await rq(db.transaction("img").objectStore("img").getAll())).map((x) => [x.key, x.data]));
       BY = Object.fromEntries(ALL.map((m) => [m.key, m]));
       ALL.sort((a, b) => a.name.localeCompare(b.name)); SP.sort((a, b) => a.name.localeCompare(b.name));
-      $("#dbinfo").textContent = ALL.length ? `${ALL.length} fichas e ${SP.length} magias salvas neste computador.` : "Nada salvo ainda. Use “Baixar / atualizar bestiário”.";
-      $("#spinfo").textContent = (SP.length ? `${SP.length} magias baixadas, além das ${Object.keys(D.S).length} do SRD 5.1 já embutidas.` : `${Object.keys(D.S).length} magias do SRD 5.1 embutidas (em português). Baixe o bestiário para incluir outras fontes.`) + (LDJ.novos.size ? ` Tradução pessoal do LDJ: ${Object.keys(LDJ.meta).length} magias.` : "");
-      abiIndex(); buildFilter(); renderBestiary(); renderColls(); spSearch(); if (document.activeElement === $("#name")) sugg(); window.__ini.render();
+      $("#spinfo").textContent = "Catálogo D&D 2014 em português.";
+      abiIndex(); buildFilter(); renderBestiary(); spSearch(); if (document.activeElement === $("#name")) sugg(); window.__ini.render();
     }
-    async function api(path) { const r = await fetch(path.startsWith("http") ? path : API + path); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }
-    async function getPage(url) {
-      try { return await api(url); }
-      catch (e) { if (/HTTP 400/.test(e.message) && /[?&]ordering=/.test(url)) return api(url.replace(/([?&])ordering=[^&]*&?/, "$1").replace(/[?&]$/, "")); throw e; }
-    }
-
     /* o campo Nome de “Adicionar combatente” é a busca do bestiário */
     const match = (m, q) => nz(m.name + " " + pt(m) + " " + (m.subtitle || "")).includes(q);
     const sug = $("#sug");
@@ -197,8 +166,7 @@
       const raw = $("#name").value.trim(), q = nz(raw);
       sug.hidden = q.length < 2; if (q.length < 2) return;
       const r = ALL.filter((m) => match(m, q)).slice(0, 12);
-      sug.innerHTML = r.map((m) => `<div data-sug="${esc(m.key)}">${av(m, 22)}${esc(pt(m) || m.name)}${pt(m) ? ` <span class="muted">(${esc(m.name)})</span>` : ""} <span class="muted">· ${CAT[catOf(m)]} · ${lvl(m)} · CA ${m.armor_class} · PV ${m.hit_points} · ${esc(srcOf(m))}</span></div>`).join("")
-        + (q.length > 2 ? `<div data-online="1" class="muted">${r.length ? "Não é este? " : "Nada no bestiário local. "}Buscar “${esc(raw)}” na Open5e (online)</div>` : "");
+      sug.innerHTML = r.map((m) => `<div data-sug="${esc(m.key)}">${av(m, 22)}${esc(pt(m) || m.name)}${pt(m) ? ` <span class="muted">(${esc(m.name)})</span>` : ""} <span class="muted">· ${CAT[catOf(m)]} · ${lvl(m)} · CA ${m.armor_class} · PV ${m.hit_points} · ${esc(srcOf(m))}</span></div>`).join("");
     }
     $("#name").addEventListener("input", () => { if (window.__ini.pending) $("#ini-mod").value = 0; window.__ini.pending = ""; sugg(); });
     $("#name").addEventListener("focus", sugg);
@@ -220,15 +188,6 @@
     function addMon(m) {
       window.__ini.add({ name: uniq(pt(m) || m.name), kind: CAT[catOf(m)], initiative: rollInit(m), hp: m.hit_points, maxHp: m.hit_points, ac: m.armor_class, key: m.key });
     }
-    async function online() {
-      const q = $("#name").value.trim(); sug.innerHTML = '<div class="muted">Buscando na Open5e…</div>';
-      try {
-        const j = await api("/creatures/?name__icontains=" + encodeURIComponent(q) + "&limit=30&ordering=name");
-        await put("mon", (j.results || []).filter(EDICOES.permitida)); await reload(); sug.hidden = false; sugg();
-        if (!(j.results || []).length) sug.innerHTML = '<div class="muted">A Open5e não tem nenhum monstro com esse nome.</div>';
-      } catch (e) { sug.innerHTML = `<div class="err">Falha na busca online (${esc(e.message)}).</div>`; }
-    }
-
     /* Meu bestiário: só aparece quando você pesquisa, filtra ou pede */
     const hay = (m) => nz([m.name, pt(m), m.subtitle, CAT[catOf(m)], m.size?.name, SZ[m.size?.name], m.type?.name, TP[m.type?.name], srcOf(m)].filter(Boolean).join(" "));
     function buildFilter() {
@@ -254,48 +213,6 @@
     $("#bq").addEventListener("input", () => { shown = 40; renderBestiary(); });
     $("#ball").onclick = () => { showAll = !showAll; shown = 40; renderBestiary(); };
 
-    /* coleções baixadas (com exclusão) */
-    function renderColls() {
-      const g = {};
-      ALL.filter((m) => !m.custom).forEach((m) => { (g[m.document?.key || "?"] ??= { n: srcOf(m), m: 0, s: 0 }).m++; });
-      SP.forEach((s) => { (g[s.document?.key || "?"] ??= { n: s.document?.display_name || s.document?.key || "?", m: 0, s: 0 }).s++; });
-      $("#colls").innerHTML = Object.entries(g).map(([k, v]) => `<div class="res"><span><b>${esc(v.n)}</b> <span class="muted">${v.m} monstros · ${v.s} magias</span></span><button class="small danger" data-delcol="${esc(k)}">Excluir coleção</button></div>`).join("");
-    }
-
-    /* download: uma fonte por vez, com ordenação por nome (paginação estável) */
-    $("#dl-cancel").onclick = () => { $("#docs-wrap").hidden = true; };
-    $("#dl-open").onclick = async () => {
-      if (!$("#docs-wrap").hidden) { $("#docs-wrap").hidden = true; return; }
-      $("#docs-wrap").hidden = false;
-      try {
-        const j = await api("/documents/?limit=100");
-        $("#docs").innerHTML = (j.results || []).filter(EDICOES.permitida).map((d) => `<label><input type="checkbox" value="${esc(d.key)}" ${d.key === "srd-2014" ? "checked" : ""}>${esc(d.display_name || d.name || d.key)}</label>`).join("");
-      } catch (e) { $("#docs").innerHTML = `<span class="err">Não foi possível listar as fontes (${esc(e.message)}). Verifique a conexão.</span>`; }
-    };
-    async function pull(path, store, label) {
-      let url = API + path, n = 0, total = 0;
-      while (url) {
-        const j = await getPage(url.replace(/^http:/, "https:")); total = j.count ?? total;
-        await put(store, (j.results || []).filter(EDICOES.permitida)); n += (j.results || []).length; status(`${esc(label)}: ${n} de ${total}…`); url = j.next;
-      }
-      return [n, total];
-    }
-    $("#dl-go").onclick = async () => {
-      const keys = [...document.querySelectorAll("#docs input:checked")].map((i) => i.value);
-      if (!keys.length) { status("Marque ao menos uma fonte."); return; }
-      $("#dl-go").disabled = true; let nm_ = 0, ns = 0, miss = 0;
-      try {
-        for (const k of keys) {
-          const f = `document__key__in=${encodeURIComponent(k)}&limit=100&ordering=name`;
-          const [a, ta] = await pull("/creatures/?" + f, "mon", `Monstros (${k})`); nm_ += a; miss += Math.max(0, ta - a);
-          const [b, tb] = await pull("/spells/?" + f, "spl", `Magias (${k})`); ns += b; miss += Math.max(0, tb - b);
-        }
-        $("#docs-wrap").hidden = true; await reload();
-        status(`Concluído: ${nm_} monstros e ${ns} magias.` + (miss ? " Alguns itens podem ter ficado de fora; digite o nome no campo “Adicionar combatente” e use a busca online." : ""));
-      } catch (e) { console.error(e); await reload(); status(`<span class="err">Falha no download (${esc(e.message)}). O que já foi baixado foi mantido; tente de novo.</span>`); }
-      $("#dl-go").disabled = false;
-    };
-
     /* abas laterais: ficha (direita) e magia (esquerda, ou empilhada na direita) */
     function layout() {
       const full = innerWidth < 700, W = full ? innerWidth : Math.round(Math.min(460, Math.max(320, innerWidth * 0.34)));
@@ -304,7 +221,8 @@
       if (sp.parentNode !== dest) dest.appendChild(sp);
       let L = false, R = false;
       [["#dock-l", false], ["#dock-r", true]].forEach(([s, r]) => { const dk = $(s), vis = [...dk.children].some((c) => !c.hidden); dk.hidden = !vis; if (r) R = vis; else L = vis; });
-      document.body.style.paddingLeft = 22 + (L && !full ? W : 0) + "px"; document.body.style.paddingRight = 22 + (R && !full ? W : 0) + "px";
+      const margem=innerWidth<=800?14:22;
+      document.body.style.paddingLeft = margem + (L && !full ? W : 0) + "px"; document.body.style.paddingRight = margem + (R && !full ? W : 0) + "px";
     }
     window.addEventListener("resize", layout);
     const closeSheet = () => { $("#sheet").hidden = true; $("#tip").style.display = "none"; layout(); };
@@ -352,7 +270,7 @@
     const edOf = (doc) => { const k = String(doc?.key || ""); return /2014/.test(k) || k === "ldj" ? "2014" : /2024/.test(k) ? "2024" : ""; };
     function spSearch() {
       const q = nz($("#sq").value.trim()), box = $("#spells"); if (!q) { box.innerHTML = ""; return; }
-      const tipo = $("#sf-type").value, src = $("#sf-src").value, lv = $("#sf-lvl").value, sch = $("#sf-sch").value, ex = $("#sf-ex").value;
+      const tipo = $("#sf-type").value, src = "2014", lv = $("#sf-lvl").value, sch = $("#sf-sch").value, ex = $("#sf-ex").value;
       const soMagia = tipo === "spell" || !!(lv || sch || ex); // círculo, escola e ritual só existem em magias
       const kOf = (s) => s.key.startsWith("ds:") ? s.key.slice(3) : s.name.toLowerCase();
       const r = (tipo && tipo !== "spell" ? [] : catalog()).filter((s) => !src || edOf(s.document) === src)
@@ -386,21 +304,6 @@
 
     /* habilidades de classe do Livro do Jogador (vêm do importador; ficam só no navegador e no repositório privado) */
     const CFL = new Set();
-    function aplicarClassesLDJ(dados) {
-      CF = CF.filter((f) => !f.ldj); CFL.clear(); CFT = { ...CFT0 };
-      for (const f of CF) delete f.po;
-      if (!dados || !Array.isArray(dados.classes) || !dados.classes.length) return;
-      const rev = Object.fromEntries(Object.entries(CFCLS).map(([en, pt]) => [fold(pt), en]));
-      const srd = new Map(), pdf = new Map();
-      for (const f of CF) if (f.e === "2014") for (const nome of new Set([f.p, f.n])) if (nome) { const k = `${f.u || f.c}|${fold(nome)}`; (srd.get(k) || srd.set(k, []).get(k)).push(f); }
-      for (const x of dados.classes) { const en = rev[fold(x.c)]; if (!en) continue; const k = `${en}|${fold(x.n)}`; (pdf.get(k) || pdf.set(k, []).get(k)).push([x, en]); }
-      for (const [k, lista] of pdf) {
-        const alvo = srd.get(k);
-        if (lista.length === 1 && alvo && alvo.length === 1) { const f = alvo[0], x = lista[0][0]; CFT[cfKey(f)] = x.d; CFL.add(cfKey(f)); f.po = x.n; }
-        else for (const [x, en] of lista) CF.push({ e: "2014", c: x.u || en, u: x.u ? en : "", n: x.n, p: "", l: [], d: x.d, ldj: true });
-      }
-    }
-
     /* adiciona uma habilidade de classe a uma ficha própria (personagem, NPC ou monstro criado por você) */
     const cfAlvos = (i) => {
       const alvos = ALL.filter((m) => m.custom).sort((x, y) => x.name.localeCompare(y.name));
@@ -482,7 +385,6 @@
       cmSpells.push(ex ? { key: ex.key, name: ex.name } : { key: null, name: v }); spq.value = ""; spsug.hidden = true; chips();
     });
 
-    try { aplicarClassesLDJ(JSON.parse(localStorage.getItem(acervo.chave("ini_ldj")) || "null")); } catch (_) {}
     /* busca de habilidade de classe no campo de características da ficha */
     const cfq = $("#cm-cfq"), cfsug = $("#cm-cfsug");
     setTimeout(() => { $("#cm-traits").addEventListener("input", refreshLineChips); $("#cm-acts").addEventListener("input", refreshLineChips); refreshLineChips(); }, 0);
@@ -543,11 +445,11 @@
     const syncFilters = () => {
       const tipo = $("#sf-type").value, soMagia = tipo === "" || tipo === "spell"; // círculo, escola e ritual só existem em magias
       for (const id of ["#sf-lvl", "#sf-sch", "#sf-ex"]) { $(id).hidden = !soMagia; if (!soMagia) $(id).value = ""; }
-      const n = ["#sf-src", "#sf-lvl", "#sf-sch", "#sf-ex"].filter((id) => $(id).value).length;
+      const n = ["#sf-lvl", "#sf-sch", "#sf-ex"].filter((id) => $(id).value).length;
       $("#sf-more").innerHTML = ico("filter") + "Filtros" + (n ? ` (${n})` : "");
     };
     $("#sf-more").onclick = () => { const aberto = $("#sf-adv").hidden; $("#sf-adv").hidden = !aberto; $("#sf-more").setAttribute("aria-expanded", String(aberto)); };
-    ["#sf-type", "#sf-src", "#sf-lvl", "#sf-sch", "#sf-ex"].forEach((s) => $(s).addEventListener("change", () => { syncFilters(); spSearch(); }));
+    ["#sf-type", "#sf-lvl", "#sf-sch", "#sf-ex"].forEach((s) => $(s).addEventListener("change", () => { syncFilters(); spSearch(); }));
     syncFilters();
     $("#sq-x").onclick = () => { $("#sq").value = ""; $("#sq-x").hidden = true; spSearch(); $("#sq").focus(); };
     $("#sh-close").onclick = closeSheet; $("#spd-close").onclick = closeSpell;
@@ -560,7 +462,6 @@
       if (!t.closest("#cm-spq,#cm-spsug")) spsug.hidden = true;
       if (!t.closest("#cm-cfq,#cm-cfsug")) cfsug.hidden = true;
       if (sg) return pick(sg.dataset.sug);
-      if (t.closest("[data-online]")) return online();
       const ao = t.closest("[data-abopen]"); if (ao) return openAbility(ao.dataset.abopen, 0, "panel");
       const ax = t.closest("[data-abix]"); if (ax) return openAbility(ax.dataset.l, +ax.dataset.abix);
       const fav = t.closest("#blist .av"); if (fav) { const v = fav.closest(".res")?.querySelector("[data-view]"); if (v) return openSheet(v.dataset.view); }
@@ -600,8 +501,7 @@
     document.addEventListener("mouseover", (e) => { if (matchMedia("(hover: none)").matches) return; const h = e.target.closest(".hab,[data-fxtip]"); if (!h || h.classList.contains("open")) { tip.style.display = "none"; return; } const s = h.dataset.desc || h.dataset.fxtip || ""; tip.textContent = s.length > 260 ? s.slice(0, 260) + "… (clique para ler tudo)" : s; tip.style.display = s ? "block" : "none"; });
     document.addEventListener("mousemove", (e) => { tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - 340)) + "px"; tip.style.top = e.clientY + 14 + "px"; });
     document.addEventListener("mouseout", (e) => { if (!e.relatedTarget?.closest?.(".hab,[data-fxtip]")) tip.style.display = "none"; });
-    $("#tr-exp").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify({ ...D.M, ...TR }, null, 1)], { type: "application/json" })); a.download = "traducoes-monstros.json"; a.click(); };
-    $("#tr-imp").onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { const o = JSON.parse(await f.text()); for (const k in o) TR[k.toLowerCase()] = String(o[k]); saveTR(); renderBestiary(); } catch (_) { alert("Arquivo JSON inválido."); } e.target.value = ""; };
+
 
     window.__ini.avatar = (key, name, size, foto) => (foto && /^data:image\//.test(foto) ? `<img class="av" style="width:${size}px;height:${size}px" src="${esc(foto)}" alt="">` : av(BY[key] || { name }, size));
     const fileIn = $("#ph-file");
@@ -635,7 +535,7 @@
         const todos=await rq(db.transaction("mon").objectStore("mon").getAll()), fotos=await rq(db.transaction("img").objectStore("img").getAll()), porFoto=Object.fromEntries(fotos.map(i=>[i.key,i.data]));
         const items=Object.fromEntries(todos.filter(m=>m.custom).map(m=>[m.key,{...m,photo:porFoto[m.key]||""}]));
         const d=await acervo.mesclar({v:1,items,deleted:TOMB,tr:TR,ldj:JSON.parse(localStorage.getItem(acervo.chave("ini_ldj"))||"{}")});
-        await acervo.aplicar(d);TOMB=d.deleted||{};Object.assign(TR,d.tr||{});if(d.ldj){aplicarLDJ(d.ldj);aplicarClassesLDJ(d.ldj);} await reload();
+        await acervo.aplicar(d);TOMB=d.deleted||{};Object.assign(TR,d.tr||{}); await reload();
         localStorage.removeItem("ini_sync"); saveTR();syMsg("Sincronizado com sua conta");
       }catch(e){syMsg('<span class="err">'+esc(e.message)+'</span>');}
       finally{syncing=false;if(syncDeNovo){syncDeNovo=false;queueSync();}}
@@ -643,43 +543,30 @@
     let TOMB = {}, syncing = false, syncDeNovo = false, syTimer = null;
     try { TOMB = JSON.parse(localStorage.getItem(acervo.chave("ini_tomb")) || "{}"); localStorage.removeItem("ini_sync"); localStorage.removeItem("ini_pub"); localStorage.removeItem("ini_admin"); } catch (_) {}
     const saveTomb = () => { try { localStorage.setItem(acervo.chave("ini_tomb"), JSON.stringify(TOMB)); } catch (_) {} };
-    const syMsg = h => { $("#sy-status").innerHTML = h; };
+    const syMsg = h => {try{localStorage.setItem(acervo.chave("ini_sync_status"),JSON.stringify({mensagem:String(h).replace(/<[^>]*>/g,""),em:Date.now()}));}catch(_){}};
     window.addEventListener("storage", (e) => {
       if (e.key !== acervo.chave("ini_ldj") || !e.newValue) return;
-      try { const n = JSON.parse(e.newValue); aplicarLDJ(n); aplicarClassesLDJ(n); spSearch(); queueSync(); } catch (_) {}
+      queueSync();
     });
     window.addEventListener("online", () => queueSync());
     const touch = async (k) => { const m = BY[k]; if (m && m.custom) { m.updatedAt = Date.now(); await put("mon", [m]); queueSync(); } };
     function queueSync() { if (!window.nuvem?.usuario() || !acervo.ativo()) return; clearTimeout(syTimer); syTimer = setTimeout(syncNow, 1500); }
     async function syncNow() { if(window.nuvem?.usuario() && acervo.ativo()) return syncConta(); }
-    $("#sy-now").onclick = () => syncNow();
-    $("#synctop").hidden = !window.nuvem?.usuario();
     document.addEventListener("visibilitychange", () => { if (!document.hidden) queueSync(); });
 
-    /* pacotes embutidos no site (SRD 2014 e 2024): funcionam sem a API; ela só é usada para outras fontes */
+    /* Catálogo 2014 empacotado no próprio site, sem consulta a fontes externas. */
     let PACKS = [], LP = {};
     try { LP = JSON.parse(localStorage.getItem(acervo.chave("ini_packs")) || "{}"); } catch (_) {}
     const saveLP = () => { try { localStorage.setItem(acervo.chave("ini_packs"), JSON.stringify(LP)); } catch (_) {} };
-    function renderPacks() {
-      $("#packs").innerHTML = PACKS.length ? '<div class="sub">Incluídos no site (não usam a API)</div>' + PACKS.map((p) =>
-        `<div class="res"><span><b>${esc(p.name)}</b> <span class="muted">${+p.monsters || 0} monstros · ${+p.spells || 0} magias</span></span><button class="small" data-pack="${esc(p.key)}">${LP[p.key] === p.v ? "Recarregar" : "Carregar"}</button></div>`).join("") : "";
-    }
     async function loadPack(p) {
       status(`Carregando ${esc(p.name)}…`);
       const r = await fetch("dados/bestiario/" + encodeURIComponent(p.key) + ".json?v=" + p.v, { cache: "no-cache" });
       if (!r.ok) throw new Error("HTTP " + r.status);
       const d = await r.json();
       await put("mon", d.monsters || []); await put("spl", d.spells || []);
-      LP[p.key] = p.v; saveLP(); renderPacks(); await reload();
+      LP[p.key] = p.v; saveLP(); await reload();
       status(`${esc(p.name)}: ${(d.monsters || []).length} monstros e ${(d.spells || []).length} magias carregados.`);
     }
-    $("#packs").addEventListener("click", async (e) => {
-      const b = e.target.closest("[data-pack]"); if (!b) return;
-      const p = PACKS.find((x) => x.key === b.dataset.pack); if (!p) return;
-      b.disabled = true;
-      try { await loadPack(p); } catch (err) { status(`<span class="err">Falha ao carregar (${esc(err.message)}).</span>`); }
-      b.disabled = false;
-    });
     async function carregarCatalogo() {
       if(!window.nuvem?.usuario())return;
       try {
@@ -692,42 +579,15 @@
       }catch(e){status('<span class="err">Não consegui atualizar o catálogo compartilhado: '+esc(e.message)+'</span>');}
     }
     async function initPacks() {
-      try { const r = await fetch("dados/bestiario/index.json", { cache: "no-cache" }); if (r.ok) PACKS = (await r.json()).filter(EDICOES.permitida); } catch (_) {}
-      renderPacks();
+      try { const r = await fetch("dados/bestiario/index.json", { cache: "no-cache" }); if (r.ok) PACKS = (await r.json()).filter(p=>p.key==="srd-2014"); } catch (_) {}
       for (const p of PACKS) if (LP[p.key] !== p.v) { try { await loadPack(p); } catch (err) { console.error(err); } }
     }
 
-    /* exportar / importar o meu bestiário (criações, todas as fotos que você colocou e nomes traduzidos) */
-    const bkMsg = (t) => { $("#bk-msg").innerHTML = t; };
-    $("#bk-exp").onclick = () => {
-      const mon = ALL.filter((m) => m.custom), img = Object.entries(PH).map(([key, data]) => ({ key, data }));
-      const dados = { v: 2, em: new Date().toISOString(), mon, img, tr: TR };
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([JSON.stringify(dados)], { type: "application/json" }));
-      a.download = `meu-bestiario-${dados.em.slice(0, 10)}.json`; a.click();
-      bkMsg(`Exportado: ${mon.length} criações, ${img.length} fotos e ${Object.keys(TR).length} nomes traduzidos.`);
-    };
-    $("#bk-imp").onchange = async (e) => {
-      const f = e.target.files[0]; if (!f) return;
-      try {
-        const d = JSON.parse(await f.text());
-        if (!d || !Array.isArray(d.mon)) throw new Error("não parece um arquivo exportado por este rastreador");
-        const mons = d.mon.filter((m) => m && typeof m.key === "string" && typeof m.name === "string" && m.custom);
-        const novos = mons.filter((m) => !BY[m.key] || (m.updatedAt || 0) > (BY[m.key].updatedAt || 0));
-        const imgs = (d.img || []).filter((i) => i && typeof i.key === "string" && typeof i.data === "string" && /^data:image\//.test(i.data));
-        await put("mon", novos); await put("img", imgs);
-        if (d.tr && typeof d.tr === "object") { for (const k in d.tr) TR[k] = String(d.tr[k]); saveTR(); }
-        if (d.ldj) { try { localStorage.setItem(acervo.chave("ini_ldj"), JSON.stringify(d.ldj)); } catch (_) {} aplicarLDJ(d.ldj); aplicarClassesLDJ(d.ldj); }
-        await reload(); queueSync();
-        bkMsg(`Importado: ${novos.length} criações novas ou mais recentes e ${imgs.length} fotos.`);
-      } catch (err) { bkMsg(`<span class="err">Não consegui importar (${esc(err.message)}).</span>`); }
-      e.target.value = "";
-    };
     if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
 
     const o = indexedDB.open(acervo.banco(), 3);
     o.onupgradeneeded = () => { const d = o.result; ["mon", "spl", "img"].forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "key" }); }); };
-    o.onblocked = () => { $("#mais").open = true; $("#dbinfo").innerHTML = '<span class="err">Atualização do banco bloqueada: feche as outras abas deste rastreador e recarregue a página.</span>'; };
+    o.onblocked = () => status("Feche as outras abas do aplicativo e recarregue para atualizar o armazenamento.");
     o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(syncNow).then(initPacks).then(carregarCatalogo); };
-    o.onerror = () => { $("#mais").open = true; $("#dbinfo").innerHTML = '<span class="err">Este navegador bloqueou o armazenamento local (IndexedDB).</span>'; };
+    o.onerror = () => status("Este navegador bloqueou o armazenamento local.");
   })();

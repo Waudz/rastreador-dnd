@@ -14,6 +14,7 @@ function indexedDBFalso(){
         let pendentes=0,abortou=false;
         const t={objectStore(k){return {
           get(id){const r={};pendentes++;queueMicrotask(()=>{if(abortou)return;r.result=copia[k].get(id);try{r.onsuccess?.();}finally{pendentes--;}});return r;},
+          getAll(){const r={};pendentes++;queueMicrotask(()=>{if(abortou)return;r.result=[...copia[k].values()];try{r.onsuccess?.();}finally{pendentes--;}});return r;},
           put(v){copia[k].set(v.key,structuredClone(v));},
           delete(id){copia[k].delete(id);}
         };},abort(){abortou=true;queueMicrotask(()=>t.onabort?.());}};

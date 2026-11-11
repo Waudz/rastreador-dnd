@@ -106,5 +106,16 @@
     await aplicar(d, conta);
     return d;
   }
-  window.acervo = { ativo, banco, chave, aplicar, mesclar, importar, baixar, validar };
+  async function sincronizar(){
+    exigirAtivo();const conta=identidade(),db=await abrir(conta);
+    let mon,img;
+    try{[mon,img]=await Promise.all(['mon','img'].map(s=>new Promise((ok,no)=>{const r=db.transaction(s).objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);})));}finally{db.close();}
+    conferir(conta);const fotos=Object.fromEntries(img.map(i=>[i.key,i.data]));
+    const ler=k=>{try{return JSON.parse(localStorage.getItem(k+'_'+conta.id)||'{}');}catch(_){return {};}};
+    const dados={v:1,items:Object.fromEntries(mon.filter(m=>m.custom).map(m=>[m.key,{...m,photo:fotos[m.key]||''}])),deleted:ler('ini_tomb'),tr:ler('ini_tr'),ldj:ler('ini_ldj')};
+    const salvo=await mesclar(dados,conta);await aplicar(salvo,conta);conferir(conta);
+    localStorage.setItem('ini_sync_status_'+conta.id,JSON.stringify({mensagem:'Sincronizado com sua conta',em:Date.now()}));
+    return salvo;
+  }
+  window.acervo = { ativo, banco, chave, aplicar, mesclar, importar, baixar, sincronizar, validar };
 })();

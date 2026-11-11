@@ -68,10 +68,17 @@
     }).join("") : '<span class="muted">Seus personagens como jogador aparecem aqui. Como mestre, acesse os personagens dentro da campanha.</span>';
   }
 
+  async function sincronizarConta(){
+    if(!nuvem.usuario()||!acervo.ativo())return;
+    const b=$("#conta-sincronizar"),el=$("#conta-sync-status");b.disabled=true;el.textContent="Sincronizando com sua conta…";
+    try{await acervo.sincronizar();el.textContent="Sincronizado com sua conta às "+new Date().toLocaleTimeString("pt-BR")+". Personagens e campanhas são salvos online.";}
+    catch(e){el.textContent="Não foi possível sincronizar: "+e.message;}finally{b.disabled=false;}
+  }
+  $("#conta-sincronizar").onclick=sincronizarConta;
   async function mostrarArea() {
     $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = "";
     $("#entrar").hidden = true; $("#area").hidden = false;
-    try { await carregar(); } catch (e) { $("#campanhas").innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+    try { await carregar(); if(acervo.ativo())await sincronizarConta(); } catch (e) { $("#campanhas").innerHTML = `<span class="err">${esc(e.message)}</span>`; }
   }
   function mostrarLogin() { $("#entrar").hidden = false; $("#area").hidden = true; $("#l-senha").value = ""; $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = ""; $("#quem").textContent = ""; }
 

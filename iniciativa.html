@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.open5e.com https://pdjzahpxjrlbqqtzkfdr.supabase.co; worker-src 'self'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://pdjzahpxjrlbqqtzkfdr.supabase.co; worker-src 'self'; base-uri 'self'; form-action 'self'">
   <title>Iniciativa — D&D 5e</title>
   <meta name="theme-color" content="#111018">
   <link rel="manifest" href="manifest.json">
@@ -21,13 +21,13 @@
   <script src="js/foto.js" defer></script>
   <script src="js/edicoes.js" defer></script>
   <script src="js/app.js" defer></script>
+  <script src="js/origens.js" defer></script>
   <script src="js/regras.js" defer></script>
   <script src="js/campanha-ini.js" defer></script>
 </head>
 <body>
   <main class="tracker">
 
-    <div id="synctop" class="synctop" hidden><i data-i="cloud"></i><span class="muted" id="sy-status"></span><button type="button" class="small" id="sy-now">Sincronizar</button></div>
     <header class="header">
       <div>
         <p class="eyebrow">Dungeons & Dragons · 5ª edição</p>
@@ -88,9 +88,10 @@
 
     <details class="panel" id="camp-ini" hidden>
       <summary class="panel-title" style="cursor:pointer">Personagens da campanha</summary>
-      <div class="bar"><select id="ci-camp" aria-label="Campanha" style="width:auto"></select><span class="grow"></span><button type="button" class="small" id="ci-recarregar">Atualizar</button><button type="button" class="small primary" id="ci-todos">Adicionar todos</button></div>
+      <div class="bar ci-filtros"><select id="ci-camp" aria-label="Campanha" style="width:auto"></select><span class="grow"></span><button type="button" class="small" id="ci-recarregar">Atualizar</button><button type="button" class="small primary" id="ci-todos">Adicionar todos</button></div>
       <div id="ci-msg" class="muted"></div>
-      <div id="ci-lista"></div>
+      <div id="ci-lista" class="ci-grade"></div>
+      <p class="muted">Adicione os personagens e preencha a iniciativa com a rolagem de cada jogador.</p>
     </details>
 
     <section class="panel">
@@ -127,7 +128,6 @@
         <button type="button" class="small" id="sf-more" aria-expanded="false" aria-controls="sf-adv"><i data-i="filter"></i>Filtros</button>
       </div>
       <div class="row" id="sf-adv" style="margin-bottom:8px" hidden>
-        <select id="sf-src" style="flex:1 1 140px" aria-label="Fonte"><option value="" selected>D&amp;D 2014 e fontes pessoais</option><option value="2014">Somente SRD 2014</option></select>
         <select id="sf-lvl" style="flex:1 1 120px" aria-label="Círculo"><option value="">Qualquer círculo</option><option value="0">Truques</option><option value="1">1º círculo</option><option value="2">2º círculo</option><option value="3">3º círculo</option><option value="4">4º círculo</option><option value="5">5º círculo</option><option value="6">6º círculo</option><option value="7">7º círculo</option><option value="8">8º círculo</option><option value="9">9º círculo</option></select>
         <select id="sf-sch" style="flex:1 1 130px" aria-label="Escola"><option value="">Qualquer escola</option><option>Abjuração</option><option>Adivinhação</option><option>Conjuração</option><option>Encantamento</option><option>Evocação</option><option>Ilusão</option><option>Necromancia</option><option>Transmutação</option></select>
         <select id="sf-ex" style="flex:1 1 130px" aria-label="Característica"><option value="">Ritual ou não</option><option value="ritual">Só rituais</option><option value="conc">Só concentração</option></select>
@@ -173,41 +173,14 @@
         <select id="bf" style="flex:0 1 260px"></select>
         <button type="button" class="small" id="ball">Mostrar tudo</button>
       </div>
-      <div class="row">
-        <button type="button" class="small" id="dl-open" title="Baixa monstros e magias de outras fontes da Open5e">Baixar outras fontes</button>
-        <span class="muted" id="dl-status"></span>
-      </div>
-      <div id="docs-wrap" class="dl-box" hidden>
-        <div id="docs" class="muted">Carregando fontes…</div>
-        <div class="row" style="margin:0"><button type="button" class="primary small" id="dl-go">Baixar selecionadas</button><button type="button" class="small subtle" id="dl-cancel">Fechar</button></div>
-      </div>
-      <div class="row">
-        <button type="button" class="small" id="bk-exp" title="Salva suas criações, as fotos que você colocou e os nomes traduzidos num arquivo">Exportar meu bestiário</button>
-        <label class="btnlike muted" title="Traz criações, fotos e nomes de um arquivo exportado em outro navegador">Importar<input type="file" id="bk-imp" accept=".json" hidden></label>
-        <span class="muted" id="bk-msg"></span>
-      </div>
+      <p id="dl-status" class="muted" role="status"></p>
       <div class="muted" id="bcount"></div>
       <div id="blist"></div>
     </section>
 
-    <section class="panel only-admin">
-      <h2 class="panel-title"><i data-i="database"></i>Dados locais e bestiário</h2>
-      <div id="packs"></div>
-      <details id="mais" class="more">
-        <summary>Mais opções: outras fontes, traduções e backup</summary>
-        <p class="muted" id="dbinfo"></p>
-        <div id="colls"></div>
-        <div class="sub">Traduções e backup</div>
-        <div class="row">
-          <a class="btnlike muted" href="ferramentas/importar-ldj.html">Importar tradução do LDJ</a>
-          <button type="button" class="small subtle" id="tr-exp">Exportar traduções</button>
-          <label class="btnlike muted">Importar traduções<input type="file" id="tr-imp" accept=".json" hidden></label>
-        </div>
-      </details>
-    </section>
 
 
-    <footer class="muted" style="font-size:11px;margin:26px 0 8px;line-height:1.6">Este site usa material do System Reference Document 5.1 e do System Reference Document 5.2 da Wizards of the Coast LLC, licenciados sob a Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode). Os dados são obtidos da API Open5e (open5e.com). Este é um projeto de fãs, sem vínculo com a Wizards of the Coast.</footer>
+    <footer class="muted" style="font-size:11px;margin:26px 0 8px;line-height:1.6">Este site usa material do System Reference Document 5.1 da Wizards of the Coast LLC, licenciados sob a Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode). Os dados são obtidos da API Open5e (open5e.com). Este é um projeto de fãs, sem vínculo com a Wizards of the Coast.</footer>
     <input type="file" id="ph-file" accept="image/*" hidden>
     <div id="dock-l" class="dock" hidden></div>
     <div id="dock-r" class="dock" hidden>
@@ -220,6 +193,7 @@
         <div id="spd-body"></div>
       </aside>
     </div>
+    <aside id="ci-resumo" class="ci-resumo" aria-label="Resumo do Personagem" hidden><div class="ci-resumo-topo"><strong>Resumo do Personagem</strong><button type="button" id="ci-resumo-fechar">Fechar</button></div><div id="ci-resumo-corpo"></div></aside>
     <div id="tip"></div>
   </main>
 </body>

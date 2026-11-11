@@ -14,6 +14,8 @@
   <script src="js/nuvem.js" defer></script>
   <script src="js/navegacao.js" defer></script>
   <script src="js/acervo.js" defer></script>
+  <script src="js/edicoes.js" defer></script>
+  <script src="js/admin.js" defer></script>
   <script src="js/conta.js" defer></script>
 </head>
 <body>
@@ -74,7 +76,7 @@
         <summary class="panel-title" style="font-size:14px">Conta</summary>
         <div class="row" style="margin-top:10px"><input id="a-nome" maxlength="60" placeholder="Seu nome" style="flex:1 1 220px"><button type="button" class="small" id="btn-nome">Salvar nome</button></div>
         <div class="row"><div class="pw" style="flex:1 1 220px"><input id="a-senha" type="password" minlength="8" autocomplete="new-password" placeholder="Nova senha"><button type="button" class="pw-eye"></button></div><button type="button" class="small" id="btn-senha">Trocar senha</button></div>
-        <div class="muted" id="msg-conta"></div><div id="opcoes-admin" hidden><h3>Opções de administrador</h3><a class="btnlike" href="admin.html">Gerenciar catálogo, campanhas e perfis</a></div>
+        <div class="muted" id="msg-conta"></div><h3>Sincronização da Conta</h3><p id="conta-sync-status" class="muted" role="status">Os dados são vinculados à sua conta logada.</p><button type="button" id="conta-sincronizar">Sincronizar Agora</button><details id="opcoes-admin" hidden><summary class="panel-title">Opções de Administração</summary><div id="admin-conteudo"><p id="resumo" class="muted">Expanda esta seção para gerenciar seus dados.</p><h3>Dados Locais e Bestiários</h3><p>Adicione dados de 2014 e gerencie as cópias deste aparelho. As criações pessoais sincronizam com sua conta; publicar o catálogo compartilha apenas os registros públicos.</p><div id="admin-dados-resumo" class="muted"></div><div class="row"><label class="btnlike">Adicionar Dados (JSON)<input type="file" id="admin-importar" accept=".json,application/json" hidden></label><button type="button" id="admin-exportar">Exportar Dados</button><button type="button" id="pub-go">Publicar Catálogo 2014</button></div><p role="status" id="pub-status"></p><h3>Campanhas</h3><div id="admin-campanhas" class="cards"></div><h3>Perfis</h3><div id="admin-perfis"></div></div></details>
       </details>
     </div>
 
