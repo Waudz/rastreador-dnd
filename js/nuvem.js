@@ -1,17 +1,56 @@
-/* Cliente mínimo do Supabase (login, tabelas, funções e arquivos) sem biblioteca externa.
+/* Cliente do Supabase. A AUTENTICAÇÃO usa o SDK oficial (vendor/supabase/supabase.js, carregado antes deste arquivo):
+   sessão persistente, renovação automática, PKCE e sincronização entre abas ficam por conta dele.
+   Aqui ficam só: a interface `window.nuvem` (a mesma de antes, para as telas), as chamadas de dados e de arquivos, e as regras de
+   convivência com a internet instável (cair a conexão NUNCA desconecta nem apaga dados locais).
    Uso: nuvem.entrar(email, senha); nuvem.get("campanhas?select=id,nome"); nuvem.rpc("criar_campanha", { p_nome: "..." }) */
 (() => {
   "use strict";
-  const C = window.NUVEM_CONFIG || {}, LS = "nuvem_sessao", base = C.url;
-  let sessao = null, renovando = null, tipoRetorno = "";
+  const C = window.NUVEM_CONFIG || {}, base = C.url, SDK = window.supabase;
+  const CHAVE_SESSAO = "nuvem_sessao_sdk", CHAVE_ANTIGA = "nuvem_sessao";   // a antiga é migrada uma vez e removida
   const ouvintes = [];
-  try { sessao = JSON.parse(localStorage.getItem(LS) || "null"); } catch (_) {}
+  let tipoRetorno = "", erroDoLink = "", tokensNoEndereco = null, usuarioAtual = null;
 
-  const guardar = (s) => { sessao = s; try { if (s) localStorage.setItem(LS, JSON.stringify(s)); else localStorage.removeItem(LS); } catch (_) {} ouvintes.forEach((f) => { try { f(sessao && sessao.user); } catch (_) {} }); };
+  /* armazenamento da sessão: localStorage (sobrevive a fechar o navegador e a PWA); se estiver bloqueado, memória */
+  const memoria = {};
+  const armazem = {
+    getItem: (k) => { try { return localStorage.getItem(k); } catch (_) { return k in memoria ? memoria[k] : null; } },
+    setItem: (k, v) => { try { localStorage.setItem(k, v); } catch (_) { memoria[k] = String(v); } },
+    removeItem: (k) => { try { localStorage.removeItem(k); } catch (_) { delete memoria[k]; } }
+  };
+  const nomeDe = (u) => (u && u.user_metadata && u.user_metadata.nome) || (u && u.nome) || "";
+  const simples = (u) => (u && u.id ? { id: u.id, email: u.email, nome: nomeDe(u) } : null);
+  const lerSessaoGuardada = (chave) => { try { const s = JSON.parse(armazem.getItem(chave) || "null"); return s && s.user ? s : null; } catch (_) { return null; } };
+  /* o usuário é conhecido na hora (sem esperar a rede): vem da sessão guardada, assim a tela não "pisca" deslogada ao reabrir */
+  usuarioAtual = simples((lerSessaoGuardada(CHAVE_SESSAO) || lerSessaoGuardada(CHAVE_ANTIGA) || {}).user);
+
+  /* o que o link do e-mail trouxe no endereço, lido ANTES do SDK limpar a URL */
+  (() => {
+    try {
+      const h = new URLSearchParams((location.hash || "").replace(/^#/, "")), q = new URLSearchParams(location.search || "");
+      erroDoLink = h.get("error_description") || q.get("error_description") || "";
+      if (h.get("access_token")) tokensNoEndereco = { access_token: h.get("access_token"), refresh_token: h.get("refresh_token") || "", type: h.get("type") || "" };
+    } catch (_) {}
+  })();
+
+  const sb = SDK && base ? SDK.createClient(base, C.chave, {
+    auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: CHAVE_SESSAO, storage: armazem }
+  }) : null;
+
+  const avisar = () => ouvintes.forEach((f) => { try { f(usuarioAtual); } catch (_) {} });
+  if (sb) sb.auth.onAuthStateChange((evento, sess) => {
+    if (evento === "PASSWORD_RECOVERY") tipoRetorno = "recovery";
+    if (evento === "INITIAL_SESSION") { if (sess && sess.user) usuarioAtual = simples(sess.user); return; }
+    /* SIGNED_OUT só acontece na saída voluntária (aqui ou em outra aba) ou quando o servidor invalida a sessão de vez.
+       Falha de rede ao renovar NÃO gera esse evento: a sessão continua guardada e o SDK tenta de novo sozinho. */
+    if (evento === "SIGNED_OUT") usuarioAtual = null;
+    else if (sess && sess.user) usuarioAtual = simples(sess.user);
+    avisar();
+  });
+
   const MSG = [
     [/Invalid login credentials/i, "E-mail ou senha incorretos."],
     [/already registered|already been registered/i, "Este e-mail já tem conta. Use “Entrar”."],
-    [/Password should be at least|weak.?password/i, "A senha precisa ter pelo menos 8 caracteres."],
+    [/Password should be at least|weak.?password/i, "A senha precisa ter pelo menos 10 caracteres, com letras e números."],
     [/Unable to validate email|invalid format|valid email/i, "E-mail inválido."],
     [/rate limit|too many|over_email_send_rate_limit/i, "Muitas tentativas seguidas. Espere um pouco e tente de novo."],
     [/not authorized/i, "Este e-mail não pode receber mensagens agora. Use e-mail e senha."],
@@ -20,6 +59,7 @@
     [/JWT expired|invalid JWT/i, "Sua sessão expirou. Entre de novo."],
     [/weak_password|weak password|known to be weak|should contain at least one character/i, "Senha fraca. Use pelo menos 10 caracteres, com letras e números."],
     [/otp_expired|email link is invalid or has expired|token has expired or is invalid/i, "Este link expirou ou já foi usado. Peça um novo."],
+    [/captcha/i, "Não foi possível confirmar que você não é um robô. Tente de novo."],
     [/reauthentication|nonce/i, "Por segurança, confirme sua identidade com o código enviado ao seu e-mail."],
     [/same.?password|different from the old password/i, "A nova senha precisa ser diferente da atual."]
   ];
@@ -33,10 +73,14 @@
     return { ok: true, erro: "" };
   };
   const traduz = (m) => { for (const [re, t] of MSG) if (re.test(m)) return t; return m; };
+  const SEM_REDE = "Sem conexão com o servidor. Seus dados continuam salvos neste aparelho.";
+  const erroDeRede = (e) => !!e && (/retryable|fetch/i.test(String(e.name || "")) || /failed to fetch|networkerror|load failed|network request failed|sem conexão/i.test(String(e.message || "")) || (typeof navigator !== "undefined" && navigator.onLine === false));
+  const comoErro = (e) => { const x = new Error(erroDeRede(e) ? SEM_REDE : traduz(String((e && e.message) || e || "Erro"))); x.status = e && e.status; x.codigo = e && e.code; x.detalhe = e; if (erroDeRede(e)) x.semRede = true; return x; };
+  const exigirSdk = () => { if (!sb) throw new Error("Não foi possível carregar o módulo de login. Recarregue a página."); return sb.auth; };
 
   async function http(url, opt) {
     let r;
-    try { r = await fetch(url, opt); } catch (e) { throw new Error("Sem conexão com o servidor."); }
+    try { r = await fetch(url, opt); } catch (e) { const x = new Error(SEM_REDE); x.semRede = true; throw x; }
     const txt = await r.text();
     let j = null; try { j = txt ? JSON.parse(txt) : null; } catch (_) {}
     if (!r.ok) {
@@ -46,96 +90,127 @@
     return j;
   }
   const JSONH = { apikey: C.chave, "Content-Type": "application/json" };
-
-  const aceitar = (j) => {
-    const u = j.user || {};
-    guardar({
-      access_token: j.access_token, refresh_token: j.refresh_token,
-      expires_at: j.expires_at || Math.floor(Date.now() / 1000) + (j.expires_in || 3600),
-      user: { id: u.id, email: u.email, nome: (u.user_metadata && u.user_metadata.nome) || "" }
-    });
-    return sessao.user;
-  };
-  async function renovar() {
-    if (renovando) return renovando;
-    renovando = http(`${base}/auth/v1/token?grant_type=refresh_token`, { method: "POST", headers: JSONH, body: JSON.stringify({ refresh_token: sessao.refresh_token }) })
-      .then(aceitar).finally(() => { renovando = null; });
-    return renovando;
-  }
+  /* token de acesso: o SDK renova sozinho quando falta pouco. Sem internet, nada de "Faça login": avisa que está sem conexão. */
   async function token() {
-    if (!sessao) return null;
-    if (sessao.expires_at - Date.now() / 1000 < 60) { try { await renovar(); } catch (e) { if (e.status && e.status < 500) guardar(null); else throw e; } }
-    return sessao ? sessao.access_token : null;
+    if (!sb) return null;
+    let r;
+    try { r = await sb.auth.getSession(); } catch (e) { if (erroDeRede(e)) throw new Error(SEM_REDE); return null; }
+    if (r && r.data && r.data.session) return r.data.session.access_token;
+    if (r && r.error && erroDeRede(r.error)) { const x = new Error(SEM_REDE); x.semRede = true; throw x; }
+    return null;
   }
 
   /* ---------- login ---------- */
+  const comCaptcha = (extra, captcha) => (captcha ? { ...extra, captchaToken: captcha } : extra);
   /* Com “Confirm email” ligado no Supabase o servidor NÃO devolve sessão: a conta só vale depois do link enviado ao e-mail.
-     Retorna { confirmar: true } nesse caso (o app mostra a orientação); retorna o usuário só se o projeto ainda não exigir confirmação. */
-  async function cadastrar(email, senha, nome, voltarPara) {
+     Retorna { confirmar: true } nesse caso (o app mostra a orientação); retorna o usuário só se o projeto ainda não exigir confirmação.
+     O token do CAPTCHA (Turnstile) só é enviado quando existir; hoje o CAPTCHA está desligado até a configuração ser feita. */
+  async function cadastrar(email, senha, nome, voltarPara, captcha) {
     const v = validarSenha(senha); if (!v.ok) throw new Error(v.erro);
-    const j = await http(`${base}/auth/v1/signup?redirect_to=${encodeURIComponent(voltarPara || location.href.split("#")[0])}`, { method: "POST", headers: JSONH, body: JSON.stringify({ email, password: senha, data: { nome: nome || "" } }) });
-    if (!j || !j.access_token) return { confirmar: true, email };
-    return aceitar(j);
+    const { data, error } = await exigirSdk().signUp({ email, password: senha, options: comCaptcha({ data: { nome: nome || "" }, emailRedirectTo: voltarPara || location.href.split("#")[0] }, captcha) });
+    if (error) throw comoErro(error);
+    if (!data || !data.session) return { confirmar: true, email };
+    return usuarioAtual;
   }
-  async function reenviarConfirmacao(email, voltarPara) {
-    await http(`${base}/auth/v1/resend?redirect_to=${encodeURIComponent(voltarPara || location.href.split("#")[0])}`, { method: "POST", headers: JSONH, body: JSON.stringify({ type: "signup", email }) });
+  async function reenviarConfirmacao(email, voltarPara, captcha) {
+    const { error } = await exigirSdk().resend({ type: "signup", email, options: comCaptcha({ emailRedirectTo: voltarPara || location.href.split("#")[0] }, captcha) });
+    if (error) throw comoErro(error);
   }
   /* A resposta é sempre a mesma, exista ou não a conta (não revela quais e-mails estão cadastrados). */
-  async function esqueciSenha(email, voltarPara) {
-    try { await http(`${base}/auth/v1/recover?redirect_to=${encodeURIComponent(voltarPara || location.href.split("#")[0])}`, { method: "POST", headers: JSONH, body: JSON.stringify({ email }) }); }
-    catch (e) { if (e.status && e.status < 500 && e.status !== 429) return; throw e; }
+  async function esqueciSenha(email, voltarPara, captcha) {
+    const { error } = await exigirSdk().resetPasswordForEmail(email, comCaptcha({ redirectTo: voltarPara || location.href.split("#")[0] }, captcha));
+    if (error && !(error.status && error.status < 500 && error.status !== 429 && !/captcha/i.test(error.message || ""))) throw comoErro(error);
   }
-  async function entrar(email, senha) {
-    const j = await http(`${base}/auth/v1/token?grant_type=password`, { method: "POST", headers: JSONH, body: JSON.stringify({ email, password: senha }) });
-    return aceitar(j);
+  async function entrar(email, senha, captcha) {
+    const { data, error } = await exigirSdk().signInWithPassword({ email, password: senha, options: comCaptcha({}, captcha) });
+    if (error) throw comoErro(error);
+    usuarioAtual = simples(data.user);
+    return usuarioAtual;
   }
-  async function linkMagico(email, voltarPara) {
-    await http(`${base}/auth/v1/otp?redirect_to=${encodeURIComponent(voltarPara || location.href.split("#")[0])}`, { method: "POST", headers: JSONH, body: JSON.stringify({ email, create_user: true }) });
+  async function linkMagico(email, voltarPara, captcha) {
+    const { error } = await exigirSdk().signInWithOtp({ email, options: comCaptcha({ emailRedirectTo: voltarPara || location.href.split("#")[0], shouldCreateUser: true }, captcha) });
+    if (error) throw comoErro(error);
   }
-  async function retornoDoLink() {           // chamar ao abrir a página: lê a sessão que vem na URL depois do link mágico
-    const h = new URLSearchParams(location.hash.replace(/^#/, ""));
-    if (!h.get("access_token")) { if (h.get("error_description")) throw new Error(traduz(h.get("error_description").replace(/\+/g, " "))); return null; }
-    const t = h.get("access_token"); tipoRetorno = h.get("type") || "";
-    const u = await http(`${base}/auth/v1/user`, { headers: { apikey: C.chave, Authorization: "Bearer " + t } });
-    history.replaceState(null, "", location.pathname + location.search);
-    return aceitar({ access_token: t, refresh_token: h.get("refresh_token"), expires_in: +h.get("expires_in") || 3600, user: u });
+  /* sessão da versão anterior do aplicativo (chave nuvem_sessao): entregue ao SDK uma vez; só é apagada se der certo
+     ou se o servidor a rejeitar de vez. Sem internet, fica guardada para a próxima abertura. */
+  async function migrarSessaoAntiga() {
+    const antiga = lerSessaoGuardada(CHAVE_ANTIGA); if (!antiga || !sb) return;
+    try {
+      const atual = await sb.auth.getSession();
+      if (atual && atual.data && atual.data.session) { armazem.removeItem(CHAVE_ANTIGA); return; }
+      const { error } = await sb.auth.setSession({ access_token: antiga.access_token, refresh_token: antiga.refresh_token });
+      if (!error || !erroDeRede(error)) armazem.removeItem(CHAVE_ANTIGA);
+    } catch (e) { if (!erroDeRede(e)) armazem.removeItem(CHAVE_ANTIGA); }
   }
-  async function sair() {
-    try { const t = sessao && sessao.access_token; if (t) await fetch(`${base}/auth/v1/logout`, { method: "POST", headers: { apikey: C.chave, Authorization: "Bearer " + t } }); } catch (_) {}
-    guardar(null);
+  /* chamar ao abrir a página: o SDK já trocou o código do link por sessão (PKCE); aqui se aguarda isso, se aproveita um link
+     antigo (tokens no endereço) e se informa o tipo (signup, recovery...). */
+  async function retornoDoLink() {
+    if (erroDoLink) { const m = erroDoLink.replace(/\+/g, " "); erroDoLink = ""; throw new Error(traduz(m)); }
+    if (!sb) return usuarioAtual;
+    try { await sb.auth.getSession(); } catch (_) {}
+    if (tokensNoEndereco) {
+      const t = tokensNoEndereco; tokensNoEndereco = null;
+      try {
+        const atual = await sb.auth.getSession();
+        if (!(atual && atual.data && atual.data.session)) { const { error } = await sb.auth.setSession({ access_token: t.access_token, refresh_token: t.refresh_token }); if (error) throw comoErro(error); }
+        tipoRetorno = tipoRetorno || t.type;
+        history.replaceState(null, "", location.pathname + location.search);
+      } catch (e) { if (!erroDeRede(e)) throw e; }
+    }
+    await migrarSessaoAntiga();
+    return usuarioAtual;
   }
+  /* Sair VOLUNTARIAMENTE. Padrão: só este aparelho. Mesmo sem internet a sessão local é removida (a do servidor expira sozinha);
+     os dados do usuário no aparelho (criações, combates, preferências) nunca são apagados. */
+  async function encerrar(escopo) {
+    const limpar = () => { armazem.removeItem(CHAVE_SESSAO); armazem.removeItem(CHAVE_SESSAO + "-code-verifier"); armazem.removeItem(CHAVE_ANTIGA); usuarioAtual = null; };
+    if (sb) { try { await sb.auth.signOut({ scope: escopo }); } catch (_) {} }
+    const tinha = !!usuarioAtual || !!lerSessaoGuardada(CHAVE_SESSAO);
+    limpar(); if (tinha) avisar();
+  }
+  const sair = () => encerrar("local");
+  const sairDeTodos = () => encerrar("global");
   /* Troca de senha. Sem depender só do navegador:
-     1) a senha atual é conferida pelo servidor (novo login com ela); 2) o pedido leva `current_password` (o Supabase recusa se
-     “Require current password” estiver ligado e ela não bater) e, quando “Secure password change” exige, o código `nonce`
-     enviado ao e-mail (reautenticar()). Quem chegou por link de recuperação pode definir a senha sem a atual (a sessão é recente). */
+     1) sem CAPTCHA configurado, a senha atual é conferida pelo servidor (novo login com ela); 2) o pedido leva `current_password`
+     (o Supabase recusa se “Require current password” estiver ligado e ela não bater) e, quando “Secure password change” exige,
+     o código `nonce` enviado ao e-mail (reautenticar()). Quem chegou por link de recuperação pode definir a senha sem a atual. */
   async function trocarSenha(nova, atual, codigo) {
     const v = validarSenha(nova); if (!v.ok) throw new Error(v.erro);
-    if (!sessao) throw new Error("Faça login.");
+    if (!usuarioAtual) throw new Error("Faça login.");
     if (atual !== undefined && atual !== null) {
       if (!atual) throw new Error("Informe a senha atual.");
       if (atual === nova) throw new Error("A nova senha precisa ser diferente da atual.");
-      try { await entrar(sessao.user.email, atual); }
-      catch (e) { throw new Error(e.status === 400 || e.status === 401 || /incorretos/.test(e.message) ? "A senha atual está incorreta." : e.message); }
+      if (!C.turnstileSiteKey) {
+        try { await entrar(usuarioAtual.email, atual); }
+        catch (e) { throw new Error(e.status === 400 || e.status === 401 || /incorretos/.test(e.message) ? "A senha atual está incorreta." : e.message); }
+      }
     }
-    const t = await token(); if (!t) throw new Error("Faça login.");
-    const corpo = { password: nova };
-    if (atual) corpo.current_password = atual;
-    if (codigo) corpo.nonce = String(codigo).trim();
-    try { await http(`${base}/auth/v1/user`, { method: "PUT", headers: { ...JSONH, Authorization: "Bearer " + t }, body: JSON.stringify(corpo) }); }
-    catch (e) { if (/reauthentication|nonce/i.test(e.detalhe ? JSON.stringify(e.detalhe) : e.message)) e.reautenticar = true; throw e; }
+    const atributos = { password: nova };
+    if (atual) atributos.current_password = atual;
+    if (codigo) atributos.nonce = String(codigo).trim();
+    const { error } = await exigirSdk().updateUser(atributos);
+    if (error) { const e = comoErro(error); if (/reauthentication|nonce|reauth/i.test(String(error.message || "") + String(error.code || ""))) e.reautenticar = true; throw e; }
   }
   async function reautenticar() {
-    const t = await token(); if (!t) throw new Error("Faça login.");
-    await http(`${base}/auth/v1/reauthenticate`, { method: "GET", headers: { apikey: C.chave, Authorization: "Bearer " + t } });
+    const { error } = await exigirSdk().reauthenticate();
+    if (error) throw comoErro(error);
   }
 
   /* ---------- tabelas (PostgREST) ---------- */
-  async function rest(metodo, caminho, corpo, extra) {
+  async function rest(metodo, caminho, corpo, extra, jaRenovou) {
     const t = await token(); if (!t) throw new Error("Faça login.");
     const h = { apikey: C.chave, Authorization: "Bearer " + t, ...(extra || {}) };
     if (corpo !== undefined) h["Content-Type"] = "application/json";
     if (metodo !== "GET" && metodo !== "DELETE" && !h.Prefer) h.Prefer = "return=representation";
-    return http(`${base}/rest/v1/${caminho}`, { method: metodo, headers: h, body: corpo !== undefined ? JSON.stringify(corpo) : undefined });
+    try { return await http(`${base}/rest/v1/${caminho}`, { method: metodo, headers: h, body: corpo !== undefined ? JSON.stringify(corpo) : undefined }); }
+    catch (e) {
+      /* token vencido entre a leitura e o envio: renova uma vez e repete; se a renovação falhar por falta de internet, só avisa */
+      if (!jaRenovou && e.status === 401 && /expired|JWT/i.test(JSON.stringify(e.detalhe || "") + e.message) && sb) {
+        try { await sb.auth.refreshSession(); } catch (_) {}
+        return rest(metodo, caminho, corpo, extra, true);
+      }
+      throw e;
+    }
   }
 
   /* ---------- arquivos (Storage) ---------- */
@@ -175,9 +250,10 @@
   const copiar = async (t) => { try { await navigator.clipboard.writeText(t); return true; } catch (_) { return false; } };
 
   window.nuvem = {
-    usuario: () => (sessao && sessao.user) || null,
+    usuario: () => usuarioAtual,
     aoMudar: (f) => ouvintes.push(f),
-    cadastrar, reenviarConfirmacao, esqueciSenha, entrar, linkMagico, retornoDoLink, retornoTipo: () => tipoRetorno, sair, trocarSenha, reautenticar, validarSenha, SENHA_MIN,
+    online: () => typeof navigator === "undefined" || navigator.onLine !== false,
+    cadastrar, reenviarConfirmacao, esqueciSenha, entrar, linkMagico, retornoDoLink, retornoTipo: () => tipoRetorno, sair, sairDeTodos, trocarSenha, reautenticar, validarSenha, SENHA_MIN,
     get: (c) => rest("GET", c), post: (c, o, h) => rest("POST", c, o, h), patch: (c, o) => rest("PATCH", c, o), apagar: (c) => rest("DELETE", c),
     rpc: (nome, args) => rest("POST", "rpc/" + nome, args || {}),
     enviarArquivo, urlDoArquivo, apagarArquivos, observar, esc, olhos, copiar

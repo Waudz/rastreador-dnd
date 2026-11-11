@@ -23,7 +23,7 @@ test('todas as páginas têm o mesmo bloco de manifest, favicons, apple-touch e 
 test('service worker: tudo que ele pré-guarda existe, inclusive logotipo, ícones e magias offline',()=>{
  const s=ler('sw.js'),lista=eval(/const ESSENCIAIS = (\[.*?\]);/s.exec(s)[1]);
  for(const f of lista)if(f!=='./')assert.ok(fs.existsSync(path.join(root,f)),'pré-cache aponta para arquivo inexistente: '+f);
- for(const f of ['icones/logo-64.png','icones/icone-512.png','icones/icone-maskable-512.png','icones/apple-touch-icon.png','dados/magias.json','manifest.json','css/identidade.css','css/fichas.css','css/magias.css','js/navegacao.js'])assert.ok(lista.includes(f),f+' deveria estar no pré-cache');
+ for(const f of ['icones/logo-64.png','icones/icone-512.png','icones/icone-maskable-512.png','icones/apple-touch-icon.png','dados/magias.json','manifest.json','css/identidade.css','css/fichas.css','css/magias.css','js/navegacao.js','vendor/supabase/supabase.js'])assert.ok(lista.includes(f),f+' deveria estar no pré-cache');
  assert.match(s,/cache: "no-cache"/);          // com internet, sempre revalida; sem internet, usa o guardado
 });
 test('o registro do service worker é único (navegacao.js), com atualização fora do cache HTTP e aviso sem recarregar sozinho',()=>{
@@ -46,4 +46,8 @@ test('controles da campanha: três botões em grade de três colunas, sem Gerenc
  const conv=c.slice(c.indexOf('async function mostrarConvite'),c.indexOf('/* ---------- ações'));assert.ok(!conv.includes('novo-cod'),'Trocar código saiu do topo');
  const grupo=c.slice(c.indexOf('function abaMembros'),c.indexOf('async function desenhar'));assert.match(grupo,/mestre\(\)/);assert.match(grupo,/id="novo-cod"/);
  assert.match(c,/Gerar um novo código\? O código antigo deixa de valer/);     // confirmação preservada
+});
+test('o SDK oficial é carregado antes do cliente em todas as páginas e a cópia tem licença e procedência',()=>{
+ for(const p of PAGINAS){const h=ler(p);if(!/js\/nuvem\.js/.test(h))continue;assert.ok(h.indexOf('vendor/supabase/supabase.js')>=0&&h.indexOf('vendor/supabase/supabase.js')<h.indexOf('js/nuvem.js'),p);}
+ assert.ok(fs.existsSync(path.join(root,'vendor/supabase/LICENSE')));assert.match(ler('vendor/supabase/LEIA-ME.md'),/2\.118\.0/);
 });

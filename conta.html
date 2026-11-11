@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="css/fichas.css">
   <script src="js/icones.js" defer></script>
   <script src="js/config-nuvem.js" defer></script>
+  <script src="vendor/supabase/supabase.js" defer></script>
   <script src="js/nuvem.js" defer></script>
   <script src="js/navegacao.js" defer></script>
   <script src="js/paineis.js" defer></script>
@@ -106,6 +107,7 @@
         <div class="row"><div class="pw" style="flex:1 1 220px"><input id="a-atual" type="password" autocomplete="current-password" placeholder="Senha atual"><button type="button" class="pw-eye"></button></div></div>
         <div class="row"><div class="pw" style="flex:1 1 220px"><input id="a-senha" type="password" autocomplete="new-password" placeholder="Nova senha (mín. 10, com letras e números)"><button type="button" class="pw-eye"></button></div><button type="button" class="small" id="btn-senha">Trocar senha</button></div>
         <div class="row" id="linha-codigo" hidden><input id="a-codigo" inputmode="numeric" autocomplete="one-time-code" placeholder="Código enviado ao seu e-mail" style="flex:1 1 220px"><button type="button" class="small" id="btn-codigo">Confirmar troca</button></div>
+        <div class="row"><button type="button" class="small subtle" id="btn-sair-todos" title="Encerra a sessão em todos os aparelhos onde você entrou">Sair de todos os aparelhos</button></div>
         <div class="muted" id="msg-conta"></div><h3>Sincronização da Conta</h3><p id="conta-sync-status" class="muted" role="status">Os dados são vinculados à sua conta logada.</p><button type="button" id="conta-sincronizar">Sincronizar Agora</button><details id="backup-conta" class="item" style="margin-top:12px"><summary>Backup e restauração das criações</summary><div>
           <p class="muted">Suas criações (monstros, NPCs e personagens do bestiário, com fotos) ficam na sua conta. O backup é um arquivo seu: guarde-o fora deste aparelho. Restaurar nunca apaga nem sobrescreve nada sem você confirmar.</p>
           <div class="row"><button type="button" class="small" id="backup-baixar">Baixar backup</button><label class="btnlike small">Restaurar de um arquivo<input type="file" id="backup-arquivo" accept=".json,application/json" hidden></label><button type="button" class="small" id="backup-legado">Procurar dados antigos neste navegador</button></div>

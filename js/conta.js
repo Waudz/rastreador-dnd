@@ -140,7 +140,11 @@
   }
   function mostrarLogin() { liberar();personagensConta=[];podeCriarPersonagem=false;$("#entrar").hidden = false; $("#area").hidden = true; $("#l-senha").value = ""; $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = ""; $("#quem").textContent = "";$('#biblioteca-contagem').textContent=''; }
 
-  $("#btn-sair").onclick = async () => { await nuvem.sair(); mostrarLogin(); };
+  $("#btn-sair").onclick = async () => { await nuvem.sair(); mostrarLogin(); };     // sai só deste aparelho; seus dados locais continuam aqui
+  $("#btn-sair-todos").onclick = async () => {
+    if (!confirm("Sair da conta em todos os aparelhos? Você precisará entrar de novo em cada um. Seus dados locais não são apagados.")) return;
+    await nuvem.sairDeTodos(); mostrarLogin();
+  };
   $("#abre-camp").onclick = () => { $("#form-entrar").hidden = true; alterna("#form-camp"); };
   $("#abre-codigo").onclick = () => { $("#form-camp").hidden = true; alterna("#form-entrar"); };
   $("#abre-pers").onclick = () => alterna("#form-pers");

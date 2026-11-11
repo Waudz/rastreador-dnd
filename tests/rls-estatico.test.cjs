@@ -53,10 +53,13 @@ test('nenhum segredo (senha, service_role, token ou chave privada) no código pu
   for(const a of arquivos){const t=fs.readFileSync(path.join(root,a),'utf8');for(const p of padroes)assert.ok(!p.test(t),'possível segredo em '+a);}
   assert.ok(!/service_role/.test(ler('js/nuvem.js')+ler('js/config-nuvem.js')+ler('js/conta.js')));
 });
-test('o cliente de login só grava a sessão no navegador',()=>{
+test('o cliente de login só grava a sessão no navegador (pelo SDK) e nunca a senha',()=>{
   const n=ler('js/nuvem.js'),usos=[...n.matchAll(/localStorage\.setItem\(([^,]+),/g)].map(m=>m[1].trim());
-  assert.deepEqual(usos,['LS']);assert.ok(!/sessionStorage|document\.cookie/.test(n));
+  assert.deepEqual(usos,['k']);                                   // só o adaptador de armazenamento entregue ao SDK
+  assert.ok(!/armazem\.setItem\(/.test(n),'o aplicativo não grava sessão por conta própria');
+  assert.ok(!/sessionStorage|document\.cookie/.test(n));
   assert.ok(!/console\.(log|info|debug)\([^)]*(senha|password|token)/i.test(n));
+  assert.match(n,/storageKey: CHAVE_SESSAO, storage: armazem/);
 });
 test('a política de segurança do site só permite o Supabase como destino de rede',()=>{
   for(const h of fs.readdirSync(root).filter(f=>f.endsWith('.html'))){const t=ler(h);if(!/Content-Security-Policy/.test(t))continue;
