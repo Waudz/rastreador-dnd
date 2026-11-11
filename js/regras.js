@@ -34,7 +34,6 @@ window.REGRAS = (() => {
 
   /* [nome, deslocamento em metros, bônus de atributo, observações]  — subraças aparecem como "Raça (Sub-raça)" */
   const RACAS = [
-    ["Raça personalizada", 9, "+2 e +1 à escolha", "Sem traços adicionais"],
     ["Aasimar", 9, "CAR +2", "Visão no escuro 18 m; resistência a necrótico e radiante; mãos curativas"],
     ["Anão (da Colina)", 7.5, "CON +2, SAB +1", "Visão no escuro 18 m; resiliência anã; robustez anã (+1 PV por nível)"],
     ["Anão (da Montanha)", 7.5, "CON +2, FOR +2", "Visão no escuro 18 m; resiliência anã; treinamento com armaduras"],
@@ -171,11 +170,7 @@ window.REGRAS = (() => {
       return {nome:tituloTexto(titulo),desc,origem:"Raça · "+nome};
     });
   }
-  /* Só o que o SRD 5.1 (CC-BY 4.0) traz pode ser ESCOLHIDO. Raças, subclasses e classes de outros livros continuam reconhecidas
-     em fichas que já as usam, mas não são oferecidas; para o resto existe "Raça personalizada". */
-  const RACAS_BASE=['Anão (da Colina)','Draconato','Elfo (Alto)','Gnomo (da Rocha)','Halfling (Pés Leves)','Humano','Meio-elfo','Meio-orc','Tiefling','Raça personalizada'];
-  const SUBCLASSES_SRD={Barbarian:'Trilha do Berserker',Bard:'Colégio do Conhecimento',Cleric:'Domínio da Vida',Druid:'Círculo da Terra',Fighter:'Campeão',Monk:'Caminho da Mão Espalmada',Paladin:'Juramento de Devoção',Ranger:'Caçador',Rogue:'Ladrão',Sorcerer:'Linhagem Dracônica',Warlock:'O Corruptor',Wizard:'Escola de Evocação'};
-  const classeSrd=id=>Object.prototype.hasOwnProperty.call(SUBCLASSES_SRD,id);
+  const RACAS_BASE=['Anão (da Colina)','Anão (da Montanha)','Draconato','Elfo (Alto)','Elfo (da Floresta)','Elfo (Drow)','Gnomo (da Floresta)','Gnomo (da Rocha)','Halfling (Pés Leves)','Halfling (Robusto)','Humano','Humano (Variante)','Meio-elfo','Meio-orc','Tiefling','Fada'];
   function preparacao(f){
     const mapa={Cleric:'sab',Druid:'sab',Wizard:'int',Paladin:'car',Artificer:'int'},out=[];
     for(const c of f.classes||[]){if(!mapa[c.c]||!conjuracao([c]).habilidades.length)continue;const limite=Math.max(1,Math.floor(c.n/(['Paladin','Artificer'].includes(c.c)?2:1))+mod(f.atributos?.[mapa[c.c]]||10));
@@ -231,5 +226,5 @@ window.REGRAS = (() => {
   function percepcaoPassiva(f){return 10+valorPericia(f,'percepcao');}
   function valoresAtaque(f,a){const attrs=f.atributos||{},at=a.atr==='acuidade'?Math.max(mod(attrs.for??10),mod(attrs.des??10)):mod(attrs[a.atr||'for']??10),mg=Number(a.magico)||0;return {ataque:at+(a.prof===false?0:prof(nivelTotal(f.classes||[])||f.nivel||1))+mg,dano:at+mg+(Number(a.extra)||0)};}
   function resumoMestre(f){const fontes=fontesPericias(f),tracos=tracosDaFicha(f);return {passiva:percepcaoPassiva(f),pericias:PERICIAS.filter(([k])=>fontes.basicas.includes(k)).map(([k,n])=>({id:k,nome:n,valor:valorPericia(f,k),especializada:fontes.especializadas.includes(k)})),tracos,resistencias:[...(Array.isArray(f.resistencias)?f.resistencias:f.resistencias?[f.resistencias]:[]),...tracos.filter(t=>/resistência|imunidade/i.test(t.desc)).map(t=>t.desc)],ataques:(f.ataques||[]).map(a=>({...a,...valoresAtaque(f,a)})),magias:f.magias||[],caracteristicas:f.caracteristicas||[]};}
-  return { chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, resumoMestre, RACAS_BASE, SUBCLASSES_SRD, classeSrd, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+  return { chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, resumoMestre, RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();

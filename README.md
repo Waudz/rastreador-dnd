@@ -2,7 +2,7 @@
 
 Rastreador de iniciativa, fichas, campanhas, monstros e magias de D&D 5ª edição (2014), em português. Site estático (HTML, CSS e JavaScript puro, sem build e sem framework) publicado no GitHub Pages, com contas e campanhas no Supabase e instalável como PWA.
 
-Projeto de fãs, sem vínculo com a Wizards of the Coast. Conteúdo oferecido para escolha: apenas o System Reference Document 5.1 (veja "Licenças").
+Projeto de fãs, sem vínculo com a Wizards of the Coast. Conteúdo de D&D 5e (2014): o SRD 5.1 e resumos próprios de outros livros (veja "Licenças").
 
 ## O que faz
 
@@ -69,7 +69,7 @@ O fluxo do GitHub também aplica `supabase/*.sql` num Postgres temporário e rod
 - Monstros, magias, classes e raças do **System Reference Document 5.1**, de Wizards of the Coast LLC, sob **Creative Commons Attribution 4.0** (dados obtidos pela API Open5e). A atribuição completa e as alterações feitas estão em [`licencas.html`](licencas.html) e no rodapé de todas as páginas.
 - As traduções de `dados/` são do autor do projeto, feitas com auxílio de IA a partir do texto do SRD (confirmado pelo autor em 11/11/2026). São obras derivadas do SRD, publicadas sob a mesma licença CC BY 4.0, com a atribuição e a indicação das alterações em `licencas.html`.
 - A estrutura do criador foi adaptada do HeroQuill (MIT); aviso em [`docs/FONTES-CRIADOR.md`](docs/FONTES-CRIADOR.md).
-- Livros publicados, outras edições e conteúdo de outros livros não fazem parte do repositório nem são oferecidos para escolha. Fichas antigas que já usam raças ou subclasses de outros livros continuam abrindo.
+- O texto de livros publicados e de outras edições não faz parte do repositório. O criador também oferece resumos próprios de raças, subclasses e antecedentes de outros livros de D&D 5e (2014); esse material **não** é coberto pela licença do SRD e fica por conta do autor (decisão registrada em 11/11/2026). Se o projeto for distribuído amplamente, vale revisar esse ponto.
 
 ## Documentos do projeto
 

@@ -23,8 +23,7 @@ test('atribuição do SRD 5.1 completa na página de licenças e resumida em tod
  const n=ler('js/navegacao.js');assert.match(n,/System Reference Document 5\.1 da Wizards of the Coast LLC/);assert.match(n,/href="licencas\.html"/);
  for(const h of ['index.html','conta.html','campanha.html','personagem.html','criar-personagem.html','iniciativa.html'])assert.match(ler(h),/src="js\/navegacao\.js"/,h);
 });
-test('só raças do SRD 5.1 são oferecidas na ficha: Artífice e subclasses de outros livros ficam fora da escolha',()=>{
- const p=ler('js/personagem.js');
- assert.match(p,/R\.classeSrd\(x\.id\)/);assert.match(p,/R\.SUBCLASSES_SRD\[d\.id\]/);
- assert.match(ler('js/criador.js'),/!s\.id\.startsWith\('phb2014:'\)/);
+test('a página de licenças diz com clareza que há conteúdo além do SRD, não coberto pela licença CC',()=>{
+ const l=ler('licencas.html');
+ assert.match(l,/Conteúdo além do SRD/);assert.match(l,/não<\/b> é coberto pela licença Creative Commons/);
 });
