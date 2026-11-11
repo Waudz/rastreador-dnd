@@ -14,7 +14,8 @@
     $("#aba-entrar").classList.toggle("on", !criar); $("#aba-criar").classList.toggle("on", criar);
     $("#campo-nome").hidden = !criar; $("#btn-login").textContent = criar ? "Criar conta" : "Entrar";
     $("#l-senha").autocomplete = criar ? "new-password" : "current-password";
-    $("#l-senha").placeholder = criar ? "Mínimo 8 caracteres" : "";
+    $("#l-senha").placeholder = criar ? "Mínimo 10 caracteres" : "";
+    $("#dica-senha").hidden = !criar; $("#confirmar-email").hidden = true;
     msg($("#msg-login"), "");
   }
   $("#aba-entrar").onclick = () => modo(false);
@@ -23,16 +24,45 @@
   async function enviarLogin() {
     const email = $("#l-email").value.trim(), senha = $("#l-senha").value, m = $("#msg-login");
     if (!email || !senha) { msg(m, "Informe o e-mail e a senha.", true); return; }
-    if (senha.length < 8) { msg(m, "A senha precisa ter pelo menos 8 caracteres.", true); return; }
+    if (modoCriar) { const v = nuvem.validarSenha(senha); if (!v.ok) { msg(m, v.erro, true); return; } }   // no login não se exige regra: contas antigas podem ter senha mais curta
     $("#btn-login").disabled = true; msg(m, "Aguarde…");
     try {
-      if (modoCriar) await nuvem.cadastrar(email, senha, $("#l-nome").value.trim()); else await nuvem.entrar(email, senha);
-      await mostrarArea();
+      if (modoCriar) {
+        const r = await nuvem.cadastrar(email, senha, $("#l-nome").value.trim(), location.origin + location.pathname);
+        if (r && r.confirmar) { $("#l-senha").value = ""; mostrarConfirmacao(email); msg(m, ""); }
+        else await mostrarArea();
+      } else { await nuvem.entrar(email, senha); await mostrarArea(); }
     } catch (e) { msg(m, e.message, true); }
     $("#btn-login").disabled = false;
   }
   $("#btn-login").onclick = enviarLogin;
   $("#form-login").addEventListener("submit", (e) => { e.preventDefault(); enviarLogin(); });
+  /* cadastro com confirmação obrigatória de e-mail: a conta só vale depois do link; aqui só se orienta o usuário */
+  function mostrarConfirmacao(email) {
+    $("#confirmar-texto").textContent = "Enviamos um e-mail para " + email + ". Abra o link dele neste aparelho para ativar a conta. Se não chegou em alguns minutos, olhe a caixa de spam ou peça o reenvio.";
+    $("#confirmar-email").hidden = false;
+  }
+  $("#btn-reenviar").onclick = async () => {
+    const email = $("#l-email").value.trim(), m = $("#msg-login"); if (!email) return;
+    $("#btn-reenviar").disabled = true; setTimeout(() => { $("#btn-reenviar").disabled = false; }, 60000);   // o servidor aceita um pedido por minuto
+    try { await nuvem.reenviarConfirmacao(email, location.origin + location.pathname); msg(m, "E-mail de confirmação reenviado."); }
+    catch (e) { msg(m, e.message, true); }
+  };
+  $("#btn-confirmar-ok").onclick = () => { $("#confirmar-email").hidden = true; modo(false); $("#l-senha").focus(); };
+  $("#btn-esqueci").onclick = async () => {
+    const email = $("#l-email").value.trim(), m = $("#msg-login");
+    if (!email) { msg(m, "Informe o e-mail da conta para receber o link de nova senha.", true); return; }
+    msg(m, "Enviando…");
+    try { await nuvem.esqueciSenha(email, location.origin + location.pathname); msg(m, "Se existir uma conta com este e-mail, enviamos um link para criar uma nova senha. Confira também o spam."); }
+    catch (e) { msg(m, e.message, true); }
+  };
+  $("#btn-recuperar").onclick = async () => {
+    const m = $("#msg-recuperar"), a = $("#r-senha").value, b = $("#r-senha2").value;
+    if (a !== b) { msg(m, "As duas senhas não são iguais.", true); return; }
+    const v = nuvem.validarSenha(a); if (!v.ok) { msg(m, v.erro, true); return; }
+    try { await nuvem.trocarSenha(a); $("#r-senha").value = $("#r-senha2").value = ""; $("#recuperar").hidden = true; await mostrarArea(); msg($("#msg-conta"), "Senha alterada."); }
+    catch (e) { msg(m, e.message, true); }
+  };
   $("#btn-link").onclick = async () => {
     const email = $("#l-email").value.trim(), m = $("#msg-login");
     if (!email) { msg(m, "Informe o e-mail para receber o link.", true); return; }
@@ -138,11 +168,18 @@
     const m = $("#msg-conta"), nome = $("#a-nome").value.trim(); if (!nome) return;
     try { await nuvem.patch(`perfis?id=eq.${nuvem.usuario().id}`, { nome }); msg(m, "Nome salvo."); await carregar(); } catch (e) { msg(m, e.message, true); }
   };
-  $("#btn-senha").onclick = async () => {
-    const m = $("#msg-conta"), s = $("#a-senha").value;
-    if (s.length < 8) { msg(m, "A senha precisa ter pelo menos 8 caracteres.", true); return; }
-    try { await nuvem.trocarSenha(s); $("#a-senha").value = ""; msg(m, "Senha trocada."); } catch (e) { msg(m, e.message, true); }
-  };
+  async function trocarSenhaConta(codigo) {
+    const m = $("#msg-conta"), atual = $("#a-atual").value, nova = $("#a-senha").value;
+    try {
+      await nuvem.trocarSenha(nova, atual, codigo);
+      $("#a-atual").value = $("#a-senha").value = $("#a-codigo").value = ""; $("#linha-codigo").hidden = true; msg(m, "Senha trocada.");
+    } catch (e) {
+      if (e.reautenticar && !codigo) { try { await nuvem.reautenticar(); $("#linha-codigo").hidden = false; $("#a-codigo").focus(); msg(m, "Por segurança, enviamos um código ao seu e-mail. Digite-o e confirme a troca."); } catch (e2) { msg(m, e2.message, true); } return; }
+      msg(m, e.message, true);
+    }
+  }
+  $("#btn-senha").onclick = () => trocarSenhaConta();
+  $("#btn-codigo").onclick = () => { const c = $("#a-codigo").value.trim(); if (!c) { msg($("#msg-conta"), "Digite o código recebido por e-mail.", true); return; } trocarSenhaConta(c); };
 
 
 
@@ -150,6 +187,9 @@
   (async () => {
     nuvem.olhos();
     try { await nuvem.retornoDoLink(); } catch (e) { mostrarLogin(); msg($("#msg-login"), e.message, true); return; }
+    if (nuvem.usuario() && nuvem.retornoTipo?.() === "recovery") {      // veio do link “esqueci minha senha”: pede a nova senha antes de mostrar a conta
+      liberar(); $("#entrar").hidden = true; $("#area").hidden = true; $("#recuperar").hidden = false; $("#r-senha").focus(); return;
+    }
     const rapido = nuvem.usuario() ? window.CAMPANHAS_UI?.entradaRapida(location.search) : '';
     if (rapido) { location.replace(rapido); return; }
     if (nuvem.usuario()) await mostrarArea(); else mostrarLogin();

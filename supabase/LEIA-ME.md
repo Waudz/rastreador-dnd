@@ -22,20 +22,21 @@ Em **Authentication → URL Configuration**:
 - **Site URL**: o endereço do seu site no GitHub Pages (por exemplo `https://SEUUSUARIO.github.io/rastreador-dnd/`).
 - **Redirect URLs**: acrescente o mesmo endereço seguido de `**` e também `http://localhost:8000/**` (para testes no computador).
 
-## 4. Como os jogadores vão entrar
+## 4. Como os jogadores vão entrar (cadastro público)
 
-**Importante:** no plano grátis, o e-mail embutido do Supabase só envia para membros da sua própria organização e no máximo 2 mensagens por hora. Por isso:
+O cadastro público exige **e-mail confirmado** e **senha forte**. O aplicativo já trata os dois casos (tela "Confirme seu e-mail", "Esqueci minha senha", troca de senha com a senha atual), mas **quem decide é o servidor**: as configurações abaixo precisam estar ligadas no painel. A lista completa, com a ordem e a forma de conferir, está em [`docs/SEGURANCA-SUPABASE.md`](../docs/SEGURANCA-SUPABASE.md).
 
-### Opção A: e-mail e senha (funciona já, sem configurar e-mail)
-Em **Authentication → Sign In / Providers → Email**, deixe o provedor ligado e **desligue "Confirm email"**. Cada jogador cria a conta com e-mail e senha.
+Resumo do que precisa estar assim em **Authentication**:
 
-### Opção B: link mágico por e-mail (sem senha)
-Exige um serviço de e-mail próprio, também gratuito. Em **Authentication → SMTP Settings → Enable custom SMTP**, use um destes:
+| Onde | Configuração |
+|---|---|
+| Sign In / Providers → Email | **Confirm email: ligado** (antes este guia mandava desligar; não desligue) |
+| Sign In / Providers → Email | Tamanho mínimo da senha: **10**; exigir **letras e dígitos** ("Letters and digits") |
+| Sign In / Providers → Email | **Secure password change** e **Require current password**: ligados |
+| Emails → SMTP Settings | **SMTP próprio ligado** (Brevo ou Gmail), senão o limite é de 2 e-mails por hora no projeto inteiro |
+| URL Configuration | Site URL do GitHub Pages; Redirect URLs só o site e `http://localhost:8000/**` |
 
-- **Brevo** (cerca de 300 e-mails por dia no plano grátis): crie a conta, verifique o seu endereço de remetente e gere uma chave SMTP. Servidor `smtp-relay.brevo.com`, porta `587`, usuário e senha SMTP que o Brevo mostra.
-- **Gmail**: servidor `smtp.gmail.com`, porta `465`, usuário o seu Gmail e, como senha, uma **senha de app** (exige verificação em duas etapas ligada).
-
-O site vai oferecer as duas formas de entrar. Você pode começar com a A e ligar a B quando o e-mail estiver pronto.
+O link "Entrar por link no e-mail" também usa o e-mail próprio (SMTP) configurado acima.
 
 ## 5. Me passar os dados do projeto
 

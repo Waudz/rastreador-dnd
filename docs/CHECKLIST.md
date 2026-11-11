@@ -164,3 +164,10 @@ Esta verificação não equivale a teste em PWA instalado ou sessão autenticada
 - **Licenças:** `licencas.html` com a atribuição completa do SRD 5.1 e as alterações; rodapé resumido em todas as páginas (`js/navegacao.js`).
 - **Traduções:** o autor confirmou (11/11/2026) que `dados/srd-pt.json`, `magias.json` e `habilidades-pt.json` são traduções próprias do texto do SRD feitas com auxílio de IA. Conferência feita: as 319 magias de `srd-pt.json` são todas do SRD 2014; dos 331 monstros, 321 coincidem com o pacote 2014 e 10 são nomes de criaturas ligadas a magias ou variantes de nome.
 - **Fotos de `fotos/`:** o autor confirmou (11/11/2026) que as 4 imagens são de uso livre.
+
+## Autenticação, backup e permissões (fase A da auditoria)
+
+- **Cadastro:** exige confirmação de e-mail (o cliente trata a resposta sem sessão e mostra a orientação, com reenvio). Recuperação de senha (`/auth/v1/recover`) com tela de nova senha; mensagem igual para e-mail existente ou não. Troca de senha confere a senha atual no servidor e usa `current_password` e, se exigido, o `nonce` por e-mail. Regra de senha: 10 caracteres com letras e números no cliente, **e a mesma regra precisa estar ligada no Supabase** (`docs/SEGURANCA-SUPABASE.md`).
+- **Backup e restauração:** `js/backup.js` e `acervo.exportar/analisar/restaurar/lerLegado`. Restaurar só adiciona; conflito só muda com opção marcada e se o backup for mais recente; exclusões de backup nunca valem; o banco antigo `bestiario` é só lido.
+- **Testes:** `auth.test.cjs`, `backup.test.cjs`, `rls-estatico.test.cjs` (rodam local) e `tests/supabase-permissoes.test.sql` (só no CI, com PostgreSQL).
+- **Não alterado:** configurações do Supabase em produção, o repositório privado e o conteúdo de D&D.

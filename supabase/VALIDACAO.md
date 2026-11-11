@@ -13,3 +13,8 @@ Antes da publicação:
 
 A migração é transacional e pode ser reaplicada. Não apaga personagens nem os JSONs do GitHub.
 A política de acervos e a função de mesclagem precisam ser validadas no projeto Supabase; os testes locais não substituem essa verificação.
+
+
+## Migração 03 e testes de permissões
+
+Aplicar também `03-administracao-conta.sql`. O CI aplica 01, 02 e 03 num PostgreSQL descartável e roda, nesta ordem, `tests/supabase.test.sql` e `tests/supabase-permissoes.test.sql` (campanhas, documentos, Storage, convites e administradores). **Esses testes só rodam no GitHub Actions** (precisam de PostgreSQL); localmente rodam apenas as verificações estáticas de `tests/rls-estatico.test.cjs`. Nenhum dos dois substitui as conferências no projeto real descritas em `docs/SEGURANCA-SUPABASE.md`.

@@ -3,6 +3,7 @@
   "use strict";
   const usuario = () => window.nuvem && nuvem.usuario();
   const ativo = () => window.NUVEM_CONFIG?.acervoPorConta === true;
+  const LIMITE_ITENS = 2000, LIMITE_BYTES = 20 * 1048576;
   const exigirAtivo = () => { if(!ativo())throw new Error("A migração dos dados para a conta ainda não foi concluída. Seus dados locais foram preservados."); };
   const banco = () => !ativo() ? "bestiario" : usuario() ? "bestiario_" + usuario().id : "bestiario_publico";
   const chave = k => ativo() ? k + "_" + (usuario() ? usuario().id : "publico") : k;
@@ -20,8 +21,11 @@
     for (const k of ["items", "deleted", "tr"]) {
       if (d[k] !== undefined && !objeto(d[k])) throw new Error("Campo inválido no backup: " + k);
     }
+    const chaves = Object.keys(d.items || {});
+    if (chaves.length > LIMITE_ITENS) throw new Error("O backup tem criações demais (máximo " + LIMITE_ITENS + ").");
     for (const [key, m] of Object.entries(d.items || {})) {
       if (!objeto(m) || key !== m.key || !m.custom || typeof m.name !== "string") throw new Error("Criação inválida no backup.");
+      if (m.photo !== undefined && m.photo !== "" && !/^data:image\//.test(String(m.photo))) throw new Error("Foto inválida no backup.");
     }
     return d;
   }
@@ -116,5 +120,75 @@
     localStorage.setItem('ini_sync_status_'+conta.id,JSON.stringify({mensagem:'Sincronizado com sua conta',em:Date.now()}));
     return salvo;
   }
-  window.acervo = { ativo, banco, chave, aplicar, mesclar, importar, baixar, sincronizar, validar };
+  /* ---------- backup, restauração e recuperação do navegador antigo ----------
+     Regras: nada é apagado e nada é sobrescrito sem o usuário confirmar; exclusões ("deleted") de um backup NUNCA são aplicadas. */
+  const lerStore = (db, s) => new Promise((ok, no) => { const r = db.transaction(s).objectStore(s).getAll(); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+  const lerJSON = (k) => { try { return JSON.parse(localStorage.getItem(k) || "{}") || {}; } catch (_) { return {}; } };
+  async function exportar() {
+    exigirAtivo();
+    const conta = identidade();
+    try { await baixar(); } catch (_) {}                    // alinha com a conta antes (outro aparelho pode ter criado algo); sem rede, exporta o que há aqui
+    const db = await abrir(conta);
+    let mon, img;
+    try { [mon, img] = await Promise.all([lerStore(db, "mon"), lerStore(db, "img")]); } finally { db.close(); }
+    conferir(conta);
+    const fotos = Object.fromEntries(img.map(i => [i.key, i.data]));
+    return { v: 1, tipo: "backup-criacoes", criadoEm: new Date().toISOString(), origem: conta.email,
+      items: Object.fromEntries(mon.filter(m => m.custom).map(m => [m.key, { ...m, photo: fotos[m.key] || "" }])),
+      deleted: {}, tr: lerJSON("ini_tr_" + conta.id) };
+  }
+  async function itensDaConta(conta) {
+    const db = await abrir(conta);
+    try { return Object.fromEntries((await lerStore(db, "mon")).filter(m => m.custom).map(m => [m.key, m])); } finally { db.close(); }
+  }
+  /* compara o backup com o que a conta tem hoje, sem gravar nada */
+  async function analisar(d) {
+    exigirAtivo(); validar(d);
+    const conta = identidade(), atuais = await itensDaConta(conta), trAtual = lerJSON("ini_tr_" + conta.id);
+    const novos = [], iguais = [], conflitos = [];
+    for (const [k, m] of Object.entries(d.items || {})) {
+      const x = atuais[k];
+      if (!x) novos.push(k);
+      else if (Number(x.updatedAt || 0) === Number(m.updatedAt || 0) && x.name === m.name) iguais.push(k);
+      else conflitos.push({ key: k, nome: m.name, backupMaisRecente: Number(m.updatedAt || 0) > Number(x.updatedAt || 0) });
+    }
+    const trNovas = Object.keys(d.tr || {}).filter(k => !(k in trAtual));
+    return { novos, iguais, conflitos, trNovas, total: Object.keys(d.items || {}).length };
+  }
+  async function restaurar(d, { substituir = false } = {}) {
+    exigirAtivo();
+    const conta = identidade(), r = await analisar(d), items = {}, tr = {};
+    r.novos.forEach(k => { items[k] = d.items[k]; });
+    const trocados = substituir ? r.conflitos.filter(c => c.backupMaisRecente) : [];
+    trocados.forEach(c => { items[c.key] = d.items[c.key]; });
+    r.trNovas.forEach(k => { tr[k] = d.tr[k]; });          // só traduções que a conta ainda não tem
+    const resultado = { adicionadas: r.novos.length, substituidas: trocados.length, mantidas: r.conflitos.length - trocados.length, iguais: r.iguais.length, traducoes: r.trNovas.length };
+    if (!Object.keys(items).length && !Object.keys(tr).length) return resultado;
+    const salvo = await mesclar({ v: 1, items, deleted: {}, tr }, conta);
+    await aplicar(salvo, conta);
+    conferir(conta);
+    return resultado;
+  }
+  /* dados de antes da migração para a conta: banco "bestiario" (sem id) e chaves de localStorage sem id. Só leitura; nada é apagado. */
+  async function lerLegado() {
+    if (typeof indexedDB === "undefined") return null;
+    if (typeof indexedDB.databases === "function") { try { if (!(await indexedDB.databases()).some(x => x.name === "bestiario")) return null; } catch (_) {} }
+    const db = await new Promise((ok) => {
+      const r = indexedDB.open("bestiario");
+      r.onupgradeneeded = () => { try { r.transaction.abort(); } catch (_) {} };    // o banco não existia: não criar um vazio
+      r.onerror = () => ok(null); r.onblocked = () => ok(null);
+      r.onsuccess = () => ok(r.result);
+    });
+    if (!db) return null;
+    try {
+      if (!db.objectStoreNames.contains("mon")) return null;
+      const mon = (await lerStore(db, "mon")).filter(m => m && m.custom && typeof m.key === "string" && typeof m.name === "string");
+      const img = db.objectStoreNames.contains("img") ? await lerStore(db, "img") : [];
+      if (!mon.length) return null;
+      const fotos = Object.fromEntries(img.filter(i => typeof i.data === "string" && /^data:image\//.test(i.data)).map(i => [i.key, i.data]));
+      return { v: 1, tipo: "legado", origem: "este navegador (dados anteriores à conta)", deleted: {}, tr: lerJSON("ini_tr"),
+        items: Object.fromEntries(mon.map(m => [m.key, { ...m, photo: fotos[m.key] || "" }])) };
+    } finally { db.close(); }
+  }
+  window.acervo = { exportar, analisar, restaurar, lerLegado, LIMITE_BYTES, ativo, banco, chave, aplicar, mesclar, importar, baixar, sincronizar, validar };
 })();

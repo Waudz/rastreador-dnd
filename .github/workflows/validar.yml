@@ -46,5 +46,7 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/03-administracao-conta.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/03-administracao-conta.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/supabase.test.sql
+      - name: Permissões de campanhas, documentos, Storage, convites e administradores
+        run: psql -v ON_ERROR_STOP=1 -f tests/supabase-permissoes.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/admin.test.sql
       - run: bash tests/acervo-concorrencia.sh

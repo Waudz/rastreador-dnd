@@ -20,6 +20,7 @@
   <script src="js/navegacao.js" defer></script>
   <script src="js/paineis.js" defer></script>
   <script src="js/acervo.js" defer></script>
+  <script src="js/backup.js" defer></script>
   <script src="js/catalogo.js" defer></script>
   <script src="js/edicoes.js" defer></script>
   <script src="js/admin.js" defer></script>
@@ -47,13 +48,28 @@
       <form id="form-login" class="cmg" autocomplete="on">
         <div id="campo-nome" style="grid-column:span 2" hidden><label for="l-nome">Seu nome</label><input id="l-nome" name="nome" maxlength="60" autocomplete="nickname"></div>
         <div style="grid-column:span 2"><label for="l-email">E-mail</label><input id="l-email" name="email" type="email" autocomplete="username" required></div>
-        <div style="grid-column:span 2"><label for="l-senha">Senha</label><div class="pw"><input id="l-senha" name="senha" type="password" minlength="8" autocomplete="current-password" required><button type="button" class="pw-eye"></button></div></div>
+        <div style="grid-column:span 2"><label for="l-senha">Senha</label><div class="pw"><input id="l-senha" name="senha" type="password" autocomplete="current-password" required><button type="button" class="pw-eye"></button></div><p id="dica-senha" class="muted" style="margin:4px 0 0;font-size:11px" hidden>Mínimo de 10 caracteres, com letras e números.</p></div>
       </form>
       <div class="row" style="margin:10px 0 0">
         <button type="button" class="primary" id="btn-login">Entrar</button>
         <button type="button" class="small subtle" id="btn-link" title="Envia um link de acesso para o seu e-mail">Entrar por link no e-mail</button>
+        <button type="button" class="small subtle" id="btn-esqueci">Esqueci minha senha</button>
       </div>
-      <div class="muted" id="msg-login" style="margin-top:8px"></div>
+      <div class="muted" id="msg-login" style="margin-top:8px" role="status" aria-live="polite"></div>
+      <div id="confirmar-email" class="panel2" style="margin-top:10px" hidden>
+        <b>Confirme seu e-mail para ativar a conta</b>
+        <p id="confirmar-texto" class="muted" style="margin:6px 0"></p>
+        <div class="row" style="margin:0"><button type="button" class="small" id="btn-reenviar">Reenviar e-mail</button><button type="button" class="small subtle" id="btn-confirmar-ok">Já confirmei: entrar</button></div>
+      </div>
+    </section>
+    <section class="panel" id="recuperar" hidden>
+      <h2 class="panel-title" style="font-size:14px">Defina uma nova senha</h2>
+      <form id="form-recuperar" class="cmg" autocomplete="off">
+        <div style="grid-column:span 2"><label for="r-senha">Nova senha</label><div class="pw"><input id="r-senha" type="password" autocomplete="new-password" required><button type="button" class="pw-eye"></button></div><p class="muted" style="margin:4px 0 0;font-size:11px">Mínimo de 10 caracteres, com letras e números.</p></div>
+        <div style="grid-column:span 2"><label for="r-senha2">Repita a nova senha</label><div class="pw"><input id="r-senha2" type="password" autocomplete="new-password" required><button type="button" class="pw-eye"></button></div></div>
+      </form>
+      <div class="row" style="margin:10px 0 0"><button type="button" class="primary" id="btn-recuperar">Salvar nova senha</button></div>
+      <div class="muted" id="msg-recuperar" style="margin-top:8px" role="status" aria-live="polite"></div>
     </section>
 
     <!-- logado -->
@@ -87,8 +103,14 @@
       <details class="panel" data-conta-painel="conta" open>
         <summary class="panel-title" style="font-size:14px">Conta</summary>
         <div class="row" style="margin-top:10px"><input id="a-nome" maxlength="60" placeholder="Seu nome" style="flex:1 1 220px"><button type="button" class="small" id="btn-nome">Salvar nome</button></div>
-        <div class="row"><div class="pw" style="flex:1 1 220px"><input id="a-senha" type="password" minlength="8" autocomplete="new-password" placeholder="Nova senha"><button type="button" class="pw-eye"></button></div><button type="button" class="small" id="btn-senha">Trocar senha</button></div>
-        <div class="muted" id="msg-conta"></div><h3>Sincronização da Conta</h3><p id="conta-sync-status" class="muted" role="status">Os dados são vinculados à sua conta logada.</p><button type="button" id="conta-sincronizar">Sincronizar Agora</button><details id="opcoes-admin" hidden><summary class="panel-title">Opções de Administração</summary><div id="admin-conteudo"><p id="resumo" class="muted">Expanda esta seção para gerenciar seus dados.</p><h3>Dados Locais e Bestiários</h3><p>Adicione dados de 2014 e gerencie as cópias deste aparelho. As criações pessoais sincronizam com sua conta; as fotos do catálogo básico sincronizam automaticamente.</p><div id="admin-dados-resumo" class="muted"></div><div class="row"><label class="btnlike">Adicionar Dados<input type="file" id="admin-importar" accept=".json,application/json" hidden></label><button type="button" id="admin-exportar">Exportar Bestiário</button></div><p class="muted">Fotos e ajustes do catálogo básico sincronizam automaticamente. Monstros personalizados continuam privados; use Exportar Bestiário para compartilhá-los.</p><p role="status" id="pub-status"></p></div></details>
+        <div class="row"><div class="pw" style="flex:1 1 220px"><input id="a-atual" type="password" autocomplete="current-password" placeholder="Senha atual"><button type="button" class="pw-eye"></button></div></div>
+        <div class="row"><div class="pw" style="flex:1 1 220px"><input id="a-senha" type="password" autocomplete="new-password" placeholder="Nova senha (mín. 10, com letras e números)"><button type="button" class="pw-eye"></button></div><button type="button" class="small" id="btn-senha">Trocar senha</button></div>
+        <div class="row" id="linha-codigo" hidden><input id="a-codigo" inputmode="numeric" autocomplete="one-time-code" placeholder="Código enviado ao seu e-mail" style="flex:1 1 220px"><button type="button" class="small" id="btn-codigo">Confirmar troca</button></div>
+        <div class="muted" id="msg-conta"></div><h3>Sincronização da Conta</h3><p id="conta-sync-status" class="muted" role="status">Os dados são vinculados à sua conta logada.</p><button type="button" id="conta-sincronizar">Sincronizar Agora</button><details id="backup-conta" class="item" style="margin-top:12px"><summary>Backup e restauração das criações</summary><div>
+          <p class="muted">Suas criações (monstros, NPCs e personagens do bestiário, com fotos) ficam na sua conta. O backup é um arquivo seu: guarde-o fora deste aparelho. Restaurar nunca apaga nem sobrescreve nada sem você confirmar.</p>
+          <div class="row"><button type="button" class="small" id="backup-baixar">Baixar backup</button><label class="btnlike small">Restaurar de um arquivo<input type="file" id="backup-arquivo" accept=".json,application/json" hidden></label><button type="button" class="small" id="backup-legado">Procurar dados antigos neste navegador</button></div>
+          <div id="backup-previa" hidden><p id="backup-resumo"></p><label class="inline"><input type="checkbox" id="backup-substituir" style="width:auto;height:auto"> Se o item já existir, usar o do backup quando ele for mais recente</label><div class="row"><button type="button" class="primary small" id="backup-confirmar">Restaurar</button><button type="button" class="small subtle" id="backup-cancelar">Cancelar</button></div></div>
+          <p id="backup-msg" class="muted" role="status" aria-live="polite"></p></div></details><details id="opcoes-admin" hidden><summary class="panel-title">Opções de Administração</summary><div id="admin-conteudo"><p id="resumo" class="muted">Expanda esta seção para gerenciar seus dados.</p><h3>Dados Locais e Bestiários</h3><p>Adicione dados de 2014 e gerencie as cópias deste aparelho. As criações pessoais sincronizam com sua conta; as fotos do catálogo básico sincronizam automaticamente.</p><div id="admin-dados-resumo" class="muted"></div><div class="row"><label class="btnlike">Adicionar Dados<input type="file" id="admin-importar" accept=".json,application/json" hidden></label><button type="button" id="admin-exportar">Exportar Bestiário</button></div><p class="muted">Fotos e ajustes do catálogo básico sincronizam automaticamente. Monstros personalizados continuam privados; use Exportar Bestiário para compartilhá-los.</p><p role="status" id="pub-status"></p></div></details>
       </details>
     </div>
 
