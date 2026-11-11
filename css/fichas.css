@@ -242,3 +242,12 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .combatant .id-texto { flex:1 1 auto; min-width:0; }
 .combatant .id-texto .name { display:block; padding-top:1px; }
 .combatant .id-texto .kind { margin-top:3px; }
+
+/* iniciativa, retrato e nome: mesmo tamanho e mesmo topo em qualquer cartão (com ou sem efeitos) */
+.combatant { --medida:44px; }
+@media (max-width:520px) { .combatant { --medida:40px; } }
+.combatant:not(.editing) { align-items:start; }
+.combatant:not(.editing) input.initiative.iniciativa-valor { width:var(--medida); height:var(--medida); align-self:start; }
+.combatant:not(.editing) .id-bloco { align-self:start; }
+.combatant:not(.editing) .id-bloco .av, .combatant:not(.editing) .id-bloco .av0 { width:var(--medida)!important; height:var(--medida)!important; }
+.combatant:not(.editing) .id-bloco .name { line-height:1.3; padding-top:2px; }

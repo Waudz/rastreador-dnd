@@ -24,3 +24,10 @@ test('retratos usam um único padrão quadrado e o avatar da conta é a única e
  assert.doesNotMatch(fichas,/\.av[^{]*\{[^}]*border-radius:\s*50%/);
  assert.doesNotMatch(fichas,/\.ficha-identidade \.av \{ width:64px!important; height:72px/);      // proporção antiga, não quadrada
 });
+test('iniciativa e retrato do cartão de combate usam a mesma medida e o mesmo alinhamento no topo',()=>{
+ const css=ler('css/fichas.css');
+ assert.match(css,/\.combatant \{ --medida:44px; \}/);
+ assert.match(css,/input\.initiative\.iniciativa-valor \{ width:var\(--medida\); height:var\(--medida\); align-self:start; \}/);
+ assert.match(css,/\.id-bloco \.av, \.combatant:not\(\.editing\) \.id-bloco \.av0 \{ width:var\(--medida\)!important; height:var\(--medida\)!important; \}/);
+ assert.match(css,/\.combatant:not\(\.editing\) \{ align-items:start; \}/);
+});
