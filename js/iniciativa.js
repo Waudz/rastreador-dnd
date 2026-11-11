@@ -230,10 +230,13 @@
           return `
             <article class="combatant ${isActive ? "active" : ""} ${isDefeated ? "defeated" : ""}" aria-current="${isActive?'step':'false'}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
               <input class="initiative iniciativa-valor" type="number" step="1" data-iniciativa="${c.id}" value="${pendente(c) ? "" : Number(c.initiative)}" placeholder="d20" aria-label="Iniciativa de ${escapeText(c.name)}" title="Iniciativa pendente: informe o resultado da rolagem, já com o modificador">
-              <div>
-                <div class="name"><span class="avfx">${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 40, c.foto) : ""}</span><span class="nome-texto">${escapeText(c.name)}</span>${isActive ? ` <span aria-label="turno atual" class="turn-mark">${ico("turn")}</span>` : ""}</div>
+              <div class="id-bloco">
+                <span class="avfx">${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 40, c.foto) : ""}</span>
+                <div class="id-texto">
+                <div class="name"><span class="nome-texto">${escapeText(c.name)}</span>${isActive ? ` <span aria-label="turno atual" class="turn-mark">${ico("turn")}</span>` : ""}</div>
                 <div class="kind">${isActive?'<span class="turno-badge">Turno atual</span> · ':''}${escapeText(c.kind)}${isDefeated ? " · Inconsciente/derrotado" : ""}${pendente(c) ? " · iniciativa pendente" : ""}</div>
                 ${c.effects && c.effects.length ? `<div class="fxbar">${c.effects.map((e) => `<span class="fxchip" style="--c:${e.color}" data-fxtip="${escapeText(fxTip(e))}">${fxIcon(e.type)}${escapeText(e.name)} <b>${fxLeft(e)}</b><button type="button" data-fxdel="${c.id}|${e.id}" aria-label="Remover ${escapeText(e.name)}">${ico("x")}</button></span>`).join("")}</div>` : ""}
+              </div>
               </div>
               <div class="stats-linha">
                 <div class="stat">CA<strong>${Number(c.ac)}</strong></div>

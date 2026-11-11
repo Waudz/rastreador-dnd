@@ -234,3 +234,10 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .combatant .name { align-items:flex-start; }
 .combatant .name .nome-texto { padding-top:2px; }
 .combatant input.iniciativa-valor { align-self:start; }
+
+/* retrato numa coluna própria; nome, tipo e efeitos alinham-se pelo mesmo recuo */
+.combatant .id-bloco { display:flex; align-items:flex-start; gap:10px; min-width:0; }
+.combatant .id-bloco .avfx { flex:0 0 auto; margin:0; }
+.combatant .id-texto { flex:1 1 auto; min-width:0; }
+.combatant .id-texto .name { display:block; padding-top:1px; }
+.combatant .id-texto .kind { margin-top:3px; }
