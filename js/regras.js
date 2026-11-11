@@ -103,7 +103,7 @@ window.REGRAS = (() => {
 
   const mod = (v) => Math.floor((Number(v) - 10) / 2);
   const prof = (nivel) => 2 + Math.floor((Math.max(1, nivel) - 1) / 4);
-  const nivelTotal = (cls) => (cls || []).reduce((s, c) => s + (Number(c.n) || 0), 0);
+  const nivelTotal = (cls) => (cls || []).filter(c=>classe(c.c)).reduce((s,c)=>s+Math.max(0,Math.floor(Number(c.n)||0)),0);
 
   /* nível de conjurador e espaços (regra de multiclasse) */
   function conjuracao(cls) {
@@ -112,7 +112,7 @@ window.REGRAS = (() => {
       let t = x.d.conj && x.d.conj.t;
       if (!t && x.d.terco && x.c.sub === x.d.terco) t = "third";
       return { ...x, t };
-    }).filter((x) => x.t);
+    }).filter((x) => x.t && Number(x.c.n) >= (x.t === "third" ? 3 : x.d.conj?.min || 1));
     const normais = tipos.filter((x) => x.t !== "pact"), pacto = tipos.filter((x) => x.t === "pact");
     let nc = 0;
     const unico = normais.length === 1;
@@ -151,7 +151,7 @@ window.REGRAS = (() => {
     const fixas = n.startsWith("elfo") ? ["percepcao"] : n === "meio-orc" ? ["intimidacao"] : n === "goliath" ? ["atletismo"] : n === "tabaxi" ? ["percepcao", "furtividade"] : n === "bugbear" ? ["furtividade"] : n.startsWith("satyr") ? ["atuacao", "persuasao"] : [];
     const escolhas = n === "meio-elfo" || n.startsWith("lizardfolk") || n==="kenku" || n.startsWith("metamorfo") ? 2 : n === "humano (variante)" || n==="centauro" ? 1 : 0;
     const opcoes = n==="kenku" ? ["acrobacia","enganacao","furtividade","prestidigitacao"] : n.startsWith("metamorfo") ? ["enganacao","intuicao","intimidacao","persuasao"] : n==="centauro" ? ["adestrar","medicina","natureza","sobrevivencia"] : n.startsWith("lizardfolk") ? ["adestrar","natureza","percepcao","furtividade","sobrevivencia"] : TODAS;
-    const atributos = /em dois|dois atributos/.test(r[2]) ? 2 : /escolha/.test(r[2]) ? 2 : 0;
+    const atributos = /em dois|dois atributos|\+2 e \+1/.test(r[2]) ? 2 : /escolha/.test(r[2]) ? 1 : 0;
     let tracos = r[3].split(";").map(t => t.trim());
     if (n.startsWith("elfo")) tracos = [...new Set([...tracos, "Ancestral feérico: vantagem contra enfeitiçamento; magia não pode fazer você dormir.", "Sentidos aguçados: proficiência em Percepção."])];
     if (n === "meio-elfo") tracos = ["Visão no escuro: 18 m.", "Ancestral feérico: vantagem contra enfeitiçamento; magia não pode fazer você dormir.", "Versatilidade em perícias: escolha duas perícias diferentes."];
@@ -170,11 +170,22 @@ window.REGRAS = (() => {
     const especializadas = [...new Set(f.especializacoes || [])].filter(k=>basicas.includes(k)).slice(0,limiteEspecializacao(cls));
     return { fixas, raciais, classePer, basicas, especializadas, valores: Object.fromEntries(basicas.map(k=>[k,especializadas.includes(k)?2:1])) };
   }
+
+  function bonusSemProf(f) {
+    return (f.classes||[]).some(c=>c.c==="Bard" && c.n>=2) ? Math.floor(prof(nivelTotal(f.classes))/2) : 0;
+  }
+  function bonusPericia(f,k) {
+    const grau=fontesPericias(f).valores[k]||0;
+    return grau ? grau*prof(nivelTotal(f.classes)) : bonusSemProf(f);
+  }
   function aplicarRaca(f, anterior) {
     f.atributos ||= {};
     const antes = anterior || {}, r = racial(f.raca), depois = {...r.bonus};
-    const escolhas = [...new Set(f.atrRaca || [])].filter(k=>ATR.includes(k) && !(k in r.bonus)).slice(0,r.atributos);
-    escolhas.forEach((k,i)=>depois[k]=(depois[k]||0)+(/\+2 e \+1/.test((RACAS.find(r=>r[0]===f.raca)||[])[2]||"") && i===0 ? 2 : 1));
+    const usados = new Set();
+    (f.atrRaca || []).slice(0,r.atributos).forEach((k,i)=>{
+      if(!ATR.includes(k) || k in r.bonus || usados.has(k))return; usados.add(k);
+      depois[k]=(depois[k]||0)+(/\+2 e \+1/.test((RACAS.find(r=>r[0]===f.raca)||[])[2]||"") && i===0 ? 2 : 1);
+    });
     ATR.forEach(k=> { f.atributos[k] = (Number(f.atributos[k]) || 10) - (antes[k] || 0) + (depois[k] || 0); });
     f.bonusRaca = depois;
   }
@@ -185,5 +196,5 @@ window.REGRAS = (() => {
       .map(h=>{const cf=h.e+"|"+h.c+"|"+h.n;return {nome:h.p||h.n,desc:pt[cf]||h.d,cf,auto:"classe"};});
   }
 
-  return { melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+  return { bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();

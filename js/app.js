@@ -270,14 +270,14 @@
       $("#docs-wrap").hidden = false;
       try {
         const j = await api("/documents/?limit=100");
-        $("#docs").innerHTML = j.results.map((d) => `<label><input type="checkbox" value="${esc(d.key)}" ${/^srd-20/.test(d.key) ? "checked" : ""}>${esc(d.display_name || d.name || d.key)}</label>`).join("");
+        $("#docs").innerHTML = (j.results || []).filter(EDICOES.permitida).map((d) => `<label><input type="checkbox" value="${esc(d.key)}" ${d.key === "srd-2014" ? "checked" : ""}>${esc(d.display_name || d.name || d.key)}</label>`).join("");
       } catch (e) { $("#docs").innerHTML = `<span class="err">Não foi possível listar as fontes (${esc(e.message)}). Verifique a conexão.</span>`; }
     };
     async function pull(path, store, label) {
       let url = API + path, n = 0, total = 0;
       while (url) {
         const j = await getPage(url.replace(/^http:/, "https:")); total = j.count ?? total;
-        await put(store, j.results || []); n += (j.results || []).length; status(`${esc(label)}: ${n} de ${total}…`); url = j.next;
+        await put(store, (j.results || []).filter(EDICOES.permitida)); n += (j.results || []).length; status(`${esc(label)}: ${n} de ${total}…`); url = j.next;
       }
       return [n, total];
     }

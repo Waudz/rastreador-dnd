@@ -137,3 +137,5 @@ Validação local: `node tests/regras.test.cjs`. A validação de permissões e 
 D&D 2014 é a edição ativa: pacotes, monstros, magias e habilidades de 2024 ficam desabilitados, inclusive quando já existem no cache. Os arquivos antigos não são apagados.
 
 O workflow Validar fichas e banco executa os testes JavaScript e aplica os dois schemas em um PostgreSQL descartável para verificar RLS, transferência, fotos e mesclagem concorrente. Não usa credenciais nem dados do projeto real.
+
+O acompanhamento item a item está em docs/CHECKLIST.md. A cobertura efetiva de classes e subclasses está em docs/cobertura-2014.json; opções fora do catálogo precisam de cadastro ou importação de dados adicionais.

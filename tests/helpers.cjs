@@ -26,7 +26,7 @@ function indexedDBFalso(){
 }
 function documentoFalso(){
   const elementos=new Map();
-  const el=id=>{if(!elementos.has(id))elementos.set(id,{id,value:"",hidden:true,innerHTML:"",textContent:"",disabled:false,classList:{toggle(){}},events:{},addEventListener(n,fn){this.events[n]=fn;},querySelector(){return null;},focus(){}});return elementos.get(id);};
+  const el=id=>{if(!elementos.has(id))elementos.set(id,{id,value:"",style:{},hidden:true,innerHTML:"",textContent:"",disabled:false,classList:{toggle(){}},events:{},addEventListener(n,fn){this.events[n]=fn;},querySelector(){return null;},focus(){}});return elementos.get(id);};
   return {el,querySelector:s=>el(s.replace(/^#/,"")),querySelectorAll:()=>[],addEventListener(){}};
 }
 function executar(p,contexto){vm.runInContext(ler(p),contexto,{filename:p});}

@@ -85,7 +85,7 @@
   document.addEventListener("change", async e=>{
     const t=e.target;if(!t.dataset.dono||!mestre())return;
     t.disabled=true;
-    try{await nuvem.patch("personagens?id=eq."+encodeURIComponent(t.dataset.dono),{dono_id:t.value||null});await recarregar();await desenhar();aviso("Personagem atribuído ao jogador.");}
+    try{await PERSONAGENS_DADOS.atribuirDono(nuvem,t.dataset.dono,t.value||null);await recarregar();await desenhar();aviso("Personagem atribuído ao jogador.");}
     catch(err){aviso(err.message,true);}finally{t.disabled=false;}
   });
 
@@ -93,7 +93,7 @@
   async function recuperarFotos(){
     try{
       await acervo.baixar();const lista=await lerCriacoes(), porOrigem=Object.fromEntries(lista.map(m=>[m.key,m]));let n=0;
-      for(const p of pers){const f=p.ficha||{}, m=porOrigem[f.origem];if(!m||f.foto)continue;const foto=await reduzir((window.__fotos||{})[m.key]||m.photo);if(!foto)continue;await nuvem.patch("personagens?id=eq."+encodeURIComponent(p.id),{ficha:{...f,foto}});n++;}
+      for(const p of pers){const f=p.ficha||{}, m=porOrigem[f.origem];if(!m||f.foto)continue;const foto=await reduzir((window.__fotos||{})[m.key]||m.photo);if(!foto)continue;await PERSONAGENS_DADOS.atualizarFoto(nuvem,p.id,foto);n++;}
       await recarregar();await desenhar();aviso(n+" foto(s) recuperada(s). Fotos já existentes foram preservadas.");
     }catch(e){aviso(e.message,true);}
   }
@@ -117,17 +117,7 @@
     });
   }
   const CATROT = { player: "Personagem", npc: "NPC", monster: "Monstro" };
-  function fichaDe(m, npc, foto) {
-    const ab = m.ability_scores || {}, ft = (m.speed && m.speed.walk) || 30;
-    const lista = (a) => (a || []).filter((x) => x && x.name).map((x) => ({ nome: String(x.name).slice(0, 120), desc: String(x.desc || "").slice(0, 4000) }));
-    const magias = (m.spells || []).map((s) => (typeof s === "string" ? s : s && (s.name || s.nome))).filter(Boolean);
-    const notas = [m.subtitle, magias.length ? "Magias: " + magias.join(", ") : ""].filter(Boolean).join("\n");
-    return {
-      npc: npc || undefined, origem: m.key, foto: foto || undefined, classe: m.cat === "player" ? (m.subtitle || "") : (m.type && m.type.name) || "", nivel: m.level || null, deslocamento: Math.round(ft * 0.3 * 10) / 10,
-      atributos: { for: ab.strength || 10, des: ab.dexterity || 10, con: ab.constitution || 10, int: ab.intelligence || 10, sab: ab.wisdom || 10, car: ab.charisma || 10 },
-      caracteristicas: lista(m.traits).concat(lista(m.actions)), notas
-    };
-  }
+  const fichaDe = (m,npc,foto) => PERSONAGENS_DADOS.fichaDe(m,npc,foto,REGRAS);
   async function painelImportar() {
     const box = $("#imp"); box.innerHTML = '<span class="muted">Lendo o bestiário…</span>';
     let lista;
@@ -139,10 +129,10 @@
       (lista.length ? lista.map((m) => `<div class="res" data-k="${esc(m.key)}"><span><b>${esc(m.name)}</b> <span class="badge jog">${CATROT[m.cat] || "Monstro"}</span>${ja.has(m.key) ? ' <span class="muted">· já importado</span>' : ""}${((window.__fotos || {})[m.key] || m.photo) ? "" : ' <span class="muted">· sem foto</span>'}</span><span class="inline">${ja.has(m.key) && ((window.__fotos || {})[m.key] || m.photo) ? `<button type="button" class="small" data-foto="${esc(m.key)}">Atualizar foto</button>` : ""}<select class="imp-dest" aria-label="Importar como"><option value="p"${m.cat === "player" || !mestre() ? " selected" : ""}>Personagem</option>${mestre() ? `<option value="n"${m.cat !== "player" ? " selected" : ""}>NPC</option>` : ""}</select><button type="button" class="small primary" data-imp="${esc(m.key)}">Importar</button></span></div>`).join("") : '<span class="muted">Você não tem criações neste navegador. Crie no bestiário do rastreador.</span>') + "</div>";
   }
   async function atualizarFoto(chave, botao) {
-    const foto = await reduzir((window.__criacoes?.[chave]?.photo || (window.__fotos || {})[chave])), alvos = pers.filter((p) => (p.ficha || {}).origem === chave);
+    const foto = await reduzir(((window.__fotos || {})[chave] || window.__criacoes?.[chave]?.photo)), alvos = pers.filter((p) => (p.ficha || {}).origem === chave);
     if (!foto || !alvos.length) { aviso("Não encontrei foto ou personagem importado.", true); return; }
     botao.disabled = true;
-    try { for (const p of alvos) await nuvem.patch(`personagens?id=eq.${encodeURIComponent(p.id)}`, { ficha: { ...p.ficha, foto } }); await recarregar(); await desenhar(); painelImportar(); aviso("Foto atualizada."); }
+    try { for (const p of alvos) await PERSONAGENS_DADOS.atualizarFoto(nuvem,p.id,foto); await recarregar(); await desenhar(); painelImportar(); aviso("Foto atualizada."); }
     catch (e) { botao.disabled = false; aviso(e.message, true); }
   }
   async function importar(chave, botao) {

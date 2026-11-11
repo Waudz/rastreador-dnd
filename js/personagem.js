@@ -57,14 +57,14 @@
   function agendar(campos) { pend = { ...(pend || {}), ...campos }; $("#estado").textContent = "Salvando…"; clearTimeout(timer); timer = setTimeout(enviar, 600); }
   async function enviar() {
     if (!pend || salvando) return;
-    const corpo = JSON.parse(JSON.stringify(pend)); pend = null; salvando = true;
+    const corpo = JSON.parse(JSON.stringify(pend)); pend = null; salvando = true; let falhou = false;
     try {
       const r = await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}`, corpo);
       if (!r || !r[0]) throw new Error("O personagem não foi atualizado. Confira se você ainda tem acesso.");
       P.versao = r[0].versao;
       $("#estado").textContent = "Salvo";
-    } catch (e) { pend = { ...corpo, ...(pend || {}) }; $("#estado").innerHTML = `<span class="err">Não salvou: ${esc(e.message)}</span>`; }
-    finally { salvando = false; if(pend && !$("#estado").textContent.startsWith("Não salvou")){clearTimeout(timer);timer=setTimeout(enviar,0);} }
+    } catch (e) { falhou = true; pend = { ...corpo, ...(pend || {}) }; $("#estado").innerHTML = `<span class="err">Não salvou: ${esc(e.message)}</span>`; }
+    finally { salvando = false; if(pend && !falhou){clearTimeout(timer);timer=setTimeout(enviar,0);} }
   }
   window.addEventListener("beforeunload", () => { if (pend) enviar(); });
 
@@ -92,7 +92,8 @@
     const f = F(); let mudou = false;
     if (!Array.isArray(f.classes)) {
       f.classes = [];
-      const c = R.CLASSES.find((x) => nz(x.n) === nz(f.classe || "") || nz(x.id) === nz(f.classe || ""));
+      const inferida = window.PERSONAGENS_DADOS.classeDaDescricao(f.classe);
+      const c = R.classe(inferida);
       if (c && f.nivel) f.classes.push({ c: c.id, n: Math.max(1, Math.min(20, num(f.nivel, 1))), sub: "" });
       mudou = mudou || f.classes.length > 0;
     }
@@ -176,7 +177,7 @@
   const racaSel = () => { const r = F().raca || ""; return R.RACAS.some((x) => x[0] === r) ? r : (r || F().racaCustom ? "__custom" : ""); };
   const blocoClasses = () => {
     const l = CLS().length ? CLS() : [{c:"",n:1,sub:""}];
-    return l.map((c, i) => { const d = R.classe(c.c); return `<div class="row" style="margin:0 0 6px" data-ci="${i}"><select data-cls="c" style="flex:1 1 150px" aria-label="Classe">${opt("", "Classe…", !c.c)}${R.CLASSES.map((x) => opt(x.id, x.n, x.id === c.c)).join("")}</select><input class="num" type="number" min="1" max="20" data-cls="n" value="${c.n}" aria-label="Nível na classe" title="Nível nesta classe"><input style="flex:1 1 150px" list="subs-${i}" data-cls="sub" value="${esc(c.sub || "")}" maxlength="50" placeholder="Subclasse"><datalist id="subs-${i}">${(d ? d.subs : []).map((s) => `<option value="${esc(s)}">`).join("")}</datalist>${l.length > 1 || c.c ? `<button type="button" class="small subtle" data-rm-cls="${i}" aria-label="Remover classe">${window.ico ? window.ico("x") : "x"}</button>` : ""}</div>`; }).join("");
+    return l.map((c, i) => { const d = R.classe(c.c); return `<div class="row" style="margin:0 0 6px" data-ci="${i}"><select data-cls="c" style="flex:1 1 150px" aria-label="Classe">${opt("", "Classe…", !c.c)}${R.CLASSES.filter(x=>x.id===c.c || !l.some(outro=>outro.c===x.id)).map((x) => opt(x.id, x.n, x.id === c.c)).join("")}</select><input class="num" type="number" min="1" max="${Math.max(1,20-R.nivelTotal(l.filter((_,j)=>j!==i)))}" data-cls="n" value="${c.n}" aria-label="Nível na classe" title="Nível nesta classe"><input style="flex:1 1 150px" list="subs-${i}" data-cls="sub" value="${esc(c.sub || "")}" maxlength="50" placeholder="Subclasse"><datalist id="subs-${i}">${(d ? d.subs : []).map((s) => `<option value="${esc(s)}">`).join("")}</datalist>${l.length > 1 || c.c ? `<button type="button" class="small subtle" data-rm-cls="${i}" aria-label="Remover classe">${window.ico ? window.ico("x") : "x"}</button>` : ""}</div>`; }).join("");
   };
   const infoRaca = () => { const r = R.RACAS.find((x) => x[0] === F().raca); return r ? `<div class="muted" style="margin-top:6px">${esc(r[0])}: deslocamento ${String(r[1]).replace(".", ",")} m · atributos ${esc(r[2])} · ${esc(r[3])}</div>` : ""; };
 
@@ -200,10 +201,10 @@
     const lim=R.limiteEspecializacao(CLS());
     if(lim)h+=`<p class="muted">Especializações: ${fontes.especializadas.length}/${lim}. Escolha entre as perícias proficientes.</p>`;
     h+='<div class="grade2">'+R.PERICIAS.map(([k,n,a])=>{
-      const e=pr[k]||0,v=modA(a)+(e===2?pb*2:e===1?pb:0);
+      const e=pr[k]||0,v=modA(a)+R.bonusPericia(f,k);
       return `<div class="lin"><span class="pbol${e?' on':''}${e===2?' dup':''}"></span><b>${fm(v)}</b><span>${n}</span>${lim&&e?`<button type="button" class="small" data-per="${k}" aria-pressed="${e===2}">${e===2?'Especializada':'Especializar'}</button>`:''}</div>`;
     }).join("")+'</div>';
-    return h+`<p class="muted">Percepção passiva: <b>${10+modA("sab")+(pr.percepcao||0)*pb}</b></p>`;
+    return h+`<p class="muted">Percepção passiva: <b>${10+modA("sab")+R.bonusPericia(f,"percepcao")}</b></p>`;
   }
   function blocoProf() {
     const c0 = CLS()[0] && R.classe(CLS()[0].c); if (!c0) return '<span class="muted">Escolha uma classe para ver as proficiências.</span>';
@@ -255,7 +256,7 @@
       <div class="panel">
         <div class="row" style="margin:0 0 8px;flex-wrap:nowrap;gap:12px"><span id="foto-box">${fotoHTML()}</span><div style="flex:1 1 auto;min-width:0">
           <input id="nome" data-col="nome" value="${esc(P.nome)}" maxlength="80" style="font-family:Georgia,serif;font-size:22px;height:46px;font-weight:700" aria-label="Nome">
-          <div class="muted" style="margin-top:4px"><button type="button" class="small" id="b-foto">Trocar foto</button><input type="file" id="in-foto" accept="image/*" hidden> ${esc(camp.nome)}${donoNome ? " · jogador: " + esc(donoNome) : ""}${outro ? ' · <span class="badge">editando como mestre</span>' : ""}</div></div></div>
+          <div class="muted" style="margin-top:4px"><button type="button" class="small" id="b-foto">Trocar foto</button><input type="file" id="in-foto" accept="image/*" hidden> ${esc(camp.nome)}${donoNome ? " · responsável: " + esc(donoNome) : ""}${outro ? ' · <span class="badge">editando como mestre</span>' : ""}</div></div></div>
         <div class="row" style="margin:0">
           <div style="flex:1 1 200px"><label>Raça</label><select id="raca-sel">${opt("", "Escolha…", !rs)}${R.RACAS.map((r) => opt(r[0], r[0], rs === r[0])).join("")}${opt("__custom", "Outra (personalizada)…", rs === "__custom")}</select></div>
           <div style="flex:1 1 200px" id="raca-txt-box" ${rs === "__custom" ? "" : "hidden"}><label>Nome da raça personalizada</label><input id="raca-txt" value="${esc(R.RACAS.some((x) => x[0] === f.raca) ? "" : f.raca || "")}" maxlength="60" placeholder="Ex.: Fada, Sereia…"></div>
@@ -307,7 +308,7 @@
   }
   const presets = () => R.ARMADURAS.map((a) => [a[1], a[6]]).concat([["Escudo", 3], ["Mochila", 2.5], ["Saco de dormir", 3.5], ["Corda de cânhamo (15 m)", 5], ["Tocha", 0.5], ["Ração (1 dia)", 1], ["Cantil", 2.5], ["Kit de curandeiro", 1.5], ["Poção de cura", 0.25], ["Ferramentas de ladrão", 0.5], ["Foco arcano", 0.5], ["Símbolo sagrado", 0.5], ["Grimório", 1.5]]);
 
-  function profTxt() { const e = $("#prof-txt"); if (e) e.textContent = `Bônus de proficiência ${fm(bonusProf())} · Iniciativa ${fm(modA("des"))}`; }
+  function profTxt() { const e = $("#prof-txt"); if (e) e.textContent = `Bônus de proficiência ${fm(bonusProf())} · Iniciativa ${fm(modA("des")+R.bonusSemProf(F()))}`; }
   function avisoArm() {
     const e = $("#aviso-arm"); if (!e) return; const arm = R.ARMADURAS.find((a) => a[0] === EQ().armadura), t = [];
     if (arm && arm[4] && num(A()["for"], 10) < arm[4]) t.push(`Exige Força ${arm[4]}: deslocamento reduzido em 3 m.`);
@@ -373,7 +374,7 @@
     if (t.dataset.atr) { const k = t.dataset.atr; A()[k] = num(t.value, 10); $("#mod-" + k).textContent = fm(mod(A()[k])); refrescar(); return; }
     if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; INV()[i][k] = k === "nome" ? t.value : num(t.value, 0); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
     if (t.dataset.din) { DIN()[t.dataset.din] = moeda(t.value); t.value = DIN()[t.dataset.din]; $("#total-po").textContent = totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); agendar({ dinheiro: P.dinheiro }); return; }
-    if (t.dataset.cls) { const i = +t.closest("[data-ci]").dataset.ci, k = t.dataset.cls; if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; if (k === "n") CLS()[i].n = Math.max(1, Math.min(20, Math.floor(num(t.value, 1)))); else if (k === "sub") { CLS()[i].sub = t.value; } else return; refrescar(); return; }
+    if (t.dataset.cls) { const i = +t.closest("[data-ci]").dataset.ci, k = t.dataset.cls; if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; if (k === "n") CLS()[i].n = Math.max(1, Math.min(Math.max(1,20-R.nivelTotal(CLS().filter((_,j)=>j!==i))), Math.floor(num(t.value, 1)))); else if (k === "sub") { CLS()[i].sub = t.value; } else return; refrescar(); return; }
     if (t.dataset.atq && t.tagName === "INPUT" && t.type !== "checkbox") { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = ["magico", "extra"].includes(k) ? num(t.value, 0) : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
     if (t.id === "eq-bonus") { EQ().bonus = num(t.value, 0); refrescar(); return; }
     if (t.id === "raca-txt") { F().raca = t.value; F().racaCustom = true; agendar({ ficha: P.ficha }); return; }
@@ -384,7 +385,7 @@
   document.addEventListener("change", (e) => {
     const t = e.target; if (!P) return;
     if (t.dataset.cls === "n") { desenhar(); return; }
-    if (t.dataset.cls === "c") { const i = +t.closest("[data-ci]").dataset.ci; if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; CLS()[i].c = t.value; CLS()[i].sub = ""; if(i===0){F().perClasse=[];F().especializacoes=[];} refrescar(); desenhar(); return; }
+    if (t.dataset.cls === "c") { const i = +t.closest("[data-ci]").dataset.ci; if(CLS().some((c,j)=>j!==i && c.c===t.value && t.value)){aviso("Esta classe já foi adicionada.",true);desenhar();return;} if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; CLS()[i].c = t.value; CLS()[i].sub = ""; if(i===0){F().perClasse=[];F().especializacoes=[];} refrescar(); desenhar(); return; }
     if (t.dataset.atq && (t.tagName === "SELECT" || t.type === "checkbox")) { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = t.type === "checkbox" ? t.checked : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
 
     if(t.dataset.asi){const f=F();f.melhorias ||= {};f.melhorias[t.dataset.asi] ||= [];f.melhorias[t.dataset.asi][+t.dataset.i]=t.value;refrescar();desenhar();return;}
@@ -427,7 +428,7 @@
       else { f.slotsUsados = f.slotsUsados || []; const i = +b.dataset.slot; f.slotsUsados[i] = Math.max(0, num(f.slotsUsados[i], 0) + d); }
       $("#bloco-slots").innerHTML = blocoSlots(); agendar({ ficha: P.ficha }); return;
     }
-    if (c("#add-cls")) { CLS().push({ c: "", n: 1, sub: "" }); desenhar(); return; }
+    if (c("#add-cls")) { if(CLS().some(c=>!c.c)){aviso("Escolha a classe pendente antes de adicionar outra.",true);return;} if(nivelTotal()>=20){aviso("O limite é 20 níveis no total.",true);return;} CLS().push({ c: "", n: 1, sub: "" }); desenhar(); return; }
     if ((b = c("[data-rm-cls]"))) { CLS().splice(+b.dataset.rmCls, 1); refrescar(); desenhar(); return; }
     if ((b = c("[data-per]"))) { const k=b.dataset.per, f=F(), fontes=R.fontesPericias(f); f.especializacoes=fontes.especializadas; const i=f.especializacoes.indexOf(k); if(i>=0)f.especializacoes.splice(i,1); else if(fontes.basicas.includes(k)&&f.especializacoes.length<R.limiteEspecializacao(CLS()))f.especializacoes.push(k); $("#bloco-per").innerHTML = blocoPer(); agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-idi]"))) { IDI().splice(+b.dataset.rmIdi, 1); desenhar(); agendar({ ficha: P.ficha }); return; }

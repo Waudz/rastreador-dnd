@@ -37,6 +37,11 @@
   }
   async function aplicar(d, conta = identidade()) {
     conferir(conta);
+
+    let locais = {}; try { locais = JSON.parse(localStorage.getItem("ini_tomb_" + conta.id) || "{}"); } catch (_) {}
+    const deleted = { ...(d.deleted || {}) };
+    for (const [k,ts] of Object.entries(locais || {})) if (Number(ts) > Number(deleted[k] || 0)) deleted[k] = ts;
+    d = { ...d, deleted };
     const db = await abrir(conta);
     try {
       conferir(conta);

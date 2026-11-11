@@ -43,3 +43,11 @@ test("exclusão vence cópia antiga e preserva cópia local mais nova",async()=>
 test("validação recusa campos com formato errado",()=>{
   const f=fixture();assert.throws(()=>f.acervo.validar({items:[]}),/Campo inválido/);assert.throws(()=>f.acervo.validar({items:{x:{key:"y",custom:true,name:"X"}}}),/Criação inválida/);
 });
+
+test("baixar cópia remota antiga não desfaz uma exclusão local ainda não sincronizada",async()=>{
+  const f=fixture();await f.acervo.importar(backup());
+  f.localStorage.setItem("ini_tomb_a",JSON.stringify({heroi:20}));
+  await f.acervo.aplicar(backup());
+  assert.equal(f.indexedDB.bancos.get("bestiario_a").mon.has("heroi"),false);
+  assert.equal(JSON.parse(f.localStorage.getItem("ini_tomb_a")).heroi,20);
+});
