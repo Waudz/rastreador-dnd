@@ -43,7 +43,7 @@
   const CONTA = " Sua conta continua conectada e nada foi apagado.";
   function erro(el, texto, tentar, rodape) {
     if (!el) return; pronto(el);
-    el.innerHTML = `<p class="err esq-erro" role="alert">${esc(texto)}${rodape === undefined ? CONTA : rodape} <button type="button" class="small" data-esq-tentar>Tentar novamente</button></p>`;
+    el.innerHTML = `<p class="err esq-erro" role="alert">${esc(texto)}${rodape !== undefined ? rodape : /conectada|continuam salvos/.test(texto) ? "" : CONTA} <button type="button" class="small" data-esq-tentar>Tentar novamente</button></p>`;
     const b = el.querySelector && el.querySelector("[data-esq-tentar]"); if (b && tentar) b.onclick = () => tentar();
   }
   /* se os dados demoram mais que o limite, troca o esqueleto pelo aviso de lentidão; devolve a função que cancela a vigia */

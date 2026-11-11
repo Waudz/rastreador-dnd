@@ -52,3 +52,16 @@ test('o SDK oficial é carregado antes do cliente em todas as páginas e a cópi
  for(const p of PAGINAS){const h=ler(p);if(!/js\/nuvem\.js/.test(h))continue;assert.ok(h.indexOf('vendor/supabase/supabase.js')>=0&&h.indexOf('vendor/supabase/supabase.js')<h.indexOf('js/nuvem.js'),p);}
  assert.ok(fs.existsSync(path.join(root,'vendor/supabase/LICENSE')));assert.match(ler('vendor/supabase/LEIA-ME.md'),/2\.118\.0/);
 });
+
+test('offline: o service worker serve a cópia guardada mesmo com outra busca na URL (iniciativa.html?aba=...) e nunca devolve "nada"',async()=>{
+ const {vm}=require('./helpers.cjs');
+ const guardado={'https://x.invalid/iniciativa.html':'INICIATIVA','https://x.invalid/index.html':'INDEX'};
+ const caches={match:async(req,op)=>{const u=typeof req==='string'?'https://x.invalid/'+req:req.url;if(guardado[u])return guardado[u];if(op&&op.ignoreSearch){const b=u.split('?')[0];return guardado[b]||undefined;}return undefined;},open:async()=>({put(){}}),keys:async()=>[],delete:async()=>true};
+ const ouvintes={};const ctx=vm.createContext({self:{addEventListener:(n,f)=>ouvintes[n]=f,skipWaiting(){},clients:{claim(){}}},caches,location:{origin:'https://x.invalid'},fetch:async()=>{throw new Error('sem rede');},Request:class{},Response:{error:()=>'ERRO'},URL});
+ vm.runInContext(ler('sw.js'),ctx);
+ const pedir=async(url,mode)=>{let r;ouvintes.fetch({request:{url,method:'GET',mode},respondWith:p=>{r=p;}});return r;};
+ assert.equal(await pedir('https://x.invalid/iniciativa.html?aba=iniciativa','navigate'),'INICIATIVA');
+ assert.equal(await pedir('https://x.invalid/iniciativa.html','navigate'),'INICIATIVA');
+ assert.equal(await pedir('https://x.invalid/pagina-que-nao-existe.html','navigate'),'INDEX');
+ assert.equal(await pedir('https://x.invalid/js/inexistente.js?v=3','no-cors'),'ERRO');
+});
