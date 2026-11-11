@@ -170,7 +170,8 @@
         return rows.length ? { rounds: round, rows } : null;
       }
 
-      function render() {
+      function render(force=false) {
+        if(!force&&document.activeElement?.matches?.('#combatants [data-iniciativa]')){save();return;}
         const list = $("combatants");
         const ordered = sorted();
         $("round").textContent = round;
@@ -336,12 +337,17 @@
         if (!nm.hidden) nm.focus();
       });
 
+      $("combatants").addEventListener("input",e=>{
+        const id=e.target.dataset.iniciativa;if(!id||e.target.validity?.badInput)return;
+        const c=combatants.find(c=>c.id===id),valor=e.target.value.trim();
+        if(c&&(valor===""||Number.isFinite(Number(valor)))){c.initiative=valor===""?null:Number(valor);save();}
+      });
       $("combatants").addEventListener("change", e => {
         const id=e.target.dataset.iniciativa;if(!id)return;
         const c=combatants.find(c=>c.id===id);if(!c)return;
         const valor=e.target.value.trim();
         if(valor!==""&&!Number.isFinite(Number(valor)))return;
-        c.initiative=valor===""?null:Number(valor);render();
+        c.initiative=valor===""?null:Number(valor);render(true);
       });
       $("combatants").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset.iniciativa){e.preventDefault();e.target.blur();}});
       $("start").addEventListener("click", () => {

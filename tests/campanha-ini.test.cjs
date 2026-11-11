@@ -40,3 +40,4 @@ test("consulta automática sem alterações não refaz a grade nem exibe carrega
  Object.defineProperty(f.document.el("ci-lista"),"innerHTML",{get:()=>html,set:v=>{html=v;escritas++;}});
  await f.atualizar();assert.equal(escritas,0);assert.equal(f.document.el("ci-msg").innerHTML,"");
 });
+test("normalização de HTML pelo navegador não provoca redesenho em cada consulta",async()=>{const f=await fixture();let escritas=0;Object.defineProperty(f.document.el('ci-lista'),'innerHTML',{get:()=>'<article>HTML normalizado pelo navegador</article>',set(){escritas++;}});await f.atualizar();assert.equal(escritas,0);});

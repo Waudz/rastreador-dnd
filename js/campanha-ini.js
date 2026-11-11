@@ -6,7 +6,7 @@
   const esc = nuvem.esc;
   const params = new URLSearchParams(location.search), pedido = params.get("campanha"), personagemPedido = params.get("personagem");
   const conta = nuvem.usuario()?.id;
-  let camps = [], pers = [], atual = "", enviado = {}, falhas = 0, adicionouPedido = false, buscando = false, carregou = false, resumoId = null, focoAnterior = null;
+  let camps = [], pers = [], atual = "", enviado = {}, falhas = 0, adicionouPedido = false, buscando = false, carregou = false, resumoId = null, focoAnterior = null, ultimaGrade = null;
   const msg = (t, erro) => { $("#ci-msg").innerHTML = erro ? '<span class="err">'+esc(t)+'</span>' : esc(t || ""); };
   const mesmaConta = () => nuvem.usuario()?.id === conta;
   const emCombate = p => window.__ini.list().some(c => c.pid === p.id);
@@ -15,7 +15,7 @@
       const f = p.ficha || {}, foto = f.foto && /^data:image\//.test(f.foto) ? '<img class="av" style="width:36px;height:36px" src="'+esc(f.foto)+'" alt="">' : "";
       return '<article class="ci-cartao"><button type="button" class="ci-personagem" data-ci-resumo="'+esc(p.id)+'" aria-label="Ver resumo de '+esc(p.nome)+'">'+foto+'<span><b>'+esc(p.nome)+'</b><small>'+esc(f.classe||[f.npc?"NPC":"Personagem",f.nivel?'Nível '+f.nivel:''].filter(Boolean).join(' · '))+'</small><small>PV '+p.pv_atual+'/'+p.pv_max+' · CA '+p.ca+'</small></span></button>'+(emCombate(p)?'<span class="muted ci-no-combate">No combate</span>':'<button type="button" class="small" data-ci="'+esc(p.id)+'">Adicionar à iniciativa</button>')+'</article>';
     }).join("") : '<span class="muted">Esta campanha ainda não tem personagens. Importe ou crie as fichas dentro da campanha.</span>';
-    if($("#ci-lista").innerHTML!==html)$("#ci-lista").innerHTML=html;
+    if(ultimaGrade!==html){$("#ci-lista").innerHTML=html;ultimaGrade=html;}
   }
   function abrirResumo(p){
     resumoId=p.id;focoAnterior=document.activeElement;
