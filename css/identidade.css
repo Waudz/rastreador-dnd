@@ -143,7 +143,7 @@ button.danger:hover { border-color:var(--red); background:#C74B4B25; }
 .appheader > .appdireita { grid-area:dir; display:flex; align-items:center; gap:10px; justify-content:flex-end; }
 .appheader > nav { grid-area:nav; width:100%; max-width:1120px; margin:0 auto; }
 .appmarca { display:inline-flex; align-items:center; gap:8px; min-width:0; color:var(--text); text-decoration:none; font-weight:800; font-size:15px; letter-spacing:-.02em; }
-.appmarca img { width:22px; height:22px; flex:0 0 auto; object-fit:contain; }
+.appmarca img { width:32px; height:32px; flex:0 0 auto; object-fit:contain; }
 .appmarca span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .appsino { flex:0 0 34px; height:34px; } /* espaço reservado para o sino de notificações */
 .appavatar { flex:0 0 auto; display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--panel); border:1px solid var(--gold-dark); color:var(--gold); text-decoration:none; }
@@ -267,3 +267,10 @@ main:has(> :is(#ficha,#conteudo,#criador-conteudo,#conta-abrindo)[aria-busy="tru
 .esq-cartao.esq-uma { min-height:0; height:49px; display:flex; align-items:center; } .esq-uma .esq-linha { margin:0; flex:0 0 60%; }
 .esq-quem { min-height:29px; margin-bottom:12px; } .esq-sair { height:29px; }
 @media (min-width:700px) { .esq-resumo { margin-bottom:24px; } }
+
+/* ---------- abertura da PWA (js/splash.js): tela preta, símbolo e indicador discreto ---------- */
+html.splash { overflow:hidden; }
+html.splash::before { content:""; position:fixed; inset:0; z-index:2147483646; background:#000 url(../icones/compendio-logo-192.png) center calc(50% - 22px) / 96px 96px no-repeat; }
+html.splash::after { content:""; position:fixed; left:50%; top:calc(50% + 50px); width:22px; height:22px; margin-left:-11px; box-sizing:border-box; z-index:2147483647; border:2px solid #FAAF2333; border-top-color:#FAAF23; border-radius:50%; animation:splash-gira .9s linear infinite; }
+@keyframes splash-gira { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) { html.splash::after { animation:none; border-color:#FAAF2366; border-top-color:#FAAF23; } }

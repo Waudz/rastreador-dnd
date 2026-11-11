@@ -330,7 +330,7 @@
     if (ui) { ui.href = "iniciativa.html?aba=iniciativa&campanha=" + encodeURIComponent(P.campanha_id) + "&personagem=" + encodeURIComponent(id); ui.hidden = !!emPainel; }
     if (ex) ex.hidden = !!emPainel;
     if (fc && emPainel) { fc.href = "personagem.html?id=" + encodeURIComponent(id); fc.hidden = false; }
-    document.title = P.nome + " — Rastreador D&D"; profTxt(); avisoArm();
+    document.title = P.nome + " — Compêndio 5e"; profTxt(); avisoArm();
     document.querySelectorAll(".atributos-ficha input,.atributos-ficha select").forEach(el=>{el.disabled=!editandoFicha;});
   }
   const presets = () => R.ARMADURAS.map((a) => [a[1], a[6]]).concat([["Escudo", 3], ["Mochila", 2.5], ["Saco de dormir", 3.5], ["Corda de cânhamo (15 m)", 5], ["Tocha", 0.5], ["Ração (1 dia)", 1], ["Cantil", 2.5], ["Kit de curandeiro", 1.5], ["Poção de cura", 0.25], ["Ferramentas de ladrão", 0.5], ["Foco arcano", 0.5], ["Símbolo sagrado", 0.5], ["Grimório", 1.5]]);

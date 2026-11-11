@@ -4,16 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://pdjzahpxjrlbqqtzkfdr.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self'; base-uri 'self'; form-action 'self'">
-  <title>Entrar — Rastreador D&D</title>
+  <title>Entrar — Compêndio 5e</title>
   <meta name="theme-color" content="#101820">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="icones/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="icones/icone-192.png">
-  <link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icones/compendio-favicon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icones/compendio-favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="icones/compendio-favicon-48.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icones/compendio-app-192.png">
+  <link rel="apple-touch-icon" href="icones/compendio-apple-touch.png">
   <link rel="stylesheet" href="css/estilo.css">
   <link rel="stylesheet" href="css/identidade.css">
   <link rel="stylesheet" href="css/fichas.css">
+  <script src="js/splash.js"></script>
   <script src="js/icones.js" defer></script>
   <script src="js/config-nuvem.js" defer></script>
   <script src="vendor/supabase/supabase.js" defer></script>
@@ -24,7 +26,7 @@
 </head>
 <body>
   <main class="tracker">
-    <header class="header"><div><p class="eyebrow">Rastreador D&D</p><h1>Entrar</h1></div></header>
+    <header class="header"><div><p class="eyebrow">Compêndio 5e</p><h1>Entrar</h1></div></header>
     <p class="muted">Você não precisa de conta para pesquisar monstros e magias nem para usar a iniciativa. A conta serve para criar e participar de campanhas, guardar personagens e sincronizar seus dados. <a href="iniciativa.html">Continuar como visitante</a></p>
     <section class="panel" id="entrar" hidden>
       <div class="seg" style="margin-bottom:12px">

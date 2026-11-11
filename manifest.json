@@ -1,36 +1,36 @@
 {
-  "name": "Rastreador D&D",
-  "short_name": "Iniciativa",
+  "name": "Compêndio 5e",
+  "short_name": "Compêndio 5e",
   "id": "./",
   "lang": "pt-BR",
-  "description": "Iniciativa, fichas, campanhas, monstros e magias de D&D 5e.",
+  "description": "Compêndio 5e: iniciativa, fichas, campanhas, monstros e magias de D&D 5e em português.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#101820",
+  "background_color": "#000000",
   "theme_color": "#101820",
   "icons": [
     {
-      "src": "icones/icone-192.png",
+      "src": "icones/compendio-app-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icones/icone-512.png",
+      "src": "icones/compendio-app-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icones/icone-maskable-192.png",
+      "src": "icones/compendio-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "icones/icone-maskable-512.png",
+      "src": "icones/compendio-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

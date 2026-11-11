@@ -1,6 +1,6 @@
-# Rastreador D&D 5e
+# Compêndio 5e
 
-Rastreador de iniciativa, fichas, campanhas, monstros e magias de D&D 5ª edição (2014), em português. Site estático (HTML, CSS e JavaScript puro, sem build e sem framework) publicado no GitHub Pages, com contas e campanhas no Supabase e instalável como PWA.
+Compêndio 5e: rastreador de iniciativa, fichas, campanhas, monstros e magias de D&D 5ª edição (2014), em português. Site estático (HTML, CSS e JavaScript puro, sem build e sem framework) publicado no GitHub Pages, com contas e campanhas no Supabase e instalável como PWA.
 
 Projeto de fãs, sem vínculo com a Wizards of the Coast. Conteúdo de D&D 5e (2014): o SRD 5.1 e resumos próprios de outros livros (veja "Licenças").
 

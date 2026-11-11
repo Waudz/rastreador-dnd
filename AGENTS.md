@@ -1,4 +1,4 @@
-# Rastreador D&D 5e — contexto para agentes (Codex e Claude)
+# Compêndio 5e — contexto para agentes (Codex e Claude)
 
 Pasta única de trabalho: `C:\Users\LocaGOra\Downloads\William`. Repositório: `Waudz/rastreador-dnd` (GitHub Pages, branch `main`).
 Só um agente edita por vez. Antes de começar: `git status` e `git pull --rebase origin main`. **Nunca fazer push sem o William pedir.**
@@ -6,6 +6,9 @@ Só um agente edita por vez. Antes de começar: `git status` e `git pull --rebas
 ## O que é
 Site estático (HTML/CSS/JS puro, scripts clássicos com `defer`, sem build e sem dependências novas) com rastreador de iniciativa, bestiário/magias SRD 5.1 (2014) em português, fichas, campanhas multiusuário no Supabase (cliente próprio em `js/nuvem.js`, sem SDK), PWA offline (`sw.js`).
 CSP por `<meta>`: `script-src 'self'`; Supabase só em `https://pdjzahpxjrlbqqtzkfdr.supabase.co`.
+
+## Identidade
+Nome oficial: **Compêndio 5e** (acento e "e" minúsculo). Símbolo: livro com chapéu de mago, dourado (`icones/compendio-simbolo.png`, transparente). Ícones de instalação da PWA têm fundo preto; `ferramentas/gerar-icones.py` gera todos. O `id`/`start_url`/`scope` do manifesto e as chaves de armazenamento (`dnd5e_*`, `ini_*`) não mudam com o nome. "Rastreador de iniciativa" continua sendo o nome da ferramenta de combate. `js/splash.js` + `.splash*` em `css/identidade.css`: tela de abertura da PWA instalada (uma vez por abertura). Mudança de endereço do site: `docs/MIGRACAO-ENDERECO.md`.
 
 ## Mapa rápido
 - Páginas: `index.html`/`conta.html` (campanhas, personagens, conta), `campanha.html`, `personagem.html`, `criar-personagem.html`, `iniciativa.html` (iniciativa + Monstros + Magias por `?aba=`), `admin.html`.
@@ -16,7 +19,7 @@ CSP por `<meta>`: `script-src 'self'`; Supabase só em `https://pdjzahpxjrlbqqtz
 - `supabase/` SQL; mudar o banco exige o William rodar o SQL no Supabase.
 
 ## Decisões de produto (11/11/2026)
-- O Rastreador D&D é **totalmente gratuito**.
+- O Compêndio 5e (antes "Rastreador D&D") é **totalmente gratuito**.
 - **Modo visitante:** quem não tem conta pode pesquisar monstros, consultar magias e usar todo o rastreador de iniciativa. Login só para o que depende de conta: criar ou entrar em campanhas, personagens vinculados à conta e sincronização. Os dados locais do visitante devem ser preservados, inclusive se ele entrar na conta depois. **Implementado (Fase B4, ainda não publicado):** a raiz sem sessão abre a iniciativa, o menu mostra "Entrar", criar fichas/fotos exigem conta (CSS e código), e há backup/restauração local do combate e das criações (`js/dados-locais.js`). O visitante nunca precisa de acesso ao Supabase.
 - Fase A (cadastro com confirmação de e-mail, recuperação/troca de senha, backup, testes de permissões) publicada. Fase B: SDK oficial (`vendor/supabase`, sessão persistente), `entrar.html` com Turnstile desligado por padrão (`turnstileSiteKey` em `js/config-nuvem.js`; só ligar depois de testar o fluxo completo) e modo visitante.
 

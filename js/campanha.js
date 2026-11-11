@@ -48,7 +48,7 @@
 
   /* ---------- desenho ---------- */
   function cabecalho() {
-    $("#titulo").textContent = camp.nome; document.title = camp.nome + " — Rastreador D&D";
+    $("#titulo").textContent = camp.nome; document.title = camp.nome + " — Compêndio 5e";
     $("#papel").textContent = mestre() ? "Mestre" : "Jogador";
     $("#lnk-combate").href = "iniciativa.html?campanha="+encodeURIComponent(id); $("#lnk-combate").hidden = false; $("#lnk-combate").textContent=mestre()?"Combate e consultas":"Consultar monstros e habilidades";
     const abas = [["pers", "Personagens"], ["diario", "Diário"], ["docs", "Documentos"]].concat(mestre() ? [["membros", "Grupo"]] : []);

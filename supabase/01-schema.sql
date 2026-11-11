@@ -1,4 +1,4 @@
--- Rastreador D&D — banco de dados (Supabase / Postgres)
+-- Compêndio 5e — banco de dados (Supabase / Postgres)
 -- Cole este arquivo inteiro no SQL Editor do projeto e clique em Run. Pode ser executado de novo sem problemas.
 --
 -- Modelo:
