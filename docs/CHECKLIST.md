@@ -109,3 +109,11 @@ As pendências estruturais estão detalhadas em `docs/PENDENCIAS.md`, na seção
 | Redimensionar gradualmente | Teste da transição de reserva lateral para empilhada e retorno; reserva removida ao fechar | Arrastar a janela continuamente em navegador e conferir foco/scroll |
 
 Esses testes não utilizam um motor de renderização. Não equivalem à confirmação visual dos tamanhos acima, que não foi possível realizar na prévia local. Após o envio autorizado, conferir o resultado de Actions/Pages e executar a revisão visual na versão atualizada.
+
+### Verificação após envio autorizado
+
+O envio `b3f1b51` passou em Actions/Pages. Foi possível acessar a versão publicada pelo navegador integrado. Na entrada do aplicativo, medições DOM em viewports de 320, 375, 390, 430 e 1366 px confirmaram uma linha de navegação, fonte de 13 px, botões de 44 px e ausência de overflow horizontal do documento. A rolagem horizontal em 320 px tornou o último link acessível.
+
+No painel real de Goblin, medições durante redimensionamento entre 1920 e 320 px confirmaram posição fixa com espaço reservado nas larguras a partir de 1200 px e posição relativa abaixo disso, com rolagem interna `auto`. Em 320 px foi identificado um pequeno overflow na faixa de ações do resultado do bestiário, independente da navegação. A correção permite que esses botões quebrem dentro do cartão (a navegação superior continua em uma única linha). O cache seguinte foi incrementado para v59.
+
+Esta verificação não equivale a teste em PWA instalado ou sessão autenticada de mestre/jogador. Permanecem pendentes os fluxos reais de campanha/biblioteca, o painel de personagem com permissões e comparação em dispositivo físico.
