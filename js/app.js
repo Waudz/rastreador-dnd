@@ -10,7 +10,7 @@
     let PUB = new Set();
     try { const r = await fetch("fotos/index.json", { cache: "no-cache" }); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}
     let CF = [];
-    try { const r = await fetch("dados/habilidades.json"); if (r.ok) CF = await r.json(); } catch (_) {}
+    try { const r = await fetch("dados/habilidades.json"); if (r.ok) CF = (await r.json()).filter(EDICOES.permitida); } catch (_) {}
     let CFT = {}, CFT0 = {};
     try { const r = await fetch("dados/habilidades-pt.json"); if (r.ok) CFT = await r.json(); } catch (_) {}
     CFT0 = { ...CFT };
@@ -176,8 +176,8 @@
     const del = async (store, key) => { const t = db.transaction(store, "readwrite"); t.objectStore(store).delete(key); await done(t); };
     const status = (h) => { $("#dl-status").innerHTML = h; };
     async function reload() {
-      ALL = await rq(db.transaction("mon").objectStore("mon").getAll());
-      SP = await rq(db.transaction("spl").objectStore("spl").getAll());
+      ALL = (await rq(db.transaction("mon").objectStore("mon").getAll())).filter(EDICOES.permitida);
+      SP = (await rq(db.transaction("spl").objectStore("spl").getAll())).filter(EDICOES.permitida);
       PH = Object.fromEntries((await rq(db.transaction("img").objectStore("img").getAll())).map((x) => [x.key, x.data]));
       BY = Object.fromEntries(ALL.map((m) => [m.key, m]));
       ALL.sort((a, b) => a.name.localeCompare(b.name)); SP.sort((a, b) => a.name.localeCompare(b.name));
@@ -225,7 +225,7 @@
       const q = $("#name").value.trim(); sug.innerHTML = '<div class="muted">Buscando na Open5e…</div>';
       try {
         const j = await api("/creatures/?name__icontains=" + encodeURIComponent(q) + "&limit=30&ordering=name");
-        await put("mon", j.results || []); await reload(); sug.hidden = false; sugg();
+        await put("mon", (j.results || []).filter(EDICOES.permitida)); await reload(); sug.hidden = false; sugg();
         if (!(j.results || []).length) sug.innerHTML = '<div class="muted">A Open5e não tem nenhum monstro com esse nome.</div>';
       } catch (e) { sug.innerHTML = `<div class="err">Falha na busca online (${esc(e.message)}).</div>`; }
     }
@@ -794,7 +794,7 @@
       b.disabled = false;
     });
     async function initPacks() {
-      try { const r = await fetch("dados/bestiario/index.json", { cache: "no-cache" }); if (r.ok) PACKS = await r.json(); } catch (_) {}
+      try { const r = await fetch("dados/bestiario/index.json", { cache: "no-cache" }); if (r.ok) PACKS = (await r.json()).filter(EDICOES.permitida); } catch (_) {}
       renderPacks();
       for (const p of PACKS) if (LP[p.key] !== p.v) { try { await loadPack(p); } catch (err) { console.error(err); } }
     }

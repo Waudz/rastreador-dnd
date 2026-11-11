@@ -49,6 +49,7 @@
       nuvem.get(`membros?select=papel,campanha:campanhas(id,nome)&usuario_id=eq.${u.id}&order=entrou_em.desc`),
       nuvem.get(`personagens?select=id,nome,pv_atual,pv_max,ca,ficha,campanha:campanhas(id,nome)&dono_id=eq.${u.id}&order=nome`)
     ]);
+    if(nuvem.usuario()?.id !== u.id) return;
     const nome = (perfil[0] && perfil[0].nome) || u.nome || u.email.split("@")[0];
     $("#quem").textContent = nome; $("#a-nome").value = nome;
 
@@ -57,7 +58,7 @@
       return `<a class="card" href="campanha.html?id=${encodeURIComponent(c.id)}"><b>${esc(c.nome)}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></a>`;
     }).join("") : '<span class="muted">Nenhuma campanha ainda.</span>';
 
-    $("#p-camp").innerHTML = membros.filter(m=>m.papel==="jogador").map((m) => `<option value="${esc(m.campanha.id)}">${esc(m.campanha.nome)}</option>`).join("") || '<option value="">(sem campanhas)</option>';
+    $("#p-camp").innerHTML = membros.filter(m=>m.papel==="jogador" && m.campanha).map((m) => `<option value="${esc(m.campanha.id)}">${esc(m.campanha.nome)}</option>`).join("") || '<option value="">(sem campanhas)</option>';
 
     const campanhasJogador = new Set(membros.filter(m=>m.papel==="jogador").map(m=>m.campanha.id));
     const meusPersonagens = pers.filter(p=>!(p.ficha||{}).npc && campanhasJogador.has((p.campanha||{}).id));
@@ -68,10 +69,11 @@
   }
 
   async function mostrarArea() {
+    $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = "";
     $("#entrar").hidden = true; $("#area").hidden = false;
     try { await carregar(); } catch (e) { $("#campanhas").innerHTML = `<span class="err">${esc(e.message)}</span>`; }
   }
-  function mostrarLogin() { $("#entrar").hidden = false; $("#area").hidden = true; }
+  function mostrarLogin() { $("#entrar").hidden = false; $("#area").hidden = true; $("#l-senha").value = ""; $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = ""; $("#quem").textContent = ""; }
 
   $("#btn-sair").onclick = async () => { await nuvem.sair(); mostrarLogin(); };
   $("#abre-camp").onclick = () => { $("#form-entrar").hidden = true; alterna("#form-camp"); };

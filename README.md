@@ -133,3 +133,7 @@ Para migrar do repositório privado:
 As automações seguem os dados de classe SRD 2014 do projeto. Atributos iniciais e escolhas de talento, estilo de luta, perícias e melhorias continuam sendo escolhas do jogador; os bônus e recursos derivados são calculados. As melhorias permitem escolher +1 duas vezes, inclusive no mesmo atributo, até 20. As descrições das raças expandidas continuam sendo resumos do catálogo existente, sem reprodução de livros.
 
 Validação local: `node tests/regras.test.cjs`. A validação de permissões e concorrência do banco está em `supabase/VALIDACAO.md`.
+
+D&D 2014 é a edição ativa: pacotes, monstros, magias e habilidades de 2024 ficam desabilitados, inclusive quando já existem no cache. Os arquivos antigos não são apagados.
+
+O workflow Validar fichas e banco executa os testes JavaScript e aplica os dois schemas em um PostgreSQL descartável para verificar RLS, transferência, fotos e mesclagem concorrente. Não usa credenciais nem dados do projeto real.

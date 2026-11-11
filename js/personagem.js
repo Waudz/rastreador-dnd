@@ -5,7 +5,7 @@
   "use strict";
   const $ = (s) => document.querySelector(s), esc = nuvem.esc, R = window.REGRAS;
   const id = new URLSearchParams(location.search).get("id");
-  let P = null, camp = null, souMestre = false, donoNome = "", pend = null, timer = null, catalogo = null, magiasCat = null, achadosM = [];
+  let P = null, camp = null, souMestre = false, donoNome = "", pend = null, salvando = false, timer = null, catalogo = null, magiasCat = null, achadosM = [];
   const ATR = [["for", "FOR"], ["des", "DES"], ["con", "CON"], ["int", "INT"], ["sab", "SAB"], ["car", "CAR"]];
   const MOEDAS = [["pc", "Cobre (PC)"], ["pp", "Prata (PP)"], ["po", "Ouro (PO)"]];
   const CLASSES = { Barbarian: "Bárbaro", Bard: "Bardo", Cleric: "Clérigo", Druid: "Druida", Fighter: "Guerreiro", Monk: "Monge", Paladin: "Paladino", Ranger: "Patrulheiro", Rogue: "Ladino", Sorcerer: "Feiticeiro", Warlock: "Bruxo", Wizard: "Mago" };
@@ -56,13 +56,15 @@
   /* ---------- salvar (agrupa as alterações por 0,6 s) ---------- */
   function agendar(campos) { pend = { ...(pend || {}), ...campos }; $("#estado").textContent = "Salvando…"; clearTimeout(timer); timer = setTimeout(enviar, 600); }
   async function enviar() {
-    if (!pend) return;
-    const corpo = pend; pend = null;
+    if (!pend || salvando) return;
+    const corpo = JSON.parse(JSON.stringify(pend)); pend = null; salvando = true;
     try {
       const r = await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}`, corpo);
-      if (r && r[0]) P.versao = r[0].versao;
+      if (!r || !r[0]) throw new Error("O personagem não foi atualizado. Confira se você ainda tem acesso.");
+      P.versao = r[0].versao;
       $("#estado").textContent = "Salvo";
     } catch (e) { pend = { ...corpo, ...(pend || {}) }; $("#estado").innerHTML = `<span class="err">Não salvou: ${esc(e.message)}</span>`; }
+    finally { salvando = false; if(pend && !$("#estado").textContent.startsWith("Não salvou")){clearTimeout(timer);timer=setTimeout(enviar,0);} }
   }
   window.addEventListener("beforeunload", () => { if (pend) enviar(); });
 
