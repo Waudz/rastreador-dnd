@@ -266,4 +266,4 @@ main:has(> :is(#ficha,#conteudo,#criador-conteudo,#conta-abrindo)[aria-busy="tru
 .esq-cartao.esq-curto { min-height:54px; }
 .esq-cartao.esq-uma { min-height:0; height:49px; display:flex; align-items:center; } .esq-uma .esq-linha { margin:0; flex:0 0 60%; }
 .esq-quem { min-height:29px; margin-bottom:12px; } .esq-sair { height:29px; }
-@media (min-width:700px) { .esq-resumo { margin-bottom:-12px; } }
+@media (min-width:700px) { .esq-resumo { margin-bottom:24px; } }

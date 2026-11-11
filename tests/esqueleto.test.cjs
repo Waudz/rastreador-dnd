@@ -57,3 +57,14 @@ test('o esqueleto da abertura não reintroduz flicker: título/abas/conteúdo j�
   const c=ler('campanha.html');assert.match(c,/id="titulo"><span class="esq esq-titulo">/);assert.match(c,/id="abas" aria-hidden="true">/);assert.match(c,/id="conteudo" aria-busy="true"/);
   assert.match(ler('sw.js'),/js\/esqueleto\.js/);assert.match(ler('conta.html'),/id="conta-abrindo" aria-busy="true"/);
 });
+
+test('trocar de aba da campanha não espera rede (usa dados já carregados), então não precisa de esqueleto nem pisca',()=>{
+  const c=ler('js/campanha.js'),d=c.slice(c.indexOf('async function desenhar()'),c.indexOf('async function mostrarConvite'));
+  assert.ok(!/await\s+nuvem\./.test(d)&&!/fetch\(/.test(d),'desenhar() só monta HTML com dados em memória');
+  assert.match(c,/data-aba[\s\S]{0,200}return desenhar\(\)/);
+  const r=c.slice(c.indexOf('async function recarregar()'),c.indexOf('async function recarregar()')+160);assert.match(r,/await carregar\(\); desenhar\(\)/);   // atualização posterior mantém o conteúdo até haver dado novo
+});
+test('admin.html só redireciona: sem dados assíncronos, sem esqueleto, e o redirecionamento roda antes da pintura',()=>{
+  const h=ler('admin.html');assert.match(h,/<script src="js\/admin-redirecionar\.js"><\/script>/);assert.ok(!/esqueleto|esq/.test(h));
+  assert.match(ler('js/admin-redirecionar.js'),/location\.replace\("conta\.html\?aba=conta#opcoes-admin"\)/);
+});
