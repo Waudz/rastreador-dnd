@@ -67,7 +67,7 @@ O fluxo do GitHub também aplica `supabase/*.sql` num Postgres temporário e rod
 ## Licenças
 
 - Monstros, magias, classes e raças do **System Reference Document 5.1**, de Wizards of the Coast LLC, sob **Creative Commons Attribution 4.0** (dados obtidos pela API Open5e). A atribuição completa e as alterações feitas estão em [`licencas.html`](licencas.html) e no rodapé de todas as páginas.
-- As traduções de `dados/` devem ser do próprio projeto, feitas a partir do texto do SRD. A procedência de cada arquivo precisa estar confirmada antes de uma distribuição ampla.
+- As traduções de `dados/` são do autor do projeto, feitas com auxílio de IA a partir do texto do SRD (confirmado pelo autor em 11/11/2026). São obras derivadas do SRD, publicadas sob a mesma licença CC BY 4.0, com a atribuição e a indicação das alterações em `licencas.html`.
 - A estrutura do criador foi adaptada do HeroQuill (MIT); aviso em [`docs/FONTES-CRIADOR.md`](docs/FONTES-CRIADOR.md).
 - Livros publicados, outras edições e conteúdo de outros livros não fazem parte do repositório nem são oferecidos para escolha. Fichas antigas que já usam raças ou subclasses de outros livros continuam abrindo.
 
