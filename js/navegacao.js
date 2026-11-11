@@ -15,7 +15,7 @@
  const contaInicial=nuvem.usuario()?.id; nuvem.aoMudar(u=>{if(u?.id!==contaInicial)location.reload();});
  const pagina=location.pathname.split('/').pop(),aba=new URLSearchParams(location.search).get('aba');
  if(pagina==='iniciativa.html'){
-  const consulta=aba==='consulta';document.body.dataset.view=consulta?'consulta':'iniciativa';
+  const consulta=aba==='consulta';document.body.dataset.appView=consulta?'consulta':'iniciativa';
   for(const s of document.querySelectorAll('main > section, main > details')){
    const bestiario=!!s.querySelector('#blist,#sq')||s.id==='cm',dados=s.classList.contains('only-admin');
    if(bestiario||dados)s.classList.add('vista-consulta');else s.classList.add('vista-iniciativa');
