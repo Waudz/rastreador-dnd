@@ -1,73 +1,67 @@
-# Símbolo e backdrop — plano de integração para aprovação
+# Imagens de campanhas — proposta de integração para aprovação
 
-Estado desta entrega: somente layout e prévia temporária. Nenhuma imagem é enviada, nenhuma configuração do Supabase foi alterada e nenhuma migração foi executada. A prévia se perde ao sair/recarregar a página; não é sincronização.
+## Estado desta etapa — 11/11/2026
 
-## Implementado na etapa visual
+Foram revisados o código local e o Supabase remoto `rastreador-dnd` (`pdjzahpxjrlbqqtzkfdr`) com consultas de metadados somente de leitura. A migração e os testes SQL estão preparados localmente, **sem execução**. Nenhuma alteração no banco/Storage, upload, push ou deploy foi feito nesta etapa. A interface continua na prévia temporária até a implementação após aprovação.
 
-- Símbolo circular de 68 px no computador e 52 px no celular; livro como alternativa.
-- Backdrop independente, com altura moderada, gradiente até `--bg` e enquadramento separado para computador e celular.
-- Sem backdrop, não há faixa de imagem nem altura reservada.
-- Menu Mais opções → Prévia da aparência, somente no papel de mestre da campanha.
-- PNG/JPEG/WebP até 8 MB; preparação local em canvas com limite de 256 px para o símbolo e 1600 px para o fundo. SVG não é aceito. Nenhuma imagem é gravada no localStorage, na ficha ou no banco.
+## Estrutura confirmada no projeto remoto
 
-## Estrutura atual confirmada
+- `campanhas`: id, nome, codigo, mestre_id, criado_em. RLS ativa; código não é leitura pública do cliente.
+- `membros`: campanha_id, usuario_id, papel, entrou_em. RLS ativa.
+- Bucket privado `documentos`: 10 MB, com políticas ligadas aos documentos da campanha.
+- Não existem `campanha_visual` nem bucket `campanhas-visuais`.
+- `eh_membro()` verifica participação. **`eh_mestre()` também concede acesso a administradores globais**, conforme `03-administracao-conta.sql`; não será usada como autorização de edição das imagens.
+- `nuvem.js` tem envio, assinatura de URL e exclusão no bucket documentos; o SDK oficial já é carregado pelo aplicativo. Não serão adicionadas dependências.
+- O service worker não intercepta requisições de outro domínio, incluindo o Supabase.
 
-`campanha.js` consulta campanhas/membros e usa as políticas existentes. Convites são obtidos por `codigo_da_campanha`, exclusiva do mestre. `js/nuvem.js` já oferece envio, URL assinada e exclusão no bucket privado `documentos`; as políticas desse bucket dependem dos registros de documentos. Ele não deve ser reaproveitado por meio de documentos fictícios de aparência.
+## Migração preparada, ainda não aplicada
 
-## Proposta de dados
+Arquivo: `supabase/migrations/20261111194808_imagens_campanhas.sql`, criado pela CLI oficial (`migration new`, operação local).
 
-Preparar uma migração aditiva, após aprovação, com tabela `public.campanha_visual`:
+1. Tabela `public.campanha_visual`: uma linha por campanha, dois caminhos opcionais e independentes (`simbolo_path`, `backdrop_path`), posições verticais de computador/celular, versão e data. FK com exclusão em cascata; posições entre 0–100; caminhos restritos ao UUID da campanha e ao tipo de imagem. Nenhuma imagem/base64 no banco.
+2. Bucket **privado** `campanhas-visuais`: até 2 MB por arquivo preparado, somente PNG/JPEG/WebP. O bucket documentos e suas políticas não mudam.
+3. Função privada de responsabilidade: exige simultaneamente `campanhas.mestre_id = auth.uid()` e registro de membro com papel mestre. Não aceita papel vindo da URL, localStorage ou claims editáveis; administradores não responsáveis não recebem exceção para imagens.
+4. RLS: participantes leem a aparência; escrita direta na tabela não é concedida. Gravação somente pela RPC autenticada `salvar_visual_campanha`, que revalida o responsável no servidor, confere versão, enquadramento, caminho, existência e metadados do arquivo no bucket correto.
+5. Storage: somente o responsável envia e exclui; participantes leem somente arquivos publicados na aparência. O responsável pode ler seus uploads ainda não publicados para prévia/limpeza. Sem policy UPDATE: substituição usa arquivo novo com UUID novo, sem sobrescrever o anterior.
+6. Arquivos ainda referenciados não são apagáveis diretamente. A remoção limpa primeiro a referência; depois limpa o arquivo pelo Storage. A RPC e a política de limpeza usam bloqueio da campanha para coordenar publicação e exclusão.
+7. Helpers privilegiados ficam em `private`, com `search_path` vazio, checagem de identidade e grants restritos. O wrapper público é invoker. Não expor `private` na Data API nem usar chave secreta no navegador.
 
-| Campo | Regra proposta |
-| --- | --- |
-| campanha_id | UUID, chave primária, referência a campanhas, exclusão em cascata |
-| simbolo_path | Texto opcional; somente caminho da própria campanha |
-| backdrop_path | Texto opcional; somente caminho da própria campanha |
-| backdrop_y / backdrop_y_mobile | Inteiros 0–100, padrão 50 |
-| versao / atualizado_em | Controle de concorrência e atualização |
+Campanhas antigas sem linha visual continuam com símbolo padrão e fundo atual; não há preenchimento obrigatório ou alteração dos dados existentes. A migração não muda funções de permissão antigas, campanhas, personagens, convites ou combates. Pode ser reaplicada, mas não deve ser aplicada automaticamente.
 
-Campanhas antigas sem registro continuam com o tema atual. Nenhuma imagem/base64 entra no banco; somente caminhos e enquadramento. Não alterar a tabela de personagens, chaves de iniciativa, códigos de convite ou autenticação.
+## Fluxo da integração após aprovação
 
-## Storage e permissões propostas
+1. Substituir a prévia temporária por edição com Salvar/Cancelar, exibida somente ao responsável real; jogadores apenas visualizam.
+2. Manter símbolo circular (68/52 px), fundo com fade e enquadramentos independentes para desktop/celular. Sem imagem, não reservar altura vazia.
+3. Decodificar e otimizar no navegador: PNG/JPEG/WebP de entrada até 8 MB e 40 megapixels, símbolo até 256 px e backdrop até 1600 px. Validar novamente o arquivo preparado até 2 MB; SVG e arquivos que não decodificam serão recusados. Bucket valida tamanho e MIME; RPC confere metadados e extensão. Isso não equivale a um antivírus ou inspeção binária no SQL.
+4. Usar caminhos `<campanha_id>/simbolo/<uuid>.png` e `<campanha_id>/backdrop/<uuid>.jpg` (WebP também permitido). Enviar pelo cliente autenticado existente, sem upsert.
+5. Salvar a referência com a versão carregada. Conflito entre abas mostra aviso para atualizar, sem substituir silenciosamente. Falha de envio/publicação preserva a imagem anterior e tenta limpar apenas os novos uploads órfãos. Nenhum falso “Salvo”.
+6. Remoção de símbolo não remove o fundo, e vice-versa. Após confirmação no banco, excluir o arquivo antigo pelo Storage API, nunca apagando linhas de `storage.objects` diretamente.
+7. Carregar aparência e URLs assinadas na página e na lista de campanhas; URLs com duração de cinco minutos e renovação enquanto abertas. Uma URL já emitida pode continuar válida até expirar; revogação impede novas assinaturas.
+8. Atualizar participantes em consulta periódica, reutilizando o padrão do aplicativo sem reconstruir cards ou perder seleção. Cache apenas em memória, separado por conta; limpar ao sair ou trocar de conta. Falha de rede não deve desfazer a aparência já carregada nem alegar sincronização.
+9. Atualizar `nuvem.js` com opção de bucket compatível com os usos atuais de documentos, `campanha-visual.js`, `campanha.js`, `campanhas-ui.js`, a lista em `conta.js` e os testes. Preservar o tratamento de fade/enquadramento no CSS. Nenhum envio de senha/token pela conversa.
 
-- Novo bucket privado `campanhas-visuais`, limite de arquivo de 2 MB após otimização, MIME PNG/JPEG/WebP.
-- Caminhos únicos: `<campanha_id>/simbolo/<uuid>.png` e `<campanha_id>/backdrop/<uuid>.jpg`.
-- RLS na tabela: leitura para `eh_membro(campanha_id)`; inserção/edição/exclusão para `eh_mestre(campanha_id)`; nenhum acesso anônimo.
-- Políticas do Storage: envio/exclusão somente pelo mestre da campanha identificada pelo primeiro segmento validado como UUID; leitura para participantes, limitada aos objetos referenciados pela aparência da campanha. Sem bucket público ou service_role no navegador.
-- Validar no servidor que caminhos e campos pertencem à campanha; não aceitar caminhos de outra campanha nem usar papel enviado pelo navegador como autorização.
-- A gravação da referência deve ser atômica e validar versão: uma segunda aba não pode sobrescrever silenciosamente alterações recentes.
+## Validação prevista
 
-## Fluxo proposto
+Rascunho preparado: `tests/imagens-campanhas-permissoes.test.sql` (não executado).
 
-1. Mestre escolhe arquivos e enquadramento; continua vendo uma prévia antes de salvar.
-2. Preparar as imagens e validar tamanho/tipo; enviar para nomes únicos no bucket.
-3. Salvar os caminhos e posições com conferência de versão e permissão no servidor.
-4. Se a atualização falhar, preservar a referência anterior e remover apenas o novo upload órfão quando possível.
-5. Depois de confirmar a nova referência, limpar imagens antigas que não estejam mais referenciadas. Remoção limpa a referência primeiro; falha de limpeza não remove a imagem vigente.
-6. Participantes carregam URLs assinadas de curta duração pelo cliente autenticado; renovação antes de expirar. A lista de campanhas usa o mesmo símbolo com cache em memória por conta, sem persistir URLs assinadas no service worker.
-7. Atualizações periódicas/realtime da aparência trocam somente as imagens, sem redesenhar cards, fechar menus ou perder a seleção de personagens.
-8. Encerrar a sessão/trocar de conta descarta imagens e cache em memória. Offline: manter a página utilizável e informar falha de envio; não alegar que salvou.
+| Identidade | Ler imagens publicadas | Enviar/substituir/remover |
+| --- | --- | --- |
+| Responsável da campanha A | Sim | Somente A |
+| Jogador participante de A | Sim | Não |
+| Mestre de B sem participação em A | Não em A | Somente B |
+| Administrador global não responsável/não participante | Não em A | Não em A |
+| Visitante | Não | Não |
 
-## Migração e validação antes da ativação
+Primeiro executar em PostgreSQL/Supabase descartável: fixture + 01/02/03 + nova migração duas vezes + testes. A fixture atual de CI precisa receber uma coluna `metadata jsonb` em `storage.objects` para reproduzir o schema real, além de testar conflitos e concorrência entre publicação/limpeza em duas conexões. Não executar o script de identidades sintéticas no projeto real.
 
-A próxima etapa deve entregar o SQL revisável e testes de banco/Storage em ambiente de teste: mestre da campanha A, jogador A, usuário da campanha B e visitante. Cobrir leitura, envio, substituição, remoção, caminhos cruzados, falta de sessão, conflito entre abas e falhas parciais. Rodar verificações de segurança e reaplicação da migração antes de pedir autorização para o ambiente remoto.
+Depois da aprovação, verificar com sessões reais de teste de mestre/jogador pelo Storage API e RPC: upload válido, formato/tamanho recusados, caminhos cruzados, manipulação direta via chamadas, exclusão, revogação de participação, conflito, falha de rede, símbolo/fundo independentes e persistência em dois dispositivos. Identidades serão usadas por login normal ou ambiente de teste autorizado, sem pedir senhas ou criar usuários/campanhas reais silenciosamente.
 
-A interface atual não depende dessa migração: continuará mostrando fundo escuro e símbolo padrão até ativarmos o salvamento.
+Executar também suíte JavaScript, checagem de segurança do Supabase e revisão visual/PWA em 320/375/390/430 px e desktop. As contas reais e permissões da nova implementação **ainda não foram testadas**, pois ela não foi ativada.
 
-Não houve push, deploy, escrita no Supabase ou envio de imagens nesta entrega.
+## Aprovação solicitada e sequência
 
-Referência técnica: [Controle de acesso do Storage](https://supabase.com/docs/guides/storage/security/access-control).
+Aprovar este desenho permite avançar à implementação local completa e à validação em ambiente de teste. A aplicação no projeto remoto será feita somente após os testes e dentro da autorização concedida; respeitar que o AGENTS.md atual prevê William executar o SQL. Não haverá push/deploy sem autorização específica.
 
+Não foi alterado o código de produção nesta etapa. Migração e testes são propostas revisáveis; ainda precisam de execução e validação antes de uso. Se houver problema após ativação, desativar os controles no cliente e preservar tabela/bucket/arquivos para correção; não usar rollback destrutivo automático.
 
-## Arquivos desta entrega e validação
-
-- Campanhas: campanha.html, js/campanha.js, js/campanhas-ui.js.
-- Seleção na Iniciativa: iniciativa.html e js/campanha-ini.js.
-- Componentes compactos compartilhados: js/grupo-personagens.js e css/grupo-personagens.css.
-- Prévia das imagens: js/campanha-visual.js e css/campanha-visual.css.
-- Apoio: js/conta.js (reutiliza ingresso por código), js/icones.js e sw.js (cache v82).
-- Testes: tests/campanha-compacta.test.cjs, tests/grupo-personagens.test.cjs, tests/campanha-ini.test.cjs, tests/campanhas-ui.test.cjs e tests/pwa.test.cjs.
-
-Validação: 242 testes aprovados com `node --test tests/*.cjs`; diff sem erros de whitespace. Os testes novos cobrem seleção, IDs indisponíveis, duplicação, preservação dos combatentes anteriores, revogação de permissão, PV temporários/limite de cura, mestre/jogador, imagens opcionais e formatos/tamanhos.
-
-Pendente: conferir visualmente 320/375/390/430 px, tablet, desktop e PWA instalada; menus por toque/teclado, enquadramento com fotos reais e captura de telas. O navegador automatizado local não pôde ser capturado (janela minimizada); não houve aprovação visual nem capturas nesta rodada. Os fluxos remotos de convite/ingresso devem ser conferidos com as contas de teste; testes locais usam doubles, sem escrita no servidor real.
+Referência: [Buckets privados e acesso](https://supabase.com/docs/guides/storage/buckets/fundamentals), [políticas de Storage](https://supabase.com/docs/guides/storage/security/access-control).

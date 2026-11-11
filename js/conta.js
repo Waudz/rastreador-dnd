@@ -40,8 +40,9 @@
 
     $("#campanhas").innerHTML = membros.length ? membros.map((m) => {
       const c = m.campanha || {};
-      return `<a class="card" href="campanha.html?id=${encodeURIComponent(c.id)}"><b>${esc(c.nome)}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></a>`;
+      return `<a class="card" href="campanha.html?id=${encodeURIComponent(c.id)}"><span data-visual-lista="${esc(c.id)}"></span><b>${esc(c.nome)}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></a>`;
     }).join("") : '<div class="estado-vazio"><strong>Sua próxima aventura começa aqui</strong><p>Crie uma campanha para mestrar ou entre com o código enviado pelo seu mestre. Use as ações acima para começar.</p></div>';
+    window.CAMPANHA_IMAGENS?.miniaturas(membros.map(m=>m.campanha?.id)).then(imagens=>{if(nuvem.usuario()?.id!==u.id)return;for(const m of membros){const c=m.campanha||{},el=document.querySelector('[data-visual-lista="'+c.id+'"]');if(el&&imagens[c.id])el.innerHTML=window.CAMPANHA_VISUAL.simbolo(imagens[c.id],c.nome,true);}}).catch(()=>{});
     const acao=new URLSearchParams(location.search||'').get('acao');
     if(acao==='criar')$('#form-camp').hidden=false;
     if(acao==='entrar')$('#form-entrar').hidden=false;

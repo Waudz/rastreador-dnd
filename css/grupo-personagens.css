@@ -71,3 +71,12 @@
 .grupo-cartao { position:relative; }
 .grupo-cartao .compact-menu { position:static; }
 .grupo-cartao .compact-popover { width:calc(100% - 16px); max-width:280px; right:8px; top:46px; }
+
+/* Ações de seleção sob demanda: a barra só existe depois de marcar uma ficha. */
+.grupo-selecao { margin:6px 0; gap:4px; }
+.grupo-selecao > .grow { display:none; }
+@media(max-width:600px) {
+ .grupo-selecao { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto; }
+ .grupo-selecao .small { min-width:0; min-height:40px; padding:5px 6px; font-size:10.5px; line-height:1.25; white-space:normal; }
+ .grupo-selecao .primary { white-space:nowrap; }
+}

@@ -62,11 +62,11 @@ test('cabeçalho: logotipo, menu e perfil em três colunas (menu centralizado na
   assert.match(c,/grid-template-columns:minmax\(0,1fr\) auto minmax\(0,1fr\)/);assert.match(c,/\.appavatar \.ico, \.appnav a \.ico \{ margin:0/);
   assert.match(ler('js/navegacao.js'),/class="appdireita"/);
 });
-test('ficha: Usar na Iniciativa, Editar e Excluir ficam na barra do topo, com Excluir separado e sob confirmação',()=>{
+test('ficha: ações principais no topo e exclusão no menu secundário sob confirmação',()=>{
   const h=ler('personagem.html'),j=ler('js/personagem.js');
-  assert.match(h,/id="usar-iniciativa"/);assert.match(h,/class="ficha-acao-perigo"><button[^>]*id="excluir-personagem"/);
+  assert.match(h,/id="usar-iniciativa"/);assert.match(h,/class="ficha-menu"[^>]*id="ficha-mais"[\s\S]*?class="ficha-menu-opcoes"><button[^>]*id="excluir-personagem"/);
   assert.ok(!/class="ficha-acoes"/.test(j),'sem os botões antigos');assert.equal((h+j).split('id="excluir-personagem"').length-1,1);
-  assert.match(j,/confirm\("Excluir "/);assert.match(ler('css/fichas.css'),/\.ficha-acao-perigo \{ margin-left:auto/);
+  assert.match(j,/confirm\("Excluir "/);assert.match(ler('css/fichas.css'),/\.ficha-menu-opcoes \{ position:absolute/);
 });
 
 test('abertura da PWA: sem passar por licenças nem pela tela de campanhas; destino decidido antes da pintura',()=>{

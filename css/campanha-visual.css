@@ -23,3 +23,32 @@
  .campanha-identificacao { gap:10px; }
  .campanha-identificacao h1 { font-size:25px; }
 }
+
+/* O seletor antigo tinha basis de 440px: em coluna isso virava altura vazia. */
+.campanha-compacta .campanha-contexto { flex:0 0 auto; }
+
+/* Faixa de imagem acompanha todo o conteúdo, sem moldura nem controles na borda. */
+.campanha-compacta.com-backdrop { align-items:stretch; }
+.campanha-compacta .campanha-ferramentas { padding-right:12px; }
+#campanha-backdrop { display:block; border:0; border-radius:0; object-fit:cover; }
+
+/* Ícone padrão sem a margem herdada dos ícones que acompanham texto. */
+.campanha-simbolo > .ico { display:block; margin:0; justify-self:center; align-self:center; }
+
+/* Fundo contínuo entre o menu principal e a linha inferior das abas, como a referência. */
+.campanha-faixa { position:relative; isolation:isolate; margin-top:-18px; margin-bottom:12px; }
+.campanha-faixa .campanha-compacta { margin:0; padding-top:10px; }
+.campanha-faixa.com-backdrop .campanha-compacta { background:transparent; isolation:auto; }
+.campanha-faixa.com-backdrop .campanha-compacta::after { content:none; }
+.campanha-faixa.com-backdrop::after { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg,#10182055 0%,#10182066 25%,#101820CC 72%,var(--bg) 100%); pointer-events:none; }
+.campanha-faixa #abas { position:relative; z-index:1; margin-bottom:0; }
+.campanha-faixa #erro { position:relative; z-index:1; }
+@media(max-width:839px) {
+ .campanha-faixa { margin-inline:calc(var(--pad-corpo) * -1); padding-inline:var(--pad-corpo); }
+}
+
+.campanha-faixa .campanha-compacta > .campanha-contexto { flex:0 0 auto; }
+
+/* Altura compacta, crescendo somente quando o texto realmente precisar. */
+.campanha-faixa.com-backdrop .campanha-compacta { min-height:240px; }
+@media(max-width:600px) { .campanha-faixa.com-backdrop .campanha-compacta { min-height:220px; } }

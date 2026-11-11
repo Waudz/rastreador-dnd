@@ -253,3 +253,19 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .combatant:not(.editing) .id-bloco { align-self:start; }
 .combatant:not(.editing) .id-bloco .av, .combatant:not(.editing) .id-bloco .av0 { width:var(--medida)!important; height:var(--medida)!important; }
 .combatant:not(.editing) .id-bloco .name { line-height:1.3; padding-top:2px; }
+
+.ficha-topo-acoes { position:relative; min-width:0; }
+.ficha-menu { flex:0 0 34px; }
+.ficha-menu > summary { width:34px; height:34px; display:grid; place-items:center; padding:0; list-style:none; cursor:pointer; border:1px solid var(--line); border-radius:8px; background:var(--panel); }
+.ficha-menu > summary::-webkit-details-marker { display:none; }
+.ficha-menu[open] > summary { color:var(--gold); border-color:var(--gold); }
+.ficha-menu-opcoes { position:absolute; z-index:10; right:0; top:calc(100% + 6px); width:min(230px,100%); padding:8px; border:1px solid var(--line); border-radius:10px; background:var(--panel); box-shadow:0 8px 24px #0006; }
+.ficha-topo-acoes .ficha-menu-opcoes button { width:100%; white-space:normal; justify-content:flex-start; color:var(--red); }
+@media(max-width:759px) {
+ .ficha-topo-acoes { flex-wrap:nowrap; gap:5px; }
+ .ficha-topo-acoes > .btnlike,.ficha-topo-acoes > button { flex:1 1 0; min-width:0; padding:7px 5px; font-size:11px; justify-content:center; }
+ .ficha-menu { flex-basis:36px; }
+ .ficha-menu > summary { width:36px; height:36px; position:relative; }
+ .ficha-menu > summary::before { content:''; position:absolute; inset:-4px; }
+ .ficha-menu-opcoes button { min-height:44px; }
+}

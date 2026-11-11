@@ -329,6 +329,7 @@
     const ui = $("#usar-iniciativa"), ex = $("#excluir-personagem");
     if (ui) { ui.href = "iniciativa.html?aba=iniciativa&campanha=" + encodeURIComponent(P.campanha_id) + "&personagem=" + encodeURIComponent(id); ui.hidden = !!emPainel; }
     if (ex) ex.hidden = !!emPainel;
+    if($("#ficha-mais"))$("#ficha-mais").hidden=!!emPainel;
     if (fc && emPainel) { fc.href = "personagem.html?id=" + encodeURIComponent(id); fc.hidden = false; }
     document.title = P.nome + " — Compêndio 5e"; profTxt(); avisoArm();
     document.querySelectorAll(".atributos-ficha input,.atributos-ficha select").forEach(el=>{el.disabled=!editandoFicha;});

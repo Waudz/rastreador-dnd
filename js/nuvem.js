@@ -228,18 +228,18 @@
   }
 
   /* ---------- arquivos (Storage) ---------- */
-  async function enviarArquivo(caminho, arquivo) {
+  async function enviarArquivo(caminho, arquivo, bucket = "documentos") {
     const t = await token(); if (!t) throw new Error("Faça login.");
-    return http(`${base}/storage/v1/object/documentos/${caminho.split("/").map(encodeURIComponent).join("/")}`, { method: "POST", headers: { apikey: C.chave, Authorization: "Bearer " + t, "Content-Type": arquivo.type || "application/octet-stream", "x-upsert": "false" }, body: arquivo });
+    return http(`${base}/storage/v1/object/${encodeURIComponent(bucket)}/${caminho.split("/").map(encodeURIComponent).join("/")}`, { method: "POST", headers: { apikey: C.chave, Authorization: "Bearer " + t, "Content-Type": arquivo.type || "application/octet-stream", "x-upsert": "false" }, body: arquivo });
   }
-  async function urlDoArquivo(caminho, segundos) {
+  async function urlDoArquivo(caminho, segundos, bucket = "documentos") {
     const t = await token(); if (!t) throw new Error("Faça login.");
-    const j = await http(`${base}/storage/v1/object/sign/documentos/${caminho.split("/").map(encodeURIComponent).join("/")}`, { method: "POST", headers: { ...JSONH, Authorization: "Bearer " + t }, body: JSON.stringify({ expiresIn: segundos || 600 }) });
+    const j = await http(`${base}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${caminho.split("/").map(encodeURIComponent).join("/")}`, { method: "POST", headers: { ...JSONH, Authorization: "Bearer " + t }, body: JSON.stringify({ expiresIn: segundos || 600 }) });
     return `${base}/storage/v1${j.signedURL}`;
   }
-  async function apagarArquivos(caminhos) {
+  async function apagarArquivos(caminhos, bucket = "documentos") {
     const t = await token(); if (!t) throw new Error("Faça login.");
-    return http(`${base}/storage/v1/object/documentos`, { method: "DELETE", headers: { ...JSONH, Authorization: "Bearer " + t }, body: JSON.stringify({ prefixes: caminhos }) });
+    return http(`${base}/storage/v1/object/${encodeURIComponent(bucket)}`, { method: "DELETE", headers: { ...JSONH, Authorization: "Bearer " + t }, body: JSON.stringify({ prefixes: caminhos }) });
   }
 
   /* ---------- atualização periódica (usada pelas telas enquanto estão abertas) ---------- */

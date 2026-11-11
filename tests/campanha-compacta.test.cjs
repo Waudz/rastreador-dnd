@@ -31,3 +31,10 @@ test('dano compacto mantém absorção de PV temporários e limite de cura',asyn
  for(const fn of f.eventos.click)await fn({target:{closest:s=>s==='[data-cura]'?{}:s==='.card'?card:null}});
  assert.equal(f.p.pv_atual,20);assert.equal(f.gravacoes[1].d.pv_atual,20);
 });
+
+test('controles de seleção só aparecem após marcar uma ficha e somem quando a seleção fica vazia',async()=>{
+ const f=await fixture();assert.doesNotMatch(f.document.el('conteudo').innerHTML,/id="grupo-todos"/);
+ const mudar=async checked=>{for(const fn of f.eventos.change)await fn({target:{dataset:{grupoSel:'p'},checked}});};
+ await mudar(true);assert.match(f.document.el('conteudo').innerHTML,/id="grupo-todos"/);assert.match(f.document.el('conteudo').innerHTML,/Rolar iniciativa \(1\)/);
+ await mudar(false);assert.doesNotMatch(f.document.el('conteudo').innerHTML,/id="grupo-todos"|id="grupo-nenhum"|id="grupo-rolar"/);
+});

@@ -45,6 +45,12 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/02-acervos-e-transferencia.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/03-administracao-conta.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/03-administracao-conta.sql
+      - name: Imagens de campanhas — migração e reaplicação
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261111194808_imagens_campanhas.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261111194808_imagens_campanhas.sql
+      - name: Permissões de imagens em banco descartável
+        run: psql -v ON_ERROR_STOP=1 -f tests/imagens-campanhas-permissoes.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/supabase.test.sql
       - name: Permissões de campanhas, documentos, Storage, convites e administradores
         run: psql -v ON_ERROR_STOP=1 -f tests/supabase-permissoes.test.sql

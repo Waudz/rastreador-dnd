@@ -5,6 +5,7 @@
   const id = new URLSearchParams(location.search).get("id");
   let camp = null, papel = "", membros = [], nomes = {}, pers = [], docs = [], aba = "pers", editandoDoc = null, anexosForm = [], formAberto = false;
   const mestre = () => papel === "mestre";
+  const responsavelVisual=()=>camp?.mestre_id===meuId()&&membros.some(m=>m.usuario_id===meuId()&&m.papel==="mestre");
   const meuId = () => nuvem.usuario().id;
   const pct = (a, m) => (m > 0 ? Math.max(0, Math.min(100, (a / m) * 100)) : 0);
   const fmtData = (t) => new Date(t).toLocaleDateString("pt-BR");
@@ -294,7 +295,7 @@
     const t = e.target, c = (s) => t.closest(s);
     try {
       let b;
-      if(c('[data-camp-aparencia]')){if(!mestre())return;const painel=$('#aparencia-painel');painel.hidden=false;painel.open=true;document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);window.CAMPANHA_VISUAL.montar({id,mestre:mestre()});painel.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
+      if(c('[data-camp-aparencia]')){if(!responsavelVisual())return;const painel=$('#aparencia-painel');painel.hidden=false;painel.open=true;document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);window.CAMPANHA_VISUAL.montar({id,mestre:responsavelVisual()});painel.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
       if(c('[data-camp-grupo]')){if(!mestre())return;aba='membros';document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);return desenhar();}
       if(c('#grupo-todos')){if(!mestre())return;pers.forEach(p=>selecionados.add(p.id));return desenhar();}
       if(c('#grupo-nenhum')){selecionados.clear();return desenhar();}
@@ -371,7 +372,7 @@
     const area = $("#conteudo");
     if (!area.hasAttribute("aria-busy")) esqueletoDaPagina();
     const cancelar = window.ESQ ? window.ESQ.vigiar(area, abrir, 20000, "A conexão está lenta e a campanha ainda não chegou.") : () => {};
-    try { await carregar(); await desenhar(); cancelar(); window.ESQ?.pronto(area); aviso(''); await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre()}); window.ESQ?.pronto($("#campanha-contexto")); window.CAMPANHA_VISUAL?.montar({id,mestre:mestre()}); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); }
+    try { await carregar(); await desenhar(); cancelar(); window.ESQ?.pronto(area); aviso(''); await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre(),podeEditarVisual:responsavelVisual()}); window.ESQ?.pronto($("#campanha-contexto")); window.CAMPANHA_VISUAL?.montar({id,mestre:mestre()}); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); }
     catch (e) {
       cancelar(); camp = null;
       $("#abas").hidden = true; $("#campanha-contexto").hidden = true; $("#titulo").textContent = "Campanha"; $("#papel").textContent = "";

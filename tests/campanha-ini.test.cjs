@@ -100,7 +100,7 @@ test('seleção em lote rola só os escolhidos e preserva quem já está em comb
 test('selecionar e desmarcar todos não adiciona participantes por conta própria',async()=>{
  const f=await fixture();const click=id=>f.document.el('camp-ini').events.click({target:{closest:s=>s===id?{}:null}});
  click('#ci-todos');assert.match(f.document.el('ci-selecao').innerHTML,/Rolar iniciativa \(1\)/);assert.equal(f.lista.length,0);
- click('#ci-nenhum');assert.match(f.document.el('ci-selecao').innerHTML,/id="ci-rolar" hidden/);
+ click('#ci-nenhum');assert.equal(f.document.el('ci-selecao').innerHTML,'');
 });
 test('permissão revogada após selecionar impede a adição em lote',async()=>{
  const f=await fixture();f.document.el('camp-ini').events.change({target:{dataset:{ciSel:'p'},checked:true}});
