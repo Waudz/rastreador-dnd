@@ -27,8 +27,8 @@ function indexedDBFalso(){
 }
 function documentoFalso(){
   const elementos=new Map();
-  const el=id=>{if(!elementos.has(id))elementos.set(id,{id,value:"",style:{},hidden:true,innerHTML:"",textContent:"",disabled:false,classList:{toggle(){}},events:{},addEventListener(n,fn){this.events[n]=fn;},querySelector(){return null;},focus(){}});return elementos.get(id);};
-  return {el,querySelector:s=>el(s.replace(/^#/,"")),querySelectorAll:()=>[],addEventListener(){}};
+  const el=id=>{if(!elementos.has(id))elementos.set(id,{id,value:"",style:{},hidden:true,innerHTML:"",textContent:"",disabled:false,attributes:{},setAttribute(k,v){this.attributes[k]=String(v);},getAttribute(k){return this.attributes[k]??null;},classList:{toggle(){}},events:{},addEventListener(n,fn){this.events[n]=fn;},querySelector(){return null;},focus(){}});return elementos.get(id);};
+  return {el,body:{classList:{add(){},remove(){},contains(){return false;}}},querySelector:s=>el(s.replace(/^#/,"")),querySelectorAll:()=>[],addEventListener(){}};
 }
 function executar(p,contexto){vm.runInContext(ler(p),contexto,{filename:p});}
 module.exports={root,ler,tick,armazenamento,indexedDBFalso,documentoFalso,executar,vm};

@@ -5,6 +5,9 @@
   "use strict";
   const $ = (s) => document.querySelector(s), esc = nuvem.esc, R = window.REGRAS;
   const id = new URLSearchParams(location.search).get("id");
+  const emPainel = new URLSearchParams(location.search).get("modo") === "painel";
+  if (emPainel) document.body.classList.add('ficha-embutida');
+  const notificar = tipo => { if(emPainel && window.parent !== window) window.parent.postMessage({tipo,id},location.origin); };
   let editandoFicha = false, P = null, camp = null, souMestre = false, donoNome = "", pend = null, salvando = false, timer = null, catalogo = null, magiasCat = null, achadosM = [];
   const ATR = [["for", "FOR"], ["des", "DES"], ["con", "CON"], ["int", "INT"], ["sab", "SAB"], ["car", "CAR"]];
   const MOEDAS = [["pc", "Cobre (PC)"], ["pp", "Prata (PP)"], ["po", "Ouro (PO)"]];
@@ -56,15 +59,17 @@
   document.addEventListener("focusin",e=>{if(!P)return;if(e.target.id==="cat-q")buscarCatalogo(e.target.value);if(e.target.id==="mag-q")buscarMagias();});
 
   /* ---------- salvar (agrupa as alterações por 0,6 s) ---------- */
-  function agendar(campos) { pend = { ...(pend || {}), ...campos }; $("#estado").textContent = "Salvando…"; clearTimeout(timer); timer = setTimeout(enviar, 600); }
+  function agendar(campos) { pend = { ...(pend || {}), ...campos }; notificar('ficha-salvando'); $("#estado").textContent = "Salvando…"; clearTimeout(timer); timer = setTimeout(enviar, 600); }
   async function enviar() {
     if (!pend || salvando) return;
     const corpo = JSON.parse(JSON.stringify(pend)); pend = null; salvando = true; let falhou = false;
     try {
+      if(emPainel && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true) throw new Error('Este painel é exclusivo do mestre da campanha.');
       const r = await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}`, corpo);
       if (!r || !r[0]) throw new Error("O personagem não foi atualizado. Confira se você ainda tem acesso.");
       P.versao = r[0].versao;
       $("#estado").textContent = "Salvo";
+      if(!pend) notificar('ficha-salva');
     } catch (e) { falhou = true; pend = { ...corpo, ...(pend || {}) }; $("#estado").innerHTML = `<span class="err">Não salvou: ${esc(e.message)}</span>`; }
     finally { salvando = false; if(pend && !falhou){clearTimeout(timer);timer=setTimeout(enviar,0);} }
   }
@@ -83,6 +88,7 @@
       nuvem.get("perfis?select=id,nome")
     ]);
     camp = c[0] || { id: P.campanha_id, nome: "Campanha" };
+    if(emPainel && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true) throw new Error('Este painel é exclusivo do mestre da campanha.');
     souMestre = !!(m[0] && m[0].papel === "mestre") || !!(window.ACESSO && await ACESSO.pronto);
     const d = pf.find((x) => x.id === P.dono_id); donoNome = d ? d.nome : "";
     $("#voltar").href = souMestre ? `campanha.html?id=${encodeURIComponent(P.campanha_id)}` : "conta.html";
@@ -167,15 +173,15 @@
       <div><div class="big" id="pv-num">${P.pv_atual}<span class="muted" style="font-size:18px"> / ${P.pv_max}</span></div><div class="muted" id="pv-temp-txt">${P.pv_temp ? `+${P.pv_temp} PV temporários` : "&nbsp;"}</div></div>
       <div class="inline"><input class="num" id="qtd" type="number" min="1" value="1" aria-label="Quantidade"><button type="button" class="danger" id="b-dano">Dano</button><button type="button" id="b-cura">Cura</button></div>
     </div>
-    <div class="hp-track" style="height:9px;margin:10px 0"><div class="hp-fill ${pctPV() <= 25 ? "low" : pctPV() <= 50 ? "mid" : ""}" id="pv-barra" style="width:${pctPV()}%"></div></div>
-    <div class="row" style="margin:0"><div><label>PV máximo</label><input class="num" type="number" min="0" data-col="pv_max" value="${P.pv_max}"></div><div><label>PV temporário</label><input class="num" type="number" min="0" data-col="pv_temp" value="${P.pv_temp}"></div></div>
-    <div class="row" style="margin:8px 0 0"><label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-auto="pvAuto" ${autoOn("pvAuto") ? "checked" : ""}> PV máximo automático (dado de vida médio + Constituição)</label><div class="inline"><label style="margin:0">PV extra por nível</label><input class="num" type="number" step="1" data-f="pvExtra" value="${num(F().pvExtra, 0)}" title="Ex.: anão da colina +1, talento Robusto +2"></div></div>`;
+    <div class="hp-track" role="progressbar" aria-label="Pontos de vida" aria-valuemin="0" aria-valuemax="${P.pv_max}" aria-valuenow="${P.pv_atual}" style="height:9px;margin:10px 0"><div class="hp-fill ${pctPV() <= 25 ? "low" : pctPV() <= 50 ? "mid" : ""}" id="pv-barra" style="width:${pctPV()}%"></div></div>
+    <details class="vida-config"><summary>Ajustes de vida</summary><div class="row" style="margin:0"><div><label>PV máximo</label><input class="num" type="number" min="0" data-col="pv_max" value="${P.pv_max}"></div><div><label>PV temporário</label><input class="num" type="number" min="0" data-col="pv_temp" value="${P.pv_temp}"></div></div>
+    <div class="row" style="margin:8px 0 0"><label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-auto="pvAuto" ${autoOn("pvAuto") ? "checked" : ""}> PV máximo automático (dado de vida médio + Constituição)</label><div class="inline"><label style="margin:0">PV extra por nível</label><input class="num" type="number" step="1" data-f="pvExtra" value="${num(F().pvExtra, 0)}" title="Ex.: anão da colina +1, talento Robusto +2"></div></div></details>`;
 
   const linhaInv = (it, i) => `<div class="row" style="margin:0 0 6px" data-i="${i}"><input style="flex:1 1 160px" data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"><input class="num" type="number" min="0" step="1" data-inv="qtd" value="${num(it.qtd, 1)}" aria-label="Quantidade"><input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}" aria-label="Peso de cada unidade em kg"><button type="button" class="small subtle" data-rm-item="${i}" aria-label="Remover item">${window.ico ? window.ico("x") : "x"}</button></div>`;
   const cabInv = '<div class="row inv-h" style="margin:0 0 4px"><span style="flex:1 1 160px">Item</span><span class="num-h">Qtd.</span><span class="num-h">Peso cada (kg)</span><span style="width:34px"></span></div>';
   const blocoCarga = () => { const c = capacidade(), p = pesoTotal(), pc = Math.min(100, c > 0 ? (p / c) * 100 : 0); return `<div class="hp-top"><span>Carga total (qtd. × peso)</span><strong id="carga-txt" ${p > c ? 'class="err"' : ""}>${kg(p)} / ${kg(c)} kg</strong></div><div class="hp-track"><div class="hp-fill ${p > c ? "low" : pc > 66 ? "mid" : ""}" id="carga-barra" style="width:${pc}%"></div></div>`; };
 
-  const blocoAtr = () => `<div class="attrs">${ATR.map(([k, r]) => `<div class="attr"><label>${r}</label><input type="number" min="1" max="30" data-atr="${k}" value="${num(A()[k], 10)}"><div class="mod" id="mod-${k}">${fm(mod(A()[k]))}</div></div>`).join("")}</div><div class="muted" style="margin-top:8px" id="prof-txt"></div>`;
+  const blocoAtr = () => `<div class="attrs">${ATR.map(([k, r]) => `<div class="attr"><label for="atributo-${k}">${r}</label><input id="atributo-${k}" type="number" min="1" max="30" data-atr="${k}" value="${num(A()[k], 10)}"><div class="mod" id="mod-${k}">${fm(mod(A()[k]))}</div><button type="button" class="rolar-atributo" data-rolar-atr="${k}" aria-label="Rolar teste de ${R.ATR_NOME[k]}">Rolar</button></div>`).join("")}</div><div class="muted" style="margin-top:8px" id="prof-txt"></div>`;
 
   const itemCar = (c, i) => `<details class="item"><summary>${esc(c.nome)}</summary><div><div class="pre">${TEXTO_REGRAS.html(c.desc || "")}</div>${!c.auto?`<div class="row" style="margin:8px 0 0"><button type="button" class="small danger" data-rm-car="${i}">Remover</button></div>`:""}</div></details>`;
 
@@ -207,7 +213,7 @@
     if(lim)h+=`<p class="muted">Especializações: ${fontes.especializadas.length}/${lim}. Escolha entre as perícias proficientes.</p>`;
     h+='<div class="grade2">'+R.PERICIAS.map(([k,n,a])=>{
       const e=pr[k]||0,v=R.valorPericia(f,k);
-      return `<div class="lin"><span class="pbol${e?' on':''}${e===2?' dup':''}"></span><b>${fm(v)}</b><span>${n}</span>${lim&&e?`<button type="button" class="small" data-per="${k}" aria-pressed="${e===2}">${e===2?'Especializada':'Especializar'}</button>`:''}</div>`;
+      return `<div class="lin"><span class="pbol${e?' on':''}${e===2?' dup':''}"></span><b>${fm(v)}</b><button type="button" class="rolar-pericia" data-rolar-per="${k}" aria-label="Rolar ${n}">${n}</button>${lim&&e?`<button type="button" class="small" data-per="${k}" aria-pressed="${e===2}">${e===2?'Especializada':'Especializar'}</button>`:''}</div>`;
     }).join("")+'</div>';
     return h+`<p class="muted">Percepção passiva: <b>${R.percepcaoPassiva(f)}</b></p>`;
   }
@@ -234,7 +240,7 @@
       <div><label>Dano</label><input class="num" data-atq="dado" value="${esc(a.dado || "1d6")}" maxlength="12"></div><div><label>Tipo de dano</label><select data-atq="tipo">${R.TIPOS_DANO.map((t) => opt(t, t, t === a.tipo)).join("")}</select></div>
       <div><label>Bônus mágico</label><input class="num" type="number" data-atq="magico" value="${num(a.magico, 0)}"></div><div><label>Dano extra</label><input class="num" type="number" data-atq="extra" value="${num(a.extra, 0)}" title="Somado ao dano (ex.: fúria, estilo de luta)"></div>
       <label class="inline" style="margin:14px 0 0"><input type="checkbox" style="width:auto;height:auto" data-atq="prof" ${a.prof === false ? "" : "checked"}> Proficiente</label></div>
-      <div class="atk-res" id="atk-res-${i}"><b>${resAtq(a)}</b></div></div>`;
+      <div class="atk-res" id="atk-res-${i}"><b>${resAtq(a)}</b></div><div class="row"><button type="button" class="small" data-rolar-atq="${i}">Rolar ataque</button><button type="button" class="small" data-rolar-dano="${i}">Rolar dano</button></div></div>`;
 
   /* magias */
   function blocoSlots() {
@@ -257,7 +263,7 @@
     const f = F(), outro = souMestre && P.dono_id !== nuvem.usuario().id, rs = racaSel(), c = conj();
     const mostraMag = c.habilidades.length || MAG().length || f.magiaExtra || magiaRacial();
     $("#ficha").innerHTML = `
-      <header class="panel ficha-resumo"><div class="ficha-identidade">${fotoHTML()}<div><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p>Origem: ${esc(f.background||"Não definida")}</p></div></div><div class="ficha-destaques"><div><small>Nível</small><strong>${nivelTotal()}</strong></div><div><small>Vida</small><strong id="resumo-pv">${P.pv_atual} / ${P.pv_max}</strong></div><div><small>CA</small><strong id="resumo-ca">${P.ca}</strong></div><div><small>Proficiência</small><strong>${fm(bonusProf())}</strong></div></div><div class="ficha-acoes"><div class="ficha-acoes-jogo"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de Nível</a><a class="btnlike" href="iniciativa.html?aba=iniciativa&campanha=${encodeURIComponent(P.campanha_id)}&personagem=${encodeURIComponent(id)}">Usar na Iniciativa</a></div><div class="ficha-acoes-gestao"><button type="button" id="editar-ficha">${editandoFicha?"Concluir Edição":"Editar Personagem"}</button><button type="button" class="danger" id="excluir-personagem">Excluir Personagem</button></div></div></header>
+      <header class="panel ficha-resumo"><div class="ficha-identidade">${fotoHTML()}<div><p class="eyebrow">Ficha de personagem · D&D 2014</p><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p class="ficha-meta"><span class="badge">Nível ${nivelTotal()}</span> Proficiência ${fm(bonusProf())} · ${esc(f.background||"Origem não definida")}</p></div></div><div class="ficha-destaques"><div><small>Classe de armadura</small><strong id="resumo-ca">${P.ca}</strong></div><div><small>Iniciativa</small><strong id="resumo-iniciativa">${fm(modA("des")+R.bonusSemProf(F()))}</strong></div><div><small>Deslocamento</small><strong id="resumo-deslocamento">${f.deslocamento ?? 9}<span class="unidade"> m</span></strong></div></div><div class="ficha-acoes"><div class="ficha-acoes-jogo"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de Nível</a><a class="btnlike" href="iniciativa.html?aba=iniciativa&campanha=${encodeURIComponent(P.campanha_id)}&personagem=${encodeURIComponent(id)}">Usar na Iniciativa</a></div><div class="ficha-acoes-gestao"><button type="button" id="editar-ficha">${editandoFicha?"Concluir Edição":"Editar Personagem"}</button><button type="button" class="danger" id="excluir-personagem">Excluir Personagem</button></div></div></header>
       <div class="panel identidade-editor" style="${editandoFicha?"":"display:none"}">
         <div class="row" style="margin:0 0 8px;flex-wrap:nowrap;gap:12px"><span id="foto-box">${fotoHTML()}</span><div style="flex:1 1 auto;min-width:0">
           <input id="nome" data-col="nome" value="${esc(P.nome)}" maxlength="80" style="font-family:Georgia,serif;font-size:22px;height:46px;font-weight:700" aria-label="Nome">
@@ -273,34 +279,34 @@
         <div id="classes">${blocoClasses()}</div>
         <div class="row" style="margin:0"><button type="button" class="small" id="add-cls">${CLS().length ? "Adicionar classe (multiclasse)" : "Escolher classe"}</button></div>
       </div>
-      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2><p class="muted">${editandoFicha?"Editando os valores do personagem.":"Use Editar Personagem para alterar os atributos."}</p>${blocoAtr()}<div id="melhorias">${blocoMelhorias()}</div></div>
-      <div class="panel"><h2 class="panel-title">Vida</h2><div id="bloco-pv">${blocoPV()}</div><div class="sub">Dados de vida</div><div id="bloco-dv">${blocoDV()}</div>
-        <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-curto">Registrar Descanso Curto</button><button type="button" class="small" id="b-longo">Descanso Longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></div>
-      <div class="panel"><h2 class="panel-title">Classe de armadura</h2><div id="bloco-ca">${blocoCA()}</div>
+      <div class="panel vida-ficha"><h2 class="panel-title">Pontos de vida</h2><div id="bloco-pv">${blocoPV()}</div><details class="vida-descanso"><summary>Dados de vida e descanso</summary><div id="bloco-dv">${blocoDV()}</div>
+        <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-curto">Registrar Descanso Curto</button><button type="button" class="small" id="b-longo">Descanso Longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></details></div>
+<nav class="ficha-abas" aria-label="Seções da ficha" role="tablist"><button type="button" role="tab" id="aba-principal" aria-controls="secao-principal" data-ficha-aba="principal">Principal</button><button type="button" role="tab" id="aba-combate" aria-controls="secao-combate" data-ficha-aba="combate">Combate</button><button type="button" role="tab" id="aba-magias" aria-controls="secao-magias" data-ficha-aba="magias">Magias</button><button type="button" role="tab" id="aba-inventario" aria-controls="secao-inventario" data-ficha-aba="inventario">Inventário</button><button type="button" role="tab" id="aba-personagem" aria-controls="secao-personagem" data-ficha-aba="personagem">Personagem</button><button type="button" role="tab" id="aba-notas" aria-controls="secao-notas" data-ficha-aba="notas">Notas</button></nav><section id="secao-principal" role="tabpanel" aria-labelledby="aba-principal" data-ficha-secao="principal" class="ficha-conteudo" tabindex="0">      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2><p class="muted">${editandoFicha?"Editando os valores do personagem.":"Use Editar Personagem para alterar os atributos."}</p>${blocoAtr()}<div id="melhorias">${blocoMelhorias()}</div></div>
+      <div class="panel"><h2 class="panel-title">Salvaguardas</h2><div id="bloco-sal">${blocoSal()}</div></div>
+      <details class="panel pericias-ficha" open><summary class="panel-title">Perícias <span class="muted">Expandir / recolher</span></summary><div id="bloco-per">${blocoPer()}</div></details>
+      <div class="panel"><h2 class="panel-title">Proficiências e idiomas</h2><div id="bloco-prof">${blocoProf()}</div>
+        <div class="sub">Idiomas</div><div id="idiomas" class="anexos">${IDI().map((x, i) => `<span class="chip">${esc(x)}<button type="button" class="chip-x" data-rm-idi="${i}" aria-label="Tirar">${window.ico ? window.ico("x") : "x"}</button></span>`).join("") || '<span class="muted">Nenhum ainda.</span>'}</div>
+        <div class="row" style="margin:8px 0 0"><select id="idi-sel" style="flex:1 1 160px">${opt("", "Adicionar idioma…", true)}${R.IDIOMAS.filter((x) => !IDI().includes(x)).map((x) => opt(x, x)).join("")}</select><input id="idi-txt" style="flex:1 1 160px" maxlength="40" placeholder="Outro idioma"><button type="button" class="small" id="add-idi">Adicionar</button></div>
+        <div class="sub">Outras proficiências (ferramentas, veículos, jogos…)</div><textarea data-f="outrasProf" rows="2" style="width:100%">${esc(f.outrasProf || "")}</textarea></div>
+      </section><section id="secao-combate" role="tabpanel" aria-labelledby="aba-combate" data-ficha-secao="combate" class="ficha-conteudo" tabindex="0">      <div class="panel"><h2 class="panel-title">Classe de armadura</h2><div id="bloco-ca">${blocoCA()}</div>
         <div class="row" style="margin:8px 0 0"><div style="flex:1 1 200px"><label>Armadura</label><select id="eq-arm">${opt("", "Nenhuma", !EQ().armadura)}${R.ARMADURAS.map((a) => opt(a[0], `${a[1]} (${a[2]}, CA ${a[3]})`, EQ().armadura === a[0])).join("")}</select></div>
           <label class="inline" style="margin:18px 0 0"><input type="checkbox" style="width:auto;height:auto" id="eq-esc" ${EQ().escudo ? "checked" : ""}> Escudo (+2)</label>
           <div><label>Outros bônus</label><input class="num" type="number" id="eq-bonus" value="${num(EQ().bonus, 0)}" title="Armadura +1, anel de proteção, etc."></div>
           <label class="inline" style="margin:18px 0 0"><input type="checkbox" style="width:auto;height:auto" data-auto="caAuto" ${autoOn("caAuto") ? "checked" : ""}> CA automática</label></div>
         <div class="muted" id="aviso-arm"></div></div>
-      <div class="panel"><h2 class="panel-title">Salvaguardas</h2><div id="bloco-sal">${blocoSal()}</div></div>
-      <div class="panel"><h2 class="panel-title">Perícias</h2><div id="bloco-per">${blocoPer()}</div></div>
-      <div class="panel"><h2 class="panel-title">Proficiências e idiomas</h2><div id="bloco-prof">${blocoProf()}</div>
-        <div class="sub">Idiomas</div><div id="idiomas" class="anexos">${IDI().map((x, i) => `<span class="chip">${esc(x)}<button type="button" class="chip-x" data-rm-idi="${i}" aria-label="Tirar">${window.ico ? window.ico("x") : "x"}</button></span>`).join("") || '<span class="muted">Nenhum ainda.</span>'}</div>
-        <div class="row" style="margin:8px 0 0"><select id="idi-sel" style="flex:1 1 160px">${opt("", "Adicionar idioma…", true)}${R.IDIOMAS.filter((x) => !IDI().includes(x)).map((x) => opt(x, x)).join("")}</select><input id="idi-txt" style="flex:1 1 160px" maxlength="40" placeholder="Outro idioma"><button type="button" class="small" id="add-idi">Adicionar</button></div>
-        <div class="sub">Outras proficiências (ferramentas, veículos, jogos…)</div><textarea data-f="outrasProf" rows="2" style="width:100%">${esc(f.outrasProf || "")}</textarea></div>
-      <div class="panel"><h2 class="panel-title">Criação e evolução</h2><div class="row"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}">Criação guiada</a><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a></div></div><div class="panel"><h2 class="panel-title">Ataques</h2><div id="lista-atq">${ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'}</div>
+<div class="panel"><h2 class="panel-title">Criação e evolução</h2><div class="row"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}">Criação guiada</a><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a></div></div><div class="panel"><h2 class="panel-title">Ataques</h2><div id="lista-atq">${ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'}</div>
         <div class="row" style="margin:8px 0 0"><select id="atq-arma" style="flex:1 1 180px">${opt("", "Adicionar arma comum…", true)}${R.ARMAS.map((a, i) => opt(i, `${a[0]} (${a[1]} ${a[2]})`)).join("")}</select><button type="button" class="small" id="add-atq-arma">Adicionar arma</button><button type="button" class="small" id="add-atq">Personalizado</button></div></div>
-      ${mostraMag ? `<div class="panel" id="painel-mag"><h2 class="panel-title">Magias</h2><div id="bloco-slots">${blocoSlots()}</div>
+      </section><section id="secao-magias" role="tabpanel" aria-labelledby="aba-magias" data-ficha-secao="magias" class="ficha-conteudo" tabindex="0">${mostraMag ? `<div class="panel" id="painel-mag"><h2 class="panel-title">Magias</h2><div id="bloco-slots">${blocoSlots()}</div>
         ${f.magiaExtra ? '<button type="button" class="small subtle" id="b-mag-fechar">Desativar fonte adicional</button>' : ""}<div class="sub">Magias conhecidas e preparadas</div><div id="lista-mag">${listaMagias()}</div>
         <div class="sub">Adicionar do catálogo (SRD)</div><div class="row" style="margin:0 0 6px"><input id="mag-q" style="flex:1 1 200px" placeholder="Buscar: bola de fogo, curar…" autocomplete="off"><label class="inline" style="margin:0"><input type="checkbox" id="mag-cls" style="width:auto;height:auto" ${c.habilidades.length ? "checked" : ""}> Só da minha classe</label></div><div id="mag-res" class="catalogo-lista"></div></div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia.</span><details><summary>Conjuração por raça, talento ou item</summary><p class="muted">Essas fontes podem conceder magias sem espaços de classe.</p><button type="button" class="small" id="b-mag-abrir">Habilitar magias de outra fonte</button></details></div>`}
-      <div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
+      </section><section id="secao-inventario" role="tabpanel" aria-labelledby="aba-inventario" data-ficha-secao="inventario" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
         ${cabInv}<div id="inv">${INV().map(linhaInv).join("")}</div>
         <div class="row"><button type="button" class="small" id="add-item">Adicionar item</button><select id="eq-pre" style="flex:1 1 180px">${opt("", "Adicionar equipamento comum…", true)}${presets().map((p, i) => opt(i, `${p[0]} (${p[1]} kg)`)).join("")}</select><button type="button" class="small" id="add-pre">Adicionar</button></div>
         <div id="bloco-carga">${blocoCarga()}</div>
         <div class="sub">Dinheiro</div>
         <div class="moedas">${MOEDAS.map(([k, r]) => `<div class="moeda-controle"><label>${r}</label><input class="num" type="number" min="0" step="1" data-din="${k}" value="${moeda(DIN()[k])}"><div class="inline"><button type="button" data-moeda="${k}" data-sinal="-1" aria-label="Diminuir ${r}">−</button><input class="num" type="number" min="1" step="1" id="ajuste-${k}" placeholder="1" aria-label="Quantidade de ${r}"><button type="button" data-moeda="${k}" data-sinal="1" aria-label="Somar ${r}">+</button></div></div>`).join("")}<div><label>Total em PO</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="total-po">${totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div></div>
       </div>
-      <div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosDaFicha(f).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Esta raça não concede traços adicionais.</p>'}</div>
+      </section><section id="secao-personagem" role="tabpanel" aria-labelledby="aba-personagem" data-ficha-secao="personagem" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosDaFicha(f).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Esta raça não concede traços adicionais.</p>'}</div>
       ${f.backgroundCaracteristica?'<div class="panel"><h2 class="panel-title">Origem · '+esc(f.background||"")+'</h2><h3>'+esc(f.backgroundCaracteristica.nome)+'</h3><p class="descricao-regra">'+esc(f.backgroundCaracteristica.desc)+'</p></div>':""}
       <div class="panel"><h2 class="panel-title">Características de classe e outras habilidades</h2>
         <div id="lista-car">${CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>'}</div>
@@ -310,7 +316,8 @@
           <input id="car-nome" maxlength="80" placeholder="Nome" style="margin-bottom:6px"><textarea id="car-desc" rows="4" placeholder="O que ela faz" style="width:100%"></textarea>
           <div class="row" style="margin:6px 0 0"><button type="button" class="small primary" id="add-car">Adicionar</button></div></div></details>
       </div>
-      <div class="panel"><h2 class="panel-title">Notas</h2><textarea data-f="notas" rows="6" style="width:100%" placeholder="Anotações do personagem">${esc(f.notas || "")}</textarea></div>`;
+      </section><section id="secao-notas" role="tabpanel" aria-labelledby="aba-notas" data-ficha-secao="notas" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Notas</h2><textarea data-f="notas" rows="6" style="width:100%" placeholder="Anotações do personagem">${esc(f.notas || "")}</textarea></div></section>`;
+    window.atualizarAbasFicha?.();
     document.title = P.nome + " — Rastreador D&D"; profTxt(); avisoArm();
     document.querySelectorAll(".atributos-ficha input,.atributos-ficha select").forEach(el=>{el.disabled=!editandoFicha;});
   }
@@ -328,6 +335,7 @@
   function atualizarPV() {
     $("#bloco-pv .big").innerHTML = `${P.pv_atual}<span class="muted" style="font-size:18px"> / ${P.pv_max}</span>`;
     $("#pv-temp-txt").innerHTML = P.pv_temp ? `+${P.pv_temp} PV temporários` : "&nbsp;";
+    const trilho = $("#bloco-pv .hp-track"); trilho?.setAttribute("aria-valuemax", P.pv_max); trilho?.setAttribute("aria-valuenow", P.pv_atual);
     const b = $("#pv-barra"); b.style.width = pctPV() + "%"; b.className = "hp-fill " + (pctPV() <= 25 ? "low" : pctPV() <= 50 ? "mid" : "");
     const m = $('#bloco-pv [data-col="pv_max"]'); if (m && document.activeElement !== m) m.value = P.pv_max;
   }
@@ -344,6 +352,7 @@
     ATQ().forEach((a, i) => { const e = $("#atk-res-" + i); if (e) e.innerHTML = `<b>${resAtq(a)}</b>`; });
     profTxt(); avisoArm(); atualizarCarga();
     if($("#resumo-pv"))$("#resumo-pv").textContent=P.pv_atual+" / "+P.pv_max;if($("#resumo-ca"))$("#resumo-ca").textContent=P.ca;
+    if($("#resumo-iniciativa"))$("#resumo-iniciativa").textContent=fm(modA("des")+R.bonusSemProf(F()));
   }
 
   /* ---------- edições ---------- */
@@ -381,7 +390,7 @@
       P[col] = v; if (col === "pv_max") P.pv_atual = Math.min(P.pv_atual, P.pv_max);
       atualizarPV(); agendar(col === "pv_max" ? { ficha: P.ficha, pv_max: P.pv_max, pv_atual: P.pv_atual } : { [col]: v }); return;
     }
-    if (t.dataset.f) { const k = t.dataset.f; F()[k] = ["nivel", "deslocamento", "pvExtra"].includes(k) ? (t.value === "" ? (k === "pvExtra" ? 0 : null) : num(t.value, 0)) : t.value; if (k === "pvExtra") return refrescar(); agendar({ ficha: P.ficha }); return; }
+    if (t.dataset.f) { const k = t.dataset.f; F()[k] = ["nivel", "deslocamento", "pvExtra"].includes(k) ? (t.value === "" ? (k === "pvExtra" ? 0 : null) : num(t.value, 0)) : t.value; if(k === "deslocamento" && $("#resumo-deslocamento")) $("#resumo-deslocamento").textContent=(F()[k] ?? 9)+" m"; if (k === "pvExtra") return refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.atr) { const k = t.dataset.atr; A()[k] = num(t.value, 10); $("#mod-" + k).textContent = fm(mod(A()[k])); refrescar(); return; }
     if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; INV()[i][k] = k === "nome" ? t.value : num(t.value, 0); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
     if (t.dataset.din) { DIN()[t.dataset.din] = moeda(t.value); t.value = DIN()[t.dataset.din]; $("#total-po").textContent = totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); agendar({ dinheiro: P.dinheiro }); return; }
@@ -418,6 +427,19 @@
   document.addEventListener("click", async (e) => {
     const t = e.target, c = (s) => t.closest(s); if (!P) return;
     let b;
+    if((b=c('[data-rolar-atr],[data-rolar-per],[data-rolar-atq],[data-rolar-dano]'))){
+      try {
+        let expressao='1d20', bonus=0, nome='Teste';
+        if(b.dataset.rolarAtr){nome=R.ATR_NOME[b.dataset.rolarAtr];bonus=modA(b.dataset.rolarAtr);}
+        if(b.dataset.rolarPer){const k=b.dataset.rolarPer;nome=R.PERICIAS.find(p=>p[0]===k)?.[1]||k;bonus=R.valorPericia(F(),k);}
+        if(b.dataset.rolarAtq!==undefined || b.dataset.rolarDano!==undefined){
+          const dano=b.dataset.rolarDano!==undefined,a=ATQ()[+(dano?b.dataset.rolarDano:b.dataset.rolarAtq)],v=R.valoresAtaque(F(),a);
+          nome=(dano?'Dano: ':'Ataque: ')+(a.nome||'Personalizado');expressao=dano?a.dado:'1d20';bonus=dano?v.dano:v.ataque;
+        }
+        const r=window.ROLAGENS.rolar(expressao,bonus);
+        $('#rolagem-ficha').textContent=nome+': '+r.total+' ('+r.dados.join(' + ')+(r.modificador?' '+fm(r.modificador):'')+')';
+      }catch(e){aviso(e.message,true);}return;
+    }
 
     if ((b=c("[data-moeda]"))) { const k=b.dataset.moeda, n=Math.max(1,moeda($("#ajuste-"+k).value||1)); DIN()[k]=moeda(moeda(DIN()[k])+(+b.dataset.sinal)*n); $('[data-din="'+k+'"]').value=DIN()[k]; $("#total-po").textContent=totalPO().toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});agendar({dinheiro:P.dinheiro});return; }
     if ((b=c("[data-escolha]"))) { const f=F(), k=b.dataset.k, tipo=b.dataset.escolha, fontes=R.fontesPericias(f), r=R.racial(f.raca), d=CLS()[0]&&R.classe(CLS()[0].c);
@@ -519,6 +541,7 @@
     try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); } catch (e) { aviso(e.message, true); return; }
     nuvem.observar(async () => {
       if (pend) return;
+      if(emPainel && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true){$('#ficha').innerHTML='';aviso('Este painel é exclusivo do mestre da campanha.',true);return;}
       const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;
       const r = await carregar();
       if (r.versao > P.versao) { P = r; desenhar(); $("#estado").textContent = "Atualizado"; }

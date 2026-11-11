@@ -1,16 +1,16 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
 const {vm,executar,documentoFalso,armazenamento,tick}=require("./helpers.cjs");
-async function fixture({search="",erro=false,user={id:"mestre"},ficha={}}={}){
-  const document=documentoFalso(),localStorage=armazenamento(),lista=[],consultas=[];let atualizar;
+async function fixture({search="",erro=false,user={id:"mestre"},ficha={},papel='mestre',autorizado=true}={}){
+  const document=documentoFalso(),localStorage=armazenamento(),lista=[],consultas=[],eventos={};let atualizar;
   localStorage.setItem("ini_campanha","antiga");
-  const nuvem={usuario:()=>user,esc:s=>String(s??""),observar(fn){atualizar=fn;},get:async q=>{
+  const nuvem={usuario:()=>user,esc:s=>String(s??""),rpc:async()=>autorizado,observar(fn){atualizar=fn;},get:async q=>{
     consultas.push(q);if(erro)throw Error("Permissão recusada");
-    return q.startsWith("membros")?[{campanha:{id:"antiga",nome:"Antiga"}},{campanha:{id:"atual",nome:"Atual"}}]:[{id:"p",nome:"Herói",pv_atual:12,pv_max:15,ca:13,ficha:{foto:"data:image/png;base64,FOTO",classes:[{c:"Bard",n:2}],atributos:{des:14},...ficha}}];
+    return q.startsWith("membros")?[{papel,campanha:{id:"antiga",nome:"Antiga"}},{papel,campanha:{id:"atual",nome:"Atual"}}]:[{id:"p",nome:"Herói",pv_atual:12,pv_max:15,ca:13,ficha:{foto:"data:image/png;base64,FOTO",classes:[{c:"Bard",n:2}],atributos:{des:14},...ficha}}];
   }};
-  const window={nuvem,__ini:{list:()=>lista,add:c=>lista.push(c),render(){}}};
-  const c=vm.createContext({window,nuvem,document,location:{search},localStorage,URLSearchParams,setInterval(){}});
+  const window={nuvem,addEventListener:(n,fn)=>eventos[n]=fn,__ini:{list:()=>lista,add:c=>lista.push(c),render(){}}};
+  const c=vm.createContext({window,nuvem,document,location:{search,origin:'http://localhost'},localStorage,URLSearchParams,setInterval(){}});
   executar("js/origens.js",c);executar("js/regras.js",c);c.REGRAS=window.REGRAS;executar("js/campanha-ini.js",c);await tick();
-  return {document,lista,consultas,atualizar};
+  return {document,lista,consultas,atualizar,nuvem,eventos};
 }
 test("link da campanha escolhe a campanha atual em vez da preferência antiga",async()=>{
   const f=await fixture({search:"?campanha=atual&personagem=p"});
@@ -32,7 +32,7 @@ test("ausência de sessão mostra instrução de login sem consultar dados",asyn
 
 test("clique no personagem abre o resumo lateral",async()=>{
  const f=await fixture();f.document.el("camp-ini").events.click({target:{closest:s=>s==="[data-ci-resumo]"?{dataset:{ciResumo:"p"}}:null}});
- assert.equal(f.document.el("ci-resumo").hidden,false);assert.match(f.document.el("ci-resumo-corpo").innerHTML,/Herói/);assert.match(f.document.el("ci-resumo-corpo").innerHTML,/PV 12 \/ 15/);
+ assert.equal(f.document.el("ci-resumo").hidden,false);assert.match(f.document.el("ci-resumo-corpo").innerHTML,/Herói/);assert.match(f.document.el("ci-resumo-corpo").innerHTML,/personagem.html\?id=p&modo=painel/);
  f.document.el("ci-resumo-fechar").events.click();assert.equal(f.document.el("ci-resumo").hidden,true);
 });
 test("consulta automática sem alterações não refaz a grade nem exibe carregamento",async()=>{
@@ -42,5 +42,47 @@ test("consulta automática sem alterações não refaz a grade nem exibe carrega
 });
 test("normalização de HTML pelo navegador não provoca redesenho em cada consulta",async()=>{const f=await fixture();let escritas=0;Object.defineProperty(f.document.el('ci-lista'),'innerHTML',{get:()=>'<article>HTML normalizado pelo navegador</article>',set(){escritas++;}});await f.atualizar();assert.equal(escritas,0);});
 
-test('resumo apresenta passiva, perícias, ataques e descrição racial em linhas compactas',async()=>{const f=await fixture({ficha:{raca:'Anão (da Colina)',atributos:{sab:14,for:16},perClasse:['percepcao'],classes:[{c:'Fighter',n:1}],tracosRaciais:[{nome:'resiliência anã',desc:'resiliência anã'}],ataques:[{nome:'Machado',dado:'1d8',tipo:'cortante'}],magias:[{n:'Luz',l:0,d:'Ilumina um objeto.'}]}});f.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci-resumo]'?{dataset:{ciResumo:'p'}}:null}});const h=f.document.el('ci-resumo-corpo').innerHTML;assert.match(h,/Percepção Passiva <b>14/);assert.match(h,/Percepção \+4/);assert.match(h,/Resiliência Anã/);assert.match(h,/resistência a dano de veneno/);assert.match(h,/Ataque \+5/);assert.match(h,/Ver Ficha Completa/);assert.match(h,/role="tooltip"/);assert.doesNotMatch(h,/<details/);});
-test('resumo não exibe seção de perícias vazia',async()=>{const f=await fixture();f.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci-resumo]'?{dataset:{ciResumo:'p'}}:null}});assert.doesNotMatch(f.document.el('ci-resumo-corpo').innerHTML,/<h3>Perícias/);});
+test('jogador não consulta personagens nem abre painel com cliques forjados',async()=>{
+ const f=await fixture({papel:'jogador'});
+ f.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci-resumo]'?{dataset:{ciResumo:'p'}}:null}});
+ assert.equal(f.document.el('camp-ini').hidden,true);
+ assert.equal(f.document.el('ci-resumo').hidden,true);
+ assert(!f.consultas.some(q=>q.startsWith('personagens')));
+});
+test('revogação do papel no servidor impede consulta mesmo com campanha na interface',async()=>{
+ const f=await fixture({autorizado:false});
+ assert.equal(f.document.el('camp-ini').hidden,true);
+ assert(!f.consultas.some(q=>q.startsWith('personagens')));
+});
+test('abrir e fechar a mesma ficha preserva a iniciativa e o estado do combate',async()=>{
+ const f=await fixture({search:'?campanha=atual&personagem=p'});
+ f.lista[0].initiative=-2;f.lista[0].order=4;
+ const antes=JSON.stringify(f.lista);
+ f.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci-resumo]'?{dataset:{ciResumo:'p'}}:null}});
+ f.document.el('ci-resumo-fechar').events.click();
+ assert.equal(JSON.stringify(f.lista),antes);
+ assert.match(f.document.el('ci-resumo-corpo').innerHTML,/<iframe[^>]+personagem.html/);
+});
+test('mensagem de outra origem não altera PV nem consulta o banco',async()=>{
+ const f=await fixture();const antes=f.consultas.length;
+ await f.eventos.message({origin:'https://externo.invalid',data:{tipo:'ficha-salva',id:'p'},source:{}});
+ assert.equal(f.consultas.length,antes);
+});
+test('salvamento da ficha é relido do banco e atualiza combate sem mudar iniciativa',async()=>{
+ const f=await fixture({search:'?campanha=atual&personagem=p'});
+ f.lista[0].initiative=17;f.lista[0].order=2;f.lista[0].hp=3;
+ const frame=f.document.el('ci-ficha-frame');frame.contentWindow={};frame.dataset={personagem:'p'};
+ await f.eventos.message({origin:'http://localhost',source:frame.contentWindow,data:{tipo:'ficha-salva',id:'p'}});
+ assert.equal(f.lista[0].hp,12);assert.equal(f.lista[0].initiative,17);assert.equal(f.lista[0].order,2);
+});
+test('dano no combate durante gravação da ficha é conciliado sem perder alterações',async()=>{
+ const f=await fixture({search:'?campanha=atual&personagem=p'}),frame=f.document.el('ci-ficha-frame');
+ frame.contentWindow={};frame.dataset={personagem:'p'};
+ const mensagem=tipo=>({origin:'http://localhost',source:frame.contentWindow,data:{tipo,id:'p'}});
+ await f.eventos.message(mensagem('ficha-salvando'));
+ f.lista[0].hp=10;
+ const get=f.nuvem.get;f.nuvem.get=async q=>{const r=await get(q);if(q.startsWith('personagens'))r[0].pv_atual=9;return r;};
+ let gravado;f.nuvem.patch=async(_q,d)=>{gravado=d.pv_atual;return[{versao:2}];};
+ await f.eventos.message(mensagem('ficha-salva'));
+ assert.equal(f.lista[0].hp,7);assert.equal(gravado,7);
+});

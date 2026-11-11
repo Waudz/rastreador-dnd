@@ -10,6 +10,13 @@
   const msg = (t, erro) => { $("#ci-msg").innerHTML = erro ? '<span class="err">'+esc(t)+'</span>' : esc(t || ""); };
   const mesmaConta = () => nuvem.usuario()?.id === conta;
   const emCombate = p => window.__ini.list().some(c => c.pid === p.id);
+  const podeUsar = () => mesmaConta() && camps.some(c => c.id === atual);
+  const ocupadas = new Set();
+  const basesPV = new Map();
+  function bloquear(){
+    pers=[];camps=[];ocupadas.clear();basesPV.clear();box.hidden=true;
+    fecharResumo();$('#ci-lista').innerHTML='';$('#ci-resumo-corpo').innerHTML='';resumoId=null;
+  }
   function desenhar() {
     const html = pers.length ? pers.map(p => {
       const f = p.ficha || {}, foto = f.foto && /^data:image\//.test(f.foto) ? '<img class="av" style="width:36px;height:36px" src="'+esc(f.foto)+'" alt="">' : '<span class="av av0" style="width:36px;height:36px" aria-hidden="true">'+esc((p.nome||'?').charAt(0).toUpperCase())+'</span>';
@@ -18,22 +25,19 @@
     if(ultimaGrade!==html){$("#ci-lista").innerHTML=html;ultimaGrade=html;}
   }
   function abrirResumo(p){
+    if (!podeUsar()) return;
+    if (resumoId && resumoId !== p.id && ocupadas.has(resumoId)) { msg('Aguarde a ficha terminar de salvar antes de trocar de personagem.'); return; }
+    if (resumoId === p.id && !$("#ci-resumo").hidden) return;
     resumoId=p.id;focoAnterior=document.activeElement;
-    const f=p.ficha||{},r=window.REGRAS,atributos=f.atributos||{},fontes=r.fontesPericias(f),info=r.resumoMestre(f);
-    const titulo=r.tituloTexto;
-    const detalhes=(nome,desc)=>'<span class="ci-dica" tabindex="0">'+esc(titulo(nome))+'<span role="tooltip">'+esc(desc||'Descrição não cadastrada na ficha.')+'</span></span>';
-    const secao=(nome,itens)=>itens.length?'<h3>'+nome+'</h3><div class="ci-lista-compacta">'+itens.join('')+'</div>':'';
-    const foto=f.foto&&/^data:image\//.test(f.foto)?'<img class="av" width="64" height="64" src="'+esc(f.foto)+'" alt="">':'';
-    const pericias=info.pericias.map(t=>esc(t.nome)+' '+(t.valor>=0?'+':'')+t.valor+(t.especializada?' (Especialização)':''));
-    const tracos=info.tracos.map(t=>detalhes(t.nome,t.desc)),resistencias=info.resistencias;
-    const ataques=info.ataques.map(t=>detalhes(t.nome||'Personalizado','Ataque '+(t.ataque>=0?'+':'')+t.ataque+' · Dano '+(t.dado||'—')+(t.dano>=0?'+':'')+t.dano+' '+(t.tipo||'')));
-    $('#ci-resumo-corpo').innerHTML=foto+'<h2>'+esc(p.nome)+'</h2><p>'+esc([f.raca,f.classe||r.resumoClasses(f.classes||[]).descricao].filter(Boolean).join(' · '))+'</p><p>PV '+p.pv_atual+' / '+p.pv_max+' · CA '+p.ca+' · Percepção Passiva <b>'+info.passiva+'</b></p><a class="btnlike" href="personagem.html?id='+encodeURIComponent(p.id)+'">Ver Ficha Completa</a><div class="ci-atributos">'+r.ATR.map(k=>'<div><small>'+esc(r.ATR_NOME[k])+'</small><strong>'+(atributos[k]??10)+'</strong><span>'+((r.mod(atributos[k]??10)>=0?'+':'')+r.mod(atributos[k]??10))+'</span></div>').join('')+'</div>'+secao('Perícias',pericias)+secao('Resistências e Defesas',resistencias.map(esc))+secao('Ataques',ataques)+secao('Traços Raciais',tracos)+(f.backgroundCaracteristica?secao('Origem · '+esc(f.background||''),[detalhes(f.backgroundCaracteristica.nome,f.backgroundCaracteristica.desc)]):'')+secao('Características',(f.caracteristicas||[]).map(h=>detalhes(h.nome,h.desc)))+secao('Magias',(f.magias||[]).map(m=>detalhes((m.n||m.nome)+' · '+(m.l?m.l+'º Círculo':'Truque')+(m.prep&&m.l?' · Preparada':''),m.d||m.desc)));
-
+    if($('#ci-ficha-frame')?.dataset?.personagem !== p.id) $("#ci-resumo-corpo").innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(p.id)+'" title="Ficha de '+esc(p.nome)+'" src="personagem.html?id='+encodeURIComponent(p.id)+'&modo=painel"></iframe>';
+    $('#ci-ficha-completa').href='personagem.html?id='+encodeURIComponent(p.id);
+    document.body.classList.add('com-ficha-lateral');
     $("#ci-resumo").hidden=false;$("#ci-resumo-fechar").focus?.();
   }
-  function fecharResumo(){resumoId=null;$("#ci-resumo").hidden=true;focoAnterior?.focus?.();}
+  function fecharResumo(){$("#ci-resumo").hidden=true;document.body.classList.remove('com-ficha-lateral');focoAnterior?.focus?.();}
+
   function adicionar(p) {
-    if (emCombate(p)) return;
+    if (!podeUsar() || emCombate(p)) return;
     const f = p.ficha || {};
     const usados = new Set(window.__ini.list().map(c => c.name));
     let nome = p.nome, n = 2; while (usados.has(nome)) nome = p.nome+" "+n++;
@@ -41,15 +45,22 @@
     enviado[p.id] = p.pv_atual;
   }
   async function carregar() {
-    if (buscando || !mesmaConta()) return;
+    if (buscando || !podeUsar()) return;
     buscando = true; if(!carregou)msg("Carregando personagens…");
+    const campanhaConsultada=atual;
     try {
+      const mestre = await nuvem.rpc('eh_mestre', {c:atual});
+      if(mestre !== true){bloquear();return;}
       const lista = await nuvem.get("personagens?select=id,nome,pv_atual,pv_max,ca,ficha&campanha_id=eq."+encodeURIComponent(atual)+"&order=nome");
-      if (!mesmaConta()) return;
+      if (!mesmaConta() || atual !== campanhaConsultada) return;
       pers = lista;
+      if(resumoId && !pers.some(p=>p.id===resumoId)){fecharResumo();$('#ci-resumo-corpo').innerHTML='';resumoId=null;}
       let mudouFoto = false;
       for (const c of window.__ini.list()) {
         const p = pers.find(p => p.id === c.pid);
+        if(p && !ocupadas.has(p.id) && enviado[p.id] === c.hp && (c.hp !== p.pv_atual || c.maxHp !== p.pv_max || c.ac !== p.ca)) {
+          c.hp=p.pv_atual;c.maxHp=p.pv_max;c.ac=p.ca;enviado[p.id]=p.pv_atual;mudouFoto=true;
+        }
         if (p?.ficha?.foto && c.foto !== p.ficha.foto) { c.foto = p.ficha.foto; mudouFoto = true; }
       }
       if (mudouFoto) window.__ini.render();
@@ -69,9 +80,9 @@
     try {
       const ms = await nuvem.get("membros?select=campanha_id,papel,campanha:campanhas(id,nome)&usuario_id=eq."+encodeURIComponent(conta)+"&papel=eq.mestre");
       if (!mesmaConta()) return;
-      camps = ms.filter(m => m.campanha).map(m => m.campanha);
-      if(window.ACESSO && await ACESSO.pronto)camps=await nuvem.get("campanhas?select=id,nome&order=nome");
-      if (!camps.length) { msg("Você pode consultar o bestiário. Para adicionar o grupo à iniciativa, abra uma campanha onde você é mestre."); return; }
+      camps = ms.filter(m => m.papel === "mestre" && m.campanha).map(m => m.campanha);
+
+      if (!camps.length) { box.hidden=true; msg("Você pode consultar o bestiário. Para adicionar o grupo à iniciativa, abra uma campanha onde você é mestre."); return; }
       $("#ci-camp").innerHTML = camps.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join("");
       let anterior = ""; try { anterior = localStorage.getItem("ini_campanha") || ""; } catch (_) {}
       atual = camps.find(c=>c.id===pedido)?.id || camps.find(c=>c.id===anterior)?.id || camps[0].id;
@@ -88,7 +99,7 @@
     if(e.target.closest("#ci-recarregar")){falhas=0;carregou=false;carregar();}
   });
   box.addEventListener("change",e=>{
-    if(e.target.id!=="ci-camp")return;atual=e.target.value;carregou=false;if(resumoId)fecharResumo();
+    if(e.target.id!=="ci-camp" || !camps.some(c=>c.id===e.target.value))return;atual=e.target.value;carregou=false;if(resumoId)fecharResumo();
     try{localStorage.setItem("ini_campanha",atual);}catch(_){}
     carregar();
   });
@@ -96,16 +107,42 @@
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&resumoId)fecharResumo();});
   $("#combatants").addEventListener("click",e=>{if(e.target.closest("button,input,select"))return;const artigo=e.target.closest("[data-pid]");const p=artigo&&pers.find(p=>p.id===artigo.dataset.pid);if(p)abrirResumo(p);});
   setInterval(async()=>{
-    if(!mesmaConta() || falhas>5)return;
+    if(!podeUsar() || falhas>5)return;
     for(const c of window.__ini.list()){
-      if(!c.pid || !pers.some(p=>p.id===c.pid))continue;
+      if(!c.pid || ocupadas.has(c.pid) || !pers.some(p=>p.id===c.pid))continue;
       const v=Math.max(0,Math.min(c.maxHp,Math.round(c.hp)));
       if(enviado[c.pid]===undefined){enviado[c.pid]=v;continue;}
       if(enviado[c.pid]===v)continue;
-      try{const r=await nuvem.patch("personagens?id=eq."+encodeURIComponent(c.pid),{pv_atual:v});if(!r?.[0])throw new Error("A ficha não confirmou a atualização.");enviado[c.pid]=v;falhas=0;}
+      try{if(await nuvem.rpc('eh_mestre',{c:atual}) !== true){bloquear();return;}const r=await nuvem.patch("personagens?id=eq."+encodeURIComponent(c.pid),{pv_atual:v});if(!r?.[0])throw new Error("A ficha não confirmou a atualização.");enviado[c.pid]=v;falhas=0;}
       catch(e){falhas++;msg("Não foi possível salvar os PV na ficha: "+e.message,true);}
     }
   },2500);
+  window.addEventListener('message',async e=>{
+    const frame=$('#ci-ficha-frame');
+    if(!podeUsar() || e.origin!==location.origin || !frame?.contentWindow || e.source!==frame.contentWindow || e.data?.id!==frame.dataset.personagem)return;
+    if(e.data.tipo==='ficha-fechar'){fecharResumo();return;}
+    if(e.data.tipo==='ficha-salvando'){
+      if(!ocupadas.has(e.data.id))basesPV.set(e.data.id,window.__ini.list().find(c=>c.pid===e.data.id)?.hp);
+      ocupadas.add(e.data.id);return;
+    }
+    if(e.data.tipo!=='ficha-salva')return;
+    const pid=e.data.id;
+    try {
+      if(await nuvem.rpc('eh_mestre',{c:atual}) !== true){bloquear();return;}
+      const rows=await nuvem.get('personagens?select=*&id=eq.'+encodeURIComponent(pid)+'&campanha_id=eq.'+encodeURIComponent(atual));
+      if(!podeUsar() || !rows[0])return;
+      const p=rows[0],combatente=window.__ini.list().find(c=>c.pid===pid),base=basesPV.get(pid);
+      // Preserva dano/cura feitos no combate enquanto a ficha estava gravando.
+      if(combatente && Number.isFinite(base) && combatente.hp!==base){
+        p.pv_atual=Math.max(0,Math.min(p.pv_max,p.pv_atual+combatente.hp-base));
+        const salvo=await nuvem.patch('personagens?id=eq.'+encodeURIComponent(pid),{pv_atual:p.pv_atual});
+        if(!salvo?.[0])throw Error('A ficha não confirmou a conciliação de PV.');
+      }
+      pers=pers.map(x=>x.id===pid?p:x);
+      for(const c of window.__ini.list().filter(c=>c.pid===pid)){c.hp=p.pv_atual;c.maxHp=p.pv_max;c.ac=p.ca;c.foto=p.ficha?.foto||'';}
+      enviado[pid]=p.pv_atual;ocupadas.delete(pid);basesPV.delete(pid);window.__ini.render();desenhar();
+    } catch(e){msg(e.message,true);}
+  });
   window.__ini.aoAlterar?.(desenhar);
   iniciar();
 })();

@@ -3,7 +3,9 @@
  const esc=nuvem.esc;
  const nav=document.createElement('nav');nav.className='appnav';nav.setAttribute('aria-label','Navegação principal');
  const links=[['iniciativa.html?aba=iniciativa','Iniciativa'],['conta.html?aba=campanhas','Campanhas'],['conta.html?aba=personagens','Personagens'],['iniciativa.html?aba=consulta','Monstros e Magias'],['conta.html?aba=conta','Minha conta']];
- nav.innerHTML=links.map(([url,n])=>`<a class="btnlike small" href="${url}">${esc(n)}</a>`).join('');document.body.prepend(nav);
+ const rotaAtual=location.pathname.split('/').pop(),abaAtual=new URLSearchParams(location.search).get('aba');
+ const destinoAtual=rotaAtual==='iniciativa.html'?'iniciativa.html?aba='+(abaAtual==='consulta'?'consulta':'iniciativa'):'conta.html?aba='+(['personagem.html','criar-personagem.html'].includes(rotaAtual)?'personagens':rotaAtual==='campanha.html'?'campanhas':['conta','personagens'].includes(abaAtual)?abaAtual:'campanhas');
+ nav.innerHTML=links.map(([url,n])=>`<a class="btnlike small" href="${url}"${url===destinoAtual?' aria-current="page"':''}>${esc(n)}</a>`).join('');document.body.prepend(nav);
  let admin=false;
  window.ACESSO={admin:()=>admin,pronto:null};
  ACESSO.pronto=(async()=>{

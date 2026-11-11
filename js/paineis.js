@@ -1,7 +1,8 @@
-/* Mantém resumos abertos na navegação da mesma aba. Recarregar fecha os painéis. */
+/* Mantém consultas abertas. Fichas reais da iniciativa nunca são restauradas de HTML salvo. */
 (() => {
+ if(new URLSearchParams(location.search).get('modo')==='painel')return;
  const user=nuvem.usuario()?.id||'publico',chave='paineis-abertos:'+user;
- const tipos=[{id:'sheet',corpo:'sheet-body',fechar:'sh-close',nome:'Ficha'},{id:'spd',corpo:'spd-body',fechar:'spd-close',nome:'Magia ou Habilidade'},{id:'ci-resumo',corpo:'ci-resumo-corpo',fechar:'ci-resumo-fechar',nome:'Resumo do Personagem'}];
+ const tipos=[{id:'sheet',corpo:'sheet-body',fechar:'sh-close',nome:'Ficha'},{id:'spd',corpo:'spd-body',fechar:'spd-close',nome:'Magia ou Habilidade'}];
  let restaurando=true;
  const limparHTML=html=>{const t=document.createElement('template');t.innerHTML=String(html||'');t.content.querySelectorAll('script,iframe,object,embed,base,meta,link').forEach(e=>e.remove());for(const e of t.content.querySelectorAll('*'))for(const a of [...e.attributes])if(/^on/i.test(a.name)||/^(?:href|src|action)$/i.test(a.name)&&/^\s*javascript:/i.test(a.value))e.removeAttribute(a.name);return t.innerHTML;};
  function guardar(){if(restaurando)return;const abertos=tipos.flatMap(t=>{const el=document.getElementById(t.id),corpo=document.getElementById(t.corpo);return el&&!el.hidden&&corpo?.innerHTML?[{tipo:t.id,html:corpo.innerHTML,scroll:el.scrollTop}]:[];});try{if(abertos.length)sessionStorage.setItem(chave,JSON.stringify(abertos));else sessionStorage.removeItem(chave);}catch(_){} }
