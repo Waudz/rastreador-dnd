@@ -122,7 +122,7 @@ Abra `http://localhost:8000`. Módulos, `fetch` e service worker não funcionam 
 
 A entrada agora é `index.html` (login ou campanhas da conta conectada). O combate e as consultas públicas estão em `iniciativa.html`; jogadores acessam monstros, magias e habilidades pelo link de consultas na conta ou campanha.
 
-Aplique `supabase/02-acervos-e-transferencia.sql` após o schema inicial **antes de publicar**. O acervo sincroniza pela conta Supabase, com controle de acesso por usuário e mesclagem de criações/exclusões por data. O IndexedDB e as traduções são separados por conta. O token GitHub legado é removido do navegador após uma importação ou sincronização bem-sucedida.
+As correções de interface podem ser publicadas com o banco atual. O acervo por conta fica desativado em NUVEM_CONFIG.acervoPorConta, preservando o banco local bestiario e a sincronização existente. Para ativar a migração, aplique supabase/02-acervos-e-transferencia.sql após o schema inicial e então habilite essa configuração. O acervo sincroniza pela conta Supabase, com controle de acesso por usuário e mesclagem de criações/exclusões por data. O IndexedDB e as traduções são separados por conta. O token GitHub legado é removido do navegador após uma importação ou sincronização bem-sucedida.
 
 Para migrar do repositório privado:
 1. Faça login na conta de destino.

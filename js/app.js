@@ -705,7 +705,7 @@
     const touch = async (k) => { const m = BY[k]; if (m && m.custom) { m.updatedAt = Date.now(); await put("mon", [m]); queueSync(); } };
     function queueSync() { if (!(window.nuvem && nuvem.usuario()) && (!SY.repo || !SY.token)) return; clearTimeout(syTimer); syTimer = setTimeout(syncNow, 1500); }
     async function syncNow() {
-      if(window.nuvem && nuvem.usuario())return syncConta();
+      if(window.nuvem && nuvem.usuario() && acervo.ativo())return syncConta();
       if (!SY.repo || !SY.token) return; if (syncing) { syncDeNovo = true; return; }
       if (!/^[\w.-]+\/[\w.-]+$/.test(SY.repo)) { syMsg('<span class="err">Use o formato usuario/repositorio.</span>'); return; }
       syncing = true; syMsg("Sincronizando…");
@@ -763,7 +763,8 @@
       if (on) document.querySelector(".syncbar").scrollIntoView({ behavior: "smooth", block: "center" });
     });
     const showSyncTop = () => { $("#synctop").hidden = !(window.nuvem && nuvem.usuario()) && !(SY.repo && SY.token); };
-    showSyncTop(); if(window.nuvem&&nuvem.usuario())$("#sync").hidden=true;
+    showSyncTop(); if(window.nuvem&&nuvem.usuario()&&acervo.ativo())$("#sync").hidden=true;
+    if(window.nuvem&&nuvem.usuario()&&!acervo.ativo()&&!SY.token){$("#sy-now").disabled=true;syMsg("Seus dados locais estão preservados. A migração para a conta ainda não foi concluída.");}
     $("#sy-save").addEventListener("click", () => { $("#sync").open = false; setTimeout(showSyncTop, 0); });
     $("#sy-clear").addEventListener("click", () => setTimeout(showSyncTop, 0));
     $("#sy-clear").onclick = () => { SY.token = ""; $("#sy-token").value = ""; saveSY(); syMsg("Token removido deste aparelho."); };

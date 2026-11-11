@@ -4,7 +4,7 @@ function fixture(){
   let user={id:"a",email:"a@example.invalid"},rpc=async(_n,{p_dados})=>p_dados;
   const localStorage=armazenamento(),indexedDB=indexedDBFalso();
   const nuvem={usuario:()=>user,rpc:(...args)=>rpc(...args),get:async()=>[{dados:{items:{}}}]};
-  const c=vm.createContext({window:{nuvem},nuvem,localStorage,indexedDB,queueMicrotask});
+  const c=vm.createContext({window:{nuvem,NUVEM_CONFIG:{acervoPorConta:true}},nuvem,localStorage,indexedDB,queueMicrotask});
   executar("js/acervo.js",c);
   return {acervo:c.window.acervo,localStorage,indexedDB,trocar:u=>user=u,rpc:f=>rpc=f};
 }
@@ -50,4 +50,15 @@ test("baixar cópia remota antiga não desfaz uma exclusão local ainda não sin
   await f.acervo.aplicar(backup());
   assert.equal(f.indexedDB.bancos.get("bestiario_a").mon.has("heroi"),false);
   assert.equal(JSON.parse(f.localStorage.getItem("ini_tomb_a")).heroi,20);
+});
+
+test("publicação antes da migração mantém o banco e as chaves legados",async()=>{
+  const localStorage=armazenamento();localStorage.setItem("ini_sync","token-preservado");
+  const nuvem={usuario:()=>({id:"a",email:"a@example.invalid"})};
+  const c=vm.createContext({window:{nuvem,NUVEM_CONFIG:{acervoPorConta:false}},nuvem,localStorage});
+  executar("js/acervo.js",c);const a=c.window.acervo;
+  assert.equal(a.banco(),"bestiario");assert.equal(a.chave("ini_tr"),"ini_tr");assert.equal(a.ativo(),false);
+  assert.deepEqual(JSON.parse(JSON.stringify(await a.baixar())),{});
+  await assert.rejects(a.importar(backup()),/migração/);
+  assert.equal(localStorage.getItem("ini_sync"),"token-preservado");
 });

@@ -2,8 +2,10 @@
 (() => {
   "use strict";
   const usuario = () => window.nuvem && nuvem.usuario();
-  const banco = () => usuario() ? "bestiario_" + usuario().id : "bestiario_publico";
-  const chave = k => k + "_" + (usuario() ? usuario().id : "publico");
+  const ativo = () => window.NUVEM_CONFIG?.acervoPorConta === true;
+  const exigirAtivo = () => { if(!ativo())throw new Error("A migração dos dados para a conta ainda não foi concluída. Seus dados locais foram preservados."); };
+  const banco = () => !ativo() ? "bestiario" : usuario() ? "bestiario_" + usuario().id : "bestiario_publico";
+  const chave = k => ativo() ? k + "_" + (usuario() ? usuario().id : "publico") : k;
   function identidade() {
     const u = usuario();
     if (!u) throw new Error("Entre na sua conta.");
@@ -36,6 +38,7 @@
     });
   }
   async function aplicar(d, conta = identidade()) {
+    exigirAtivo();
     conferir(conta);
 
     let locais = {}; try { locais = JSON.parse(localStorage.getItem("ini_tomb_" + conta.id) || "{}"); } catch (_) {}
@@ -77,12 +80,14 @@
     if (d.ldj) gravar("ini_ldj", d.ldj);
   }
   async function mesclar(d, conta = identidade()) {
+    exigirAtivo();
     conferir(conta);
     const salvo = await nuvem.rpc("mesclar_acervo", { p_dados: d });
     conferir(conta);
     return salvo;
   }
   async function importar(d) {
+    exigirAtivo();
     validar(d);
     const conta = identidade();
     if (d.destino && String(d.destino).toLowerCase() !== conta.email) throw new Error("Entre com o e-mail de destino do backup.");
@@ -93,6 +98,7 @@
     return Object.keys(salvo.items || {}).length;
   }
   async function baixar() {
+    if(!ativo()) return {};
     const conta = identidade();
     const r = await nuvem.get("acervos?select=dados&usuario_id=eq." + conta.id);
     conferir(conta);
@@ -100,5 +106,5 @@
     await aplicar(d, conta);
     return d;
   }
-  window.acervo = { banco, chave, aplicar, mesclar, importar, baixar, validar };
+  window.acervo = { ativo, banco, chave, aplicar, mesclar, importar, baixar, validar };
 })();

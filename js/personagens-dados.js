@@ -40,10 +40,11 @@ window.PERSONAGENS_DADOS = (() => {
     if (!r?.[0] || r[0].dono_id !== (donoId || null)) throw new Error("A atribuição não foi confirmada. Confira se você é mestre da campanha.");
     return r[0];
   }
-  async function atualizarFoto(api, personagemId, foto) {
+  async function atualizarFoto(api, personagemId, foto, somenteSeVazia = false) {
     for (let tentativa=0; tentativa<2; tentativa++) {
       const atual = (await api.get("personagens?select=id,ficha,versao&id=eq."+encodeURIComponent(personagemId)))[0];
       if (!atual) throw new Error("Personagem não encontrado ou sem permissão.");
+      if(somenteSeVazia && atual.ficha?.foto)return atual;
       const r = await api.patch("personagens?id=eq."+encodeURIComponent(personagemId)+"&versao=eq."+atual.versao, { ficha: { ...(atual.ficha || {}), foto } });
       if (r?.[0]) return r[0];
     }

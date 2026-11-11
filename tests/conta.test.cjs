@@ -7,7 +7,7 @@ async function fixture(user){
     if(q.startsWith("membros"))return[{papel:"mestre",campanha:{id:"mestrada",nome:"Mestrada"}},{papel:"jogador",campanha:{id:"jogada",nome:"Jogada"}}];
     return[{id:"1",nome:"Preparado pelo mestre",ficha:{},campanha:{id:"mestrada"}},{id:"2",nome:"Meu herói",ficha:{},campanha:{id:"jogada"}},{id:"3",nome:"NPC",ficha:{npc:true},campanha:{id:"jogada"}}];
   }};
-  const c=vm.createContext({window:{},document,nuvem,navigator:{},location:{protocol:"https:"}});
+  const c=vm.createContext({window:{},document,nuvem,acervo:{ativo:()=>false},navigator:{},location:{protocol:"https:"}});
   executar("js/conta.js",c);await tick();return {document,nuvem};
 }
 test("página inicial sem sessão mostra login",async()=>{const f=await fixture(null);assert.equal(f.document.el("entrar").hidden,false);assert.equal(f.document.el("area").hidden,true);});

@@ -112,6 +112,7 @@
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(()=>{});
 
 
+  $("#painel-backup-conta").hidden = !acervo.ativo();
   $("#backup-conta").onchange=async e=>{
     const f=e.target.files[0];if(!f)return; const m=$("#msg-backup");e.target.disabled=true;
     try{const n=await acervo.importar(JSON.parse(await f.text()));msg(m,n+" criações salvas na sua conta, com fotos e traduções. Abra a campanha e use Importar do bestiário.");}

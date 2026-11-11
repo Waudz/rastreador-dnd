@@ -50,7 +50,7 @@
   function cabecalho() {
     $("#titulo").textContent = camp.nome; document.title = camp.nome + " — Rastreador D&D";
     $("#papel").textContent = mestre() ? "Mestre" : "Jogador";
-    $("#lnk-combate").hidden = false; $("#lnk-combate").textContent=mestre()?"Combate e consultas":"Consultar monstros e habilidades";
+    $("#lnk-combate").href = "iniciativa.html?campanha="+encodeURIComponent(id); $("#lnk-combate").hidden = false; $("#lnk-combate").textContent=mestre()?"Combate e consultas":"Consultar monstros e habilidades";
     const abas = [["pers", "Personagens"], ["diario", "Diário"], ["docs", "Documentos"]].concat(mestre() ? [["membros", "Grupo"]] : []);
     $("#abas").hidden = false;
     $("#abas").innerHTML = abas.map(([k, t]) => `<button type="button" data-aba="${k}" class="${aba === k ? "on" : ""}">${t}</button>`).join("");
@@ -63,7 +63,7 @@
       <div class="meta">${esc(sub)}${sub ? " · " : ""}${f.npc ? "" : esc(nomes[p.dono_id] || "Sem dono") + " · "}CA ${p.ca}</div></span></a>
       ${mestre()?`<div class="row"><label>Jogador responsável<select data-dono="${esc(p.id)}"><option value="">Sem jogador</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?"selected":""}>${esc(nomes[m.usuario_id]||"Jogador")}</option>`).join("")}</select></label></div>`:""}
       <div class="hpline"><div class="hp-top"><span>PV${p.pv_temp ? ` (+${p.pv_temp} temp.)` : ""}</span><strong>${p.pv_atual} / ${p.pv_max}</strong></div><div class="hp-track"><div class="hp-fill ${v <= 25 ? "low" : v <= 50 ? "mid" : ""}" style="width:${v}%"></div></div></div>
-      <div class="inline" style="margin-top:8px"><input class="num" type="number" min="1" value="1" aria-label="Quantidade"><button type="button" class="small danger" data-dano="1">Dano</button><button type="button" class="small" data-cura="1">Cura</button></div>
+      <div class="inline" style="margin-top:8px">${mestre() ? `<a class="btnlike small" href="iniciativa.html?campanha=${encodeURIComponent(id)}&personagem=${encodeURIComponent(p.id)}">Usar na iniciativa</a>` : ""}<input class="num" type="number" min="1" value="1" aria-label="Quantidade"><button type="button" class="small danger" data-dano="1">Dano</button><button type="button" class="small" data-cura="1">Cura</button></div>
     </div>`;
   };
 
@@ -90,12 +90,12 @@
   });
 
 
-  async function recuperarFotos(){
+  async function recuperarFotos(automatico=false){
     try{
       await acervo.baixar();const lista=await lerCriacoes(), porOrigem=Object.fromEntries(lista.map(m=>[m.key,m]));let n=0;
-      for(const p of pers){const f=p.ficha||{}, m=porOrigem[f.origem];if(!m||f.foto)continue;const foto=await reduzir((window.__fotos||{})[m.key]||m.photo);if(!foto)continue;await PERSONAGENS_DADOS.atualizarFoto(nuvem,p.id,foto);n++;}
-      await recarregar();await desenhar();aviso(n+" foto(s) recuperada(s). Fotos já existentes foram preservadas.");
-    }catch(e){aviso(e.message,true);}
+      for(const p of pers){const f=p.ficha||{}, m=porOrigem[f.origem];if(!m||f.foto)continue;const foto=await reduzir((window.__fotos||{})[m.key]||m.photo);if(!foto)continue;await PERSONAGENS_DADOS.atualizarFoto(nuvem,p.id,foto,automatico);n++;}
+      if(n){await recarregar();await desenhar();aviso(n+" foto(s) recuperada(s). Fotos já existentes foram preservadas.");}else if(!automatico)aviso("Nenhuma foto pendente foi encontrada neste aparelho.");
+    }catch(e){if(!automatico)aviso(e.message,true);}
   }
   document.addEventListener("click",e=>{if(e.target.closest("#recupera-fotos"))recuperarFotos();});
   /* ---------- importar criações do bestiário deste navegador ---------- */
@@ -348,7 +348,7 @@
   (async () => {
     try { await nuvem.retornoDoLink(); } catch (_) {}
     if (!nuvem.usuario() || !id) { location.replace("conta.html"); return; }
-    try { await carregar(); await desenhar(); await mostrarConvite(); } catch (e) { aviso(e.message, true); return; }
+    try { await carregar(); await desenhar(); await mostrarConvite(); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); } catch (e) { aviso(e.message, true); return; }
     nuvem.observar(async () => {
       const ativo = document.activeElement;
       if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;     // não interrompe quem está digitando
