@@ -17,5 +17,17 @@
   function espacos(total,usados) {
     return `<span class="espacos-magia" role="img" aria-label="${total-usados} de ${total} espaços disponíveis">${Array.from({length:total},(_,i)=>`<i class="espaco${i<total-usados?' disponivel':''}" aria-hidden="true"></i>`).join('')}</span>`;
   }
-  window.FICHA_COMPONENTES={esc,icone,estatistica,atributo,cabecalho,vidaBase,espacos};
+  function retrato(nome,src,tamanho=56){
+    return typeof src==='string'&&/^data:image\//.test(src)?`<img class="av retrato-cartao" width="${tamanho}" height="${tamanho}" src="${esc(src)}" alt="Retrato de ${esc(nome)}">`:`<span class="av av0 retrato-cartao" style="width:${tamanho}px;height:${tamanho}px" aria-hidden="true">${esc(String(nome||'?').charAt(0).toUpperCase())}</span>`;
+  }
+  function resumoPersonagem(f={}){
+    f=f||{};
+    const lista=Array.isArray(f.classes)?f.classes:[],R=window.REGRAS;
+    return {classes:lista.length&&R?R.resumoClasses(lista).descricao:String(f.classe||''),nivel:lista.length&&R?R.nivelTotal(lista):Number(f.nivel)||0,ids:lista.length?lista.map(c=>c.c):f.classe?[f.classe]:[]};
+  }
+  function filtrarPersonagens(lista,filtro){
+    const normal=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    return lista.filter(p=>{const r=resumoPersonagem(p.ficha);return normal(p.nome).includes(normal(filtro.nome))&&(!filtro.classe||r.ids.includes(filtro.classe))&&(!filtro.nivel||r.nivel===Number(filtro.nivel));});
+  }
+  window.FICHA_COMPONENTES={esc,icone,estatistica,atributo,cabecalho,vidaBase,espacos,retrato,resumoPersonagem,filtrarPersonagens};
 })();

@@ -31,6 +31,12 @@ test('evolução permanece em Personagem e Combate prioriza defesa e ataques',as
  assert.match(personagem,/Criação e evolução/);assert.match(personagem,/melhorias/);
  assert.equal((h.match(/id="melhorias"/g)||[]).length,1);
 });
+test('perícias mostram o atributo da regra e preservam o botão de rolagem',async()=>{
+ const f=await ficha(async()=>[{versao:2}]);const h=f.document.el('ficha').innerHTML;
+ assert.match(h,/data-rolar-per="percepcao"[^>]*>.*?Percepção.*?pericia-atributo">SAB/s);
+ assert.match(h,/data-rolar-per="acrobacia"[^>]*>.*?Acrobacia.*?pericia-atributo">DES/s);
+ assert.match(h,/aria-label="Sem proficiência"/);
+});
 test('espaços de magia, preparação e diário sobrevivem à gravação',async()=>{
  let salvo;const f=await ficha(async(_q,d)=>{salvo=d;return[{versao:2}];},{fichaInicial:{classes:[{c:'Cleric',n:4}],notas:'História anterior',magias:[{n:'Luz',en:'Light',l:0,d:'Descrição original'},{n:'Bênção',en:'Bless',l:1,d:'Texto original',prep:true}]}});
  const h=f.document.el('ficha').innerHTML;assert.match(h,/espacos-magia/);assert.match(h,/Truques/);assert.match(h,/1º círculo/);assert.match(h,/História anterior/);

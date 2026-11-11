@@ -214,7 +214,7 @@
     if(lim)h+=`<p class="muted">Especializações: ${fontes.especializadas.length}/${lim}. Escolha entre as perícias proficientes.</p>`;
     h='<details class="config-pericias" '+(editandoFicha?'open':'')+'><summary>Escolhas e especializações</summary>'+h+'</details><div class="grade2">'+R.PERICIAS.map(([k,n,a])=>{
       const e=pr[k]||0,v=R.valorPericia(f,k);
-      return `<div class="lin"><span class="pbol${e?' on':''}${e===2?' dup':''}"></span><b>${fm(v)}</b><button type="button" class="rolar-pericia" data-rolar-per="${k}" aria-label="Rolar ${n}">${n}</button>${lim&&e?`<button type="button" class="small" data-per="${k}" aria-pressed="${e===2}">${e===2?'Especializada':'Especializar'}</button>`:''}</div>`;
+      return `<div class="lin pericia-linha"><span class="pbol${e?' on':''}${e===2?' dup':''}" role="img" aria-label="${e===2?'Especialização':e?'Proficiente':'Sem proficiência'}" title="${e===2?'Especialização':e?'Proficiente':'Sem proficiência'}"></span><b>${fm(v)}</b><button type="button" class="rolar-pericia" data-rolar-per="${k}" aria-label="Rolar ${n}, ${R.ATR_NOME[a]}"><span>${n}</span><small class="pericia-atributo">${a.toUpperCase()}</small></button>${editandoFicha&&lim&&e?`<button type="button" class="small pericia-editar" data-per="${k}" aria-pressed="${e===2}">${e===2?'Especializada':'Especializar'}</button>`:''}</div>`;
     }).join("")+'</div>';
     return h+`<p class="muted">Percepção passiva: <b>${R.percepcaoPassiva(f)}</b></p>`;
   }

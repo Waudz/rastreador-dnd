@@ -216,20 +216,13 @@
 
     /* abas laterais: ficha (direita) e magia (esquerda, ou empilhada na direita) */
     function layout() {
-      const full = innerWidth < 1200, W = Math.min(440,innerWidth);
-      document.documentElement.style.setProperty("--dw", W + "px");
-      const sp = $("#spd"), dest = $(innerWidth < 1100 || spOrigin === "sheet" ? "#dock-r" : "#dock-l");
-      if (sp.parentNode !== dest) dest.appendChild(sp);
-      let L = false, R = false;
-      [["#dock-l", false], ["#dock-r", true]].forEach(([s, r]) => { const dk = $(s), vis = [...dk.children].some((c) => !c.hidden); dk.hidden = !vis; if (r) R = vis; else L = vis; });
-      R=R||!$("#ci-resumo").hidden;
-      const margem=innerWidth<=800?14:22;
-      document.body.style.paddingLeft = margem + (L && !full ? W : 0) + "px"; document.body.style.paddingRight = margem + (R && !full ? W : 0) + "px";
+      const sp=$("#spd"),dest=$(innerWidth<1600||spOrigin==="sheet"?"#dock-r":"#dock-l");
+      if(sp.parentNode!==dest)dest.appendChild(sp);
+      window.PAINEIS_LAYOUT.aplicar();
     }
     window.reorganizarPaineis=layout;
-    window.addEventListener("resize", layout);
     let focoFicha = null;
-    const closeSheet = () => { focoFicha?.focus?.(); $("#sheet").hidden = true; $("#tip").style.display = "none"; layout(); };
+    const closeSheet = () => { $("#sheet").hidden = true; $("#tip").style.display = "none"; layout(); focoFicha?.focus?.(); };
     const closeSpell = () => { $("#spd").hidden = true; $("#tip").style.display = "none"; layout(); };
 
     /* ficha do monstro */

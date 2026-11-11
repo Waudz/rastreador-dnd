@@ -1,9 +1,11 @@
 /* Minha conta: login, campanhas e personagens do usuário */
 (() => {
   "use strict";
-  const $ = (s) => document.querySelector(s), esc = nuvem.esc;
+  const $ = (s) => document.querySelector(s), esc = nuvem.esc, C=window.FICHA_COMPONENTES;
   const msg = (el, t, erro) => { el.innerHTML = t ? (erro ? `<span class="err">${esc(t)}</span>` : esc(t)) : ""; };
   let modoCriar = false;
+  let personagensConta=[],podeCriarPersonagem=false;
+  const filtros={nome:'',classe:'',nivel:''};
   const alterna = (sel) => { const f = $(sel); f.hidden = !f.hidden; if (!f.hidden) { const i = f.querySelector("input"); if (i) i.focus(); } };
 
   /* ---------- login ---------- */
@@ -41,6 +43,19 @@
 
   /* ---------- área logada ---------- */
   const barraPV = (a, mx) => { const pct = mx > 0 ? Math.max(0, Math.min(100, (a / mx) * 100)) : 0; return `<div class="hpline"><div class="hp-top"><span>PV</span><strong>${a} / ${mx}</strong></div><div class="hp-track"><div class="hp-fill ${pct <= 25 ? "low" : pct <= 50 ? "mid" : ""}" style="width:${pct}%"></div></div></div>`; };
+  function biblioteca(){
+    const lista=C.filtrarPersonagens(personagensConta,filtros);
+    $('#biblioteca-contagem').textContent=lista.length+' de '+personagensConta.length+' personagens';
+    $('#personagens').innerHTML=lista.length?lista.map(p=>{
+      const f=p.ficha||{},r=C.resumoPersonagem(f);
+      return `<a class="card biblioteca-cartao" href="personagem.html?id=${encodeURIComponent(p.id)}"><div class="biblioteca-identidade">${C.retrato(p.nome,f.foto)}<div><h3>${esc(p.nome)}</h3><p>${esc([f.raca,r.classes].filter(Boolean).join(' · ')||'Ficha em criação')}</p>${r.nivel?`<span class="badge">Nível ${r.nivel}</span>`:''}</div></div><p class="biblioteca-campanha">${esc(p.campanha?.nome||'Campanha não informada')}</p>${barraPV(p.pv_atual,p.pv_max)}<span class="biblioteca-abrir">Abrir ficha <span aria-hidden="true">↗</span></span></a>`;
+    }).join(''):personagensConta.length?'<div class="estado-vazio"><strong>Nenhum personagem corresponde aos filtros</strong><p>Altere a busca ou use Limpar filtros para ver sua biblioteca.</p></div>':`<div class="estado-vazio"><strong>Sua biblioteca de personagens</strong><p>Seus personagens como jogador aparecem aqui. Como mestre, acesse os personagens dentro da campanha.</p>${podeCriarPersonagem?'<button type="button" class="small primary" id="biblioteca-primeiro">Criar meu primeiro personagem</button>':'<a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1">Ver campanhas</a>'}</div>`;
+    const primeiro=$('#biblioteca-primeiro');if(primeiro)primeiro.onclick=()=>{$('#form-pers').hidden=false;$('#p-nome').focus();};
+  }
+  for(const [id,k] of [['biblioteca-busca','nome'],['biblioteca-classe','classe'],['biblioteca-nivel','nivel']]){
+    $('#'+id).addEventListener(k==='nome'?'input':'change',e=>{filtros[k]=e.target.value;biblioteca();});
+  }
+  $('#biblioteca-limpar').onclick=()=>{for(const [id,k] of [['biblioteca-busca','nome'],['biblioteca-classe','classe'],['biblioteca-nivel','nivel']]){filtros[k]='';$('#'+id).value='';}biblioteca();};
 
   async function carregar() {
     const u = nuvem.usuario(); if (!u) return;
@@ -50,22 +65,28 @@
       nuvem.get(`personagens?select=id,nome,pv_atual,pv_max,ca,ficha,campanha:campanhas(id,nome)&dono_id=eq.${u.id}&order=nome`)
     ]);
     if(nuvem.usuario()?.id !== u.id) return;
+    const destino=window.CAMPANHAS_UI?.entrada(membros,location.search);
+    if(destino){location.replace(destino);return;}
     const nome = (perfil[0] && perfil[0].nome) || u.nome || u.email.split("@")[0];
     $("#quem").textContent = nome; $("#a-nome").value = nome;
 
     $("#campanhas").innerHTML = membros.length ? membros.map((m) => {
       const c = m.campanha || {};
       return `<a class="card" href="campanha.html?id=${encodeURIComponent(c.id)}"><b>${esc(c.nome)}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></a>`;
-    }).join("") : '<span class="muted">Nenhuma campanha ainda.</span>';
+    }).join("") : '<div class="estado-vazio"><strong>Sua próxima aventura começa aqui</strong><p>Crie uma campanha para mestrar ou entre com o código enviado pelo seu mestre. Use as ações acima para começar.</p></div>';
+    const acao=new URLSearchParams(location.search||'').get('acao');
+    if(acao==='criar')$('#form-camp').hidden=false;
+    if(acao==='entrar')$('#form-entrar').hidden=false;
 
     $("#p-camp").innerHTML = membros.filter(m=>m.papel==="jogador" && m.campanha).map((m) => `<option value="${esc(m.campanha.id)}">${esc(m.campanha.nome)}</option>`).join("") || '<option value="">(sem campanhas)</option>';
 
-    const campanhasJogador = new Set(membros.filter(m=>m.papel==="jogador").map(m=>m.campanha.id));
+    const campanhasJogador = new Set(membros.filter(m=>m.papel==="jogador"&&m.campanha).map(m=>m.campanha.id));
     const meusPersonagens = pers.filter(p=>!(p.ficha||{}).npc && campanhasJogador.has((p.campanha||{}).id));
-    $("#personagens").innerHTML = meusPersonagens.length ? meusPersonagens.map((p) => {
-      const f = p.ficha || {}, sub = [f.classe, f.nivel ? "nível " + f.nivel : ""].filter(Boolean).join(" · ");
-      return `<a class="card" href="personagem.html?id=${encodeURIComponent(p.id)}"><b>${esc(p.nome)}</b><div class="meta">${esc(sub)}${sub ? " · " : ""}${esc((p.campanha || {}).nome || "")}</div>${barraPV(p.pv_atual, p.pv_max)}</a>`;
-    }).join("") : '<span class="muted">Seus personagens como jogador aparecem aqui. Como mestre, acesse os personagens dentro da campanha.</span>';
+    personagensConta=meusPersonagens;podeCriarPersonagem=campanhasJogador.size>0;$('#abre-pers').disabled=!podeCriarPersonagem;
+    const ids=[...new Set(personagensConta.flatMap(p=>C.resumoPersonagem(p.ficha).ids))].sort();
+    $('#biblioteca-classe').innerHTML='<option value="">Todas as classes</option>'+ids.map(k=>'<option value="'+esc(k)+'">'+esc(window.REGRAS.classe(k)?.n||k)+'</option>').join('');
+    $('#biblioteca-nivel').innerHTML='<option value="">Todos os níveis</option>'+[...new Set(personagensConta.map(p=>C.resumoPersonagem(p.ficha).nivel).filter(Boolean))].sort((a,b)=>a-b).map(n=>'<option value="'+n+'">Nível '+n+'</option>').join('');
+    $('#biblioteca-classe').value=filtros.classe;$('#biblioteca-nivel').value=filtros.nivel;biblioteca();
   }
 
   async function sincronizarConta(){
@@ -76,11 +97,11 @@
   }
   $("#conta-sincronizar").onclick=sincronizarConta;
   async function mostrarArea() {
-    $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = "";
+    $("#campanhas").innerHTML = '<p class="carregando" role="status">Carregando suas campanhas…</p>'; $("#personagens").innerHTML = '<p class="carregando" role="status">Carregando seus personagens…</p>';
     $("#entrar").hidden = true; $("#area").hidden = false;
-    try { await carregar(); if(acervo.ativo())await sincronizarConta(); } catch (e) { $("#campanhas").innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+    try { await carregar(); if(acervo.ativo())await sincronizarConta(); } catch (e) { const erro=`<p class="err" role="alert">Não foi possível carregar seus dados: ${esc(e.message)}. Recarregue para tentar novamente.</p>`;$("#campanhas").innerHTML = erro;$('#personagens').innerHTML=erro; }
   }
-  function mostrarLogin() { $("#entrar").hidden = false; $("#area").hidden = true; $("#l-senha").value = ""; $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = ""; $("#quem").textContent = ""; }
+  function mostrarLogin() { personagensConta=[];podeCriarPersonagem=false;$("#entrar").hidden = false; $("#area").hidden = true; $("#l-senha").value = ""; $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = ""; $("#quem").textContent = "";$('#biblioteca-contagem').textContent=''; }
 
   $("#btn-sair").onclick = async () => { await nuvem.sair(); mostrarLogin(); };
   $("#abre-camp").onclick = () => { $("#form-entrar").hidden = true; alterna("#form-camp"); };

@@ -497,7 +497,8 @@ a.doclink { color: var(--gold); text-decoration: underline; cursor: pointer; }
 [hidden] {display:none!important}
 
 /* Navegação e cartões em telas pequenas. */
-.appnav{position:sticky;top:0;z-index:30;display:flex;flex-wrap:wrap;gap:8px;padding:10px max(12px,calc((100% - 1320px)/2));background:#101820ee;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+.appnav{position:static;z-index:30;display:flex;flex-wrap:nowrap;gap:6px;width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:1px solid var(--line)}
+.appnav::-webkit-scrollbar{display:none}
 .appnav a[aria-current=page]{border-color:var(--gold);color:var(--gold)}
 .card{min-width:0}.card select{max-width:100%;width:100%}.jogador-vinculo{margin-bottom:12px}.pv-acoes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}.pv-acoes a{flex:1 0 100%;text-align:center}.pv-acoes .num{width:64px;min-width:0;flex:1 1 50px}.pv-acoes button{flex:1 1 60px}.cards{grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr))}
 
@@ -506,7 +507,7 @@ a.doclink { color: var(--gold); text-decoration: underline; cursor: pointer; }
 /* Padrão visual único e navegação sem sobrepor conteúdo. */
 body{background:var(--bg)}button,.btnlike,.round-box{background:var(--panel-2);box-shadow:none}button.primary{background:#514027;color:var(--text)}
 .appnav{position:static;max-width:980px;margin:0 auto 24px;padding:0 0 14px;backdrop-filter:none;background:transparent;align-items:stretch;gap:8px}
-.appnav a{flex:1 1 120px;display:flex;align-items:center;justify-content:center;text-align:center;min-height:40px}
+.appnav a{flex:0 0 auto;white-space:nowrap;display:flex;align-items:center;justify-content:center;text-align:center;min-height:44px}
 .nav-legado{display:none!important}.estado-ficha{justify-content:flex-end;min-height:20px}
 body[data-app-view=consulta] .vista-iniciativa,body[data-app-view=iniciativa] .vista-consulta{display:none!important}
 body[data-conta-aba=conta] [data-conta-painel]:not([data-conta-painel=conta]),body[data-conta-aba=campanhas] [data-conta-painel]:not([data-conta-painel=campanhas]),body[data-conta-aba=personagens] [data-conta-painel]:not([data-conta-painel=personagens]){display:none}
@@ -514,7 +515,7 @@ body[data-conta-aba=conta] [data-conta-painel]:not([data-conta-painel=conta]),bo
 .personagem-card{display:flex;flex-direction:column}.personagem-card>a{min-height:70px}.personagem-card .cartao-vida{margin-top:auto;padding-top:14px}
 .criador-pericias{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.criador-pericias span{color:var(--text);border:1px solid var(--line);padding:5px 9px;border-radius:6px}
 .moedas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.moeda-controle{display:flex;flex-direction:column;gap:8px}.moeda-controle>input{width:100%;font-size:22px;text-align:center}.moeda-controle .inline{display:grid;grid-template-columns:40px minmax(40px,1fr) 40px}.moeda-controle .inline input{width:100%}
-@media(max-width:520px){.moedas{grid-template-columns:1fr}.appnav a{flex-basis:90px}.personagem-card>a{min-height:80px}}
+@media(max-width:520px){.moedas{grid-template-columns:1fr}.personagem-card>a{min-height:80px}}
 
 .ficha-identidade{display:flex;gap:18px;align-items:center}.ficha-identidade h1{font-size:30px}.ficha-identidade p{margin:5px 0}.ficha-destaques{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}.ficha-destaques>div{padding:12px;border:1px solid var(--line);border-radius:8px;text-align:center}.ficha-destaques small{display:block;color:var(--muted)}.ficha-destaques strong{font-size:26px}.atributos-ficha input:disabled{opacity:1;border-color:transparent;font-size:24px;background:transparent;color:var(--text)}@media(max-width:520px){.ficha-destaques{grid-template-columns:repeat(2,minmax(0,1fr))}.ficha-identidade{align-items:flex-start}.ficha-identidade h1{font-size:25px}}
 

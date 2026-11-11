@@ -47,3 +47,37 @@ Atualizado em 11/11/2026. Este arquivo registra limites conhecidos; não signifi
 2. Reproduzir eventual erro na tela e conta exatas, distinguindo aba antiga sem recarga da versão publicada.
 3. Consultar js/regras.js antes de adicionar cálculo ou descrição em uma tela. Usar os dados compartilhados em vez de criar outra cópia.
 4. Atualizar este arquivo quando uma pendência for resolvida; não marcar tarefas somente por haver botão ou texto implementado.
+
+## Pendências para implementação posterior com Claude
+
+Rodada de usabilidade preparada após `1b19419`, com 91 testes JavaScript aprovados e envio ao GitHub autorizado pelo usuário. A revisão visual local ficou bloqueada pela conexão do navegador ao servidor; conferir a faixa horizontal de navegação e o empilhamento dos painéis em janela dividida na versão atualizada. Não houve mudanças no banco.
+
+### Campanha ativa e contexto
+
+- `js/campanhas-ui.js` reutiliza `ini_campanha`, a preferência local existente da iniciativa. A entrada direta só ocorre após conferir que o ID pertence às campanhas retornadas para a conta. Sem preferência válida, a lista permanece disponível.
+- Definir, em etapa estrutural separada, como persistir a última campanha ativa **por usuário e entre dispositivos**. Não interpretar a preferência local atual como contexto sincronizado no servidor.
+- Definir o comportamento para campanha excluída, saída do grupo, mudança de papel, troca de conta, múltiplas abas e expiração da sessão. A seleção visual não pode conceder participação ou privilégios.
+- Unificar futuramente o contexto entre conta, campanha, criador, ficha e iniciativa. Preservar URLs com IDs explícitos e dar precedência à navegação explícita sobre uma preferência antiga.
+
+### Persistência e sincronização
+
+- Revisar concorrência entre ficha completa, iframe, alterações do combate e outros dispositivos. Os testes atuais cobrem serialização e cenários locais de conciliação de PV; não comprovam todos os casos concorrentes de produção.
+- Preservar objetos existentes de fichas, inventário, fotos, documentos e campos legados. Planejar migrações necessárias com validação e recuperação, sem reconstruir personagens.
+- A iniciativa atual guarda o combate no navegador. Projetar separadamente qualquer acompanhamento multiusuário/realtime, incluindo ordenação de eventos e conflitos. O refinamento visual não implementa esse compartilhamento.
+
+### Permissões e dados privados
+
+- Validar operações reais com duas contas: mestre e jogador; personagem próprio, personagem de outro jogador, NPC e inimigo. Verificar consultas e gravações diretas, não apenas controles da interface.
+- Rever a distinção existente entre administrador e mestre: `campanha.js` pode tratar administrador como mestre para a página; a ficha embutida e `campanha-ini.js` consultam `eh_mestre`. Essa diferença foi preservada nesta rodada, não resolvida por CSS.
+- Em qualquer futura visão de combate compartilhada, filtrar PV e outros dados privados **antes de entregar os dados ao jogador**. Ocultar campos no HTML/CSS não atende a esse requisito. Não usar os PV-base públicos do catálogo como se fossem PV atuais de um inimigo.
+- Preservar o acesso exclusivo do mestre à área de personagens da campanha na iniciativa, o isolamento de acervos por conta e as políticas RLS existentes até uma revisão explícita.
+
+### Contrato da interface a preservar
+
+- Reutilizar `js/ficha-componentes.js`, `js/ficha-ui.js`, `js/ficha-monstro.js`, `css/fichas.css` e `css/identidade.css`. Manter as seis abas da ficha, as perícias derivadas de `REGRAS.PERICIAS`, as rolagens e o painel real por iframe.
+- `js/interface.js` apenas rotula campos e apresenta os estados emitidos pelo salvamento. Não é um novo mecanismo de persistência ou confirmação de gravação.
+- `js/paineis-layout.js` decide espaço reservado e o breakpoint comum dos painéis. O conteúdo permanece em renderizadores específicos. Preservar a política sem sobreposição abaixo de 1200 px e a navegação superior em uma única faixa horizontal.
+- Os filtros da biblioteca operam somente sobre personagens já carregados e autorizados. Não ampliar a consulta para obter dados que a interface precise esconder depois.
+- Não refazer a identidade visual ao trabalhar na lógica. Se algum novo estado funcional exigir apresentação adicional, integrar nos componentes existentes e registrar a dependência.
+
+Antes de iniciar essa etapa, confirmar o commit remoto e os diffs locais, que ainda incluem os envios anteriores feitos por conector. O HEAD local não foi atualizado automaticamente por esses envios. Separar o que já está publicado das alterações locais desta rodada antes de criar commits ou migrations.

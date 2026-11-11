@@ -1,14 +1,15 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
 const {documentoFalso,executar,vm,tick}=require("./helpers.cjs");
 async function fixture(user){
-  const document=documentoFalso();
+  const document=documentoFalso(),consultas=[];
   const nuvem={usuario:()=>user,esc:s=>String(s??""),olhos(){},retornoDoLink:async()=>{},sair:async()=>{user=null;},get:async q=>{
+    consultas.push(q);
     if(q.startsWith("perfis"))return[{nome:"Pessoa"}];
     if(q.startsWith("membros"))return[{papel:"mestre",campanha:{id:"mestrada",nome:"Mestrada"}},{papel:"jogador",campanha:{id:"jogada",nome:"Jogada"}}];
-    return[{id:"1",nome:"Preparado pelo mestre",ficha:{},campanha:{id:"mestrada"}},{id:"2",nome:"Meu herói",ficha:{},campanha:{id:"jogada"}},{id:"3",nome:"NPC",ficha:{npc:true},campanha:{id:"jogada"}}];
+    return[{id:"1",nome:"Preparado pelo mestre",ficha:{},campanha:{id:"mestrada"}},{id:"2",nome:"Meu herói",ficha:{raca:'Humano',classes:[{c:'Fighter',n:4}]},campanha:{id:"jogada",nome:'Jogada'}},{id:"3",nome:"NPC",ficha:{npc:true},campanha:{id:"jogada"}}];
   }};
-  const c=vm.createContext({window:{},document,nuvem,acervo:{ativo:()=>false},navigator:{},location:{protocol:"https:"}});
-  executar("js/conta.js",c);await tick();return {document,nuvem};
+  const c=vm.createContext({window:{},document,nuvem,acervo:{ativo:()=>false},navigator:{},location:{protocol:"https:"},URLSearchParams});
+  executar('js/regras.js',c);executar('js/ficha-componentes.js',c);executar("js/conta.js",c);await tick();return {document,nuvem,consultas};
 }
 test("página inicial sem sessão mostra login",async()=>{const f=await fixture(null);assert.equal(f.document.el("entrar").hidden,false);assert.equal(f.document.el("area").hidden,true);});
 test("sessão existente abre campanhas e apenas personagens como jogador",async()=>{
@@ -22,4 +23,13 @@ test("sair limpa a senha e dados visíveis da conta",async()=>{
   const f=await fixture({id:"pessoa",email:"pessoa@example.invalid"});f.document.el("l-senha").value="senha-fictícia";
   await f.document.el("btn-sair").onclick();
   assert.equal(f.document.el("l-senha").value,"");assert.equal(f.document.el("personagens").innerHTML,"");assert.equal(f.document.el("area").hidden,true);
+});
+test('filtros de biblioteca operam nos dados já autorizados sem novas consultas',async()=>{
+ const f=await fixture({id:'pessoa',email:'pessoa@example.invalid'}),antes=f.consultas.length;
+ assert.match(f.document.el('personagens').innerHTML,/Guerreiro 4/);
+ assert.match(f.document.el('personagens').innerHTML,/Humano/);
+ f.document.el('biblioteca-busca').events.input({target:{value:'heroi'}});assert.match(f.document.el('personagens').innerHTML,/Meu herói/);
+ f.document.el('biblioteca-classe').events.change({target:{value:'Wizard'}});assert.doesNotMatch(f.document.el('personagens').innerHTML,/Meu herói/);
+ f.document.el('biblioteca-limpar').onclick();assert.match(f.document.el('personagens').innerHTML,/Meu herói/);
+ assert.equal(f.consultas.length,antes);
 });

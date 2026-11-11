@@ -72,3 +72,40 @@ Esta seção registra a rodada posterior ao commit `c6c7f1d`, preservando as pen
 - Magias antigas mantêm seus dados. Metadados ausentes de concentração/ritual não são inferidos como se estivessem cadastrados; novas adições preservam esses indicadores quando presentes no catálogo. Inventário mantém o modelo atual, sem classificar itens mágicos/consumíveis automaticamente.
 
 Próxima etapa: executar a revisão visual acima em um navegador com acesso ao site atualizado e registrar o resultado. A autorização de envio ao GitHub não substitui essa verificação visual.
+
+## Rodada incremental de usabilidade — 11/11/2026 (local)
+
+Base funcional: refinamento enviado no commit `1b19419`. Esta rodada foi organizada em etapas; o envio ao GitHub foi autorizado pelo usuário após a implementação.
+
+| Etapa | Alterações implementadas | Verificação |
+|---|---|---|
+| 1. Perícias e painel | Sigla do atributo lida do terceiro elemento de `REGRAS.PERICIAS`; linhas alinhadas, indicadores acessíveis de proficiência/especialização; edição por Editar Personagem; densidade menor no iframe | Testes de renderização, abas, salvamento e integração com iniciativa passaram antes da etapa seguinte |
+| 2. Campanhas | Cabeçalho com nome e seletor; links funcionais de criar/entrar/listar; gerenciamento do grupo usa a aba já existente; preferência local `ini_campanha` é validada contra campanhas carregadas da conta antes da abertura direta | Testes de preferência inválida, campanhas autorizadas e exceções de navegação; testes de conta/navegação passaram |
+| 3. Biblioteca | Retratos e metadados de raça/classe/nível/campanha, cartões com acesso à ficha, busca por nome sem acentos e filtros de classe/nível sobre os dados carregados, contagem e ação de primeiro personagem | Testes garantem ausência de novas consultas ao filtrar e manutenção da separação jogador/mestre/NPC |
+| 4. Iniciativa | Turno atual identificado por texto e `aria-current`, borda discreta, números mais legíveis e controles com melhores alvos de toque | Testes de iniciativa em branco/zero/negativa, edição, persistência e atualização sem roubar foco passaram |
+| 5. Acabamento comum | Navegação responsiva com seção atual, formulários e botões, rótulos para campos com placeholder sem nome acessível, indicadores derivados dos estados reais de salvamento, mensagens de carregamento/erro | Testes de rótulos, preservação de valores e estados Salvando/Erro/Salvo |
+| 6. Responsividade | Navegação em faixa única com rolagem horizontal em todas as larguras; filtros e cabeçalho de campanha adaptativos; controles de toque; painéis de personagem/monstro com política compartilhada de espaço | Contratos CSS e política de layout testados; revisão visual em aparelhos permanece pendente |
+
+Validação final: **91 testes JavaScript aprovados** com `node --test tests/*.test.cjs`; análise sintática incluída nos testes existentes. Os novos testes foram adicionados ao workflow. Não houve alteração de regras de D&D, Supabase, autenticação, RLS, migrations ou contratos de salvamento/sincronização.
+
+### Limite da revisão visual desta rodada
+
+O navegador integrado não alcançou a prévia HTTP local, inclusive com o servidor mantido na sessão Node. Não foram produzidas capturas “depois” desta rodada, e os testes automatizados não equivalem à revisão visual. Conferir antes da aprovação da interface: desktop/celular, biblioteca, estados sem campanhas, seletor com múltiplas campanhas, formulários e modais, seis abas, painel de 440 px, convivência com a iniciativa e navegação por teclado. Nenhuma conclusão sobre sessões de produção foi inferida dos objetos simulados dos testes.
+
+### Pendências para implementação posterior com Claude
+
+As pendências estruturais estão detalhadas em `docs/PENDENCIAS.md`, na seção de mesmo nome. A abertura direta implementada depende de uma preferência **neste aparelho**, já usada pelo rastreador; não existe nesta rodada persistência de campanha ativa entre dispositivos. Sem preferência válida, a interface lista as campanhas para escolha. As alterações visuais devem ser preservadas na próxima etapa.
+
+### Correções obrigatórias incorporadas à rodada
+
+**Navegação superior:** removidas a grade móvel, a quebra de linha e as bases flexíveis antigas. `.appnav` usa `flex-flow: row nowrap`, largura limitada ao pai, `overflow-x: auto`, scrollbar oculta e rolagem suave, respeitando movimento reduzido. Links não encolhem, não quebram texto e mantêm fonte de 13 px e altura mínima de 44 px. Não houve alteração nos links ou na indicação da página atual. O CSS é comum ao navegador e à PWA; nenhuma regra de `display-mode` muda esse comportamento.
+
+**Painéis:** `js/paineis-layout.js` passou a ser a fonte comum para medir e reservar espaço. `app.js` mantém apenas a escolha do destino de consultas e delega o layout; a ficha de personagem também usa a reorganização compartilhada. Em 1200 px ou mais, reservar 440 px por lado aberto. Abaixo disso, `#dock-l`, `#dock-r` e `.ci-resumo` usam posição relativa e largura do conteúdo, com altura delimitada e rolagem interna. Isso evita sobreposição do painel com a lista e os botões em janela dividida/tablet/celular. Os cabeçalhos com Fechar permanecem fora da região interna rolável. O fechamento devolve o foco ao controle de origem. Não foi adotada uma correção baseada em `z-index`.
+
+| Verificação solicitada | Evidência disponível | Ainda necessário |
+|---|---|---|
+| Nav em 320, 375, 390, 430 px e desktop | Teste estático garante uma única regra comum, sem grid móvel/quebra; links não encolhem; folhas comuns nas páginas principais | Renderização real em cada largura, deslizar até o último item, tabulação, largura do documento e modo PWA instalado |
+| Painel em desktop, metade da tela, tablet e celular | Testes da política em 320, 375, 390, 430, 768, 960, 1199, 1200, 1366 e 1920 px; personagem e monstro recebem reservas iguais | Comparação visual real dos painéis, controles de NPCs e rolagens internas |
+| Redimensionar gradualmente | Teste da transição de reserva lateral para empilhada e retorno; reserva removida ao fechar | Arrastar a janela continuamente em navegador e conferir foco/scroll |
+
+Esses testes não utilizam um motor de renderização. Não equivalem à confirmação visual dos tamanhos acima, que não foi possível realizar na prévia local. Após o envio autorizado, conferir o resultado de Actions/Pages e executar a revisão visual na versão atualizada.

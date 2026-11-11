@@ -205,12 +205,12 @@
           const pct = Math.max(0, Math.min(100, (Number(c.hp) / Number(c.maxHp)) * 100));
           const hpClass = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
           return `
-            <article class="combatant ${isActive ? "active" : ""} ${isDefeated ? "defeated" : ""}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
+            <article class="combatant ${isActive ? "active" : ""} ${isDefeated ? "defeated" : ""}" aria-current="${isActive?'step':'false'}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
               ${c.effects && c.effects.length ? `<div class="fxbar">${c.effects.map((e) => `<span class="fxchip" style="--c:${e.color}" data-fxtip="${escapeText(fxTip(e))}">${fxIcon(e.type)}${escapeText(e.name)} <b>${fxLeft(e)}</b><button type="button" data-fxdel="${c.id}|${e.id}" aria-label="Remover ${escapeText(e.name)}">${ico("x")}</button></span>`).join("")}</div>` : ""}
               <input class="initiative iniciativa-valor" type="number" step="1" data-iniciativa="${c.id}" value="${pendente(c) ? "" : Number(c.initiative)}" placeholder="—" aria-label="Iniciativa de ${escapeText(c.name)}" title="Informe o resultado da rolagem do jogador, incluindo o modificador">
               <div>
                 <div class="name"><span class="avfx" ${c.effects && c.effects.length ? `style="--ring:${fxRing(c.effects)}"` : ""}>${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 34, c.foto) : ""}${c.effects && c.effects.length ? `<span class="fxb" style="--c:${c.effects[0].color}" data-fxtip="${escapeText(fxTip(c.effects[0]))}">${fxIcon(c.effects[0].type)}<b>${fxLeft(c.effects[0])}</b></span>` : ""}</span>${escapeText(c.name)}${isActive ? ` <span aria-label="turno atual" class="turn-mark">${ico("turn")}</span>` : ""}</div>
-                <div class="kind${c.effects && c.effects.length ? " has-fx" : ""}">${escapeText(c.kind)}${isDefeated ? " · Inconsciente/derrotado" : ""}</div>
+                <div class="kind${c.effects && c.effects.length ? " has-fx" : ""}">${isActive?'<span class="turno-badge">Turno atual</span> · ':''}${escapeText(c.kind)}${isDefeated ? " · Inconsciente/derrotado" : ""}</div>
               </div>
               <div class="stat">CA<strong>${Number(c.ac)}</strong></div>
               <div class="stat">PV<strong>${Number(c.hp)}</strong></div>

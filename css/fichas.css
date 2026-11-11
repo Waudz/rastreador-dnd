@@ -64,6 +64,22 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .pagina-personagem .lin .rolar-pericia::after { content:''; position:absolute; inset:0; }
 .pagina-personagem .lin:hover { background:#34445380; }
 .pagina-personagem .lin button[data-per] { position:relative; z-index:1; font-size:10px; }
+.pagina-personagem .pericia-linha { min-height:42px; }
+.pagina-personagem .pericia-linha .rolar-pericia { display:flex; align-items:center; gap:7px; flex:1; min-height:28px; font-weight:550; }
+.pericia-atributo { color:var(--muted); font-size:10px; letter-spacing:.05em; font-weight:450; }
+.pagina-personagem .pericia-linha:focus-within { outline:1px solid var(--gold); outline-offset:1px; background:#34445380; }
+.pericia-linha .pbol { flex-shrink:0; }
+.pericia-linha .pbol.dup { background:var(--gold); box-shadow:0 0 0 2px var(--panel),0 0 0 3px var(--gold); }
+.pericia-editar { min-height:30px; padding:3px 6px; }
+.ficha-embutida .ficha-identidade { gap:10px; }
+.ficha-embutida .ficha-identidade p { margin:2px 0; }
+.ficha-embutida .ficha-destaques { margin:12px 0 8px; }
+.ficha-embutida .ficha-estatistica { min-height:64px; }
+.ficha-embutida .attr { min-height:86px; }
+.ficha-embutida .ficha-abas button { padding:6px 10px; }
+.ficha-embutida .vida-ficha { padding:11px 12px; }
+.ficha-embutida .ficha-acoes-gestao { width:auto; margin-left:auto; }
+.ficha-embutida .vida-controles button { min-height:34px; }
 .config-pericias { margin-bottom:10px; }
 .config-pericias > summary { min-height:28px; font-size:11px; color:var(--muted); }
 .config-pericias .anexos { margin-bottom:12px; }
@@ -153,10 +169,30 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
   .ficha-abas button { font-size:11px; padding:6px 11px; }
   .inspiracao-ficha { flex-wrap:wrap; }
 }
-@media(min-width:1200px) { body.com-ficha-lateral { padding-right:calc(var(--ficha-painel) + 24px); } }
-@media(max-width:1199px) { .ci-resumo, .dock { width:min(var(--ficha-painel),100%); } }
+@media(min-width:1200px) {
+  body[data-app-view] { padding-left:calc(24px + var(--painel-reserva-esquerda,0px)); padding-right:calc(24px + var(--painel-reserva-direita,0px)); }
+}
+@media(max-width:1199px) {
+  #dock-l, #dock-r, .ci-resumo {
+    position:relative;
+    inset:auto;
+    z-index:auto;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    height:76vh;
+    height:min(76dvh,760px);
+    min-height:min(420px,80vh);
+    margin:18px 0;
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:none;
+  }
+  #sheet, #spd { min-height:0; min-width:0; }
+  #ci-resumo-corpo { min-height:0; min-width:0; }
+  #sheet-body, #spd-body { overscroll-behavior:contain; }
+}
 @media(max-width:600px) {
-  .ci-resumo, .dock { width:100%; }
   .ci-resumo-topo button, .sh-top button { min-height:44px; }
   .ficha-acoes .btnlike, .ficha-acoes button { min-height:36px; }
 }

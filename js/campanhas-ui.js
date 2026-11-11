@@ -1,0 +1,32 @@
+/* Contexto de navegação neste aparelho. Nunca decide permissões nem amplia consultas. */
+(() => {
+  const chave='ini_campanha'; // preferência já utilizada pelo rastreador
+  const campanhasDe=membros=>membros.filter(m=>m.campanha?.id).map(m=>m.campanha);
+  function preferida(membros){
+    let id='';try{id=localStorage.getItem(chave)||'';}catch(_){}
+    return campanhasDe(membros).find(c=>c.id===id)||null;
+  }
+  function lembrar(id){try{localStorage.setItem(chave,id);}catch(_){} }
+  function entrada(membros,busca){
+    const q=new URLSearchParams(busca||'');
+    if(q.get('gerenciar')==='1'||['conta','personagens'].includes(q.get('aba')))return '';
+    const atual=preferida(membros);return atual?'campanha.html?id='+encodeURIComponent(atual.id):'';
+  }
+  async function montarSeletor(atual){
+    const box=document.querySelector('#campanha-contexto');if(!box||!nuvem.usuario())return;
+    box.hidden=false;box.innerHTML='<p role="status" class="muted">Carregando suas campanhas…</p>';
+    const uid=nuvem.usuario().id;
+    try{
+      const membros=await nuvem.get('membros?select=papel,campanha:campanhas(id,nome)&usuario_id=eq.'+encodeURIComponent(uid)+'&order=entrou_em.desc');
+      if(nuvem.usuario()?.id!==uid){box.innerHTML='';box.hidden=true;return;}
+      const lista=campanhasDe(membros),esc=nuvem.esc;
+      if(lista.some(c=>c.id===atual.id))lembrar(atual.id);
+      box.innerHTML='<label for="campanha-seletor">Sua campanha<select id="campanha-seletor">'+lista.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===atual.id?'selected':'')+'>'+esc(c.nome)+'</option>').join('')+'</select></label><div class="campanha-contexto-acoes"><a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1&acao=criar">Nova campanha</a><a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1&acao=entrar">Entrar com código</a><a class="btnlike small subtle" href="conta.html?aba=campanhas&gerenciar=1">Todas as campanhas</a></div>';
+      const select=document.querySelector('#campanha-seletor');
+      if(atual.podeGerenciar)box.querySelector('.campanha-contexto-acoes').insertAdjacentHTML('beforeend','<button type="button" class="small" data-aba="membros">Gerenciar grupo</button>');
+      if(!lista.some(c=>c.id===atual.id))select.insertAdjacentHTML('afterbegin','<option selected value="">'+esc(atual.nome)+'</option>');
+      select.addEventListener('change',()=>{const c=lista.find(c=>c.id===select.value);if(c){lembrar(c.id);location.href='campanha.html?id='+encodeURIComponent(c.id);}});
+    }catch(e){box.innerHTML='<p role="status" class="err">Não foi possível carregar o seletor: '+nuvem.esc(e.message)+'</p><a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1">Ver minhas campanhas</a>';}
+  }
+  window.CAMPANHAS_UI={campanhasDe,preferida,lembrar,entrada,montarSeletor};
+})();

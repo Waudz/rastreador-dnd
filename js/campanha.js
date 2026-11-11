@@ -57,11 +57,11 @@
   }
 
   const cartaoPers = (p) => {
-    const f = p.ficha || {}, sub = [f.classe, f.nivel ? "nível " + f.nivel : ""].filter(Boolean).join(" · "), v = pct(p.pv_atual, p.pv_max);
+    const f = p.ficha || {}, info=window.FICHA_COMPONENTES.resumoPersonagem(f),sub=[f.raca,info.classes].filter(Boolean).join(" · "), v = pct(p.pv_atual, p.pv_max);
     return `<div class="card personagem-card" data-id="${esc(p.id)}">
       ${mestre()?`<div class="jogador-vinculo"><label>Jogador<select data-dono="${esc(p.id)}"><option value="">Vincular conta…</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?"selected":""}>${esc(nomes[m.usuario_id]||"Jogador")}</option>`).join("")}</select></label></div>`:`<div class="meta">Jogador: ${esc(nomes[p.dono_id]||"Sem vínculo")}</div>`}
       <a href="personagem.html?id=${encodeURIComponent(p.id)}" style="color:inherit;text-decoration:none;display:flex;gap:10px;align-items:center">${f.foto && /^data:image\//.test(f.foto) ? `<img class="av" style="width:44px;height:44px" src="${esc(f.foto)}" alt="">` : `<span class="av av0" style="width:44px;height:44px;font-size:20px">${esc((p.nome || "?").charAt(0).toUpperCase())}</span>`}<span><b>${esc(p.nome)}</b>
-      <div class="meta">${esc(sub)}${sub ? " · " : ""}CA ${p.ca}</div></span></a>
+      <div class="meta">${esc(sub)}${sub ? " · " : ""}CA ${p.ca}</div>${info.nivel?`<span class="badge">Nível ${info.nivel}</span>`:''}</span></a>
       <div class="hpline cartao-vida"><div class="hp-top"><span>PV${p.pv_temp ? ` (+${p.pv_temp} temp.)` : ""}</span><strong>${p.pv_atual} / ${p.pv_max}</strong></div><div class="hp-track"><div class="hp-fill ${v <= 25 ? "low" : v <= 50 ? "mid" : ""}" style="width:${v}%"></div></div></div>
       <div class="pv-acoes">${mestre() ? `<a class="btnlike small" href="iniciativa.html?campanha=${encodeURIComponent(id)}&personagem=${encodeURIComponent(p.id)}">Usar na iniciativa</a>` : ""}<input class="num" type="number" min="1" value="1" aria-label="Quantidade"><button type="button" class="small danger" data-dano="1">Dano</button><button type="button" class="small" data-cura="1">Cura</button><button type="button" class="small danger" data-excluir-pers="${esc(p.id)}">Excluir</button></div>
     </div>`;
@@ -348,7 +348,8 @@
   (async () => {
     try { await nuvem.retornoDoLink(); } catch (_) {}
     if (!nuvem.usuario() || !id) { location.replace("conta.html"); return; }
-    try { await carregar(); await desenhar(); await mostrarConvite(); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); } catch (e) { aviso(e.message, true); return; }
+    aviso('Carregando a campanha…');
+    try { await carregar(); await desenhar();aviso('');await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre()}); await mostrarConvite(); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); } catch (e) { aviso(e.message, true); return; }
     nuvem.observar(async () => {
       const ativo = document.activeElement;
       if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;     // não interrompe quem está digitando

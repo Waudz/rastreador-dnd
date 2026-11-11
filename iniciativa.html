@@ -27,11 +27,13 @@
   <script src="js/edicoes.js" defer></script>
   <script src="js/rolagens.js" defer></script>
   <script src="js/ficha-monstro.js" defer></script>
+  <script src="js/paineis-layout.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/origens.js" defer></script>
   <script src="js/texto-regras.js" defer></script>
   <script src="js/regras.js" defer></script>
   <script src="js/campanha-ini.js" defer></script>
+  <script src="js/interface.js" defer></script>
 </head>
 <body>
   <main class="tracker">
@@ -108,7 +110,7 @@
       <div class="combat-bar">
         <div>
           <h2 class="panel-title" style="margin-bottom:4px"><i data-i="swords"></i>Ordem do combate</h2>
-          <div class="turn-label" id="current-turn">Adicione os combatentes para começar.</div>
+          <div class="turn-label" id="current-turn" role="status" aria-live="polite">Adicione os combatentes para começar.</div>
         </div>
         <div class="turn-actions">
           <div class="dmgby"><label for="dmg-by">Dano causado por</label><select id="dmg-by"><option value="">Quem está na vez</option></select></div>
