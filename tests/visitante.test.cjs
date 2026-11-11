@@ -93,3 +93,9 @@ test('PWA com sessão e campanha ativa abre direto na campanha; sem preferência
   assert.deepEqual(preSessao({url:'/'}).destinos,['iniciativa.html']);
   assert.deepEqual(preSessao({sessao:s,url:'/iniciativa.html',busca:'?aba=magias'}).destinos,[]);
 });
+
+test('conexão lenta na abertura: mensagem neutra, nunca a lista errada nem o modo visitante para quem tem sessão',()=>{
+  const css=ler('css/estilo.css');assert.match(css,/animation:entrada-ok 0s 20s forwards/);assert.match(css,/html\.conta-verificando #conta-abrindo \{ display:block; visibility:visible; \}/);
+  for(const h of ['conta.html','index.html'])assert.match(ler(h),/id="conta-abrindo"/);
+  const p=ler('js/pre-pagina.js');assert.ok(!/iniciativa\.html/.test(p.slice(p.indexOf('if (logado && !retornoDeLink'))),'quem tem sessão nunca é enviado à iniciativa por esta rota');
+});
