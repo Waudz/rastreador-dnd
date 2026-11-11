@@ -1,14 +1,21 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {ler}=require('./helpers.cjs');
-test('navegação compartilha faixa horizontal sem grade ou quebra nos breakpoints',()=>{
+test('cabeçalho é fixo, sem rolagem horizontal e com navegação em grade de cinco colunas no celular',()=>{
  const css=ler('css/identidade.css'),base=ler('css/estilo.css');
- const regras=[...css.matchAll(/\.appnav\s*\{([^}]+)\}/g)].map(m=>m[1]);
- assert.equal(regras.length,1,'Uma definição comum, sem sobrescrita móvel');
- const regra=regras[0];for(const propriedade of ['display:flex','flex-flow:row nowrap','overflow-x:auto','overflow-y:hidden','max-width:100%','min-width:0','scrollbar-width:none','scroll-behavior:smooth'])assert.ok(regra.includes(propriedade),propriedade);
- assert.match(css,/\.appnav a\s*\{[^}]*flex:0 0 auto;[^}]*white-space:nowrap/);
- assert.match(css,/\.appnav a\s*\{[^}]*min-height:44px;[^}]*font-size:13px/);
- assert.doesNotMatch(base,/\.appnav\s*\{[^}]*flex-wrap:wrap/);
- assert.doesNotMatch(css,/\.appnav\s*\{[^}]*display:grid/);
+ assert.match(css,/\.appheader\s*\{[^}]*position:sticky;[^}]*top:0/);
+ const nav=[...css.matchAll(/\.appnav\s*\{([^}]+)\}/g)].map(m=>m[1]);
+ assert.ok(nav.length>=1);
+ assert.ok(nav[0].includes('display:grid')&&nav[0].includes('repeat(5,minmax(0,1fr))'));
+ for(const r of nav)assert.doesNotMatch(r,/overflow-x:\s*(auto|scroll)/);
+ assert.doesNotMatch(base,/\.appnav\s*\{[^}]*overflow-x:auto/);
+ assert.match(css,/\.appnav a\s*\{[^}]*flex-direction:column/);          // ícone sobre a legenda no celular
+ assert.match(css,/@media \(min-width:760px\)[\s\S]*\.appnav a\s*\{[^}]*flex-direction:row/); // nomes completos no desktop
+});
+test('avatar da conta é circular; retratos de personagens são quadrados com cantos suaves',()=>{
+ const css=ler('css/identidade.css'),base=ler('css/estilo.css');
+ assert.match(css,/\.appavatar\s*\{[^}]*border-radius:50%/);
+ assert.match(base,/\.av\{[^}]*aspect-ratio:1\/1;[^}]*border-radius:10px;[^}]*object-fit:cover/);
+ assert.doesNotMatch(base,/\.avfx[^{]*\{[^}]*border-radius:\s*50%/);
 });
 test('folhas comuns da navegação são carregadas nas páginas principais',()=>{
  for(const pagina of ['index.html','conta.html','campanha.html','personagem.html','criar-personagem.html','iniciativa.html']){

@@ -6,7 +6,7 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .ficha-resumo { margin-bottom: 12px; }
 .pagina-personagem .ficha-resumo { padding:0; border:0; background:transparent; }
 .ficha-identidade { display:flex; align-items:center; gap:12px; }
-.ficha-identidade .av { width:64px!important; height:72px!important; border-radius:12px; object-fit:cover; border:1px solid #D4AE7240; }
+.ficha-identidade .av { width:72px!important; height:72px!important; border-radius:12px; object-fit:cover; border:1px solid #D4AE7240; }
 .ficha-identidade > div { flex:1; min-width:0; }
 .ficha-identidade h1, .ficha-identidade .ficha-nome { font:700 clamp(21px,3cqi,29px)/1.15 ui-sans-serif,system-ui,sans-serif; letter-spacing:-.035em; margin:0 0 3px; overflow-wrap:anywhere; color:var(--text); }
 .ficha-identidade .eyebrow { font-size:9px; letter-spacing:.12em; color:var(--gold); margin:0 0 5px; }
@@ -121,7 +121,7 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .ci-resumo { display:flex; flex-direction:column; padding:0; overflow:hidden; right:0; border-top:0; border-bottom:0; }
 #ci-resumo-corpo { flex:1; min-height:0; }
 #ci-ficha-frame { display:block; border:0; width:100%; height:100%; background:var(--bg); }
-.ficha-embutida .appnav, .ficha-embutida .ficha-acoes-jogo, .ficha-embutida #excluir-personagem { display:none; }
+.ficha-embutida .appheader, .ficha-embutida .ficha-acoes-jogo, .ficha-embutida #excluir-personagem { display:none; }
 #rolagem-ficha { display:block; position:sticky; top:6px; z-index:5; padding:8px 12px; border:1px solid var(--gold-dark); border-radius:8px; background:var(--panel); color:var(--gold); margin:6px 0; }
 #rolagem-ficha:empty { display:none; }
 .drawer { padding:0; display:flex; flex-direction:column; min-height:0; overflow:hidden; background:var(--bg); }
@@ -161,7 +161,7 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 }
 @container (max-width: 360px) {
   .filtros-magias { grid-template-columns:1fr; }
-  .ficha-identidade .av { width:52px!important; height:62px!important; }
+  .ficha-identidade .av { width:56px!important; height:56px!important; }
   .ficha-identidade h1, #sheet .ficha-nome { font-size:20px; }
   .ficha-identidade .eyebrow { display:none; }
   .ficha-estatistica small { font-size:10px; }
@@ -202,3 +202,35 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 #dock-r > .ci-resumo[hidden], #dock-r > .drawer[hidden] { display:none; }
 #dock-r > .drawer { flex:1 1 0; min-height:0; }
 .sh-top #spd-voltar { margin-right:8px; }
+
+/* ações no topo da ficha: Salvo discreto, Ficha completa e Editar lado a lado, acima da foto */
+.estado-ficha { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:6px 10px; min-height:36px; }
+.estado-ficha .salvo { margin-right:auto; padding:0; border:0; background:transparent; font-size:10px; color:var(--muted); opacity:.8; }
+.estado-ficha .salvo[data-estado=erro] { opacity:1; padding:3px 8px; }
+.ficha-topo-acoes { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; }
+.ficha-topo-acoes[hidden], .ficha-topo-acoes > [hidden] { display:none; }
+.ficha-topo-acoes .btnlike, .ficha-topo-acoes button { min-height:34px; padding:5px 12px; font-size:12px; white-space:nowrap; display:inline-flex; align-items:center; text-decoration:none; }
+.ficha-embutida .estado-ficha { min-height:36px; margin-bottom:6px; }
+@media (max-width:420px) { .ficha-topo-acoes { width:100%; } .ficha-topo-acoes > * { flex:1 1 0; justify-content:center; } .estado-ficha .salvo { flex-basis:100%; margin-right:0; text-align:right; } }
+
+/* cartões da iniciativa: efeitos em área própria abaixo do nome; número pendente destacado */
+.combatant .fxbar { grid-column:auto; }
+.combatant .name { display:flex; align-items:center; gap:8px; min-width:0; }
+.combatant .name .avfx { flex:0 0 auto; margin-right:0; }
+.combatant .name .av { margin-right:0; width:40px!important; height:40px!important; }
+.combatant input.iniciativa-valor[value=""] { border-style:dashed; border-color:var(--gold-dark); }
+.combatant input.iniciativa-valor::placeholder { color:var(--gold); font-size:11px; font-weight:700; letter-spacing:.02em; }
+
+/* estatísticas do cartão: no desktop continuam na mesma grade; em telas estreitas descem para uma linha abaixo do nome */
+.combatant .stats-linha { display:contents; }
+@media (max-width:520px) {
+  .combatant:not(.editing) { grid-template-columns:44px minmax(0,1fr); align-items:start; }
+  .combatant:not(.editing) .stats-linha { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; grid-column:2 / -1; }
+  .combatant:not(.editing) .initiative { align-self:start; }
+  .combatant .nome-texto { overflow-wrap:anywhere; min-width:0; }
+}
+.turn-actions { min-width:0; max-width:100%; }
+.turn-actions > button { flex:1 1 auto; }
+.combatant .name { align-items:flex-start; }
+.combatant .name .nome-texto { padding-top:2px; }
+.combatant input.iniciativa-valor { align-self:start; }

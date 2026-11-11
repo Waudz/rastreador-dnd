@@ -30,7 +30,7 @@
     if (resumoId === p.id && !$("#ci-resumo").hidden) return;
     resumoId=p.id;focoAnterior=document.activeElement;
     if($('#ci-ficha-frame')?.dataset?.personagem !== p.id) $("#ci-resumo-corpo").innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(p.id)+'" title="Ficha de '+esc(p.nome)+'" src="personagem.html?id='+encodeURIComponent(p.id)+'&modo=painel"></iframe>';
-    $('#ci-ficha-completa').href='personagem.html?id='+encodeURIComponent(p.id);
+    
     document.body.classList.add('com-ficha-lateral');
     if(window.PAINEL)window.PAINEL.mostrar("ci-resumo");else{if(window.reorganizarPaineis)$("#sheet").hidden=true;$("#ci-resumo").hidden=false;}
     window.reorganizarPaineis?.();$("#ci-resumo-fechar").focus?.();

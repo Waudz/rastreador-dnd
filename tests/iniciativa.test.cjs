@@ -30,3 +30,20 @@ test('sem sessão ou sem campanha o rastreador avulso continua usando a chave an
 test('o link da campanha tem prioridade sobre a preferência lembrada',()=>{
  assert.equal(comCampanha({ativa:'A',search:'?campanha=Z'}).ini.contexto(),'Z');
 });
+
+test('efeitos ficam numa área própria abaixo do nome, sem selo sobre a foto, mesmo com vários',()=>{
+ const f=fixture();f.ini.add({...pessoa('Herói',12),effects:[{id:'a',name:'Fogo',type:'burning',color:'#f80',rounds:3},{id:'b',name:'Congelado',type:'frozen',color:'#6cf',rounds:null},{id:'c',name:'Veneno',type:'custom',color:'#9c3',rounds:1}]});
+ const h=f.document.el('combatants').innerHTML;
+ assert.equal((h.match(/class="fxchip"/g)||[]).length,3);
+ assert.ok(!h.includes('class="fxb"'));assert.ok(!h.includes('--ring'));
+ assert.ok(h.indexOf('class="kind"')<h.indexOf('class="fxbar"'));      // área de efeitos depois do nome/tipo
+ assert.ok(h.indexOf('class="fxbar"')<h.indexOf('class="stat"'));
+});
+test('iniciativa pendente fica explícita (campo vazio, d20 e aviso); valor registrado, inclusive zero, aparece',()=>{
+ const f=fixture();f.ini.add(pessoa('Pendente',null));f.ini.add(pessoa('Zero',0));f.ini.add(pessoa('Doze',12));
+ const h=f.document.el('combatants').innerHTML;
+ assert.match(h,/value="" placeholder="d20"/);assert.match(h,/iniciativa pendente/);
+ assert.match(h,/value="0" placeholder/);assert.match(h,/value="12" placeholder/);
+ assert.equal((h.match(/iniciativa pendente/g)||[]).length,1);
+ assert.ok(!h.includes('placeholder="—"'));
+});

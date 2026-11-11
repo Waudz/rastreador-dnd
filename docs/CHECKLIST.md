@@ -132,3 +132,10 @@ Esta verificação não equivale a teste em PWA instalado ou sessão autenticada
 - A "última campanha" é por aparelho. Para lembrá-la entre aparelhos seria preciso uma coluna no perfil (por exemplo `perfis.ultima_campanha`) com política de acesso própria, e rodar um SQL no Supabase. Não foi feito.
 - O menu não mostra o nome da campanha ativa; o seletor está na página da campanha.
 - Combates e encontros só existem no navegador (como antes); não há tabela de encontros no banco.
+
+## Cabeçalho, ficha lateral e retratos
+
+- **Cabeçalho (`js/navegacao.js`, `css/identidade.css`):** fixo (sticky). Primeira linha: marca, espaço reservado para o futuro sino e avatar circular da conta (`conta.html?aba=conta`, ícone padrão). Segunda linha: Campanhas, Iniciativa, Personagens, Monstros, Magias, em grade de 5 colunas com ícone sobre a legenda no celular e nomes completos em linha a partir de 760 px. Sem rolagem horizontal. A altura fica em `--cab-h` para rolagens e painéis; o espaçamento acompanha `--pad-corpo`.
+- **Ficha:** "Ficha completa" (só na ficha embutida na iniciativa) e "Editar Personagem" ficam no topo, ao lado do indicador "Salvo", acima da foto. O botão do painel da iniciativa foi removido para não duplicar.
+- **Retratos:** todos usam `.av` (quadrado, cantos de 10 px, `object-fit: cover`); sem foto aparece a inicial. O avatar da conta (`.appavatar`) é a única exceção circular.
+- **Iniciativa:** iniciativa pendente aparece como campo tracejado com "d20" e "iniciativa pendente" no cartão; nenhum valor é sorteado automaticamente. Efeitos ficam numa área própria (`.fxbar`) abaixo do nome, sem selo sobre a foto. Em telas estreitas as estatísticas descem para uma linha abaixo do nome.

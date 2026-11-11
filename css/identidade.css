@@ -3,26 +3,6 @@ body { padding: 24px; background: var(--bg); line-height: 1.55; }
 .tracker { width: min(1120px, 100%); max-width: 1120px; }
 html, body { min-width:0; }
 body { max-width:100%; }
-.appnav {
-  display:flex;
-  flex-flow:row nowrap;
-  width:min(1120px,100%);
-  max-width:100%;
-  min-width:0;
-  gap:6px;
-  margin:0 auto 24px;
-  padding:4px 4px 14px;
-  border-bottom:1px solid var(--line);
-  overflow-x:auto;
-  overflow-y:hidden;
-  overscroll-behavior-x:contain;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-  scroll-behavior:smooth;
-}
-.appnav::-webkit-scrollbar { display:none; }
-.appnav a { flex:0 0 auto; white-space:nowrap; max-width:none; padding:9px 14px; min-height:44px; font-size:13px; line-height:1.4; border-radius:9px; border-color:transparent; background:transparent; color:var(--muted); scroll-margin-inline:8px; }
-.appnav a:hover, .appnav a[aria-current="page"] { background: var(--panel); color: var(--gold); border-color: var(--line); }
 .panel, .card { background: var(--panel); border-radius: var(--radius); box-shadow: none; }
 .panel { padding: 22px; margin-bottom: 18px; }
 .panel-title { font-size: 13px; letter-spacing: .04em; color: var(--text); }
@@ -98,8 +78,6 @@ summary { cursor: pointer; min-height: 40px; }
   .biblioteca-filtros > button { justify-self:start; }
   .campanha-contexto { flex-basis:100%; }
 }
-.appnav a[aria-current="page"] { border-color:#D4AE7266; background:#D4AE7212; color:var(--gold); }
-.appnav a:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 form { scroll-margin-top:20px; }
 label { line-height:1.5; }
 input, select, textarea { max-width:100%; }
@@ -149,4 +127,38 @@ button.danger:hover { border-color:var(--red); background:#C74B4B25; }
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition:none!important; scroll-behavior:auto!important; } }
-@media print { .appnav,.ficha-acoes,.ficha-abas,.estado-ficha {display:none!important} .ficha-conteudo[hidden]{display:block!important} .panel,.attr{break-inside:avoid} }
+@media print { .appheader,.ficha-acoes,.ficha-abas,.estado-ficha {display:none!important} .ficha-conteudo[hidden]{display:block!important} .panel,.attr{break-inside:avoid} }
+
+/* Cabeçalho do aplicativo: marca, (futuro sino), avatar da conta e navegação sem rolagem horizontal. */
+:root { --pad-corpo:24px; }
+@media (max-width:800px) { :root { --pad-corpo:14px; } }
+@media (max-width:560px) { :root { --pad-corpo:12px; } }
+.appheader { position:sticky; top:0; z-index:40; margin:calc(var(--pad-corpo) * -1) calc(var(--pad-corpo) * -1) 18px; padding:6px var(--pad-corpo) 0; background:var(--bg); border-bottom:1px solid var(--line); }
+.appheader-topo { display:flex; align-items:center; gap:10px; min-height:44px; max-width:1120px; margin:0 auto; }
+.appmarca { display:inline-flex; align-items:center; gap:8px; min-width:0; color:var(--text); text-decoration:none; font-weight:800; font-size:15px; letter-spacing:-.02em; }
+.appmarca img { border-radius:6px; flex:0 0 auto; }
+.appmarca span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.appsino { flex:0 0 36px; height:36px; } /* espaço reservado para o sino de notificações */
+.appavatar { flex:0 0 auto; display:grid; place-items:center; width:38px; height:38px; border-radius:50%; background:var(--panel); border:1px solid var(--gold-dark); color:var(--gold); text-decoration:none; }
+.appavatar .ico { width:20px; height:20px; }
+.appavatar[aria-current="page"] { background:#D4AE7218; border-color:var(--gold); }
+.appnav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:2px; max-width:1120px; margin:0 auto; padding:2px 0 6px; }
+.appnav a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-width:0; min-height:48px; padding:4px 2px; border:1px solid transparent; border-radius:10px; color:var(--muted); font-size:10px; font-weight:700; line-height:1.15; text-decoration:none; }
+.appnav a span { max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.appnav a .ico { width:20px; height:20px; }
+.appnav a:hover { color:var(--text); background:var(--panel); }
+.appnav a[aria-current="page"] { color:var(--gold); background:#D4AE7218; border-color:#D4AE7266; }
+.appnav a:focus-visible, .appavatar:focus-visible, .appmarca:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+@media (max-width:359px) { .appnav a { font-size:9.5px; } .appmarca span { font-size:14px; } }
+@media (min-width:760px) {
+  .appnav { display:flex; justify-content:flex-start; gap:6px; padding:4px 0 8px; }
+  .appnav a { flex-direction:row; gap:8px; padding:8px 14px; min-height:44px; font-size:13px; white-space:nowrap; }
+  .appnav a .ico { width:16px; height:16px; }
+}
+#dock-r, .ci-resumo { scroll-margin-top:var(--cab-h,96px); }
+.appheader-topo > .grow { flex:1 1 auto; min-width:0; }
+@media (max-width:359px) { .appnav { gap:0; } .appnav a { padding:4px 0; font-size:9px; letter-spacing:-.01em; } }
+
+/* "Dano causado por" nunca estoura a largura da tela (o select tem largura natural do maior texto) */
+.dmgby { max-width:100%; min-width:0; }
+.dmgby select { min-width:0; max-width:100%; text-overflow:ellipsis; }
