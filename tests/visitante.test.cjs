@@ -99,3 +99,10 @@ test('conexão lenta na abertura: mensagem neutra, nunca a lista errada nem o mo
   for(const h of ['conta.html','index.html'])assert.match(ler(h),/id="conta-abrindo"/);
   const p=ler('js/pre-pagina.js');assert.ok(!/iniciativa\.html/.test(p.slice(p.indexOf('if (logado && !retornoDeLink'))),'quem tem sessão nunca é enviado à iniciativa por esta rota');
 });
+
+test('limite de 20 s: aviso claro com "Tentar novamente", sem desconectar nem apagar dados',()=>{
+  const c=ler('js/conta.js');
+  assert.match(c,/setTimeout\(\(\) => \{ liberar\(\); aviso\(/);assert.match(c,/data-tentar/);assert.match(c,/continua conectada e nada foi apagado/);
+  const m=c.slice(c.indexOf('async function mostrarArea'),c.indexOf('function mostrarLogin'));
+  assert.ok(!/nuvem\.sair|encerrar|localStorage\.removeItem|clear\(/.test(m),'a falha de rede não mexe na sessão nem em dados');
+});
