@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const {ler,root}=require('./helpers.cjs');
 const png=p=>{const d=fs.readFileSync(path.join(root,p));return {w:d.readUInt32BE(16),h:d.readUInt32BE(20),tipoCor:d[25]};};   // tipo 6 = RGBA
-const PAGINAS=['index.html','conta.html','campanha.html','personagem.html','criar-personagem.html','iniciativa.html','admin.html','licencas.html'];
+const PAGINAS=['index.html','conta.html','campanha.html','personagem.html','criar-personagem.html','iniciativa.html','admin.html','licencas.html','entrar.html'];
 test('logotipo de interface é PNG com transparência e os ícones de instalação são opacos e do tamanho certo',()=>{
  assert.equal(png('icones/logo.png').tipoCor,6);assert.equal(png('icones/logo-64.png').tipoCor,6);
  assert.deepEqual([png('icones/logo-64.png').w,png('icones/logo-64.png').h],[64,64]);

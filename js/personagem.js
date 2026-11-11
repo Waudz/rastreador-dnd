@@ -558,7 +558,8 @@
   /* ---------- início ---------- */
   (async () => {
     try { await nuvem.retornoDoLink(); } catch (_) {}
-    if (!nuvem.usuario() || !id) { location.replace("conta.html"); return; }
+    if (!nuvem.usuario()) { location.replace((window.nuvem && nuvem.entradaUrl ? nuvem.entradaUrl() : "entrar.html")); return; }
+    if (!id) { location.replace("conta.html"); return; }
     try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); } catch (e) { aviso(e.message, true); return; }
     nuvem.observar(async () => {
       if (pend) return;

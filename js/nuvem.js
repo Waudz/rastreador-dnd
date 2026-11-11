@@ -196,6 +196,20 @@
     if (error) throw comoErro(error);
   }
 
+  /* ---------- para onde voltar depois de entrar ---------- */
+  /* só páginas do próprio aplicativo (nome.html com parâmetros simples): nunca outro site nem endereço montado */
+  const PAGINAS = ["index.html", "conta.html", "campanha.html", "personagem.html", "criar-personagem.html", "iniciativa.html", "licencas.html"];
+  function destinoSeguro(v) {
+    v = String(v == null ? "" : v);
+    const m = /^([a-z0-9-]+\.html)(\?[A-Za-z0-9=&._%-]*)?$/.exec(v);
+    return m && PAGINAS.includes(m[1]) ? v : "";
+  }
+  function entradaUrl(depois) {
+    const atual = depois !== undefined ? depois : (String(location.pathname || "").split("/").pop() || "index.html") + (location.search || "");
+    const d = destinoSeguro(atual);
+    return "entrar.html" + (d && !/^(entrar|index)\.html/.test(d) ? "?voltar=" + encodeURIComponent(d) : "");
+  }
+
   /* ---------- tabelas (PostgREST) ---------- */
   async function rest(metodo, caminho, corpo, extra, jaRenovou) {
     const t = await token(); if (!t) throw new Error("Faça login.");
@@ -252,6 +266,7 @@
   window.nuvem = {
     usuario: () => usuarioAtual,
     aoMudar: (f) => ouvintes.push(f),
+    destinoSeguro, entradaUrl,
     online: () => typeof navigator === "undefined" || navigator.onLine !== false,
     cadastrar, reenviarConfirmacao, esqueciSenha, entrar, linkMagico, retornoDoLink, retornoTipo: () => tipoRetorno, sair, sairDeTodos, trocarSenha, reautenticar, validarSenha, SENHA_MIN,
     get: (c) => rest("GET", c), post: (c, o, h) => rest("POST", c, o, h), patch: (c, o) => rest("PATCH", c, o), apagar: (c) => rest("DELETE", c),

@@ -72,7 +72,7 @@
   if(b.id==='subir'){try{p=C.subir(p,$('#nivel-classe').value,$('#nivel-pv').value==='media'?'media':$('#nivel-rolagem').value);subiu=true;desenhar();}catch(err){$('#aviso').textContent=err.message;}}
   if(b.id==='salvar')salvar();
  });
- if(!nuvem.usuario()){location.replace('conta.html');return;}
+ if(!nuvem.usuario()){location.replace(window.nuvem&&nuvem.entradaUrl?nuvem.entradaUrl():'entrar.html');return;}
  const [rows,d,magias]=await Promise.all([nuvem.get('personagens?select=*&id=eq.'+encodeURIComponent(id)),fetch('dados/criacao-srd2014.json').then(r=>{if(!r.ok)throw Error('Catálogo indisponível');return r.json();}),fetch('dados/magias.json').then(r=>r.json())]);
  if(!rows[0])throw Error('Personagem não encontrado ou sem acesso.');original=rows[0];C.configurar(d,magias.filter(EDICOES.permitida).sort((a,b)=>a.l-b.l||a.n.localeCompare(b.n,'pt-BR')));
  p=C.iniciar(original,evolucao?'nivel':'criacao');

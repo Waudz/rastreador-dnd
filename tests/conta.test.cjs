@@ -1,17 +1,17 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
 const {documentoFalso,executar,vm,tick}=require("./helpers.cjs");
 async function fixture(user){
-  const document=documentoFalso(),consultas=[];
-  const nuvem={usuario:()=>user,esc:s=>String(s??""),olhos(){},retornoDoLink:async()=>{},sair:async()=>{user=null;},get:async q=>{
+  const document=documentoFalso(),consultas=[],destinos=[],estado={confirmar:false};
+  const nuvem={usuario:()=>user,esc:s=>String(s??""),olhos(){},retornoDoLink:async()=>{},entradaUrl:()=>"entrar.html?voltar=conta.html",sair:async()=>{user=null;},sairDeTodos:async()=>{user=null;},get:async q=>{
     consultas.push(q);
     if(q.startsWith("perfis"))return[{nome:"Pessoa"}];
     if(q.startsWith("membros"))return[{papel:"mestre",campanha:{id:"mestrada",nome:"Mestrada"}},{papel:"jogador",campanha:{id:"jogada",nome:"Jogada"}}];
     return[{id:"1",nome:"Preparado pelo mestre",ficha:{},campanha:{id:"mestrada"}},{id:"2",nome:"Meu herói",ficha:{raca:'Humano',classes:[{c:'Fighter',n:4}]},campanha:{id:"jogada",nome:'Jogada'}},{id:"3",nome:"NPC",ficha:{npc:true},campanha:{id:"jogada"}}];
   }};
-  const c=vm.createContext({window:{},document,nuvem,acervo:{ativo:()=>false},navigator:{},location:{protocol:"https:"},URLSearchParams});
-  executar('js/regras.js',c);executar('js/ficha-componentes.js',c);executar("js/conta.js",c);await tick();return {document,nuvem,consultas};
+  const c=vm.createContext({window:{},document,nuvem,confirm:()=>estado.confirmar,acervo:{ativo:()=>false},navigator:{},location:{protocol:"https:",search:"",replace:u=>destinos.push(u)},URLSearchParams});
+  executar('js/regras.js',c);executar('js/ficha-componentes.js',c);executar("js/conta.js",c);await tick();return {document,nuvem,consultas,destinos,estado};
 }
-test("página inicial sem sessão mostra login",async()=>{const f=await fixture(null);assert.equal(f.document.el("entrar").hidden,false);assert.equal(f.document.el("area").hidden,true);});
+test("sem sessão, a conta manda para a página de entrada e não mostra dados",async()=>{const f=await fixture(null);assert.deepEqual(f.destinos,["entrar.html?voltar=conta.html"]);assert.equal(f.document.el("area").hidden,true);assert.equal(f.consultas.length,0);});
 test("sessão existente abre campanhas e apenas personagens como jogador",async()=>{
   const f=await fixture({id:"pessoa",email:"pessoa@example.invalid"});
   assert.equal(f.document.el("area").hidden,false);
@@ -19,11 +19,18 @@ test("sessão existente abre campanhas e apenas personagens como jogador",async(
   assert.match(f.document.el("campanhas").innerHTML,/Mestrada/);assert.match(f.document.el("campanhas").innerHTML,/Jogada/);
   assert.doesNotMatch(f.document.el("p-camp").innerHTML,/Mestrada/);
 });
-test("sair limpa a senha e dados visíveis da conta",async()=>{
-  const f=await fixture({id:"pessoa",email:"pessoa@example.invalid"});f.document.el("l-senha").value="senha-fictícia";
+test("sair é voluntário: limpa os dados visíveis da conta e volta ao modo visitante",async()=>{
+  const f=await fixture({id:"pessoa",email:"pessoa@example.invalid"});
   await f.document.el("btn-sair").onclick();
-  assert.equal(f.document.el("l-senha").value,"");assert.equal(f.document.el("personagens").innerHTML,"");assert.equal(f.document.el("area").hidden,true);
+  assert.equal(f.document.el("personagens").innerHTML,"");assert.equal(f.document.el("area").hidden,true);assert.deepEqual(f.destinos,["iniciativa.html"]);
 });
+test("sair de todos os aparelhos só acontece depois de confirmar e volta ao modo visitante",async()=>{
+  const f=await fixture({id:"pessoa",email:"pessoa@example.invalid"});
+  await f.document.el("btn-sair-todos").onclick();assert.deepEqual(f.destinos,[]);assert.equal(f.nuvem.usuario().id,"pessoa");   // sem confirmar, nada muda
+  f.estado.confirmar=true;await f.document.el("btn-sair-todos").onclick();assert.equal(f.nuvem.usuario(),null);assert.deepEqual(f.destinos,["iniciativa.html"]);
+});
+
+
 test('filtros de biblioteca operam nos dados já autorizados sem novas consultas',async()=>{
  const f=await fixture({id:'pessoa',email:'pessoa@example.invalid'}),antes=f.consultas.length;
  assert.match(f.document.el('personagens').innerHTML,/Guerreiro 4/);

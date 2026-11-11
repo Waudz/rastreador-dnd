@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://pdjzahpxjrlbqqtzkfdr.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self'; base-uri 'self'; form-action 'self'">
+  <title>Entrar — Rastreador D&D</title>
+  <meta name="theme-color" content="#101820">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="icones/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icones/icone-192.png">
+  <link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/estilo.css">
+  <link rel="stylesheet" href="css/identidade.css">
+  <link rel="stylesheet" href="css/fichas.css">
+  <script src="js/icones.js" defer></script>
+  <script src="js/config-nuvem.js" defer></script>
+  <script src="vendor/supabase/supabase.js" defer></script>
+  <script src="js/nuvem.js" defer></script>
+  <script src="js/navegacao.js" defer></script>
+  <script src="js/turnstile.js" defer></script>
+  <script src="js/entrar.js" defer></script>
+</head>
+<body>
+  <main class="tracker">
+    <header class="header"><div><p class="eyebrow">Rastreador D&D</p><h1>Entrar</h1></div></header>
+    <p class="muted">Você não precisa de conta para pesquisar monstros e magias nem para usar a iniciativa. A conta serve para criar e participar de campanhas, guardar personagens e sincronizar seus dados. <a href="iniciativa.html">Continuar como visitante</a></p>
+    <section class="panel" id="entrar" hidden>
+      <div class="seg" style="margin-bottom:12px">
+        <button type="button" class="small on" id="aba-entrar">Entrar</button>
+        <button type="button" class="small" id="aba-criar">Criar conta</button>
+      </div>
+      <form id="form-login" class="cmg" autocomplete="on">
+        <div id="campo-nome" style="grid-column:span 2" hidden><label for="l-nome">Seu nome</label><input id="l-nome" name="nome" maxlength="60" autocomplete="nickname"></div>
+        <div style="grid-column:span 2"><label for="l-email">E-mail</label><input id="l-email" name="email" type="email" autocomplete="username" required></div>
+        <div style="grid-column:span 2"><label for="l-senha">Senha</label><div class="pw"><input id="l-senha" name="senha" type="password" autocomplete="current-password" required><button type="button" class="pw-eye"></button></div><p id="dica-senha" class="muted" style="margin:4px 0 0;font-size:11px" hidden>Mínimo de 10 caracteres, com letras e números.</p></div>
+      </form>
+      <div class="row" style="margin:10px 0 0">
+        <button type="button" class="primary" id="btn-login">Entrar</button>
+        <button type="button" class="small subtle" id="btn-link" title="Envia um link de acesso para o seu e-mail">Entrar por link no e-mail</button>
+        <button type="button" class="small subtle" id="btn-esqueci">Esqueci minha senha</button>
+      </div>
+      <div class="muted" id="msg-login" style="margin-top:8px" role="status" aria-live="polite"></div>
+      <div id="confirmar-email" class="panel2" style="margin-top:10px" hidden>
+        <b>Confirme seu e-mail para ativar a conta</b>
+        <p id="confirmar-texto" class="muted" style="margin:6px 0"></p>
+        <div class="row" style="margin:0"><button type="button" class="small" id="btn-reenviar">Reenviar e-mail</button><button type="button" class="small subtle" id="btn-confirmar-ok">Já confirmei: entrar</button></div>
+      </div>
+    </section>
+    <section class="panel" id="recuperar" hidden>
+      <h2 class="panel-title" style="font-size:14px">Defina uma nova senha</h2>
+      <form id="form-recuperar" class="cmg" autocomplete="off">
+        <div style="grid-column:span 2"><label for="r-senha">Nova senha</label><div class="pw"><input id="r-senha" type="password" autocomplete="new-password" required><button type="button" class="pw-eye"></button></div><p class="muted" style="margin:4px 0 0;font-size:11px">Mínimo de 10 caracteres, com letras e números.</p></div>
+        <div style="grid-column:span 2"><label for="r-senha2">Repita a nova senha</label><div class="pw"><input id="r-senha2" type="password" autocomplete="new-password" required><button type="button" class="pw-eye"></button></div></div>
+      </form>
+      <div class="row" style="margin:10px 0 0"><button type="button" class="primary" id="btn-recuperar">Salvar nova senha</button></div>
+      <div class="muted" id="msg-recuperar" style="margin-top:8px" role="status" aria-live="polite"></div>
+    </section>
+
+    <!-- logado -->
+    <div id="captcha" aria-live="polite"></div>
+  </main>
+</body>
+</html>
