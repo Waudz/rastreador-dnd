@@ -493,3 +493,10 @@ a.doclink { color: var(--gold); text-decoration: underline; cursor: pointer; }
 .catalogo-lista {max-height:360px;overflow:auto;overscroll-behavior:contain}
 .crop-stage {touch-action:none;max-width:100%;height:auto}
 [hidden] {display:none!important}
+
+/* Navegação e cartões em telas pequenas. */
+.appnav{position:sticky;top:0;z-index:30;display:flex;flex-wrap:wrap;gap:8px;padding:10px max(12px,calc((100% - 1320px)/2));background:#17151fee;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+.appnav a[aria-current=page]{border-color:var(--gold);color:var(--gold)}
+.card{min-width:0}.card select{max-width:100%;width:100%}.jogador-vinculo{margin-bottom:12px}.pv-acoes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}.pv-acoes a{flex:1 0 100%;text-align:center}.pv-acoes .num{width:64px;min-width:0;flex:1 1 50px}.pv-acoes button{flex:1 1 60px}.cards{grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr))}
+
+.descricao-regra{white-space:pre-wrap;line-height:1.6}.criador-opcoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:8px}.escolha{border:1px solid var(--line);border-radius:8px;padding:10px;min-width:0}.escolha label{display:flex;gap:8px;align-items:center}.escolha input{width:auto;height:auto}.escolha small{display:block;color:var(--muted)}.criador-atributos{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.criador-atributos strong{display:block;font-size:30px;color:var(--gold)}.criador-atributos small{display:block}.pontos{font-size:24px;color:var(--gold);font-weight:bold}#etapas{flex-wrap:wrap}#criador-conteudo select{max-width:100%}

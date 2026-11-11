@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: '22'
       - run: node tests/regras.test.cjs
-      - run: node --test tests/acervo.test.cjs tests/conta.test.cjs tests/edicoes.test.cjs tests/personagens-dados.test.cjs tests/personagem-save.test.cjs tests/campanha-ini.test.cjs
+      - run: node --test tests/acervo.test.cjs tests/conta.test.cjs tests/edicoes.test.cjs tests/personagens-dados.test.cjs tests/personagem-save.test.cjs tests/campanha-ini.test.cjs tests/criador.test.cjs
   postgres:
     runs-on: ubuntu-latest
     services:
@@ -43,5 +43,8 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f supabase/02-acervos-e-transferencia.sql
       - name: Verificar reaplicação da migração
         run: psql -v ON_ERROR_STOP=1 -f supabase/02-acervos-e-transferencia.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/03-administracao-conta.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/03-administracao-conta.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/supabase.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/admin.test.sql
       - run: bash tests/acervo-concorrencia.sh

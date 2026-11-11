@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.github.com https://api.open5e.com https://pdjzahpxjrlbqqtzkfdr.supabase.co; worker-src 'self'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.open5e.com https://pdjzahpxjrlbqqtzkfdr.supabase.co; worker-src 'self'; base-uri 'self'; form-action 'self'">
   <title>Iniciativa — D&D 5e</title>
   <meta name="theme-color" content="#111018">
   <link rel="manifest" href="manifest.json">
@@ -15,6 +15,7 @@
   <script src="js/icones.js" defer></script>
   <script src="js/config-nuvem.js" defer></script>
   <script src="js/nuvem.js" defer></script>
+  <script src="js/navegacao.js" defer></script>
   <script src="js/acervo.js" defer></script>
   <script src="js/iniciativa.js" defer></script>
   <script src="js/foto.js" defer></script>
@@ -25,7 +26,7 @@
 </head>
 <body>
   <main class="tracker">
-    <div class="topnav"><a class="btnlike muted" href="conta.html">Minha conta e campanhas</a></div>
+
     <div id="synctop" class="synctop" hidden><i data-i="cloud"></i><span class="muted" id="sy-status"></span><button type="button" class="small" id="sy-now">Sincronizar</button></div>
     <header class="header">
       <div>
@@ -205,21 +206,7 @@
       </details>
     </section>
 
-    <section class="panel syncbar only-admin">
-      <div class="syncbar-top">
-        <h2 class="panel-title"><i data-i="cloud"></i>Sincronização entre aparelhos</h2>
-      </div>
-      <details id="sync">
-        <summary>Configurar repositório e token</summary>
-        <p class="muted">Guarda suas fichas próprias (e as fotos delas) e a tradução do livro em arquivos JSON num repositório <b>privado</b> seu. Use o mesmo repositório e token em cada aparelho. O token fica salvo só neste navegador.</p>
-        <div class="cmg">
-          <div style="grid-column:span 2"><label>Repositório (usuario/repositorio)</label><input id="sy-repo" name="sync-repositorio" placeholder="seuusuario/dnd-dados" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
-          <div style="grid-column:span 2"><label>Token (fine-grained, só esse repositório)</label><input id="sy-token" name="sync-token" type="password" autocomplete="new-password" data-lpignore="true" data-1p-ignore></div>
-          <div><label>Arquivo</label><input id="sy-path" value="criacoes.json"></div>
-        </div>
-                <div class="row"><button type="button" class="primary small" id="sy-save">Salvar e sincronizar</button><button type="button" class="small subtle" id="sy-clear">Esquecer token deste aparelho</button><a class="btnlike muted" href="admin.html">Publicar fotos e bestiário</a></div>
-      </details>
-    </section>
+
     <footer class="muted" style="font-size:11px;margin:26px 0 8px;line-height:1.6">Este site usa material do System Reference Document 5.1 e do System Reference Document 5.2 da Wizards of the Coast LLC, licenciados sob a Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode). Os dados são obtidos da API Open5e (open5e.com). Este é um projeto de fãs, sem vínculo com a Wizards of the Coast.</footer>
     <input type="file" id="ph-file" accept="image/*" hidden>
     <div id="dock-l" class="dock" hidden></div>

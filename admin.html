@@ -3,35 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.github.com https://api.open5e.com; worker-src 'self'; base-uri 'self'; form-action 'self'">
-  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://pdjzahpxjrlbqqtzkfdr.supabase.co; worker-src 'self'; base-uri 'self'; form-action 'self'">
   <title>Administração — Rastreador D&D</title>
+  <meta name="theme-color" content="#111018">
   <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="icones/favicon-32.png">
   <link rel="stylesheet" href="css/estilo.css">
   <script src="js/icones.js" defer></script>
-  <script src="js/admin.js" defer></script>
+  <script src="js/config-nuvem.js" defer></script>
+  <script src="js/nuvem.js" defer></script>
+  <script src="js/navegacao.js" defer></script>
+  <script src="js/acervo.js" defer></script>
+  <script src="js/edicoes.js" defer></script>
+<script src="js/admin.js" defer></script>
 </head>
-<body>
-  <main class="tracker">
-    <header class="header">
-      <div>
-        <p class="eyebrow">Administração</p>
-        <h1>Publicar no site</h1>
-        <p class="subtitle">Envia as fotos dos monstros da API e os pacotes SRD guardados neste navegador para o repositório do site.</p>
-      </div>
-    </header>
-    <section class="panel">
-      <h2 class="panel-title"><i data-i="cloud"></i>Publicação</h2>
-      <p class="muted" id="resumo">Lendo os dados deste navegador…</p>
-      <p class="muted" style="font-size:12px">Suas criações nunca são enviadas. Use um token separado, só para o repositório do site (Contents: leitura e escrita). Por padrão ele não é salvo; marque a opção abaixo se quiser que este aparelho se lembre dele.</p>
-      <div class="cmg">
-        <div><label>Repositório do site</label><input id="pub-repo" name="pub-repo" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
-        <div><label>Token de publicação</label><input id="pub-token" name="pub-token" type="password" autocomplete="new-password" data-lpignore="true" data-1p-ignore></div>
-      </div>
-      <label class="muted" style="display:flex;gap:8px;align-items:center;margin:8px 0 0;font-size:12px"><input type="checkbox" id="pub-lembrar" style="width:auto;height:auto"> Lembrar o token neste aparelho (fica guardado sem criptografia no navegador)</label>
-      <div class="row" style="margin:8px 0 0"><button type="button" class="primary small" id="pub-go">Publicar fotos e bestiário</button><span class="muted" id="pub-status"></span></div>
-      <p style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btnlike muted" href="iniciativa.html?admin">Configurar sincronização e dados locais</a><a class="btnlike muted" href="iniciativa.html">Voltar ao rastreador</a></p>
-    </section>
-  </main>
-</body>
-</html>
+<body><main class="tracker"><header class="header"><h1>Administração</h1></header><section class="panel"><p id="resumo">Conferindo acesso…</p><div id="admin-conteudo" hidden><h2>Catálogo compartilhado 2014</h2><p>Publique monstros, magias e fotos do catálogo para as contas do aplicativo. Personagens e criações pessoais continuam na sua conta.</p><a class="btnlike" href="iniciativa.html#mais">Gerenciar bestiário e traduções</a><button type="button" id="pub-go">Publicar catálogo</button><p id="pub-status" role="status"></p><h2>Campanhas</h2><div id="admin-campanhas" class="cards"></div><h2>Perfis</h2><div id="admin-perfis"></div></div></section></main></body></html>

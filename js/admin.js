@@ -1,74 +1,26 @@
-(() => {
-  const $ = (s) => document.querySelector(s);
-  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-  const b64e = (str) => { const u = new TextEncoder().encode(str); let bin = ""; for (let i = 0; i < u.length; i += 0x8000) bin += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(bin); };
-  const pubName = (k) => "fotos/" + String(k).replace(/[^\w.-]/g, "_") + ".jpg";
-  const srcOf = (m) => m?.document?.display_name || m?.document?.key || "?";
-  const siteRepo = () => { const p = location.pathname.split("/")[1]; return /\.github\.io$/.test(location.hostname) && p && !/\.html$/.test(p) ? `${location.hostname.split(".")[0]}/${p}` : ""; };
-  const msg = (t) => { $("#pub-status").innerHTML = t; };
-  let ALL = [], SP = [], PH = {}, PUB = new Set(), PACKS = [];
-
-  const getAll = (db, s) => new Promise((ok, no) => { const r = db.transaction(s).objectStore(s).getAll(); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
-  async function carregar() {
-    const db = await new Promise((ok, no) => {
-      const o = indexedDB.open("bestiario", 3);
-      o.onupgradeneeded = () => { for (const s of ["mon", "spl", "img"]) if (!o.result.objectStoreNames.contains(s)) o.result.createObjectStore(s, { keyPath: "key" }); };
-      o.onsuccess = () => ok(o.result); o.onerror = () => no(o.error);
-    });
-    ALL = await getAll(db, "mon"); SP = await getAll(db, "spl");
-    PH = Object.fromEntries((await getAll(db, "img")).map((x) => [x.key, x.data]));
-    db.close();
-    try { const r = await fetch("fotos/index.json", { cache: "no-cache" }); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}
-    try { const r = await fetch("dados/bestiario/index.json", { cache: "no-cache" }); if (r.ok) PACKS = await r.json(); } catch (_) {}
-    const fotos = ALL.filter((m) => !m.custom && PH[m.key]).length;
-    const keys = [...new Set([...ALL.filter((m) => !m.custom).map((m) => m.document?.key), ...SP.map((s) => s.document?.key)])].filter((k) => /^srd-20/.test(k || ""));
-    $("#resumo").textContent = `Neste navegador: ${fotos} fotos de monstros da API e ${keys.length} coleções SRD (${keys.join(", ") || "nenhuma"}). Já publicadas no site: ${PUB.size} fotos e ${PACKS.length} pacotes.`;
-  }
-
-  $("#pub-go").onclick = async () => {
-    const repo = $("#pub-repo").value.trim(), tok = $("#pub-token").value.trim();
-    if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !tok) { msg("Informe o repositório do site e o token de publicação."); return; }
-    const H = { Authorization: "Bearer " + tok, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" };
-    const gh = async (path, opt = {}) => {
-      const r = await fetch("https://api.github.com/repos/" + repo + path, { ...opt, headers: H, cache: "no-store" });
-      if (!r.ok) throw new Error(`GitHub respondeu ${r.status}` + (r.status === 401 || r.status === 403 || r.status === 404 ? ": confira se o token vale para este repositório e tem Contents (leitura e escrita)" : ""));
-      return r.json();
-    };
-    $("#pub-go").disabled = true;
-    try {
-      const files = [], chaves = new Set(PUB);
-      const fotos = ALL.filter((m) => !m.custom && PH[m.key]);
-      for (const m of fotos) { files.push({ path: pubName(m.key), b64: PH[m.key].split(",")[1] }); chaves.add(m.key); }
-      if (fotos.length) files.push({ path: "fotos/index.json", b64: b64e(JSON.stringify([...chaves].sort()) + "\n") });
-      const keys = [...new Set([...ALL.filter((m) => !m.custom).map((m) => m.document?.key), ...SP.map((s) => s.document?.key)])].filter((k) => /^srd-20/.test(k || ""));
-      const idx = PACKS.filter((p) => !keys.includes(p.key)), v = Date.now();
-      for (const k of keys) {
-        const monsters = ALL.filter((m) => !m.custom && m.document?.key === k), spells = SP.filter((s) => s.document?.key === k), name = srcOf(monsters[0] || spells[0]);
-        files.push({ path: "dados/bestiario/" + encodeURIComponent(k) + ".json", b64: b64e(JSON.stringify({ v: 1, key: k, name, monsters, spells })) });
-        idx.push({ key: k, name, monsters: monsters.length, spells: spells.length, v });
-      }
-      if (keys.length) files.push({ path: "dados/bestiario/index.json", b64: b64e(JSON.stringify(idx) + "\n") });
-      if (!files.length) { msg("Nada para publicar: não há fotos suas de monstros da API nem coleções SRD baixadas neste navegador."); $("#pub-go").disabled = false; return; }
-      msg("Conectando ao GitHub…");
-      const info = await gh(""), branch = info.default_branch;
-      const parent = (await gh(`/git/ref/heads/${branch}`)).object.sha, base = (await gh(`/git/commits/${parent}`)).tree.sha;
-      let feitos = 0, prox = 0;
-      const worker = async () => { while (prox < files.length) { const f = files[prox++]; f.sha = (await gh("/git/blobs", { method: "POST", body: JSON.stringify({ content: f.b64, encoding: "base64" }) })).sha; msg(`Enviando arquivos… ${++feitos} de ${files.length}`); } };
-      await Promise.all([worker(), worker(), worker(), worker()]);
-      const tree = await gh("/git/trees", { method: "POST", body: JSON.stringify({ base_tree: base, tree: files.map((f) => ({ path: f.path, mode: "100644", type: "blob", sha: f.sha })) }) });
-      const commit = await gh("/git/commits", { method: "POST", body: JSON.stringify({ message: "Fotos e bestiário SRD (publicado pelo site)", tree: tree.sha, parents: [parent] }) });
-      await gh(`/git/refs/heads/${branch}`, { method: "PATCH", body: JSON.stringify({ sha: commit.sha }) });
-      try { if ($("#pub-lembrar").checked) localStorage.setItem("ini_pub", JSON.stringify({ repo, token: tok })); else { localStorage.removeItem("ini_pub"); $("#pub-token").value = ""; } } catch (_) {}
-      msg(`Publicado: ${fotos.length} fotos e ${keys.length} pacotes. O site atualiza em 1 a 2 minutos.`);
-    } catch (e) { console.error(e); msg(`<span class="err">Falha ao publicar: ${esc(e.message)}</span>`); }
-    $("#pub-go").disabled = false;
-  };
-
-  $("#pub-repo").value = siteRepo();
-  try {
-    const salvo = JSON.parse(localStorage.getItem("ini_pub") || "null");
-    if (salvo && salvo.token) { $("#pub-repo").value = salvo.repo || $("#pub-repo").value; $("#pub-token").value = salvo.token; $("#pub-lembrar").checked = true; }
-  } catch (_) {}
-  $("#pub-lembrar").onchange = () => { if (!$("#pub-lembrar").checked) { try { localStorage.removeItem("ini_pub"); } catch (_) {} } };
-  carregar().catch((e) => { $("#resumo").innerHTML = `<span class="err">Não consegui ler os dados deste navegador (${esc(e.message)}).</span>`; });
-})();
+/* Administração autenticada; publicação sem token pessoal. */
+(async()=>{
+ const $=s=>document.querySelector(s),esc=nuvem.esc;
+ if(!nuvem.usuario()){location.replace('conta.html');return;}
+ if(!await ACESSO.pronto){$('#resumo').textContent='Seu perfil não tem acesso à administração.';return;}
+ $('#admin-conteudo').hidden=false;
+ const [perfis,campanhas]=await Promise.all([nuvem.get('perfis?select=id,nome&order=nome'),nuvem.get('campanhas?select=id,nome&order=nome')]);
+ $('#resumo').textContent='Administrador conectado. Suas criações e traduções sincronizam com sua conta.';
+ $('#admin-campanhas').innerHTML=campanhas.map(c=>'<a class="card" href="campanha.html?id='+encodeURIComponent(c.id)+'">'+esc(c.nome)+'</a>').join('')||'Nenhuma campanha.';
+ $('#admin-perfis').innerHTML=perfis.map(p=>'<form class="row" data-perfil="'+esc(p.id)+'"><input aria-label="Nome do perfil" maxlength="60" value="'+esc(p.nome)+'" required><button class="small" type="submit">Salvar nome</button></form>').join('');
+ $('#admin-perfis').addEventListener('submit',async e=>{e.preventDefault();try{await nuvem.patch('perfis?id=eq.'+encodeURIComponent(e.target.dataset.perfil),{nome:e.target.querySelector('input').value.trim()});$('#pub-status').textContent='Perfil atualizado.';}catch(err){$('#pub-status').textContent=err.message;}});
+ const ler=(db,s)=>new Promise((ok,no)=>{const r=db.transaction(s).objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);});
+ $('#pub-go').onclick=async()=>{
+  const b=$('#pub-go');b.disabled=true;
+  try{
+   const db=await new Promise((ok,no)=>{const r=indexedDB.open(acervo.banco(),3);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);});
+   const [mon,spl,img]=await Promise.all(['mon','spl','img'].map(s=>ler(db,s)));db.close();
+   const permitidos=mon.filter(m=>!m.custom&&EDICOES.permitida(m)),keys=new Set(permitidos.map(m=>m.key));
+   const dados={mon:permitidos,spl:spl.filter(m=>!m.custom&&EDICOES.permitida(m)),img:img.filter(i=>keys.has(i.key))};
+   if(!dados.mon.length&&!dados.spl.length)throw Error('Carregue o catálogo 2014 antes de publicar.');
+   const rows=await nuvem.post('catalogo_publicado?on_conflict=id',{id:'2014',dados,atualizado_em:new Date().toISOString()},{Prefer:'resolution=merge-duplicates,return=representation'});
+   if(!rows?.length)throw Error('A publicação não foi confirmada.');
+   $('#pub-status').textContent='Catálogo publicado: '+dados.mon.length+' monstros, '+dados.spl.length+' magias e '+dados.img.length+' fotos.';
+  }catch(e){$('#pub-status').textContent=e.message;}finally{b.disabled=false;}
+ };
+})().catch(e=>{document.querySelector('#resumo').textContent=e.message;});

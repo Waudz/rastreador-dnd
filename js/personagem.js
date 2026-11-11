@@ -46,8 +46,8 @@
     catalogo={itens:a.filter(h=>h.e==="2014"),pt:b,achados:[]};
   }
   function sincronizarHabilidades() {
-    const f=F(), manuais=CAR().filter(x=>!x.auto), raciais=R.racial(f.raca).tracos.map((desc,i)=>({nome:desc.split(":")[0],desc,auto:"raca",cf:"raca|"+f.raca+"|"+i}));
-    const classes=catalogo?R.habilidadesAutomaticas(f,catalogo.itens,catalogo.pt):CAR().filter(x=>x.auto==="classe");
+    const f=F(), manuais=CAR().filter(x=>!x.auto||x.auto==="escolha"||x.auto==="criador"); f.tracosRaciais=R.tracosRaciais(f.raca); const raciais=[];
+    const classes=f.criacao?.concluido?[]:catalogo?R.habilidadesAutomaticas(f,catalogo.itens,catalogo.pt):CAR().filter(x=>x.auto==="classe");
     const vistos=new Set(manuais.flatMap(x=>[x.cf,x.nome].filter(Boolean)));
     f.caracteristicas=manuais.concat([...raciais,...classes].filter(x=>{const k=x.cf||x.nome;if(vistos.has(k)||vistos.has(x.nome))return false;vistos.add(k);vistos.add(x.nome);return true;}));
   }
@@ -81,7 +81,7 @@
       nuvem.get("perfis?select=id,nome")
     ]);
     camp = c[0] || { id: P.campanha_id, nome: "Campanha" };
-    souMestre = !!(m[0] && m[0].papel === "mestre");
+    souMestre = !!(m[0] && m[0].papel === "mestre") || !!(window.ACESSO && await ACESSO.pronto);
     const d = pf.find((x) => x.id === P.dono_id); donoNome = d ? d.nome : "";
     $("#voltar").href = souMestre ? `campanha.html?id=${encodeURIComponent(P.campanha_id)}` : "conta.html";
     $("#voltar").textContent = souMestre ? camp.nome : "Voltar";
@@ -133,7 +133,7 @@
   function calcPV() {
     const cls = CLS().filter((c) => c.n > 0 && R.classe(c.c)); if (!cls.length) return null;
     const con = modA("con"), extra = num(F().pvExtra, 0) + (F().raca === "Anão (da Colina)" ? 1 : 0); let total = 0, primeiro = true;
-    cls.forEach((c) => { const dv = R.classe(c.c).dv; for (let i = 1; i <= c.n; i++) { total += Math.max(1, (primeiro && i === 1 ? dv : Math.floor(dv / 2) + 1) + con + extra); } primeiro = false; });
+    cls.forEach((c) => { const dv = R.classe(c.c).dv; for (let i = 1; i <= c.n; i++) { total += Math.max(1, (primeiro && i === 1 ? dv : num(F().pvPorNivel?.[c.c+":"+i], Math.floor(dv / 2) + 1)) + con + extra); } primeiro = false; });
     return total;
   }
   const dadosVida = () => { const m = {}; CLS().forEach((c) => { const d = R.classe(c.c); if (d && c.n > 0) m[d.dv] = (m[d.dv] || 0) + c.n; }); return m; };
@@ -284,7 +284,7 @@
         <div class="sub">Idiomas</div><div id="idiomas" class="anexos">${IDI().map((x, i) => `<span class="chip">${esc(x)}<button type="button" class="chip-x" data-rm-idi="${i}" aria-label="Tirar">${window.ico ? window.ico("x") : "x"}</button></span>`).join("") || '<span class="muted">Nenhum ainda.</span>'}</div>
         <div class="row" style="margin:8px 0 0"><select id="idi-sel" style="flex:1 1 160px">${opt("", "Adicionar idioma…", true)}${R.IDIOMAS.filter((x) => !IDI().includes(x)).map((x) => opt(x, x)).join("")}</select><input id="idi-txt" style="flex:1 1 160px" maxlength="40" placeholder="Outro idioma"><button type="button" class="small" id="add-idi">Adicionar</button></div>
         <div class="sub">Outras proficiências (ferramentas, veículos, jogos…)</div><textarea data-f="outrasProf" rows="2" style="width:100%">${esc(f.outrasProf || "")}</textarea></div>
-      <div class="panel"><h2 class="panel-title">Ataques</h2><div id="lista-atq">${ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'}</div>
+      <div class="panel"><h2 class="panel-title">Criação e evolução</h2><div class="row"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}">Criação guiada</a><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a></div></div><div class="panel"><h2 class="panel-title">Ataques</h2><div id="lista-atq">${ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'}</div>
         <div class="row" style="margin:8px 0 0"><select id="atq-arma" style="flex:1 1 180px">${opt("", "Adicionar arma comum…", true)}${R.ARMAS.map((a, i) => opt(i, `${a[0]} (${a[1]} ${a[2]})`)).join("")}</select><button type="button" class="small" id="add-atq-arma">Adicionar arma</button><button type="button" class="small" id="add-atq">Personalizado</button></div></div>
       ${mostraMag ? `<div class="panel" id="painel-mag"><h2 class="panel-title">Magias</h2><div id="bloco-slots">${blocoSlots()}</div>
         ${f.magiaExtra ? '<button type="button" class="small subtle" id="b-mag-fechar">Desativar fonte adicional</button>' : ""}<div class="sub">Magias conhecidas e preparadas</div><div id="lista-mag">${listaMagias()}</div>
@@ -296,7 +296,9 @@
         <div class="sub">Dinheiro</div>
         <div class="row" style="margin:0">${MOEDAS.map(([k, r]) => `<div><label>${r}</label><input class="num" type="number" min="0" step="1" data-din="${k}" value="${moeda(DIN()[k])}"><div class="inline"><button type="button" data-moeda="${k}" data-sinal="-1" aria-label="Diminuir ${r}">−</button><input class="num" type="number" min="1" step="1" id="ajuste-${k}" placeholder="1" aria-label="Quantidade de ${r}"><button type="button" data-moeda="${k}" data-sinal="1" aria-label="Somar ${r}">+</button></div></div>`).join("")}<div><label>Total em PO</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="total-po">${totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div></div>
       </div>
-      <div class="panel"><h2 class="panel-title">Habilidades</h2>
+      <div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosRaciais(f.raca).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Escolha uma raça para ver seus traços.</p>'}</div>
+      ${f.backgroundCaracteristica?'<div class="panel"><h2 class="panel-title">Background · '+esc(f.background||"")+'</h2><h3>'+esc(f.backgroundCaracteristica.nome)+'</h3><p class="descricao-regra">'+esc(f.backgroundCaracteristica.desc)+'</p></div>':""}
+      <div class="panel"><h2 class="panel-title">Características de classe e outras habilidades</h2>
         <div id="lista-car">${CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>'}</div>
         <div class="sub">Adicionar do catálogo (SRD)</div>
         <input id="cat-q" placeholder="Buscar: fúria, ataque furtivo, rage…" autocomplete="off"><div id="cat-res" class="catalogo-lista" style="margin-top:6px"></div>

@@ -1,5 +1,4 @@
   (async () => {
-    try { if (/[?&]admin(=|&|$)/.test(location.search) || localStorage.getItem("ini_admin") === "1") document.body.classList.add("admin"); } catch (_) {}
     const contaInicial=window.nuvem&&nuvem.usuario()?.id;
     if(window.nuvem)nuvem.aoMudar(u=>{if(u?.id!==contaInicial)location.reload();});
     const API = "https://api.open5e.com/v2", $ = (s) => document.querySelector(s);
@@ -641,133 +640,20 @@
       }catch(e){syMsg('<span class="err">'+esc(e.message)+'</span>');}
       finally{syncing=false;if(syncDeNovo){syncDeNovo=false;queueSync();}}
     }
-    let repoOk = null, TOMB = {}, SY = {}, syncing = false, syncDeNovo = false, syTimer = null;
-    try { TOMB = JSON.parse(localStorage.getItem(acervo.chave("ini_tomb")) || "{}"); SY = JSON.parse(localStorage.getItem("ini_sync") || "{}"); } catch (_) {}
+    let TOMB = {}, SY = {}, syncing = false, syncDeNovo = false, syTimer = null;
+    try { TOMB = JSON.parse(localStorage.getItem(acervo.chave("ini_tomb")) || "{}"); localStorage.removeItem("ini_sync"); localStorage.removeItem("ini_pub"); localStorage.removeItem("ini_admin"); } catch (_) {}
     const saveTomb = () => { try { localStorage.setItem(acervo.chave("ini_tomb"), JSON.stringify(TOMB)); } catch (_) {} };
-    const saveSY = () => { try { localStorage.setItem("ini_sync", JSON.stringify(SY)); } catch (_) {} };
-    [300, 1200, 3000].forEach((ms) => setTimeout(() => { const b = $("#bq"); if (b && SY.repo && b.value === SY.repo && document.activeElement !== b) { b.value = ""; renderBestiary(); } }, ms));
-    $("#sy-repo").value = SY.repo || ""; $("#sy-token").value = SY.token || ""; $("#sy-path").value = SY.path || "criacoes.json";
-    const syMsg = (h) => { $("#sy-status").innerHTML = h; };
-    const b64d = (b) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), (c) => c.charCodeAt(0)));
-    const b64e = (str) => { const u = new TextEncoder().encode(str); let bin = ""; for (let i = 0; i < u.length; i += 0x8000) bin += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(bin); };
-    const ghUrl = (p = "") => `https://api.github.com/repos/${SY.repo}${p}`;
-    const ghFile = () => ghUrl("/contents/" + SY.path.split("/").map(encodeURIComponent).join("/"));
-    const ghHead = (accept) => ({ Authorization: "Bearer " + SY.token, Accept: accept, "X-GitHub-Api-Version": "2022-11-28" });
-    async function pullRemote() {
-      const r = await fetch(ghFile(), { headers: ghHead("application/vnd.github+json"), cache: "no-store" });
-      if (r.status === 404) {
-        const rr = await fetch(ghUrl(), { headers: ghHead("application/vnd.github+json"), cache: "no-store" });
-        if (!rr.ok) throw new Error("repositório não encontrado ou token sem acesso a ele");
-        return { sha: null, doc: { v: 1, items: {}, deleted: {} } };
-      }
-      if (r.status === 401 || r.status === 403) throw new Error("token recusado (confira a validade e a permissão Contents: leitura e escrita)");
-      if (!r.ok) throw new Error("GitHub respondeu " + r.status);
-      const j = await r.json(); let txt;
-      if (j.content && j.encoding === "base64") txt = b64d(j.content);
-      else { const rr = await fetch(ghFile(), { headers: ghHead("application/vnd.github.raw+json"), cache: "no-store" }); if (!rr.ok) throw new Error("GitHub respondeu " + rr.status); txt = await rr.text(); }
-      const doc = JSON.parse(txt || "{}"); return { sha: j.sha, doc: { v: 1, items: doc.items || {}, deleted: doc.deleted || {} } };
-    }
-    const ghFileAt = (p) => ghUrl("/contents/" + p.split("/").map(encodeURIComponent).join("/"));
-    async function ghGet(p) {
-      const r = await fetch(ghFileAt(p), { headers: ghHead("application/vnd.github+json"), cache: "no-store" });
-      if (r.status === 404) return { sha: null, json: null };
-      if (!r.ok) throw new Error("GitHub respondeu " + r.status + " em " + p);
-      const j = await r.json();
-      const txt = j.content && j.encoding === "base64" ? b64d(j.content)
-        : await (await fetch(ghFileAt(p), { headers: ghHead("application/vnd.github.raw+json"), cache: "no-store" })).text();
-      return { sha: j.sha, json: JSON.parse(txt || "null") };
-    }
-    async function ghPut(p, obj, sha, msg) {
-      const r = await fetch(ghFileAt(p), { method: "PUT", headers: { ...ghHead("application/vnd.github+json"), "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg, content: b64e(JSON.stringify(obj)), ...(sha ? { sha } : {}) }) });
-      if (!r.ok) throw new Error(`não consegui gravar ${p} (GitHub ${r.status})`);
-    }
-    async function syncExtras() {
-      const p = SY.path.replace(/[^/]*$/, "traducoes.json");
-      const { sha, json } = await ghGet(p);
-      const remoto = json || {};
-      let ldj = null; try { ldj = JSON.parse(localStorage.getItem(acervo.chave("ini_ldj")) || "null"); } catch (_) {}
-      if (remoto.ldj && (!ldj || (remoto.ldj.importadoEm || 0) > (ldj.importadoEm || 0))) {
-        ldj = remoto.ldj;
-        try { localStorage.setItem(acervo.chave("ini_ldj"), JSON.stringify(ldj)); } catch (_) {}
-        aplicarLDJ(ldj); aplicarClassesLDJ(ldj); spSearch();
-      }
-      const tr = { ...(remoto.tr || {}), ...TR };
-      if (JSON.stringify(tr) !== JSON.stringify(TR)) { TR = tr; saveTR(); renderBestiary(); }
-      const novo = { v: 1, tr, ldj: ldj || null };
-      if (JSON.stringify(novo) !== JSON.stringify({ v: 1, tr: remoto.tr || {}, ldj: remoto.ldj || null })) await ghPut(p, novo, sha, "Sincronização das traduções");
-    }
+    const syMsg = h => { $("#sy-status").innerHTML = h; };
     window.addEventListener("storage", (e) => {
       if (e.key !== acervo.chave("ini_ldj") || !e.newValue) return;
       try { const n = JSON.parse(e.newValue); aplicarLDJ(n); aplicarClassesLDJ(n); spSearch(); queueSync(); } catch (_) {}
     });
     window.addEventListener("online", () => queueSync());
     const touch = async (k) => { const m = BY[k]; if (m && m.custom) { m.updatedAt = Date.now(); await put("mon", [m]); queueSync(); } };
-    function queueSync() { if (!(window.nuvem && nuvem.usuario()) && (!SY.repo || !SY.token)) return; clearTimeout(syTimer); syTimer = setTimeout(syncNow, 1500); }
-    async function syncNow() {
-      if(window.nuvem && nuvem.usuario() && acervo.ativo())return syncConta();
-      if (!SY.repo || !SY.token) return; if (syncing) { syncDeNovo = true; return; }
-      if (!/^[\w.-]+\/[\w.-]+$/.test(SY.repo)) { syMsg('<span class="err">Use o formato usuario/repositorio.</span>'); return; }
-      syncing = true; syMsg("Sincronizando…");
-      try {
-        if (repoOk !== SY.repo) { // trava de segurança: suas criações nunca vão para um repositório público
-          const rr = await fetch(ghUrl(), { headers: ghHead("application/vnd.github+json"), cache: "no-store" });
-          if (rr.ok && (await rr.json()).private === false) throw new Error("este repositório é PÚBLICO e suas criações ficariam visíveis para todos. Use um repositório privado (por exemplo, dnd-dados)");
-          if (rr.ok) repoOk = SY.repo;
-        }
-        for (const m of ALL.filter((x) => x.custom && !x.updatedAt)) { m.updatedAt = Date.now(); await put("mon", [m]); }
-        for (let attempt = 0; attempt < 2; attempt++) {
-          const { sha, doc } = await pullRemote();
-          const local = Object.fromEntries(ALL.filter((m) => m.custom).map((m) => [m.key, m]));
-          const keys = new Set([...Object.keys(local), ...Object.keys(doc.items), ...Object.keys(doc.deleted), ...Object.keys(TOMB)]);
-          const out = { v: 1, items: {}, deleted: {} }; let upRemote = !sha, upLocal = false;
-          for (const k of keys) {
-            const l = local[k], r = doc.items[k], dts = Math.max(doc.deleted[k] || 0, TOMB[k] || 0), lt = l ? l.updatedAt || 0 : 0, rt = r ? r.updatedAt || 0 : 0;
-            if (dts && dts >= Math.max(lt, rt)) {
-              out.deleted[k] = dts; TOMB[k] = dts;
-              if (l) { await del("mon", k); await del("img", k); delete PH[k]; upLocal = true; }
-              if (r || doc.deleted[k] !== dts) upRemote = true;
-            } else if (l && lt >= rt) { out.items[k] = { ...l, photo: PH[k] || null }; if (lt > rt) upRemote = true; }
-            else if (r) {
-              const { photo, ...rec } = r; await put("mon", [rec]);
-              if (photo) { PH[k] = photo; await put("img", [{ key: k, data: photo }]); } else if (PH[k]) { delete PH[k]; await del("img", k); }
-              out.items[k] = r; upLocal = true;
-            }
-          }
-          if (upRemote) {
-            const body = { message: "Sincronização das criações", content: b64e(JSON.stringify(out)), ...(sha ? { sha } : {}) };
-            const pr = await fetch(ghFile(), { method: "PUT", headers: { ...ghHead("application/vnd.github+json"), "Content-Type": "application/json" }, body: JSON.stringify(body) });
-            if (pr.status === 409 || pr.status === 422) { if (attempt === 0) continue; throw new Error("conflito ao gravar; tente de novo"); }
-            if (!pr.ok) throw new Error(`não consegui gravar (GitHub ${pr.status}); o token precisa de Contents: leitura e escrita`);
-          }
-          saveTomb(); if (upLocal) await reload();
-          syMsg(`Sincronizado às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · ${Object.keys(out.items).length} criações.`);
-          break;
-        }
-        try { await syncExtras(); } catch (_) { await syncExtras(); }
-      } catch (e) { console.error(e); syMsg(`<span class="err">Falha na sincronização: ${esc(e.message)}</span>`); }
-      syncing = false; if (syncDeNovo) { syncDeNovo = false; queueSync(); }
-    }
-    $("#sy-save").onclick = () => { SY = { repo: $("#sy-repo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/+$/, ""), token: $("#sy-token").value.trim(), path: $("#sy-path").value.trim() || "criacoes.json" }; saveSY(); syncNow(); };
-    $("#sy-now").onclick = () => { syncNow(); };
-    /* modo administrador no app instalado: 5 toques seguidos no título ligam ou desligam os painéis de administração */
-    let toques = [];
-    document.querySelector(".header h1").addEventListener("click", () => {
-      const n = Date.now(); toques = toques.filter((t) => n - t < 2500); toques.push(n);
-      if (toques.length < 5) return;
-      toques = [];
-      const on = !document.body.classList.contains("admin");
-      document.body.classList.toggle("admin", on);
-      try { localStorage.setItem("ini_admin", on ? "1" : "0"); } catch (_) {}
-      status(on ? "Modo administrador ligado neste aparelho." : "Modo administrador desligado.");
-      if (on) document.querySelector(".syncbar").scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-    const showSyncTop = () => { $("#synctop").hidden = !(window.nuvem && nuvem.usuario()) && !(SY.repo && SY.token); };
-    showSyncTop(); if(window.nuvem&&nuvem.usuario()&&acervo.ativo())$("#sync").hidden=true;
-    if(window.nuvem&&nuvem.usuario()&&!acervo.ativo()&&!SY.token){$("#sy-now").disabled=true;syMsg("Seus dados locais estão preservados. A migração para a conta ainda não foi concluída.");}
-    $("#sy-save").addEventListener("click", () => { $("#sync").open = false; setTimeout(showSyncTop, 0); });
-    $("#sy-clear").addEventListener("click", () => setTimeout(showSyncTop, 0));
-    $("#sy-clear").onclick = () => { SY.token = ""; $("#sy-token").value = ""; saveSY(); syMsg("Token removido deste aparelho."); };
+    function queueSync() { if (!window.nuvem?.usuario() || !acervo.ativo()) return; clearTimeout(syTimer); syTimer = setTimeout(syncNow, 1500); }
+    async function syncNow() { if(window.nuvem?.usuario() && acervo.ativo()) return syncConta(); }
+    $("#sy-now").onclick = () => syncNow();
+    $("#synctop").hidden = !window.nuvem?.usuario();
     document.addEventListener("visibilitychange", () => { if (!document.hidden) queueSync(); });
 
     /* pacotes embutidos no site (SRD 2014 e 2024): funcionam sem a API; ela só é usada para outras fontes */
@@ -794,6 +680,17 @@
       try { await loadPack(p); } catch (err) { status(`<span class="err">Falha ao carregar (${esc(err.message)}).</span>`); }
       b.disabled = false;
     });
+    async function carregarCatalogo() {
+      if(!window.nuvem?.usuario())return;
+      try {
+        const rows=await nuvem.get("catalogo_publicado?select=dados&id=eq.2014"),d=rows[0]?.dados;
+        if(!d)return;
+        const mon=(d.mon||[]).filter(m=>!m.custom&&EDICOES.permitida(m)),keys=new Set(mon.map(m=>m.key));
+        await put("mon",mon);await put("spl",(d.spl||[]).filter(m=>!m.custom&&EDICOES.permitida(m)));
+        await put("img",(d.img||[]).filter(i=>keys.has(i.key)&&String(i.data||"").startsWith("data:image/")));
+        await reload();
+      }catch(e){status('<span class="err">Não consegui atualizar o catálogo compartilhado: '+esc(e.message)+'</span>');}
+    }
     async function initPacks() {
       try { const r = await fetch("dados/bestiario/index.json", { cache: "no-cache" }); if (r.ok) PACKS = (await r.json()).filter(EDICOES.permitida); } catch (_) {}
       renderPacks();
@@ -831,6 +728,6 @@
     const o = indexedDB.open(acervo.banco(), 3);
     o.onupgradeneeded = () => { const d = o.result; ["mon", "spl", "img"].forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "key" }); }); };
     o.onblocked = () => { $("#mais").open = true; $("#dbinfo").innerHTML = '<span class="err">Atualização do banco bloqueada: feche as outras abas deste rastreador e recarregue a página.</span>'; };
-    o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(syncNow).then(initPacks); };
+    o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(syncNow).then(initPacks).then(carregarCatalogo); };
     o.onerror = () => { $("#mais").open = true; $("#dbinfo").innerHTML = '<span class="err">Este navegador bloqueou o armazenamento local (IndexedDB).</span>'; };
   })();

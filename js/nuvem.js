@@ -90,7 +90,7 @@
     const t = await token(); if (!t) throw new Error("Faça login.");
     const h = { apikey: C.chave, Authorization: "Bearer " + t, ...(extra || {}) };
     if (corpo !== undefined) h["Content-Type"] = "application/json";
-    if (metodo !== "GET" && metodo !== "DELETE") h.Prefer = "return=representation";
+    if (metodo !== "GET" && metodo !== "DELETE" && !h.Prefer) h.Prefer = "return=representation";
     return http(`${base}/rest/v1/${caminho}`, { method: metodo, headers: h, body: corpo !== undefined ? JSON.stringify(corpo) : undefined });
   }
 
@@ -134,7 +134,7 @@
     usuario: () => (sessao && sessao.user) || null,
     aoMudar: (f) => ouvintes.push(f),
     cadastrar, entrar, linkMagico, retornoDoLink, sair, trocarSenha,
-    get: (c) => rest("GET", c), post: (c, o) => rest("POST", c, o), patch: (c, o) => rest("PATCH", c, o), apagar: (c) => rest("DELETE", c),
+    get: (c) => rest("GET", c), post: (c, o, h) => rest("POST", c, o, h), patch: (c, o) => rest("PATCH", c, o), apagar: (c) => rest("DELETE", c),
     rpc: (nome, args) => rest("POST", "rpc/" + nome, args || {}),
     enviarArquivo, urlDoArquivo, apagarArquivos, observar, esc, olhos, copiar
   };

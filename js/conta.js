@@ -95,7 +95,7 @@
     if (!camp || !nome) { msg(m, "Escolha a campanha e informe o nome.", true); return; }
     try {
       const r = await nuvem.post("personagens", { campanha_id: camp, dono_id: nuvem.usuario().id, nome, pv_max: 10, pv_atual: 10 });
-      location.href = `personagem.html?id=${encodeURIComponent(r[0].id)}`;
+      location.href = `criar-personagem.html?id=${encodeURIComponent(r[0].id)}`;
     } catch (err) { msg(m, err.message, true); }
   });
 
@@ -112,12 +112,6 @@
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(()=>{});
 
 
-  $("#painel-backup-conta").hidden = !acervo.ativo();
-  $("#backup-conta").onchange=async e=>{
-    const f=e.target.files[0];if(!f)return; const m=$("#msg-backup");e.target.disabled=true;
-    try{const n=await acervo.importar(JSON.parse(await f.text()));msg(m,n+" criações salvas na sua conta, com fotos e traduções. Abra a campanha e use Importar do bestiário.");}
-    catch(err){msg(m,err.message,true);}finally{e.target.disabled=false;e.target.value="";}
-  };
   /* ---------- início ---------- */
   (async () => {
     nuvem.olhos();

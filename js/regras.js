@@ -162,6 +162,14 @@ window.REGRAS = (() => {
     if (n === "meio-elfo") tracos = ["Visão no escuro: 18 m.", "Ancestral feérico: vantagem contra enfeitiçamento; magia não pode fazer você dormir.", "Versatilidade em perícias: escolha duas perícias diferentes."];
     return { bonus: b, fixas, escolhas, opcoes, atributos, tracos };
   }
+  function tracosRaciais(nome) {
+    return racial(nome).tracos.filter(t=>t!=="Sem traços adicionais").map(t=>{
+      const titulo=t.split(":")[0].replace(/ \([^)]*\)/g,"").trim(),n=normalizar(titulo);
+      const chave=Object.keys(window.TRACOS_2014||{}).find(k=>n===k||n.startsWith(k));
+      const desc=chave?window.TRACOS_2014[chave]:t;
+      return {nome:titulo,desc,origem:"Raça · "+nome};
+    });
+  }
   function limiteEspecializacao(cls) {
     return (cls || []).reduce((s,c) => s + (c.c === "Rogue" ? (c.n >= 6 ? 4 : c.n >= 1 ? 2 : 0) : c.c === "Bard" ? (c.n >= 10 ? 4 : c.n >= 3 ? 2 : 0) : 0), 0);
   }
@@ -171,9 +179,10 @@ window.REGRAS = (() => {
     const raciais = [...new Set(f.perRaca || [])].filter(k => r.opcoes && r.opcoes.includes(k) && !fixas.includes(k)).slice(0,r.escolhas);
     const classePer = [...new Set(f.perClasse || [])].filter(k => c && c.per[1].includes(k) && !fixas.includes(k) && !raciais.includes(k)).slice(0,c ? c.per[0] : 0);
     const multi = cls.slice(1).flatMap(x => { const d = classe(x.c); return d && ["Bard","Ranger","Rogue"].includes(x.c) ? [...new Set(x.per || [])].filter(k=>d.per[1].includes(k)).slice(0,1) : []; });
-    const basicas = [...new Set([...fixas,...raciais,...classePer,...multi])];
+    const background=[...new Set(f.backgroundPericias||[])].filter(k=>PERICIAS.some(p=>p[0]===k)), outras=[...new Set(f.perOutrasEscolhas||[])].filter(k=>PERICIAS.some(p=>p[0]===k));
+    const basicas = [...new Set([...fixas,...raciais,...classePer,...multi,...background,...outras])];
     const especializadas = [...new Set(f.especializacoes || [])].filter(k=>basicas.includes(k)).slice(0,limiteEspecializacao(cls));
-    return { fixas, raciais, classePer, basicas, especializadas, valores: Object.fromEntries(basicas.map(k=>[k,especializadas.includes(k)?2:1])) };
+    return { fixas, raciais, classePer, background, outras, basicas, especializadas, valores: Object.fromEntries(basicas.map(k=>[k,especializadas.includes(k)?2:1])) };
   }
 
   function bonusSemProf(f) {
@@ -201,5 +210,5 @@ window.REGRAS = (() => {
       .map(h=>{const cf=h.e+"|"+h.c+"|"+h.n;return {nome:h.p||h.n,desc:pt[cf]||h.d,cf,auto:"classe"};});
   }
 
-  return { resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+  return { tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();

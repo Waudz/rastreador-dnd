@@ -43,7 +43,7 @@
     if (!c[0]) throw new Error("Campanha não encontrada ou você não participa dela.");
     camp = c[0]; membros = m; pers = ps; docs = ds;
     nomes = Object.fromEntries(pf.map((x) => [x.id, x.nome || "Jogador"]));
-    const eu = m.find((x) => x.usuario_id === meuId()); papel = eu ? eu.papel : "jogador";
+    const eu = m.find((x) => x.usuario_id === meuId()); papel = (window.ACESSO && await ACESSO.pronto) ? "mestre" : eu ? eu.papel : "jogador";
   }
 
   /* ---------- desenho ---------- */
@@ -59,18 +59,18 @@
   const cartaoPers = (p) => {
     const f = p.ficha || {}, sub = [f.classe, f.nivel ? "nível " + f.nivel : ""].filter(Boolean).join(" · "), v = pct(p.pv_atual, p.pv_max);
     return `<div class="card" data-id="${esc(p.id)}">
+      ${mestre()?`<div class="jogador-vinculo"><label>Jogador<select data-dono="${esc(p.id)}"><option value="">Vincular conta…</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?"selected":""}>${esc(nomes[m.usuario_id]||"Jogador")}</option>`).join("")}</select></label></div>`:`<div class="meta">Jogador: ${esc(nomes[p.dono_id]||"Sem vínculo")}</div>`}
       <a href="personagem.html?id=${encodeURIComponent(p.id)}" style="color:inherit;text-decoration:none;display:flex;gap:10px;align-items:center">${f.foto && /^data:image\//.test(f.foto) ? `<img class="av" style="width:44px;height:44px" src="${esc(f.foto)}" alt="">` : `<span class="av av0" style="width:44px;height:44px;font-size:20px">${esc((p.nome || "?").charAt(0).toUpperCase())}</span>`}<span><b>${esc(p.nome)}</b>
-      <div class="meta">${esc(sub)}${sub ? " · " : ""}${f.npc ? "" : esc(nomes[p.dono_id] || "Sem dono") + " · "}CA ${p.ca}</div></span></a>
-      ${mestre()?`<div class="row"><label>Jogador responsável<select data-dono="${esc(p.id)}"><option value="">Sem jogador</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?"selected":""}>${esc(nomes[m.usuario_id]||"Jogador")}</option>`).join("")}</select></label></div>`:""}
+      <div class="meta">${esc(sub)}${sub ? " · " : ""}CA ${p.ca}</div></span></a>
       <div class="hpline"><div class="hp-top"><span>PV${p.pv_temp ? ` (+${p.pv_temp} temp.)` : ""}</span><strong>${p.pv_atual} / ${p.pv_max}</strong></div><div class="hp-track"><div class="hp-fill ${v <= 25 ? "low" : v <= 50 ? "mid" : ""}" style="width:${v}%"></div></div></div>
-      <div class="inline" style="margin-top:8px">${mestre() ? `<a class="btnlike small" href="iniciativa.html?campanha=${encodeURIComponent(id)}&personagem=${encodeURIComponent(p.id)}">Usar na iniciativa</a>` : ""}<input class="num" type="number" min="1" value="1" aria-label="Quantidade"><button type="button" class="small danger" data-dano="1">Dano</button><button type="button" class="small" data-cura="1">Cura</button></div>
+      <div class="pv-acoes">${mestre() ? `<a class="btnlike small" href="iniciativa.html?campanha=${encodeURIComponent(id)}&personagem=${encodeURIComponent(p.id)}">Usar na iniciativa</a>` : ""}<input class="num" type="number" min="1" value="1" aria-label="Quantidade"><button type="button" class="small danger" data-dano="1">Dano</button><button type="button" class="small" data-cura="1">Cura</button></div>
     </div>`;
   };
 
   function abaPers() {
     const donos = membros.map((m) => `<option value="${esc(m.usuario_id)}"${m.usuario_id === meuId() ? " selected" : ""}>${esc(nomes[m.usuario_id] || "Jogador")}</option>`).join("");
     const jog = pers.filter((p) => !(p.ficha || {}).npc), npcs = pers.filter((p) => (p.ficha || {}).npc);
-    return `<div class="bar"><span class="grow"></span><button type="button" class="small" id="recupera-fotos">Recuperar fotos importadas</button><button type="button" class="small" id="abre-imp">Importar do bestiário</button><button type="button" class="small" id="abre-novo">Novo personagem</button></div>
+    return `<div class="bar"><span class="grow"></span><button type="button" class="small" id="abre-imp">Importar do bestiário</button><button type="button" class="small" id="abre-novo">Novo personagem</button></div>
       <form id="form-novo" class="row" hidden>
         <input id="n-nome" maxlength="80" placeholder="Nome" style="flex:1 1 200px" required>
         ${mestre() ? `<select id="n-dono" style="flex:0 1 180px" aria-label="Dono">${donos}</select>` : ""}
@@ -97,7 +97,6 @@
       if(n){await recarregar();await desenhar();aviso(n+" foto(s) recuperada(s). Fotos já existentes foram preservadas.");}else if(!automatico)aviso("Nenhuma foto pendente foi encontrada neste aparelho.");
     }catch(e){if(!automatico)aviso(e.message,true);}
   }
-  document.addEventListener("click",e=>{if(e.target.closest("#recupera-fotos"))recuperarFotos();});
   /* ---------- importar criações do bestiário deste navegador ---------- */
   function lerCriacoes() {
     return new Promise((ok, falha) => {
@@ -339,7 +338,7 @@
       try {
         const dono = mestre() ? $("#n-dono").value : meuId();
         const r = await nuvem.post("personagens", { campanha_id: id, dono_id: dono, nome: $("#n-nome").value.trim(), pv_max: 10, pv_atual: 10 });
-        location.href = `personagem.html?id=${encodeURIComponent(r[0].id)}`;
+        location.href = `criar-personagem.html?id=${encodeURIComponent(r[0].id)}`;
       } catch (err) { aviso(err.message, true); }
     }
   });
