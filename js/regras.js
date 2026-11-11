@@ -105,6 +105,11 @@ window.REGRAS = (() => {
   const prof = (nivel) => 2 + Math.floor((Math.max(1, nivel) - 1) / 4);
   const nivelTotal = (cls) => (cls || []).filter(c=>classe(c.c)).reduce((s,c)=>s+Math.max(0,Math.floor(Number(c.n)||0)),0);
 
+
+  function resumoClasses(cls) {
+    const validas=(cls||[]).filter(c=>classe(c.c));
+    return { nivel:nivelTotal(validas), descricao:validas.map(c=>classe(c.c).n+" "+c.n).join(" / ") };
+  }
   /* nível de conjurador e espaços (regra de multiclasse) */
   function conjuracao(cls) {
     const lista = (cls || []).filter((c) => c.n > 0).map((c) => ({ c, d: classe(c.c) })).filter((x) => x.d);
@@ -196,5 +201,5 @@ window.REGRAS = (() => {
       .map(h=>{const cf=h.e+"|"+h.c+"|"+h.n;return {nome:h.p||h.n,desc:pt[cf]||h.d,cf,auto:"classe"};});
   }
 
-  return { bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+  return { resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();

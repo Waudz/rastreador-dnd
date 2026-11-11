@@ -143,8 +143,9 @@
   function aplicarAuto(forcar) {
     R.aplicarMelhorias(F()); sincronizarHabilidades();
     const f = F(), campos = {}, n0 = f.nivel, c0 = f.classe;
-    f.nivel = nivelTotal() || f.nivel || null;
-    f.classe = CLS().map((c) => `${(R.classe(c.c) || { n: c.c }).n} ${c.n}`).join(" / ") || f.classe || "";
+    const resumo=R.resumoClasses(CLS());
+    f.nivel = resumo.nivel || (f.classesEditadas ? null : f.nivel || null);
+    f.classe = resumo.descricao || (f.classesEditadas ? "" : f.classe || "");
     if (forcar || f.nivel !== n0 || f.classe !== c0) campos.ficha = P.ficha;
     if (autoOn("caAuto")) { const { ca } = calcCA(); if (ca !== P.ca) { P.ca = ca; campos.ca = ca; } }
     if (autoOn("pvAuto")) { const pv = calcPV(); if (pv != null && pv !== P.pv_max) { P.pv_max = pv; P.pv_atual = Math.min(P.pv_atual, pv); campos.pv_max = pv; campos.pv_atual = P.pv_atual; } }
@@ -385,7 +386,7 @@
   document.addEventListener("change", (e) => {
     const t = e.target; if (!P) return;
     if (t.dataset.cls === "n") { desenhar(); return; }
-    if (t.dataset.cls === "c") { const i = +t.closest("[data-ci]").dataset.ci; if(CLS().some((c,j)=>j!==i && c.c===t.value && t.value)){aviso("Esta classe já foi adicionada.",true);desenhar();return;} if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; CLS()[i].c = t.value; CLS()[i].sub = ""; if(i===0){F().perClasse=[];F().especializacoes=[];} refrescar(); desenhar(); return; }
+    if (t.dataset.cls === "c") { const i = +t.closest("[data-ci]").dataset.ci; if(CLS().some((c,j)=>j!==i && c.c===t.value && t.value)){aviso("Esta classe já foi adicionada.",true);desenhar();return;} if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; CLS()[i].c = t.value; CLS()[i].sub = ""; F().classesEditadas=true; if(i===0){F().perClasse=[];F().especializacoes=[];} refrescar(); desenhar(); return; }
     if (t.dataset.atq && (t.tagName === "SELECT" || t.type === "checkbox")) { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = t.type === "checkbox" ? t.checked : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
 
     if(t.dataset.asi){const f=F();f.melhorias ||= {};f.melhorias[t.dataset.asi] ||= [];f.melhorias[t.dataset.asi][+t.dataset.i]=t.value;refrescar();desenhar();return;}
@@ -429,7 +430,7 @@
       $("#bloco-slots").innerHTML = blocoSlots(); agendar({ ficha: P.ficha }); return;
     }
     if (c("#add-cls")) { if(CLS().some(c=>!c.c)){aviso("Escolha a classe pendente antes de adicionar outra.",true);return;} if(nivelTotal()>=20){aviso("O limite é 20 níveis no total.",true);return;} CLS().push({ c: "", n: 1, sub: "" }); desenhar(); return; }
-    if ((b = c("[data-rm-cls]"))) { CLS().splice(+b.dataset.rmCls, 1); refrescar(); desenhar(); return; }
+    if ((b = c("[data-rm-cls]"))) { CLS().splice(+b.dataset.rmCls, 1); F().classesEditadas=true; refrescar(); desenhar(); return; }
     if ((b = c("[data-per]"))) { const k=b.dataset.per, f=F(), fontes=R.fontesPericias(f); f.especializacoes=fontes.especializadas; const i=f.especializacoes.indexOf(k); if(i>=0)f.especializacoes.splice(i,1); else if(fontes.basicas.includes(k)&&f.especializacoes.length<R.limiteEspecializacao(CLS()))f.especializacoes.push(k); $("#bloco-per").innerHTML = blocoPer(); agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-idi]"))) { IDI().splice(+b.dataset.rmIdi, 1); desenhar(); agendar({ ficha: P.ficha }); return; }
     if (c("#add-idi")) { const v = ($("#idi-txt").value.trim() || $("#idi-sel").value); if (v && !IDI().includes(v)) { IDI().push(v); desenhar(); agendar({ ficha: P.ficha }); } return; }
