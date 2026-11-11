@@ -136,15 +136,21 @@ button.danger:hover { border-color:var(--red); background:#C74B4B25; }
 @media (max-width:800px) { :root { --pad-corpo:14px; } }
 @media (max-width:560px) { :root { --pad-corpo:12px; } }
 .appheader { position:sticky; top:0; z-index:40; margin:calc(var(--pad-corpo) * -1) calc(var(--pad-corpo) * -1) 18px; padding:6px var(--pad-corpo) 0; background:var(--bg); border-bottom:1px solid var(--line); }
-.appheader-topo { display:flex; align-items:center; gap:10px; min-height:40px; max-width:1120px; margin:0 auto; }
+/* grade do cabeçalho: logotipo, menu e perfil. No celular o menu ocupa a segunda linha; no computador as três colunas laterais
+   iguais (1fr auto 1fr) deixam o menu centralizado na largura da janela, qualquer que seja o tamanho do logotipo e do perfil. */
+.appheader { padding-inline:max(var(--pad-corpo), calc(50% - 560px)); display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"marca dir" "nav nav"; align-items:center; column-gap:10px; }
+.appheader > .appmarca { grid-area:marca; min-height:40px; }
+.appheader > .appdireita { grid-area:dir; display:flex; align-items:center; gap:10px; justify-content:flex-end; }
+.appheader > nav { grid-area:nav; width:100%; max-width:1120px; margin:0 auto; }
 .appmarca { display:inline-flex; align-items:center; gap:8px; min-width:0; color:var(--text); text-decoration:none; font-weight:800; font-size:15px; letter-spacing:-.02em; }
 .appmarca img { width:22px; height:22px; flex:0 0 auto; object-fit:contain; }
 .appmarca span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .appsino { flex:0 0 34px; height:34px; } /* espaço reservado para o sino de notificações */
 .appavatar { flex:0 0 auto; display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--panel); border:1px solid var(--gold-dark); color:var(--gold); text-decoration:none; }
-.appavatar .ico { width:18px; height:18px; }
+.appavatar .ico, .appnav a .ico { margin:0; vertical-align:middle; }
+.appavatar .ico { display:block; width:18px; height:18px; }
 .appavatar[aria-current="page"] { background:#D4AE7218; border-color:var(--gold); }
-.appnav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:2px; max-width:1120px; margin:0 auto; padding:2px 0 6px; }
+.appnav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:2px; padding:2px 0 6px; }
 .appnav a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-width:0; min-height:48px; padding:4px 2px; border:1px solid transparent; border-radius:10px; color:var(--muted); font-size:10px; font-weight:700; line-height:1.15; text-decoration:none; }
 .appnav a span { max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .appnav a .ico { width:20px; height:20px; }
@@ -153,12 +159,13 @@ button.danger:hover { border-color:var(--red); background:#C74B4B25; }
 .appnav a:focus-visible, .appavatar:focus-visible, .appmarca:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 @media (max-width:359px) { .appnav a { font-size:9.5px; } .appmarca span { font-size:14px; } }
 @media (min-width:760px) {
-  .appnav { display:flex; justify-content:flex-start; gap:6px; padding:4px 0 8px; }
+  .appheader { grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); grid-template-areas:"marca nav dir"; padding-bottom:0; }
+  .appheader > nav { width:auto; margin:0; }
+  .appnav { display:flex; justify-content:center; gap:6px; padding:4px 0; }
   .appnav a { flex-direction:row; gap:8px; padding:8px 14px; min-height:44px; font-size:13px; white-space:nowrap; }
   .appnav a .ico { width:16px; height:16px; }
 }
 #dock-r, .ci-resumo { scroll-margin-top:var(--cab-h,96px); }
-.appheader-topo > .grow { flex:1 1 auto; min-width:0; }
 @media (max-width:359px) { .appnav { gap:0; } .appnav a { padding:4px 0; font-size:9px; letter-spacing:-.01em; } }
 
 /* "Dano causado por" nunca estoura a largura da tela (o select tem largura natural do maior texto) */
@@ -185,8 +192,17 @@ button.danger:hover { border-color:var(--red); background:#C74B4B25; }
 
 /* modo visitante: criar fichas e fotos pedem conta; o aviso aparece no lugar do criador */
 #aviso-visitante { display:none; }
-body.visitante #aviso-visitante { display:block; }
-body.visitante #cm, body.visitante [data-ph], body.visitante [data-edit], body.visitante #cm-ph { display:none !important; }
+.visitante #aviso-visitante { display:block; }
+.visitante #cm, .visitante [data-ph], .visitante [data-edit], .visitante #cm-ph { display:none !important; }
 .appentrar { flex:0 0 auto; display:inline-flex; align-items:center; min-height:34px; padding:0 14px; border:1px solid var(--gold-dark); border-radius:99px; background:var(--panel); color:var(--gold); font-size:13px; font-weight:700; text-decoration:none; }
 .appentrar:hover { border-color:var(--gold); background:#D4AE7218; }
 .appentrar:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+
+/* título por vista (as três frases já estão no HTML; o CSS mostra só a da vista atual, sem JS) */
+h1 > [data-v], .subtitle > [data-v] { display:none; }
+html[data-app-view=iniciativa] [data-v=iniciativa], html[data-app-view=monstros] [data-v=monstros], html[data-app-view=magias] [data-v=magias] { display:inline; }
+h1 > [data-c] { display:none; }
+html[data-conta-aba=campanhas] [data-c=campanhas], html[data-conta-aba=personagens] [data-c=personagens], html[data-conta-aba=conta] [data-c=conta] { display:inline; }
+/* o cabeçalho é montado por js/navegacao.js; até lá, este espaço (última altura medida) evita que o conteúdo pule */
+html:not(.cab-pronto) body::before { content:""; display:block; height:var(--cab-h-est,96px); margin:calc(var(--pad-corpo) * -1) calc(var(--pad-corpo) * -1) 18px; border-bottom:1px solid var(--line); }
+@media (min-width:760px) { html:not(.cab-pronto) body::before { height:var(--cab-h-est,57px); } }

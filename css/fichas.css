@@ -170,7 +170,7 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
   .inspiracao-ficha { flex-wrap:wrap; }
 }
 @media(min-width:1200px) {
-  body[data-app-view] { padding-right:calc(24px + var(--painel-reserva-direita,0px)); }
+  html[data-app-view] body { padding-right:calc(24px + var(--painel-reserva-direita,0px)); }
 }
 @media(max-width:1199px) {
   #dock-r, .ci-resumo {
@@ -207,11 +207,13 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .estado-ficha { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:6px 10px; min-height:36px; }
 .estado-ficha .salvo { margin-right:auto; padding:0; border:0; background:transparent; font-size:10px; color:var(--muted); opacity:.8; }
 .estado-ficha .salvo[data-estado=erro] { opacity:1; padding:3px 8px; }
-.ficha-topo-acoes { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; }
+.ficha-topo-acoes { display:flex; flex:1 1 auto; flex-wrap:wrap; align-items:center; justify-content:flex-start; gap:6px; }
+.ficha-acao-perigo { margin-left:auto; padding-left:14px; border-left:1px solid var(--line); }
+.ficha-topo-acoes[hidden], .ficha-acao-perigo:has(> [hidden]) { display:none; }
 .ficha-topo-acoes[hidden], .ficha-topo-acoes > [hidden] { display:none; }
 .ficha-topo-acoes .btnlike, .ficha-topo-acoes button { min-height:34px; padding:5px 12px; font-size:12px; white-space:nowrap; display:inline-flex; align-items:center; text-decoration:none; }
 .ficha-embutida .estado-ficha { min-height:36px; margin-bottom:6px; }
-@media (max-width:420px) { .ficha-topo-acoes { width:100%; } .ficha-topo-acoes > * { flex:1 1 0; justify-content:center; } .estado-ficha .salvo { flex-basis:100%; margin-right:0; text-align:right; } }
+@media (max-width:420px) { .ficha-topo-acoes { width:100%; } .ficha-topo-acoes > .btnlike, .ficha-topo-acoes > button { flex:1 1 0; justify-content:center; } .ficha-acao-perigo { flex:1 0 100%; margin:6px 0 0; padding:8px 0 0; border-left:0; border-top:1px solid var(--line); } .ficha-acao-perigo > button { width:100%; justify-content:center; } .estado-ficha .salvo { flex-basis:100%; margin-right:0; text-align:right; } }
 
 /* cartões da iniciativa: efeitos em área própria abaixo do nome; número pendente destacado */
 .combatant .fxbar { grid-column:auto; }

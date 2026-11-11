@@ -26,8 +26,8 @@ test("adicionar manualmente preserva foto e evita duplicação",async()=>{
 test("erro de acesso é exibido em vez de esconder o painel",async()=>{
   const f=await fixture({erro:true});assert.equal(f.document.el("camp-ini").hidden,false);assert.match(f.document.el("ci-msg").innerHTML,/Permissão recusada/);
 });
-test("ausência de sessão mostra instrução de login sem consultar dados",async()=>{
-  const f=await fixture({user:null});assert.equal(f.consultas.length,0);assert.match(f.document.el("ci-msg").innerHTML,/Entre na sua conta/);
+test("visitante: o painel de campanhas fica oculto e nada é consultado",async()=>{
+  const f=await fixture({user:null});assert.equal(f.consultas.length,0);assert.equal(f.document.el("camp-ini").hidden,true);
 });
 
 test("clique no personagem abre o resumo lateral",async()=>{

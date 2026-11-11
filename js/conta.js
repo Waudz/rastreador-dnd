@@ -23,7 +23,7 @@
   }
   $('#biblioteca-limpar').onclick=()=>{for(const [id,k] of [['biblioteca-busca','nome'],['biblioteca-campanha','campanha'],['biblioteca-classe','classe'],['biblioteca-nivel','nivel']]){filtros[k]='';$('#'+id).value='';}biblioteca();};
 
-  const liberar = () => document.body.removeAttribute?.('data-entrada');   // mostra a página (ver CSS body[data-entrada])
+  const liberar = () => document.documentElement?.classList?.remove('conta-verificando');   // mostra a página (ver CSS .conta-verificando)
   async function carregar() {
     const u = nuvem.usuario(); if (!u) return;
     const [perfil, membros, pers] = await Promise.all([

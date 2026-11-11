@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="css/identidade.css">
   <link rel="stylesheet" href="css/fichas.css">
   <link rel="stylesheet" href="css/magias.css">
+  <script src="js/pre-pagina.js"></script>
   <script src="js/ficha-componentes.js" defer></script>
   <script src="js/magias-ui.js" defer></script>
   <script src="js/icones.js" defer></script>
@@ -47,8 +48,8 @@
     <header class="header">
       <div>
         <p class="eyebrow">Dungeons & Dragons · 5ª edição</p>
-        <h1>Ordem de Iniciativa</h1>
-        <p class="subtitle">Controle o combate, acompanhe os turnos e gerencie os pontos de vida.</p>
+        <h1><span data-v="iniciativa">Ordem de Iniciativa</span><span data-v="monstros">Monstros</span><span data-v="magias">Magias</span></h1>
+        <p class="subtitle"><span data-v="iniciativa">Controle o combate, acompanhe os turnos e gerencie os pontos de vida.</span><span data-v="monstros">Consulte e crie fichas de monstros, personagens e NPCs do catálogo de 2014.</span><span data-v="magias">Consulte magias e habilidades do catálogo de regras de 2014.</span></p>
       </div>
       <div class="round-box" hidden>
         <span>Rodada</span>
@@ -60,7 +61,7 @@
 
     
 
-    <details class="panel" id="camp-ini" hidden>
+    <details class="vista-iniciativa panel" id="camp-ini" hidden>
       <summary class="panel-title" style="cursor:pointer">Personagens da campanha</summary>
       <div class="bar ci-filtros"><select id="ci-camp" aria-label="Campanha" style="width:auto"></select><span class="grow"></span><button type="button" class="small" id="ci-recarregar">Atualizar</button><button type="button" class="small primary" id="ci-todos">Adicionar todos</button></div>
       <div id="ci-msg" class="muted"></div>
@@ -68,7 +69,7 @@
       <p class="muted">Adicione os personagens e preencha a iniciativa com a rolagem de cada jogador.</p>
     </details>
 
-    <section class="panel">
+    <section class="vista-iniciativa panel">
       <h2 class="panel-title"><i data-i="plus"></i>Adicionar combatente</h2>
       <form id="add-form" class="form-grid">
         <div class="field-name">
@@ -112,7 +113,7 @@
 
 
 
-    <section class="panel">
+    <section class="vista-iniciativa panel">
       <div class="combat-bar">
         <div>
           <h2 class="panel-title" style="margin-bottom:4px"><i data-i="swords"></i>Ordem do combate</h2>
@@ -137,20 +138,20 @@
       <p class="footer">A iniciativa é ordenada do maior para o menor. Em caso de empate, quem foi adicionado primeiro fica acima.</p>
     </section>
 
-    <details class="panel" id="dados-locais">
+    <details class="vista-iniciativa panel" id="dados-locais">
       <summary class="panel-title"><i data-i="database"></i>Dados deste aparelho</summary>
       <p class="muted">O combate e suas criações como visitante ficam só neste aparelho. Se limpar os dados do navegador, eles somem; por isso vale baixar um backup de vez em quando. Nada é enviado a nenhum servidor.</p>
       <div class="row"><button type="button" class="small" id="dl-combate-baixar">Baixar backup do combate</button><label class="btnlike small">Restaurar combate de um arquivo<input type="file" id="dl-combate-arquivo" accept=".json,application/json" hidden></label><button type="button" class="small" id="dl-criacoes-baixar">Baixar backup das criações deste aparelho</button></div>
       <p id="dl-msg" class="muted" role="status" aria-live="polite"></p>
     </details>
     
-    <section class="panel" id="aviso-visitante">
+    <section class="vista-monstros panel" id="aviso-visitante">
       <h2 class="panel-title"><i data-i="plus"></i>Criar fichas e fotos</h2>
       <p class="muted">Você está usando o rastreador como visitante: pode pesquisar monstros e magias e usar toda a iniciativa, com combatentes manuais, sem conta. Criar fichas próprias, adicionar fotos, personagens e campanhas exige uma conta gratuita.</p>
       <div class="row" style="margin:0"><a class="btnlike primary" href="entrar.html?voltar=iniciativa.html%3Faba%3Dmonstros">Entrar ou criar conta</a></div>
     </section>
 
-    <details class="panel" id="cm">
+    <details class="vista-monstros panel" id="cm">
       <summary class="panel-title"><i data-i="plus"></i>Criar ficha (monstro, personagem ou NPC)</summary>
       <div class="cmg">
         <div><label>Categoria</label><select id="cm-cat"><option value="monster">Monstro</option><option value="player">Personagem (jogador)</option><option value="npc">NPC</option></select></div>
@@ -181,7 +182,7 @@
       <button type="button" id="cm-cancel" hidden>Cancelar edição</button> <span class="muted" id="cm-msg"></span>
     </details>
 
-    <section class="panel catalogo-magias">
+    <section class="vista-magias panel catalogo-magias">
       <h2 class="panel-title"><i data-i="sparkles"></i>Consultar magias e habilidades</h2>
       <p class="muted" id="spinfo"></p>
       <div class="clearable"><input id="sq" placeholder="Magia ou habilidade de monstro (português ou inglês)" autocomplete="off"><button type="button" class="xbtn" id="sq-x" hidden aria-label="Limpar pesquisa" title="Limpar pesquisa"><i data-i="x"></i></button></div>
@@ -199,7 +200,7 @@
 
 
 
-    <section class="panel">
+    <section class="vista-monstros panel">
       <h2 class="panel-title"><i data-i="book"></i>Meu bestiário</h2>
       <div class="row">
         <input id="bq" type="search" name="busca-bestiario" data-lpignore="true" data-1p-ignore placeholder="Pesquisar: nome, dragão, imenso, pequeno, fera, humanoide…" autocomplete="off" style="flex:1 1 240px">

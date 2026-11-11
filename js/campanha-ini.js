@@ -75,8 +75,8 @@
     finally { buscando = false; }
   }
   async function iniciar() {
+    if (!conta) { box.hidden = true; return; }   // visitante: o painel de campanhas nem aparece (a iniciativa continua com combatentes manuais)
     box.hidden = false; box.open = true;
-    if (!conta) { msg("Entre na sua conta para usar personagens de campanhas na iniciativa. Sem conta, a iniciativa continua funcionando com combatentes manuais."); $("#ci-msg").insertAdjacentHTML?.("beforeend",' <a href="entrar.html?voltar=iniciativa.html">Entrar</a>'); return; }
     msg("Carregando campanhas…");
     try {
       const ms = await nuvem.get("membros?select=campanha_id,papel,campanha:campanhas(id,nome)&usuario_id=eq."+encodeURIComponent(conta)+"&papel=eq.mestre");

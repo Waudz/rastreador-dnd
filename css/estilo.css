@@ -502,8 +502,8 @@ a.doclink { color: var(--gold); text-decoration: underline; cursor: pointer; }
 /* Padrão visual único e navegação sem sobrepor conteúdo. */
 body{background:var(--bg)}button,.btnlike,.round-box{background:var(--panel-2);box-shadow:none}button.primary{background:#514027;color:var(--text)}
 .nav-legado{display:none!important}.estado-ficha{justify-content:flex-end;min-height:20px}
-body[data-app-view=iniciativa] :is(.vista-monstros,.vista-magias),body[data-app-view=monstros] :is(.vista-iniciativa,.vista-magias),body[data-app-view=magias] :is(.vista-iniciativa,.vista-monstros){display:none!important}
-body[data-conta-aba=conta] [data-conta-painel]:not([data-conta-painel=conta]),body[data-conta-aba=campanhas] [data-conta-painel]:not([data-conta-painel=campanhas]),body[data-conta-aba=personagens] [data-conta-painel]:not([data-conta-painel=personagens]){display:none}
+html[data-app-view=iniciativa] :is(.vista-monstros,.vista-magias),html[data-app-view=monstros] :is(.vista-iniciativa,.vista-magias),html[data-app-view=magias] :is(.vista-iniciativa,.vista-monstros){display:none!important}
+html[data-conta-aba=conta] [data-conta-painel]:not([data-conta-painel=conta]),html[data-conta-aba=campanhas] [data-conta-painel]:not([data-conta-painel=campanhas]),html[data-conta-aba=personagens] [data-conta-painel]:not([data-conta-painel=personagens]){display:none}
 .item{margin:10px 0;padding:0;overflow-wrap:anywhere}.item>summary{padding:12px 14px}.item>div,.item>p,.item>.descricao-regra{margin:0;padding:12px 14px}.item .item{margin:8px}.descricao-regra{line-height:1.65}
 .personagem-card{display:flex;flex-direction:column}.personagem-card>a{min-height:70px}.personagem-card .cartao-vida{margin-top:auto;padding-top:14px}
 .criador-pericias{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.criador-pericias span{color:var(--text);border:1px solid var(--line);padding:5px 9px;border-radius:6px}
@@ -544,5 +544,7 @@ input.iniciativa-valor{display:block;padding:0!important;text-align:center;line-
 
 /* enquanto se decide se abre direto a campanha ativa, a lista de campanhas não aparece (evita o "pisca");
    se o script falhar, o conteúdo volta sozinho depois de 2,5 s */
-body[data-entrada=verificando] main { visibility:hidden; animation:entrada-ok 0s 2.5s forwards; }
+/* enquanto ainda não se sabe para onde a abertura vai (campanha ativa ou lista), a página fica sem conteúdo: o rodapé também, para não aparecer sozinho */
+html.conta-verificando main, html.conta-verificando .rodape-licenca { visibility:hidden; animation:entrada-ok 0s 2.5s forwards; }
+html[data-conta-aba] main.tracker { min-height:70vh; }
 @keyframes entrada-ok { to { visibility:visible; } }
