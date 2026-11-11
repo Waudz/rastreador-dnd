@@ -1,6 +1,9 @@
 /* ícones simples (SVG de traço): <i data-i="nome"></i> no HTML ou ico("nome") nos textos gerados por JS */
 (() => {
   const P = {
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/>',
+    more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
     filter: '<path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',

@@ -35,3 +35,16 @@ test('abertura rápida usa só a preferência local e respeita gerenciar, ação
  for(const b of ['?aba=conta','?aba=personagens','?gerenciar=1','?acao=criar'])assert.equal(f.C.entradaRapida(b),'');
  assert.equal(fixture().C.entradaRapida(''),'');                // sem sessão nunca redireciona
 });
+
+test('barra compacta não mostra convite nem administração ao jogador',async()=>{
+ const {documentoFalso}=require('./helpers.cjs'),document=documentoFalso(),localStorage=armazenamento(),chamadas=[];
+ const box=document.el('campanha-contexto');box.removeAttribute=()=>{};box.querySelector=s=>document.el(s.slice(1));
+ const nuvem={usuario:()=>({id:'u'}),esc:s=>String(s),get:async()=>membros,rpc:async(nome,dados)=>{chamadas.push({nome,dados});return [];}};
+ const window={nuvem};executar('js/campanhas-ui.js',vm.createContext({window,nuvem,document,localStorage,URLSearchParams}));
+ await window.CAMPANHAS_UI.montarSeletor({id:'c',nome:'Campanha',podeGerenciar:false});
+ assert.match(box.innerHTML,/Abrir lista de campanhas/);assert.match(box.innerHTML,/Entrar em campanha/);assert.doesNotMatch(box.innerHTML,/Compartilhar código|Gerenciar participantes|Prévia da aparência/);
+ assert.match(document.el('camp-lista').innerHTML,/aria-current="page"/);
+ await assert.rejects(window.CAMPANHAS_UI.entrarPorCodigo('  '),/Digite/);assert.equal(chamadas.length,0);
+ await window.CAMPANHAS_UI.entrarPorCodigo(' ABC ');assert.equal(chamadas[0].nome,'entrar_na_campanha');assert.equal(chamadas[0].dados.p_codigo,'ABC');
+ await window.CAMPANHAS_UI.montarSeletor({id:'c',nome:'Campanha',podeGerenciar:true});assert.match(box.innerHTML,/Compartilhar código/);assert.match(box.innerHTML,/Gerenciar participantes/);assert.match(box.innerHTML,/Prévia da aparência/);
+});

@@ -27,20 +27,32 @@
     if(q.get('gerenciar')==='1'||q.get('acao')||['conta','personagens'].includes(q.get('aba'))||!uid())return '';
     const id=ler();return id?'campanha.html?id='+encodeURIComponent(id):'';
   }
+  async function entrarPorCodigo(codigo){
+    const cod=String(codigo||'').trim();if(!cod)throw Error('Digite o código de convite.');
+    return nuvem.rpc('entrar_na_campanha',{p_codigo:cod});
+  }
   async function montarSeletor(atual){
     const box=document.querySelector('#campanha-contexto');if(!box||!nuvem.usuario())return;
-    box.hidden=false;box.removeAttribute('aria-hidden');if(window.ESQ)window.ESQ.mostrar(box,'seletor','Carregando suas campanhas…');else box.innerHTML='<p role="status" class="muted">Carregando suas campanhas…</p>';
-    const uid=nuvem.usuario().id;
+    const usuario=nuvem.usuario().id,esc=nuvem.esc,ico=window.ico||(()=>''),url='conta.html?aba=campanhas&gerenciar=1';
+    const menu=(icone,nome,corpo)=>'<details class="compact-menu"><summary title="'+nome+'" aria-label="'+nome+'">'+ico(icone)+'</summary><div class="compact-popover">'+corpo+'</div></details>';
+    box.hidden=false;box.removeAttribute('aria-hidden');
+    box.innerHTML='<nav class="campanha-ferramentas" aria-label="Ações da campanha">'+
+      menu('list','Abrir lista de campanhas','<h2>Suas campanhas</h2><div id="camp-lista" class="compact-lista" role="status">Carregando…</div>')+
+      (atual.podeGerenciar?menu('share','Compartilhar código de convite','<h2>Convite da campanha</h2><div id="conv" class="bar" hidden></div>'):'')+
+      menu('plus','Entrar em campanha','<form id="camp-entrar"><label for="camp-codigo">Código de convite</label><input id="camp-codigo" required autocomplete="off"><button type="submit" class="small primary">Entrar</button><span id="camp-entrar-msg" role="status" class="muted"></span></form>')+
+      menu('more','Mais opções','<a href="'+url+'&acao=criar">Criar campanha</a><a href="'+url+'">Gerenciar minhas campanhas</a>'+(atual.podeGerenciar?'<button type="button" class="small" data-camp-grupo>Gerenciar participantes</button><button type="button" class="small" data-camp-aparencia>Prévia da aparência</button>':''))+'</nav>';
+    box.querySelector('#camp-entrar').addEventListener('submit',async e=>{
+      e.preventDefault();const botao=e.target.querySelector('button'),msg=box.querySelector('#camp-entrar-msg');botao.disabled=true;
+      try{await entrarPorCodigo(box.querySelector('#camp-codigo').value);msg.textContent='Entrada confirmada.';await montarSeletor(atual);}
+      catch(err){msg.textContent=err.message;}finally{botao.disabled=false;}
+    });
     try{
-      const membros=await nuvem.get('membros?select=papel,campanha:campanhas(id,nome)&usuario_id=eq.'+encodeURIComponent(uid)+'&order=entrou_em.desc');
-      if(nuvem.usuario()?.id!==uid){box.innerHTML='';box.hidden=true;return;}
-      const lista=campanhasDe(membros),esc=nuvem.esc;
-      if(lista.some(c=>c.id===atual.id))lembrar(atual.id);
-      box.innerHTML='<label for="campanha-seletor">Sua campanha<select id="campanha-seletor">'+lista.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===atual.id?'selected':'')+'>'+esc(c.nome)+'</option>').join('')+'</select></label><div class="campanha-contexto-acoes"><a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1&acao=criar" aria-label="Nova campanha"><span class="rot-curto">Nova campanha</span><span class="rot-longo">Nova campanha</span></a><a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1&acao=entrar" aria-label="Entrar com código"><span class="rot-curto">Entrar c/ código</span><span class="rot-longo">Entrar com código</span></a><a class="btnlike small subtle" href="conta.html?aba=campanhas&gerenciar=1" aria-label="Todas as campanhas"><span class="rot-curto">Ver campanhas</span><span class="rot-longo">Todas as campanhas</span></a></div>';
-      const select=document.querySelector('#campanha-seletor');
-      if(!lista.some(c=>c.id===atual.id))select.insertAdjacentHTML('afterbegin','<option selected value="">'+esc(atual.nome)+'</option>');
-      select.addEventListener('change',()=>{const c=lista.find(c=>c.id===select.value);if(c){lembrar(c.id);location.href='campanha.html?id='+encodeURIComponent(c.id);}});
-    }catch(e){box.innerHTML='<p role="status" class="err">Não foi possível carregar o seletor: '+nuvem.esc(e.message)+'</p><a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1">Ver minhas campanhas</a>';}
+      const membros=await nuvem.get('membros?select=papel,campanha:campanhas(id,nome)&usuario_id=eq.'+encodeURIComponent(usuario)+'&order=entrou_em.desc');
+      if(nuvem.usuario()?.id!==usuario){box.innerHTML='';box.hidden=true;return;}
+      const lista=campanhasDe(membros);if(lista.some(c=>c.id===atual.id))lembrar(atual.id);
+      box.querySelector('#camp-lista').innerHTML=lista.map(c=>'<a href="campanha.html?id='+encodeURIComponent(c.id)+'" '+(c.id===atual.id?'aria-current="page"':'')+'>'+(window.CAMPANHA_VISUAL?window.CAMPANHA_VISUAL.simbolo('',c.nome,true):'')+esc(c.nome)+'</a>').join('')||'<p class="muted">Nenhuma campanha disponível.</p>';
+    }catch(err){const lista=box.querySelector('#camp-lista');if(lista)lista.innerHTML='<p class="err">'+esc(err.message)+'</p><a href="'+url+'">Ver minhas campanhas</a>';}
   }
-  window.CAMPANHAS_UI={campanhasDe,preferida,lembrar,esquecer,entrada,entradaRapida,montarSeletor,ativaId:ler,chaveDe};
+
+  window.CAMPANHAS_UI={campanhasDe,preferida,lembrar,esquecer,entrada,entradaRapida,montarSeletor,entrarPorCodigo,ativaId:ler,chaveDe};
 })();

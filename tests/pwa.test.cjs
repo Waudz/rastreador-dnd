@@ -39,10 +39,10 @@ test('cabeçalho usa o logotipo transparente pequeno e o avatar da conta é circ
  assert.match(n,/<img src="icones\/compendio-logo-96.png" width="32" height="32"/);assert.match(n,/<span>Compêndio 5e<\/span>/);
  assert.match(css,/\.appmarca img \{ width:32px; height:32px;/);assert.match(css,/\.appavatar \{[^}]*width:34px; height:34px; border-radius:50%/);
 });
-test('controles da campanha: três botões em grade de três colunas, sem Gerenciar grupo, convite compacto e Trocar código no Grupo',()=>{
+test('controles compactos da campanha preservam o convite e a troca de código no Grupo',()=>{
  const ui=ler('js/campanhas-ui.js'),c=ler('js/campanha.js'),css=ler('css/identidade.css');
- assert.ok(!ui.includes('Gerenciar grupo'));assert.match(ui,/Ver campanhas/);
- assert.match(css,/\.campanha-contexto-acoes \{ display:grid; grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ for(const nome of ['Abrir lista de campanhas','Compartilhar código de convite','Entrar em campanha','Mais opções'])assert.ok(ui.includes(nome));
+ assert.match(ler('css/grupo-personagens.css'),/justify-content:flex-end/);
  assert.ok(!/id="copiar-cod">Copiar</.test(c));assert.match(c,/convite-cod/);
  const conv=c.slice(c.indexOf('async function mostrarConvite'),c.indexOf('/* ---------- ações'));assert.ok(!conv.includes('novo-cod'),'Trocar código saiu do topo');
  const grupo=c.slice(c.indexOf('function abaMembros'),c.indexOf('async function desenhar'));assert.match(grupo,/mestre\(\)/);assert.match(grupo,/id="novo-cod"/);

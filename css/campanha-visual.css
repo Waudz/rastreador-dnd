@@ -1,0 +1,25 @@
+.campanha-compacta { isolation:isolate; background:var(--bg); overflow:visible; }
+.campanha-compacta .campanha-ferramentas { z-index:3; }
+.campanha-identificacao { position:relative; display:flex; align-items:center; gap:14px; z-index:1; min-width:0; }
+.campanha-identificacao > div:last-child { min-width:0; }
+.campanha-identificacao h1 { overflow-wrap:anywhere; }
+.campanha-simbolo { display:grid; place-items:center; width:68px; height:68px; flex:0 0 68px; border-radius:50%; border:1px solid #D4AE7266; background:var(--panel); overflow:hidden; color:var(--gold); }
+.campanha-simbolo img { display:block; width:100%; height:100%; object-fit:cover; }
+.campanha-simbolo > .ico { width:28px; height:28px; }
+.campanha-simbolo.pequeno { display:inline-grid; width:24px; height:24px; vertical-align:middle; margin-right:8px; }
+.campanha-simbolo.pequeno > .ico { width:14px; height:14px; }
+#campanha-backdrop { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center var(--backdrop-y,50%); z-index:-2; }
+.campanha-compacta.com-backdrop { min-height:230px; display:flex; flex-direction:column; justify-content:space-between; padding:10px 0 22px; border:0; }
+.campanha-compacta.com-backdrop::after { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg,#10182055 0%,#10182066 25%,#101820CC 62%,var(--bg) 100%); pointer-events:none; }
+.campanha-visual-campos { display:grid; gap:10px; }
+.campanha-visual-campos label { display:grid; gap:5px; }
+.campanha-visual-campos input { min-width:0; max-width:100%; }
+#campanha-aparencia .muted { font-size:11px; line-height:1.6; }
+.campanha-compacta .compact-popover.aparencia-popover { width:340px; max-height:min(70vh,540px); overflow:auto; }
+@media(max-width:600px) {
+ .campanha-simbolo { width:52px; height:52px; flex-basis:52px; }
+ .campanha-compacta.com-backdrop { min-height:190px; padding-bottom:16px; }
+ #campanha-backdrop { object-position:center var(--backdrop-y-mobile,50%); }
+ .campanha-identificacao { gap:10px; }
+ .campanha-identificacao h1 { font-size:25px; }
+}

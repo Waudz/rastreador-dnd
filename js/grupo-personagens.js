@@ -1,0 +1,19 @@
+/* Apresentação compacta do grupo e regras compartilhadas para sua entrada no combate. */
+(() => {
+  const C=window.FICHA_COMPONENTES,esc=C.esc;
+  const icone=n=>window.ico?window.ico(n):'';
+  function identidade(p,{resumo=false,jogador='',vida=false}={}){
+    const f=p.ficha||{},r=C.resumoPersonagem(f),texto=[r.classes||f.classe,r.nivel?'Nível '+r.nivel:'', 'CA '+p.ca].filter(Boolean).join(' · ');
+    const corpo=C.retrato(p.nome,f.foto,36)+'<span class="grupo-identidade-texto"><b>'+esc(p.nome)+'</b><small>'+esc(texto)+'</small>'+(jogador?'<small>'+esc(jogador)+'</small>':'')+(vida?'<small class="grupo-pv-resumo">PV '+p.pv_atual+'/'+p.pv_max+'</small>':'')+'</span>';
+    return resumo?'<button type="button" class="ci-personagem grupo-identidade" data-ci-resumo="'+esc(p.id)+'" aria-label="Ver resumo de '+esc(p.nome)+'">'+corpo+'</button>':'<a class="grupo-identidade" href="personagem.html?id='+encodeURIComponent(p.id)+'">'+corpo+'</a>';
+  }
+  const checkbox=(p,selecionado,atributo='grupo-sel',disabled=false)=>'<label class="grupo-marcar"><input type="checkbox" data-'+atributo+'="'+esc(p.id)+'" aria-label="Selecionar '+esc(p.nome)+'" '+(selecionado?'checked ':'')+(disabled?'disabled':'')+'></label>';
+  const barra=(prefixo,n)=>'<div class="grupo-selecao"><button type="button" class="small subtle" id="'+prefixo+'-todos">Selecionar todos</button><button type="button" class="small subtle" id="'+prefixo+'-nenhum">Desmarcar todos</button><span class="grow"></span><button type="button" class="small primary" id="'+prefixo+'-rolar" '+(n?'':'hidden')+'>Rolar iniciativa ('+n+')</button><span class="sr-only" role="status">'+n+' selecionados</span></div>';
+  function bonus(f={}){const des=Number(f.atributos?.des);return window.REGRAS.mod(Number.isFinite(des)?des:10)+window.REGRAS.bonusSemProf(f);}
+  const rolar=p=>window.ROLAGENS.rolar('1d20',bonus(p.ficha||{})).total;
+  function destino(campanha,ids){const q=new URLSearchParams({aba:'iniciativa',campanha,personagens:[...new Set(ids)].join(','),rolar:'1'});return 'iniciativa.html?'+q;}
+  window.GRUPO_PERSONAGENS={identidade,checkbox,barra,bonus,rolar,destino,icone};
+  // Details nativos oferecem teclado/toque; fora/Escape fecham apenas os menus compactos.
+  document.addEventListener('click',e=>document.querySelectorAll('details.compact-menu[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;}));
+  document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const ds=[...document.querySelectorAll('details.compact-menu[open]')];ds.forEach(d=>d.open=false);ds.at(-1)?.querySelector('summary')?.focus();});
+})();

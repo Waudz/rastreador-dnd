@@ -99,7 +99,7 @@
   });
   $("#form-entrar").addEventListener("submit", async (e) => {
     e.preventDefault(); const m = $("#msg-camp"), cod = $("#e-codigo").value.trim(); if (!cod) return;
-    try { await nuvem.rpc("entrar_na_campanha", { p_codigo: cod }); $("#e-codigo").value = ""; $("#form-entrar").hidden = true; msg(m, ""); await carregar(); }
+    try { await window.CAMPANHAS_UI.entrarPorCodigo(cod); $("#e-codigo").value = ""; $("#form-entrar").hidden = true; msg(m, ""); await carregar(); }
     catch (err) { msg(m, err.message, true); }
   });
   $("#form-pers").addEventListener("submit", async (e) => {

@@ -11,6 +11,7 @@
   const mesmaConta = () => nuvem.usuario()?.id === conta;
   const emCombate = p => window.__ini.list().some(c => c.pid === p.id);
   const podeUsar = () => mesmaConta() && camps.some(c => c.id === atual);
+  const selecionados=new Set();
   const ocupadas = new Set();
   const basesPV = new Map();
   function bloquear(){
@@ -18,10 +19,10 @@
     fecharResumo();$('#ci-lista').innerHTML='';$('#ci-resumo-corpo').innerHTML='';resumoId=null;
   }
   function desenhar() {
-    const html = pers.length ? pers.map(p => {
-      const f = p.ficha || {}, foto = f.foto && /^data:image\//.test(f.foto) ? '<img class="av" style="width:36px;height:36px" src="'+esc(f.foto)+'" alt="">' : '<span class="av av0" style="width:36px;height:36px" aria-hidden="true">'+esc((p.nome||'?').charAt(0).toUpperCase())+'</span>';
-      return '<article class="ci-cartao"><button type="button" class="ci-personagem" data-ci-resumo="'+esc(p.id)+'" aria-label="Ver resumo de '+esc(p.nome)+'">'+foto+'<span><b>'+esc(p.nome)+'</b><small>'+esc(f.classe||[f.npc?"NPC":"Personagem",f.nivel?'Nível '+f.nivel:''].filter(Boolean).join(' · '))+'</small><small>PV '+p.pv_atual+'/'+p.pv_max+' · CA '+p.ca+'</small></span></button>'+(emCombate(p)?'<span class="muted ci-no-combate">No combate</span>':'<button type="button" class="small" data-ci="'+esc(p.id)+'">Adicionar à iniciativa</button>')+'</article>';
-    }).join("") : '<span class="muted">Esta campanha ainda não tem personagens. Importe ou crie as fichas dentro da campanha.</span>';
+    const G=window.GRUPO_PERSONAGENS;
+    for(const pid of selecionados)if(!pers.some(p=>p.id===pid&&!emCombate(p)))selecionados.delete(pid);
+    const barra=G.barra('ci',selecionados.size);if($('#ci-selecao').innerHTML!==barra)$('#ci-selecao').innerHTML=barra;
+    const html=pers.length?pers.map(p=>'<article class="ci-cartao grupo-cartao">'+G.checkbox(p,selecionados.has(p.id),'ci-sel',emCombate(p))+G.identidade(p,{resumo:true,vida:true})+(emCombate(p)?'<span class="muted ci-no-combate">No combate</span>':'<button type="button" class="grupo-icone" data-ci="'+esc(p.id)+'" title="Adicionar à iniciativa" aria-label="Adicionar '+esc(p.nome)+' à iniciativa">'+G.icone('swords')+'</button>')+'</article>').join(''):'<span class="muted">Esta campanha ainda não tem personagens. Importe ou crie as fichas dentro da campanha.</span>';
     if(ultimaGrade!==html){$("#ci-lista").innerHTML=html;ultimaGrade=html;}
   }
   function abrirResumo(p){
@@ -37,13 +38,22 @@
   }
   function fecharResumo(){if(window.PAINEL)window.PAINEL.fechar();$("#ci-resumo").hidden=true;document.body.classList.remove('com-ficha-lateral');window.reorganizarPaineis?.();focoAnterior?.focus?.();}
 
-  function adicionar(p) {
+  function adicionar(p,rolar=false) {
     if (!podeUsar() || emCombate(p)) return;
     const f = p.ficha || {};
     const usados = new Set(window.__ini.list().map(c => c.name));
     let nome = p.nome, n = 2; while (usados.has(nome)) nome = p.nome+" "+n++;
-    window.__ini.add({name:nome,kind:f.npc?"NPC":"Personagem",initiative:null,hp:p.pv_atual,maxHp:Math.max(1,p.pv_max),ac:p.ca||0,key:"",pid:p.id,campanhaId:atual,foto:f.foto||""});
+    window.__ini.add({name:nome,kind:f.npc?"NPC":"Personagem",initiative:rolar?window.GRUPO_PERSONAGENS.rolar(p):null,hp:p.pv_atual,maxHp:Math.max(1,p.pv_max),ac:p.ca||0,key:"",pid:p.id,campanhaId:atual,foto:f.foto||""});
     enviado[p.id] = p.pv_atual;
+  }
+  async function adicionarSelecionados(ids){
+    if(!podeUsar())return;
+    const campanha=atual;
+    if(await nuvem.rpc('eh_mestre',{c:campanha})!==true){bloquear();return;}
+    if(!podeUsar()||campanha!==atual)return;
+    const escolhidos=pers.filter(p=>ids.includes(p.id)&&!emCombate(p));
+    escolhidos.forEach(p=>adicionar(p,true));selecionados.clear();desenhar();
+    msg(escolhidos.length+' personagem(ns) adicionado(s). Os participantes atuais foram preservados.');
   }
   async function carregar() {
     if (buscando || !podeUsar()) return;
@@ -65,7 +75,10 @@
         if (p?.ficha?.foto && c.foto !== p.ficha.foto) { c.foto = p.ficha.foto; mudouFoto = true; }
       }
       if (mudouFoto) window.__ini.render();
-      if (personagemPedido && !adicionouPedido) {
+      const pedidos=(params.get('personagens')||'').split(',').filter(Boolean);
+      if(pedidos.length&&!adicionouPedido){
+        await adicionarSelecionados(pedidos);adicionouPedido=true;
+      } else if (personagemPedido && !adicionouPedido) {
         const p = pers.find(p => p.id === personagemPedido);
         if (!p) { msg("Esse personagem não está disponível nesta campanha.",true); }
         else { adicionar(p); adicionouPedido = true; msg("Personagem adicionado à iniciativa."); }
@@ -98,11 +111,14 @@
     const resumo=e.target.closest("[data-ci-resumo]");if(resumo){const p=pers.find(p=>p.id===resumo.dataset.ciResumo);if(p)abrirResumo(p);return;}
     const b=e.target.closest("[data-ci]");
     if(b){const p=pers.find(p=>p.id===b.dataset.ci);if(p){adicionar(p);desenhar();}return;}
-    if(e.target.closest("#ci-todos")){pers.forEach(adicionar);desenhar();return;}
+    if(e.target.closest('#ci-todos')){if(!podeUsar())return;pers.filter(p=>!emCombate(p)).forEach(p=>selecionados.add(p.id));desenhar();return;}
+    if(e.target.closest('#ci-nenhum')){selecionados.clear();desenhar();return;}
+    if(e.target.closest('#ci-rolar')){adicionarSelecionados([...selecionados]).catch(e=>msg(e.message,true));return;}
     if(e.target.closest("#ci-recarregar")){falhas=0;carregou=false;carregar();}
   });
   box.addEventListener("change",e=>{
-    if(e.target.id!=="ci-camp" || !camps.some(c=>c.id===e.target.value))return;atual=e.target.value;carregou=false;if(resumoId)fecharResumo();
+    if(e.target.dataset?.ciSel){if(!podeUsar())return;const pid=e.target.dataset.ciSel;if(!pers.some(p=>p.id===pid&&!emCombate(p)))return;e.target.checked?selecionados.add(pid):selecionados.delete(pid);desenhar();document.querySelector('[data-ci-sel="'+pid+'"]')?.focus();return;}
+    if(e.target.id!=="ci-camp" || !camps.some(c=>c.id===e.target.value))return;selecionados.clear();atual=e.target.value;carregou=false;if(resumoId)fecharResumo();
     if(window.CAMPANHAS_UI)window.CAMPANHAS_UI.lembrar(atual);else try{localStorage.setItem("ini_campanha",atual);}catch(_){}
     window.__ini.trocarContexto?.(atual);
     carregar();

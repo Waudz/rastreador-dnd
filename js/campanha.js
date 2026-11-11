@@ -56,21 +56,23 @@
     $("#abas").innerHTML = abas.map(([k, t]) => `<button type="button" data-aba="${k}" class="${aba === k ? "on" : ""}">${t}</button>`).join("");
   }
 
+  const selecionados=new Set();
   const cartaoPers = (p) => {
-    const f = p.ficha || {}, info=window.FICHA_COMPONENTES.resumoPersonagem(f),sub=[f.raca,info.classes].filter(Boolean).join(" · "), v = pct(p.pv_atual, p.pv_max);
-    return `<div class="card personagem-card" data-id="${esc(p.id)}">
-      ${mestre()?`<div class="jogador-vinculo"><label>Jogador<select data-dono="${esc(p.id)}"><option value="">Vincular conta…</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?"selected":""}>${esc(nomes[m.usuario_id]||"Jogador")}</option>`).join("")}</select></label></div>`:`<div class="meta">Jogador: ${esc(nomes[p.dono_id]||"Sem vínculo")}</div>`}
-      <a href="personagem.html?id=${encodeURIComponent(p.id)}" style="color:inherit;text-decoration:none;display:flex;gap:10px;align-items:center">${f.foto && /^data:image\//.test(f.foto) ? `<img class="av" style="width:44px;height:44px" src="${esc(f.foto)}" alt="">` : `<span class="av av0" style="width:44px;height:44px;font-size:20px">${esc((p.nome || "?").charAt(0).toUpperCase())}</span>`}<span><b>${esc(p.nome)}</b>
-      <div class="meta">${esc(sub)}${sub ? " · " : ""}CA ${p.ca}</div>${info.nivel?`<span class="badge">Nível ${info.nivel}</span>`:''}</span></a>
-      <div class="hpline cartao-vida"><div class="hp-top"><span>PV${p.pv_temp ? ` (+${p.pv_temp} temp.)` : ""}</span><strong>${p.pv_atual} / ${p.pv_max}</strong></div><div class="hp-track"><div class="hp-fill ${v <= 25 ? "low" : v <= 50 ? "mid" : ""}" style="width:${v}%"></div></div></div>
-      <div class="pv-acoes">${mestre() ? `<a class="btnlike small" href="iniciativa.html?campanha=${encodeURIComponent(id)}&personagem=${encodeURIComponent(p.id)}">Usar na iniciativa</a>` : ""}<input class="num" type="number" min="1" value="1" aria-label="Quantidade"><button type="button" class="small danger" data-dano="1">Dano</button><button type="button" class="small" data-cura="1">Cura</button><button type="button" class="small danger" data-excluir-pers="${esc(p.id)}">Excluir</button></div>
-    </div>`;
+    const G=window.GRUPO_PERSONAGENS, v=pct(p.pv_atual,p.pv_max);
+    const dono=mestre()?`<div class="jogador-vinculo"><label>Jogador<select data-dono="${esc(p.id)}"><option value="">Vincular conta…</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?'selected':''}>${esc(nomes[m.usuario_id]||'Jogador')}</option>`).join('')}</select></label></div>`:'';
+    return `<article class="card personagem-card grupo-cartao" data-id="${esc(p.id)}"><div class="grupo-cartao-topo">
+      ${mestre()?G.checkbox(p,selecionados.has(p.id)):''}${G.identidade(p,{jogador:nomes[p.dono_id]||'Sem vínculo'})}
+      <div class="grupo-cartao-acoes">${mestre()?`<a class="grupo-icone" href="${esc(G.destino(id,[p.id]))}" title="Adicionar à iniciativa" aria-label="Adicionar ${esc(p.nome)} à iniciativa">${ico('swords')}</a>`:''}
+      <details class="compact-menu"><summary title="Mais opções" aria-label="Mais opções de ${esc(p.nome)}">${ico('more')}</summary><div class="compact-popover"><a href="personagem.html?id=${encodeURIComponent(p.id)}">Abrir ficha</a>${dono}<button type="button" class="small danger" data-excluir-pers="${esc(p.id)}">Excluir personagem</button></div></details></div></div>
+      <div class="grupo-pv"><strong>PV ${p.pv_atual}/${p.pv_max}</strong><input class="num" type="number" min="1" value="1" aria-label="Quantidade de dano ou cura para ${esc(p.nome)}"><button type="button" class="small danger" data-dano="1" title="Aplicar dano" aria-label="Aplicar dano em ${esc(p.nome)}">${ico('minus')}</button><button type="button" class="small cura" data-cura="1" title="Aplicar cura" aria-label="Aplicar cura em ${esc(p.nome)}">${ico('plus')}</button></div>
+      <div class="hp-track" role="meter" aria-label="Pontos de vida de ${esc(p.nome)}" aria-valuemin="0" aria-valuemax="${Math.max(1,p.pv_max)}" aria-valuenow="${p.pv_atual}"><div class="hp-fill ${v<=25?'low':v<=50?'mid':''}" style="width:${v}%"></div></div>${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''}</article>`;
   };
+
 
   function abaPers() {
     const donos = membros.map((m) => `<option value="${esc(m.usuario_id)}"${m.usuario_id === meuId() ? " selected" : ""}>${esc(nomes[m.usuario_id] || "Jogador")}</option>`).join("");
     const jog = pers.filter((p) => !(p.ficha || {}).npc), npcs = pers.filter((p) => (p.ficha || {}).npc);
-    return `<div class="bar"><span class="grow"></span><button type="button" class="small" id="abre-imp">Importar do bestiário</button><button type="button" class="small" id="abre-novo">Novo personagem</button></div>
+    return `${mestre()?window.GRUPO_PERSONAGENS.barra("grupo",selecionados.size):""}<div class="bar"><span class="grow"></span><button type="button" class="small" id="abre-imp">Importar do bestiário</button><button type="button" class="small" id="abre-novo">Novo personagem</button></div>
       <form id="form-novo" class="row" hidden>
         <input id="n-nome" maxlength="80" placeholder="Nome" style="flex:1 1 200px" required>
         ${mestre() ? `<select id="n-dono" style="flex:0 1 180px" aria-label="Dono">${donos}</select>` : ""}
@@ -203,6 +205,7 @@
   }
 
   async function desenhar() {
+    for(const pid of selecionados)if(!pers.some(p=>p.id===pid))selecionados.delete(pid);
     cabecalho();
     $("#conteudo").innerHTML = aba === "pers" ? abaPers() : aba === "diario" ? abaDiario() : aba === "docs" ? abaDocs() : abaMembros();
   }
@@ -291,6 +294,12 @@
     const t = e.target, c = (s) => t.closest(s);
     try {
       let b;
+      if(c('[data-camp-aparencia]')){if(!mestre())return;const painel=$('#aparencia-painel');painel.hidden=false;painel.open=true;document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);window.CAMPANHA_VISUAL.montar({id,mestre:mestre()});painel.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
+      if(c('[data-camp-grupo]')){if(!mestre())return;aba='membros';document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);return desenhar();}
+      if(c('#grupo-todos')){if(!mestre())return;pers.forEach(p=>selecionados.add(p.id));return desenhar();}
+      if(c('#grupo-nenhum')){selecionados.clear();return desenhar();}
+      if(c('#grupo-rolar')){if(!mestre()||!selecionados.size)return;location.href=window.GRUPO_PERSONAGENS.destino(id,pers.filter(p=>selecionados.has(p.id)).map(p=>p.id));return;}
+
       if ((b = c("[data-aba]"))) { aba = b.dataset.aba; editandoDoc = null; formAberto = false; anexosForm = []; return desenhar(); }
       if ((b = c("[data-excluir-pers]"))) {const p=pers.find(p=>p.id===b.dataset.excluirPers);if(!p||!confirm("Excluir "+p.nome+"? Esta ação remove a ficha da campanha."))return;await nuvem.apagar("personagens?id=eq."+encodeURIComponent(p.id));return recarregar();}
       if ((b = c("[data-dano]"))) return mudarPV(c(".card"), true);
@@ -334,6 +343,7 @@
   });
 
   document.addEventListener("change", (e) => {
+    if(e.target.dataset.grupoSel){if(!mestre())return;const pid=e.target.dataset.grupoSel;if(!pers.some(p=>p.id===pid))return;e.target.checked?selecionados.add(pid):selecionados.delete(pid);desenhar();document.querySelector('[data-grupo-sel="'+pid+'"]')?.focus();return;}
     if (e.target.id === "ordem") { ordem = e.target.value; try { localStorage.setItem("campanha_ordem", ordem); } catch (_) {} desenhar(); return; }
  if (e.target.id === "r-anexo" && e.target.files[0]) { const f = e.target.files[0]; e.target.value = ""; anexarAoResumo(f); } });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#leitor").hidden) fecharLeitor(); });
@@ -361,7 +371,7 @@
     const area = $("#conteudo");
     if (!area.hasAttribute("aria-busy")) esqueletoDaPagina();
     const cancelar = window.ESQ ? window.ESQ.vigiar(area, abrir, 20000, "A conexão está lenta e a campanha ainda não chegou.") : () => {};
-    try { await carregar(); await desenhar(); cancelar(); window.ESQ?.pronto(area); aviso(''); await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre()}); window.ESQ?.pronto($("#campanha-contexto")); await mostrarConvite(); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); }
+    try { await carregar(); await desenhar(); cancelar(); window.ESQ?.pronto(area); aviso(''); await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre()}); window.ESQ?.pronto($("#campanha-contexto")); window.CAMPANHA_VISUAL?.montar({id,mestre:mestre()}); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); }
     catch (e) {
       cancelar(); camp = null;
       $("#abas").hidden = true; $("#campanha-contexto").hidden = true; $("#titulo").textContent = "Campanha"; $("#papel").textContent = "";
@@ -370,6 +380,7 @@
     }
   }
 
+  document.addEventListener('toggle',e=>{if(e.target.matches?.('.campanha-ferramentas details')&&e.target.open&&e.target.querySelector('#conv'))mostrarConvite();},true);
   /* ---------- início ---------- */
   (async () => {
     try { await nuvem.retornoDoLink(); } catch (_) {}

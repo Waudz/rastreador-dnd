@@ -9,8 +9,8 @@ async function fixture({search="",erro=false,user={id:"mestre"},ficha={},papel='
   }};
   const window={nuvem,addEventListener:(n,fn)=>eventos[n]=fn,__ini:{list:()=>lista,add:c=>lista.push(c),render(){}}};
   const c=vm.createContext({window,nuvem,document,location:{search,origin:'http://localhost'},localStorage,URLSearchParams,setInterval(){}});
-  executar("js/origens.js",c);executar("js/regras.js",c);c.REGRAS=window.REGRAS;executar("js/campanha-ini.js",c);await tick();
-  return {document,lista,consultas,atualizar,nuvem,eventos};
+  executar("js/origens.js",c);executar("js/regras.js",c);c.REGRAS=window.REGRAS;executar('js/ficha-componentes.js',c);executar('js/rolagens.js',c);executar('js/grupo-personagens.js',c);executar("js/campanha-ini.js",c);await tick();
+  return {document,lista,consultas,atualizar,nuvem,eventos,window};
 }
 test("link da campanha escolhe a campanha atual em vez da preferência antiga",async()=>{
   const f=await fixture({search:"?campanha=atual&personagem=p"});
@@ -85,4 +85,30 @@ test('dano no combate durante gravação da ficha é conciliado sem perder alter
  let gravado;f.nuvem.patch=async(_q,d)=>{gravado=d.pv_atual;return[{versao:2}];};
  await f.eventos.message(mensagem('ficha-salva'));
  assert.equal(f.lista[0].hp,7);assert.equal(gravado,7);
+});
+
+test('seleção em lote rola só os escolhidos e preserva quem já está em combate',async()=>{
+ const f=await fixture();f.lista.push({pid:'existente',name:'Existente',initiative:19,hp:8});
+ f.window.ROLAGENS.rolar=(expressao,bonus)=>{assert.equal(expressao,'1d20');assert.equal(bonus,3);return {total:13};};
+ f.document.el('camp-ini').events.change({target:{dataset:{ciSel:'p'},checked:true}});
+ assert.match(f.document.el('ci-selecao').innerHTML,/Rolar iniciativa \(1\)/);
+ f.document.el('camp-ini').events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();
+ assert.equal(f.lista.length,2);assert.equal(f.lista[0].initiative,19);assert.equal(f.lista[1].initiative,13);
+ assert.equal(f.lista[1].pid,'p');assert.equal(f.lista[1].hp,12);assert.equal(f.lista[1].ac,13);
+ f.document.el('camp-ini').events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();assert.equal(f.lista.length,2);
+});
+test('selecionar e desmarcar todos não adiciona participantes por conta própria',async()=>{
+ const f=await fixture();const click=id=>f.document.el('camp-ini').events.click({target:{closest:s=>s===id?{}:null}});
+ click('#ci-todos');assert.match(f.document.el('ci-selecao').innerHTML,/Rolar iniciativa \(1\)/);assert.equal(f.lista.length,0);
+ click('#ci-nenhum');assert.match(f.document.el('ci-selecao').innerHTML,/id="ci-rolar" hidden/);
+});
+test('permissão revogada após selecionar impede a adição em lote',async()=>{
+ const f=await fixture();f.document.el('camp-ini').events.change({target:{dataset:{ciSel:'p'},checked:true}});
+ f.nuvem.rpc=async()=>false;f.document.el('camp-ini').events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();
+ assert.equal(f.lista.length,0);assert.equal(f.document.el('camp-ini').hidden,true);
+});
+test('pedido por URL valida os IDs na campanha e não duplica personagens',async()=>{
+ const f=await fixture({search:'?campanha=atual&personagens=p,p,inacessivel&rolar=1'});
+ assert.equal(f.lista.length,1);assert.equal(f.lista[0].pid,'p');assert.ok(Number.isFinite(f.lista[0].initiative));
+ assert.equal(f.lista[0].campanhaId,'atual');
 });

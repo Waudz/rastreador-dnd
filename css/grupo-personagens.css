@@ -1,0 +1,73 @@
+/* Somente gerenciamento de campanha e seleção dos personagens disponíveis. */
+.campanha-header.campanha-compacta { display:block; position:relative; }
+.campanha-compacta .campanha-contexto { width:100%; min-width:0; margin:0 0 10px; }
+.campanha-ferramentas { display:flex; justify-content:flex-end; gap:6px; position:relative; }
+.compact-menu { position:relative; min-width:0; }
+.compact-menu > summary { display:flex; justify-content:center; align-items:center; width:32px; height:32px; padding:0; list-style:none; border:1px solid var(--line); background:var(--panel); border-radius:8px; cursor:pointer; color:var(--text); }
+.compact-menu > summary::-webkit-details-marker { display:none; }
+.compact-menu[open] > summary { border-color:var(--gold); color:var(--gold); }
+.compact-menu > .compact-popover { position:absolute; right:0; top:calc(100% + 6px); z-index:15; width:280px; max-width:calc(100vw - 56px); padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--panel); box-shadow:0 10px 30px #0006; }
+.compact-popover a, .compact-popover > button { display:block; width:100%; text-align:left; margin:0 0 5px; padding:8px; font-size:12px; border-radius:6px; text-decoration:none; color:var(--text); }
+.compact-popover a[aria-current="page"] { color:var(--gold); background:#D4AE721A; }
+.compact-popover .compact-lista { max-height:260px; overflow:auto; }
+.compact-popover form { display:grid; gap:8px; }
+.compact-popover label { font-size:12px; }
+.compact-popover input, .compact-popover select { width:100%; min-width:0; }
+.compact-popover #conv { flex-wrap:wrap; margin:0; gap:8px; }
+.compact-popover code { overflow-wrap:anywhere; }
+.campanha-ferramentas .compact-menu { position:static; }
+.campanha-ferramentas .compact-popover { top:38px; }
+.campanha-ferramentas .compact-popover h2 { font-size:13px; margin:0 0 10px; }
+.grupo-selecao { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:10px 0; }
+.grupo-selecao .small { min-height:32px; font-size:11px; padding:6px 9px; }
+.grupo-identidade { display:flex; align-items:center; gap:9px; min-width:0; color:inherit; text-decoration:none; text-align:left; }
+.grupo-identidade-texto { display:block; min-width:0; }
+.grupo-identidade-texto b { display:block; font-size:13px; overflow-wrap:anywhere; }
+.grupo-identidade-texto small { display:block; font-size:10px; color:var(--muted); line-height:1.6; overflow-wrap:anywhere; }
+.grupo-marcar { display:flex; align-items:center; justify-content:center; flex:0 0 28px; min-height:32px; margin:0; }
+.grupo-marcar input { width:16px; height:16px; margin:0; accent-color:var(--gold); }
+.grupo-cartao { min-width:0; }
+.personagem-card.grupo-cartao { padding:11px; gap:9px; overflow:visible; }
+.grupo-cartao-topo { display:flex; align-items:flex-start; gap:7px; min-width:0; }
+.grupo-cartao-topo .grupo-identidade { flex:1; }
+.grupo-cartao-acoes { display:flex; gap:4px; align-items:center; flex-shrink:0; }
+.grupo-icone { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; padding:0; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--gold); text-decoration:none; }
+.grupo-pv { display:flex; align-items:center; gap:5px; width:100%; }
+.grupo-pv strong { font-size:12px; margin-right:auto; white-space:nowrap; }
+.grupo-pv .num { flex:0 0 44px; width:44px; min-width:0; height:32px; padding:4px; text-align:center; }
+.grupo-pv button { width:32px; height:32px; padding:0; min-width:0; }
+.grupo-pv .cura { color:var(--green); border-color:#409B7970; }
+.grupo-pv .danger { color:var(--red); }
+.grupo-cartao .hp-track { height:4px; margin:0; }
+.grupo-pv-temp { font-size:10px; color:var(--muted); }
+.grupo-cartao .jogador-vinculo { border:0; padding:0; }
+.grupo-cartao .compact-menu { order:initial; }
+#ci-lista.ci-grade { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr)); gap:8px; }
+#ci-lista .ci-cartao.grupo-cartao { display:flex; align-items:center; gap:7px; padding:10px; margin:0; min-width:0; }
+#ci-lista .ci-personagem.grupo-identidade { flex:1; background:none; border:0; padding:0; box-shadow:none; }
+.ci-no-combate { font-size:10px; max-width:55px; }
+.grupo-cartao small.grupo-pv-resumo { font-size:11px; color:var(--text); }
+#camp-ini .ci-filtros { gap:7px; flex-wrap:wrap; margin:10px 0; }
+#camp-ini #ci-camp { flex:1 1 180px; min-width:0; max-width:100%; }
+.campanha-compacta #papel { text-transform:uppercase; }
+@media (pointer:coarse) {
+ .compact-menu > summary, .grupo-icone, .grupo-pv button { min-width:40px; width:40px; height:40px; }
+ .grupo-pv .num { height:40px; }
+ .grupo-marcar { min-height:40px; }
+ .campanha-ferramentas .compact-popover { top:46px; }
+ .grupo-selecao .small { min-height:40px; }
+}
+@media(max-width:400px) {
+ .grupo-cartao-topo { flex-wrap:wrap; }
+ .grupo-cartao-topo > .grupo-identidade { flex-basis:calc(100% - 40px); }
+ .grupo-cartao-acoes { margin-left:auto; }
+}
+
+#ci-lista .ci-cartao.grupo-cartao { flex-direction:row; }
+#ci-lista .ci-personagem.grupo-identidade { width:auto; min-height:36px; align-items:center; flex-wrap:nowrap; }
+#ci-lista .grupo-identidade-texto { flex:1; }
+#ci-lista .grupo-pv-resumo { flex:0 0 auto; font-size:10px; white-space:nowrap; }
+
+.grupo-cartao { position:relative; }
+.grupo-cartao .compact-menu { position:static; }
+.grupo-cartao .compact-popover { width:calc(100% - 16px); max-width:280px; right:8px; top:46px; }

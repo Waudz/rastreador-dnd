@@ -15,10 +15,12 @@
   <link rel="stylesheet" href="css/estilo.css">
   <link rel="stylesheet" href="css/identidade.css">
   <link rel="stylesheet" href="css/fichas.css">
+  <link rel="stylesheet" href="css/grupo-personagens.css">
   <link rel="stylesheet" href="css/magias.css">
   <script src="js/splash.js"></script>
   <script src="js/pre-pagina.js"></script>
   <script src="js/ficha-componentes.js" defer></script>
+  <script src="js/grupo-personagens.js" defer></script>
   <script src="js/magias-ui.js" defer></script>
   <script src="js/icones.js" defer></script>
   <script src="js/config-nuvem.js" defer></script>
@@ -66,10 +68,10 @@
 
     <details class="vista-iniciativa panel" id="camp-ini" hidden>
       <summary class="panel-title" style="cursor:pointer">Personagens da campanha</summary>
-      <div class="bar ci-filtros"><select id="ci-camp" aria-label="Campanha" style="width:auto"></select><span class="grow"></span><button type="button" class="small" id="ci-recarregar">Atualizar</button><button type="button" class="small primary" id="ci-todos">Adicionar todos</button></div>
+      <div class="bar ci-filtros"><select id="ci-camp" aria-label="Campanha" style="width:auto"></select><span class="grow"></span><button type="button" class="small" id="ci-recarregar">Atualizar</button></div>
       <div id="ci-msg" class="muted"></div>
-      <div id="ci-lista" class="ci-grade"></div>
-      <p class="muted">Adicione os personagens e preencha a iniciativa com a rolagem de cada jogador.</p>
+      <div id="ci-selecao"></div><div id="ci-lista" class="ci-grade"></div>
+      <p class="muted">Selecione as fichas para rolar iniciativa sem remover os participantes atuais. Recolha esta área pelo título quando terminar.</p>
     </details>
 
     <section class="vista-iniciativa panel">
