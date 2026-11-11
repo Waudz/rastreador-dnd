@@ -50,5 +50,9 @@
 .campanha-faixa .campanha-compacta > .campanha-contexto { flex:0 0 auto; }
 
 /* Altura compacta, crescendo somente quando o texto realmente precisar. */
-.campanha-faixa.com-backdrop .campanha-compacta { min-height:240px; }
+.campanha-faixa.com-backdrop .campanha-compacta { min-height:340px; }   /* computador: faixa mais alta, proporção parecida com a do celular */
 @media(max-width:600px) { .campanha-faixa.com-backdrop .campanha-compacta { min-height:220px; } }
+
+/* Sem imagem de fundo, o título não encosta nas abas; o painel de aparência não cola nos cartões acima. */
+.campanha-faixa .campanha-compacta:not(.com-backdrop) { padding-bottom:16px; }
+#aparencia-painel { margin-top:22px; }
