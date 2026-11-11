@@ -16,8 +16,8 @@
   }
   function validar(d) {
     const objeto = x => x && typeof x === "object" && !Array.isArray(x);
-    if (!objeto(d) || (!d.items && !d.tr && !d.ldj)) throw new Error("Backup inválido.");
-    for (const k of ["items", "deleted", "tr", "ldj"]) {
+    if (!objeto(d) || (!d.items && !d.tr)) throw new Error("Backup inválido.");
+    for (const k of ["items", "deleted", "tr"]) {
       if (d[k] !== undefined && !objeto(d[k])) throw new Error("Campo inválido no backup: " + k);
     }
     for (const [key, m] of Object.entries(d.items || {})) {
@@ -77,7 +77,6 @@
     const gravar = (k, v) => localStorage.setItem(k + "_" + conta.id, JSON.stringify(v));
     gravar("ini_tomb", d.deleted || {});
     if (d.tr) gravar("ini_tr", d.tr);
-    if (d.ldj) gravar("ini_ldj", d.ldj);
   }
   async function mesclar(d, conta = identidade()) {
     exigirAtivo();
@@ -112,7 +111,7 @@
     try{[mon,img]=await Promise.all(['mon','img'].map(s=>new Promise((ok,no)=>{const r=db.transaction(s).objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);})));}finally{db.close();}
     conferir(conta);const fotos=Object.fromEntries(img.map(i=>[i.key,i.data]));
     const ler=k=>{try{return JSON.parse(localStorage.getItem(k+'_'+conta.id)||'{}');}catch(_){return {};}};
-    const dados={v:1,items:Object.fromEntries(mon.filter(m=>m.custom).map(m=>[m.key,{...m,photo:fotos[m.key]||''}])),deleted:ler('ini_tomb'),tr:ler('ini_tr'),ldj:ler('ini_ldj')};
+    const dados={v:1,items:Object.fromEntries(mon.filter(m=>m.custom).map(m=>[m.key,{...m,photo:fotos[m.key]||''}])),deleted:ler('ini_tomb'),tr:ler('ini_tr')};
     const salvo=await mesclar(dados,conta);await aplicar(salvo,conta);conferir(conta);
     localStorage.setItem('ini_sync_status_'+conta.id,JSON.stringify({mensagem:'Sincronizado com sua conta',em:Date.now()}));
     return salvo;

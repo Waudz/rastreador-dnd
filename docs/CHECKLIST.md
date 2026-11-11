@@ -155,3 +155,11 @@ Esta verificação não equivale a teste em PWA instalado ou sessão autenticada
 - Três botões em grade de três colunas numa única linha (rótulos curtos abaixo de 480 px: "Nova campanha", "Entrar c/ código", "Ver campanhas"; completos acima disso). "Gerenciar grupo" saiu: o gerenciamento fica na aba Grupo.
 - Código de convite: um único controle (código + ícone de copiar) com confirmação "Copiado"; só o mestre o vê. "Trocar código" foi para a aba Grupo (só mestre), com a mesma confirmação e a mesma chamada ao servidor.
 - As abas da campanha cabem sem rolagem em 320 px.
+
+## Pré-lançamento: somente SRD 5.1 (2014)
+
+- **Removido do repositório público:** importador do Livro do Jogador (`ferramentas/importar-ldj.*`), `vendor/pdfjs/`, pacote `dados/bestiario/srd-2024.json` e as 242 habilidades de 2024 (`habilidades.json`). Cópias ficam em `William-privado/removido-do-site-2026-11-11/`. Continuam no histórico do Git.
+- **Texto do livro:** `app.js` e `acervo.js` não leem, gravam nem sincronizam mais `ini_ldj`/`ldj`. Dados já gravados no navegador (`ini_ldj_<id>`) e na conta (`acervos.dados.ldj`) não foram apagados; a limpeza da conta exige SQL aprovado.
+- **Escolhas oferecidas:** raças do SRD (Anão da Colina, Draconato, Elfo Alto, Gnomo da Rocha, Halfling Pés Leves, Humano, Meio-elfo, Meio-orc, Tiefling) e "Raça personalizada"; 12 classes e uma subclasse SRD por classe (o campo de subclasse da ficha continua livre); antecedente Acólito e "personalizado". Artífice, as 8 subclasses extras e os demais antecedentes não são mais oferecidos, mas **o código e os textos deles continuam no repositório** para que fichas antigas abram como antes. Remover esses textos é uma decisão separada.
+- **Licenças:** `licencas.html` com a atribuição completa do SRD 5.1 e as alterações; rodapé resumido em todas as páginas (`js/navegacao.js`).
+- **Pendente de confirmação sua:** procedência de `dados/srd-pt.json`, `magias.json` e `habilidades-pt.json` (precisam ser traduções próprias do SRD) e das 4 imagens de `fotos/`.

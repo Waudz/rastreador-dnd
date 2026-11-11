@@ -1,141 +1,79 @@
 # Rastreador D&D 5e
 
-Rastreador de iniciativa e bestiário para D&D 5e, em português. Roda inteiramente no navegador, sem servidor próprio: o site é um conjunto de arquivos estáticos publicados no GitHub Pages, e o GitHub também serve como armazenamento opcional (sincronização entre aparelhos).
+Rastreador de iniciativa, fichas, campanhas, monstros e magias de D&D 5ª edição (2014), em português. Site estático (HTML, CSS e JavaScript puro, sem build e sem framework) publicado no GitHub Pages, com contas e campanhas no Supabase e instalável como PWA.
 
-Projeto de fãs, para uso pessoal. Sem vínculo com a Wizards of the Coast.
+Projeto de fãs, sem vínculo com a Wizards of the Coast. Conteúdo oferecido para escolha: apenas o System Reference Document 5.1 (veja "Licenças").
 
-## Stack
+## O que faz
 
-| Camada | Tecnologia |
+- **Campanhas:** o mestre cria a campanha e convida jogadores com um código. Diário (anotações e documentos), personagens e grupo.
+- **Fichas:** criador guiado e ficha automática (classes, multiclasse, CA, PV, perícias, ataques, magias e espaços, inventário com peso, idiomas).
+- **Iniciativa:** combate com turnos, rodadas, efeitos e condições, dano e cura, relatório final. Cada campanha guarda o seu combate neste aparelho.
+- **Monstros e Magias:** catálogo SRD 5.1 com tradução para o português, fichas próprias (monstro, personagem, NPC) e fotos.
+- **PWA:** funciona offline com o que já foi aberto.
+
+## Onde cada dado fica
+
+| Dado | Onde |
 |---|---|
-| Interface | HTML5 e CSS3 (um único `estilo.css`, tema escuro, variáveis CSS) |
-| Lógica | JavaScript puro (ES2022), scripts clássicos, sem framework, sem bundler, sem etapa de build |
-| Dados locais | IndexedDB (fichas, magias, fotos) e `localStorage` (estado e configurações) |
-| Offline / instalação | PWA: `manifest.json` + service worker |
-| Rede | `fetch` para a API REST do GitHub (sincronização e publicação) e para a API da Open5e v2 (bestiário) |
-| Dependência de terceiros | `pdf.js` 4.4.168, incluído em `vendor/pdfjs/`, usado só pelo importador do Livro do Jogador |
+| Contas e sessões | Supabase Auth; o navegador guarda só a sessão (`nuvem_sessao`) |
+| Personagens, campanhas, participantes, diário | Supabase (`personagens`, `campanhas`, `membros`, `documentos`) |
+| Documentos e imagens da campanha | Supabase Storage (bucket privado `documentos`) |
+| Criações próprias (monstros, NPCs, fotos) | IndexedDB `bestiario_<id da conta>` e cópia na conta (`acervos`) |
+| SRD em português e catálogo | arquivos deste repositório (`dados/`) |
+| Estado do combate, campanha ativa, preferências | `localStorage` deste aparelho |
 
-Nenhum código é baixado de CDN. A CSP (`<meta>`) permite apenas `script-src 'self'` e conexões para `api.github.com` e `api.open5e.com`.
-
-## Funcionalidades
-
-**Combate**
-- Lista de combatentes ordenada por iniciativa, com desempate pela ordem de entrada; controle de turno e de rodada.
-- Iniciativa em dois campos: d20 e modificador. Ao escolher um monstro do bestiário, os dois vêm preenchidos (o modificador sai da Destreza).
-- Pontos de vida com dano e cura, edição e remoção. O quadro da rodada só aparece com combate ativo.
-- Efeitos de status (20 predefinidos e personalizado): ícone, anel colorido na foto, duração em rodadas que desconta no fim do turno da criatura, dica com a regra ao passar o mouse.
-- Relatório ao encerrar: dano causado, sofrido, cura e abates por combatente. O dano é atribuído a quem está na vez ou a quem for escolhido em "Dano causado por".
-
-**Bestiário e fichas**
-- Pacotes SRD 2014 e 2024 embutidos (monstros e magias), carregados em IndexedDB na primeira visita. A Open5e é usada só para outras fontes.
-- Busca e filtros por nome, tipo, tamanho e coleção.
-- Fichas próprias (monstro, personagem, NPC) com características, ações (com rolagem de ataque e dano) e magias; edição, exportação e importação em JSON.
-- Fotos com recorte (zoom, arrastar, prévia do ícone) e redução para 192 px. Fotos públicas dos monstros da API ficam em `fotos/`; a foto local tem prioridade.
-
-**Consulta de magias e habilidades**
-- Busca única em magias, habilidades de monstro e habilidades de classe, com filtros recolhíveis por tipo, fonte (2014 ou 2024), círculo, escola e ritual ou concentração.
-- Habilidades de classe do SRD (426 entradas), com texto em português para as de 2014. Podem ser adicionadas a uma ficha própria.
-
-**Tradução**
-- Descrições de monstros: camadas automáticas (modelos com troca de números, regex para ataques e salvaguardas, conjuração com links para as magias).
-- Magias do SRD 5.1 em português e nomes de monstros traduzidos, em `dados/srd-pt.json`.
-- Importador opcional (`ferramentas/importar-ldj.html`) que lê magias e habilidades de classe de um PDF do próprio usuário. O resultado fica só no navegador dele e na sincronização privada.
+Não há mais sincronização por repositório do GitHub: o site não se conecta ao GitHub nem guarda tokens dele.
 
 ## Estrutura
 
 ```
-index.html               aplicação
-admin.html               publicação de fotos e pacotes (não linkada)
-sw.js, manifest.json     PWA
-css/estilo.css
-js/
-  icones.js              ícones SVG (ico("nome") e <i data-i="nome">)
-  iniciativa.js          combate: estado, render, efeitos, relatório
-  app.js                 bestiário, fichas, tradução, magias, sincronização
-  admin.js               página de publicação
-dados/
-  srd-pt.json            dicionários de tradução (M: monstros, S: magias, F: habilidades)
-  habilidades.json       habilidades de classe (SRD, via Open5e)
-  habilidades-pt.json    tradução própria das habilidades (SRD 2014)
-  bestiario/             pacotes srd-2014.json, srd-2024.json e index.json
-fotos/                   fotos públicas dos monstros da API e index.json
-ferramentas/             importador do Livro do Jogador
-vendor/pdfjs/            pdf.js
-icones/, favicon.ico
+index.html, conta.html           entrada, campanhas, personagens e conta
+campanha.html, personagem.html   campanha e ficha
+criar-personagem.html            criador guiado
+iniciativa.html                  iniciativa, Monstros e Magias (?aba=)
+licencas.html                    licenças e créditos
+admin.html                       ferramentas do administrador
+sw.js, manifest.json             PWA
+css/                             estilo.css, identidade.css, fichas.css, magias.css
+js/                              um arquivo por área (veja AGENTS.md)
+dados/                           SRD 5.1 em português e catálogo
+supabase/                        SQL do banco e instruções
+tests/                           testes (node --test tests/*.cjs)
 ```
-
-Os dois scripts compartilham o estado pelo objeto global `window.__ini` (lista de combatentes, chave do monstro escolhido, avatar). Os dados pesados são carregados com `fetch` e não ficam no código.
-
-## Armazenamento
-
-| Onde | Chave / nome | Conteúdo |
-|---|---|---|
-| IndexedDB `bestiario` v3 | `mon`, `spl`, `img` | fichas, magias, fotos (data URL) |
-| `localStorage` | `dnd5e_initiative_tracker_v1` | estado do combate |
-| | `ini_sync` | repositório, caminho e token da sincronização |
-| | `ini_tomb` | exclusões de criações (para propagar na sincronização) |
-| | `ini_tr`, `ini_ldj`, `ini_packs`, `ini_admin` | nomes traduzidos, tradução do PDF, pacotes carregados, modo administrador |
-
-## Sincronização
-
-Opcional. Usa a API de conteúdo do GitHub em um repositório privado do usuário, com token fine-grained limitado a esse repositório (Contents: leitura e escrita).
-
-- `criacoes.json`: fichas próprias, fotos delas e lista de exclusões.
-- `traducoes.json`: nomes traduzidos e a tradução importada do PDF.
-- Resolução de conflito por `updatedAt` (vence o mais recente); exclusões vencem edições mais antigas. Nova tentativa em 409 e 422, leituras com `cache: "no-store"` e alterações feitas durante uma sincronização geram uma nova rodada.
-- Trava de segurança: a sincronização recusa repositórios públicos.
-- O token fica em `localStorage`, sem criptografia. Use um token de curta validade e só para esse repositório.
-
-## Modo administrador
-
-Os painéis de sincronização e de dados locais ficam ocultos. Aparecem com `/?admin` na URL ou com 5 toques seguidos no título (a escolha fica salva no aparelho). Depois de configurada, a sincronização continua acessível pelo botão **Sincronizar** do topo.
-
-`admin.html` publica fotos e pacotes SRD direto no repositório do site, em um único commit, pela API Git Data (blobs, tree, commit, ref). Exige um token separado com escrita no repositório do site. As criações próprias nunca são enviadas. Isso não é um controle de acesso: a proteção é o token e a permissão de escrita no GitHub.
 
 ## Executar localmente
 
 ```bash
-python -m http.server 8000
+node ferramentas/servidor-local.cjs
 ```
 
-Abra `http://localhost:8000`. Módulos, `fetch` e service worker não funcionam em `file://`.
+Ou `python -m http.server 8000` e abra `http://localhost:8000`. O service worker e o `fetch` não funcionam em `file://`.
+
+## Testes
+
+```bash
+node --test tests/*.cjs
+```
+
+O fluxo do GitHub também aplica `supabase/*.sql` num Postgres temporário e roda `tests/supabase.test.sql`. Isso não substitui validar as regras no projeto real (veja `supabase/VALIDACAO.md`).
 
 ## Publicar
 
-1. Envie o conteúdo para um repositório público e ative o GitHub Pages (branch `main`, pasta `/`). O arquivo `.nojekyll` desliga o processamento do Jekyll.
-2. A cada mudança em arquivos já publicados, aumente `CACHE` em `sw.js`. O service worker busca sempre a versão nova quando há rede e usa o cache só offline.
-3. Cada push cancela o deploy anterior do Pages; espere o último terminar antes de testar.
+1. Push na branch `main`; o GitHub Pages publica a pasta raiz.
+2. Ao mudar arquivos já publicados, aumente `CACHE` em `sw.js`.
+3. Quem tem a PWA aberta recebe o aviso "Nova versão disponível".
 
-## Dados e licenças
+## Licenças
 
-- Monstros, magias e habilidades de classe vêm do **System Reference Document 5.1** e do **5.2**, da Wizards of the Coast LLC, sob **Creative Commons Attribution 4.0** (obtidos pela API Open5e). A atribuição também aparece no rodapé do site.
-- As traduções em `dados/` são próprias, feitas a partir dos textos do SRD.
-- Textos de livros publicados não fazem parte do repositório. A tradução importada de um PDF fica apenas no navegador de quem a importou.
+- Monstros, magias, classes e raças do **System Reference Document 5.1**, de Wizards of the Coast LLC, sob **Creative Commons Attribution 4.0** (dados obtidos pela API Open5e). A atribuição completa e as alterações feitas estão em [`licencas.html`](licencas.html) e no rodapé de todas as páginas.
+- As traduções de `dados/` devem ser do próprio projeto, feitas a partir do texto do SRD. A procedência de cada arquivo precisa estar confirmada antes de uma distribuição ampla.
+- A estrutura do criador foi adaptada do HeroQuill (MIT); aviso em [`docs/FONTES-CRIADOR.md`](docs/FONTES-CRIADOR.md).
+- Livros publicados, outras edições e conteúdo de outros livros não fazem parte do repositório nem são oferecidos para escolha. Fichas antigas que já usam raças ou subclasses de outros livros continuam abrindo.
 
-## Limitações
+## Documentos do projeto
 
-- Sem servidor: cada pessoa só vê os próprios dados. Para compartilhar, use um repositório de sincronização comum ou o arquivo de exportação.
-- A tradução das habilidades de classe cobre o SRD 2014; as de 2024 ficam em inglês.
-- A extração do PDF depende do formato do livro usado no desenvolvimento e pode precisar de ajuste para outras edições.
-
-## Atualização: contas, fichas e migração
-
-A entrada agora é `index.html` (login ou campanhas da conta conectada). O combate e as consultas públicas estão em `iniciativa.html`; jogadores acessam monstros, magias e habilidades pelo link de consultas na conta ou campanha.
-
-As correções de interface podem ser publicadas com o banco atual. O acervo por conta é controlado por NUVEM_CONFIG.acervoPorConta e só deve ser ativado depois da migração SQL. A ativação está habilitada após a migração do projeto real. Para ativar a migração, aplique supabase/02-acervos-e-transferencia.sql após o schema inicial e então habilite essa configuração. O acervo sincroniza pela conta Supabase, com controle de acesso por usuário e mesclagem de criações/exclusões por data. O IndexedDB e as traduções são separados por conta. O token GitHub legado é removido do navegador após uma importação ou sincronização bem-sucedida.
-
-Para migrar do repositório privado:
-1. Faça login na conta de destino.
-2. Em **Importar dados antigos**, importe o backup combinado ou os arquivos originais `criacoes.json` e `traducoes.json`, um de cada vez.
-3. Na campanha, use **Importar do bestiário** para os personagens ainda não importados e **Recuperar fotos importadas** para os existentes.
-4. Depois que o jogador entrar na campanha com o código, o mestre escolhe o **Jogador responsável** no cartão. Não é necessário recriar a ficha.
-
-As automações seguem os dados de classe SRD 2014 do projeto. Atributos iniciais e escolhas de talento, estilo de luta, perícias e melhorias continuam sendo escolhas do jogador; os bônus e recursos derivados são calculados. As melhorias permitem escolher +1 duas vezes, inclusive no mesmo atributo, até 20. As descrições das raças expandidas continuam sendo resumos do catálogo existente, sem reprodução de livros.
-
-Validação local: `node tests/regras.test.cjs`. A validação de permissões e concorrência do banco está em `supabase/VALIDACAO.md`.
-
-D&D 2014 é a edição ativa: pacotes, monstros, magias e habilidades de 2024 ficam desabilitados, inclusive quando já existem no cache. Os arquivos antigos não são apagados.
-
-O workflow Validar fichas e banco executa os testes JavaScript e aplica os dois schemas em um PostgreSQL descartável para verificar RLS, transferência, fotos e mesclagem concorrente. Não usa credenciais nem dados do projeto real.
-
-O acompanhamento item a item está em docs/CHECKLIST.md. A cobertura efetiva de classes e subclasses está em docs/cobertura-2014.json; opções fora do catálogo precisam de cadastro ou importação de dados adicionais.
+- `AGENTS.md` e `CLAUDE.md`: contexto e regras de trabalho.
+- `docs/CHECKLIST.md`, `docs/PENDENCIAS.md`: decisões e pendências.
+- `docs/MIGRACAO-REPOSITORIO-PRIVADO.md`: como confirmar que os dados antigos foram preservados antes de arquivar o repositório privado.
+- `supabase/LEIA-ME.md`, `supabase/VALIDACAO.md`: banco de dados.

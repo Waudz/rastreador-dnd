@@ -37,9 +37,6 @@
     Object.assign(W, { "in lair": "no covil", lair: "covil", "the languages it knew in life": "os idiomas que conhecia em vida", "but can't speak it": "mas não pode falar", "languages": "idiomas", "any": "qualquer", "one": "um", "two": "dois", "three": "três", "four": "quatro", "of its choice": "à sua escolha" });
     const mk = (dict) => { const re = new RegExp("(?<![\\p{L}_])(" + Object.keys(dict).sort((a, b) => b.length - a.length).map(rx).join("|") + ")(?![\\p{L}_])", "giu"); return (s) => String(s ?? "").replace(re, (x) => dict[x.toLowerCase()] ?? x); };
     const trW = mk(W);
-    /* ===== Tradução pessoal do Livro do Jogador (vem do importador, fica em localStorage e no repositório privado) ===== */
-    // nome no PDF (sem acento, minúsculo, sem "de Bigby" etc.) → nome em inglês; tem prioridade sobre a comparação de nomes
-    const LDJ = { meta: {}, alias: {}, novos: new Set(), semPar: [] };
     const tr = (s) => trW(s).replace(/(\d+(?:\.\d+)?)\s*(?:ft\.?|feet)/gi, (_, n) => fm(+n)).replace(/, (e|ou) /g, " $1 ");
     const trAL = mk({ unaligned: "sem tendência", "any alignment": "qualquer tendência", "any non-good alignment": "qualquer tendência não boa", "any non-lawful alignment": "qualquer tendência não leal", "any chaotic alignment": "qualquer tendência caótica", "any evil alignment": "qualquer tendência má", "non-good": "não bom", "non-lawful": "não leal", typically: "geralmente", usually: "geralmente", or: "ou", and: "e", lawful: "leal", chaotic: "caótico", neutral: "neutro", good: "bom", evil: "mau", alignment: "tendência" });
     const AL = (s) => { s = String(s || "").toLowerCase().trim(); if (!s || s === "—") return s || ""; return cap(trAL(s.replace(/\b(lawful|chaotic|neutral) (good|evil|neutral)\b/g, "$1 e $2"))); };
@@ -264,11 +261,11 @@
     const catalog = () => {
       const have = new Set(SP.map((s) => s.name.toLowerCase()));
       return SP.concat(Object.entries(D.S).filter(([k]) => !have.has(k)).map(([k, v]) => ({
-        key: "ds:" + k, name: v[3] || k, level: LDJ.meta[k] ? LDJ.meta[k].nivel : null,
-        document: LDJ.novos.has(k) ? { display_name: "Livro do Jogador (pessoal)", key: "ldj" } : { display_name: "SRD 5.1", key: "srd-2014" }
+        key: "ds:" + k, name: v[3] || k, level: null,
+        document: { display_name: "SRD 5.1", key: "srd-2014" }
       })));
     };
-    const edOf = (doc) => { const k = String(doc?.key || ""); return /2014/.test(k) || k === "ldj" ? "2014" : /2024/.test(k) ? "2024" : ""; };
+    const edOf = (doc) => (/2014/.test(String(doc?.key || "")) ? "2014" : "");
     function spSearch() {
       const q = nz($("#sq").value.trim()), box = $("#spells"); if (!q) { box.innerHTML = ""; return; }
       const tipo = $("#sf-type").value, src = "2014", lv = $("#sf-lvl").value, sch = $("#sf-sch").value, ex = $("#sf-ex").value;
@@ -276,19 +273,19 @@
       const kOf = (s) => s.key.startsWith("ds:") ? s.key.slice(3) : s.name.toLowerCase();
       const r = (tipo && tipo !== "spell" ? [] : catalog()).filter((s) => !src || edOf(s.document) === src)
         .filter((s) => lv === "" || (s.level != null && String(s.level) === lv))
-        .filter((s) => !sch || (SCH[s.school?.name] || LDJ.meta[kOf(s)]?.escola || "") === sch)
-        .filter((s) => !ex || (ex === "ritual" ? !!(s.ritual || LDJ.meta[kOf(s)]?.ritual) : !!s.concentration))
-        .filter((s) => { const k = kOf(s); return nz(s.name + " " + (D.S[k]?.[0] || "") + " " + (LDJ.alias[k] || "")).includes(q); }).slice(0, 30);
+        .filter((s) => !sch || (SCH[s.school?.name] || "") === sch)
+        .filter((s) => !ex || (ex === "ritual" ? !!s.ritual : !!s.concentration))
+        .filter((s) => { const k = kOf(s); return nz(s.name + " " + (D.S[k]?.[0] || "")).includes(q); }).slice(0, 30);
       box.innerHTML = r.map((s) => {
-        const k = kOf(s), d = D.S[k], pm = LDJ.meta[k];
-        return window.MAGIAS_UI.resultado({chave:s.key,nome:d?d[0]:s.name,original:s.name,nivel:s.level,escola:SCH[s.school?.name]||pm?.escola,tempo:s.casting_time?cap(tr(s.casting_time)):pm?.tempo,alcance:s.range_text?tr(s.range_text):pm?.alcance,ritual:s.ritual||pm?.ritual,concentracao:s.concentration,fonte:srcOf(s),alias:LDJ.alias[k]&&d&&nz(LDJ.alias[k])!==nz(d[0])?LDJ.alias[k]:''});
+        const k = kOf(s), d = D.S[k];
+        return window.MAGIAS_UI.resultado({chave:s.key,nome:d?d[0]:s.name,original:s.name,nivel:s.level,escola:SCH[s.school?.name],tempo:s.casting_time?cap(tr(s.casting_time)):undefined,alcance:s.range_text?tr(s.range_text):undefined,ritual:s.ritual,concentracao:s.concentration,fonte:srcOf(s),alias:''});
       }).join("") + (soMagia || (tipo && tipo !== "monster") ? "" : abilityRows(q, src)) + (soMagia || (tipo && tipo !== "class") ? "" : classRows(q, src)) || '<span class="muted">Nada encontrado.</span>';
     }
     function abilityRows(q, src = "") {
       return [...ABI.entries()].map(([l, v]) => [l, v, src ? v.items.filter((x) => edOf(x.m.document) === src) : v.items]).filter(([l, v, its]) => its.length && nz(v.name + " " + nm(v.name)).includes(q)).slice(0, 15).map(([l, v, its]) => `<div class="res" data-abopen="${esc(l)}"><span><b>${esc(nm(v.name))}</b> <span class="muted">(${esc(v.name)})</span><br><span class="muted">Habilidade de monstro · ${its.length} ${its.length > 1 ? "monstros" : "monstro"}: ${esc(its.slice(0, 3).map((x) => pt(x.m) || x.m.name).join(", "))}${its.length > 3 ? "…" : ""}</span></span></div>`).join("");
     }
 
-    /* habilidades de classe (SRD 2014 e 2024, via Open5e; texto em inglês) */
+    /* habilidades de classe (SRD 5.1, 2014, via Open5e; texto em inglês) */
     const CFCLS = { Barbarian: "Bárbaro", Bard: "Bardo", Cleric: "Clérigo", Druid: "Druida", Fighter: "Guerreiro", Monk: "Monge", Paladin: "Paladino", Ranger: "Patrulheiro", Rogue: "Ladino", Sorcerer: "Feiticeiro", Warlock: "Bruxo", Wizard: "Mago" };
     const cfClass = (f) => { const base = f.u || f.c; return (CFCLS[base] || base) + (f.u ? ` (${f.c})` : ""); };
     const cfLevel = (f) => f.l && f.l.length ? "nível " + (f.l.length > 3 ? f.l[0] + "+" : f.l.join(", ")) : "";
@@ -301,8 +298,6 @@
     const cfFind = (q, max) => { const ws = q.split(/\s+/).filter(Boolean); if (!ws.length) return []; return CF.map((f, i) => [f, i]).filter(([f]) => { const hay = nz(`${f.n} ${f.p} ${CFCLS[f.u || f.c] || ""} ${f.u || f.c} ${f.c}`); return ws.every((w) => hay.includes(w)); }).slice(0, max); };
     const classRows = (q, src = "") => cfFind(q, 400).filter(([f]) => !src || f.e === src).slice(0, 12).map(([f, i]) => `<div class="res" data-cfopen="${i}"><span><b>${esc(cfTitle(f))}</b>${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""}<br><span class="muted">${esc(["Habilidade de classe", cfClass(f), cfLevel(f), f.e].filter(Boolean).join(" · "))}</span></span></div>`).join("");
 
-    /* habilidades de classe do Livro do Jogador (vêm do importador; ficam só no navegador e no repositório privado) */
-    const CFL = new Set();
     /* adiciona uma habilidade de classe a uma ficha própria (personagem, NPC ou monstro criado por você) */
     const cfAlvos = (i) => {
       const alvos = ALL.filter((m) => m.custom).sort((x, y) => x.name.localeCompare(y.name));
@@ -328,9 +323,9 @@
     function openClassFeature(i, origin) {
       const f = CF[i]; if (!f) return;
       $("#spd-body").innerHTML = `<h3>${esc(cfTitle(f))}</h3><div class="muted">${esc(f.n)}</div>
-        <div class="sp-meta"><div><b>Classe:</b> ${esc(cfClass(f))}</div>${f.l && f.l.length ? `<div><b>Níveis:</b> ${esc(f.l.join(", "))}</div>` : ""}<div><b>Regras:</b> ${f.ldj ? "Livro do Jogador (2014)" : "SRD " + (f.e === "2024" ? "5.2 (2024)" : "5.1 (2014)")}</div></div>
-        ${f.ldj ? '<div class="sp-note">Texto do Livro do Jogador (tradução pessoal).</div>' : CFL.has(cfKey(f)) ? '<div class="sp-note">Texto do Livro do Jogador (tradução pessoal). O original em inglês (SRD) está no final.</div>' : CFT[cfKey(f)] ? '<div class="sp-note">Tradução própria do SRD (CC-BY-4.0). O original em inglês está no final.</div>' : '<div class="sp-note">Texto original em inglês (SRD); ainda sem tradução.</div>'}
-        <div class="sp-body">${esc(String(cfText(f)).replace(/\r/g, ""))}</div>${!f.ldj && CFT[cfKey(f)] ? `<div class="orig">Original: ${esc(String(f.d).replace(/\r/g, ""))}</div>` : ""}
+        <div class="sp-meta"><div><b>Classe:</b> ${esc(cfClass(f))}</div>${f.l && f.l.length ? `<div><b>Níveis:</b> ${esc(f.l.join(", "))}</div>` : ""}<div><b>Regras:</b> SRD 5.1 (2014)</div></div>
+        ${CFT[cfKey(f)] ? '<div class="sp-note">Tradução própria do SRD (CC-BY-4.0). O original em inglês está no final.</div>' : '<div class="sp-note">Texto original em inglês (SRD); ainda sem tradução.</div>'}
+        <div class="sp-body">${esc(String(cfText(f)).replace(/\r/g, ""))}</div>${CFT[cfKey(f)] ? `<div class="orig">Original: ${esc(String(f.d).replace(/\r/g, ""))}</div>` : ""}
         ${cfAlvos(i)}`;
       window.PAINEL.empilhar("spd");
     }
@@ -347,8 +342,7 @@
       const rec = SP.find((s) => s.key === key) || SP.filter((s) => s.name.toLowerCase() === l).sort((a, b) => (b.document?.key === "srd-2014") - (a.document?.key === "srd-2014"))[0];
       const d = D.S[rec ? rec.name.toLowerCase() : l]; if (!rec && !d) return;
      
-      const pm = LDJ.meta[rec ? rec.name.toLowerCase() : l];
-      const meta = rec ? [["Círculo", rec.level ? rec.level + "º círculo" : "Truque"], ["Escola", SCH[rec.school?.name] || rec.school?.name], ["Tempo de conjuração", cap(tr(rec.casting_time || ""))], ["Alcance", tr(rec.range_text || "")], ["Componentes", [rec.verbal && "V", rec.somatic && "S", rec.material && "M"].filter(Boolean).join(", ")], ["Duração", cap(tr(rec.duration || "")) + (rec.concentration ? " (concentração)" : "")], ["Ritual", rec.ritual ? "Sim" : ""], ["Fonte", srcOf(rec)]] : pm ? [["Círculo", pm.nivel ? pm.nivel + "º círculo" : "Truque"], ["Escola", pm.escola], ["Tempo de conjuração", pm.tempo], ["Alcance", pm.alcance], ["Componentes", pm.comp], ["Duração", pm.dur], ["Ritual", pm.ritual ? "Sim" : ""], ["Fonte", "Livro do Jogador (tradução pessoal)"]] : [];
+      const meta = rec ? [["Círculo", rec.level ? rec.level + "º círculo" : "Truque"], ["Escola", SCH[rec.school?.name] || rec.school?.name], ["Tempo de conjuração", cap(tr(rec.casting_time || ""))], ["Alcance", tr(rec.range_text || "")], ["Componentes", [rec.verbal && "V", rec.somatic && "S", rec.material && "M"].filter(Boolean).join(", ")], ["Duração", cap(tr(rec.duration || "")) + (rec.concentration ? " (concentração)" : "")], ["Ritual", rec.ritual ? "Sim" : ""], ["Fonte", srcOf(rec)]] : [];
       const mat = d?.[2] || rec?.material_specified || "", en = rec ? (rec.desc || "") + (rec.higher_level ? "\n\n" + rec.higher_level : "") : "";
       const other = d && rec && rec.document?.key !== "srd-2014";
       $("#spd-body").innerHTML = window.MAGIAS_UI.detalhes({nome:d?d[0]:rec.name,original:rec?rec.name:d[3],meta,descricao:d?d[1]:en,materiais:mat,nota:other?'Texto em português do SRD 5.1 (2014). A versão desta fonte pode ter diferenças; o original está no final.':'',originalTexto:other&&en?en:'',concentracao:!!rec?.concentration});
@@ -530,7 +524,7 @@
       try{
         const todos=await rq(db.transaction("mon").objectStore("mon").getAll()), fotos=await rq(db.transaction("img").objectStore("img").getAll()), porFoto=Object.fromEntries(fotos.map(i=>[i.key,i.data]));
         const items=Object.fromEntries(todos.filter(m=>m.custom).map(m=>[m.key,{...m,photo:porFoto[m.key]||""}]));
-        const d=await acervo.mesclar({v:1,items,deleted:TOMB,tr:TR,ldj:JSON.parse(localStorage.getItem(acervo.chave("ini_ldj"))||"{}")});
+        const d=await acervo.mesclar({v:1,items,deleted:TOMB,tr:TR});
         await acervo.aplicar(d);TOMB=d.deleted||{};Object.assign(TR,d.tr||{}); await reload();
         localStorage.removeItem("ini_sync"); saveTR();syMsg("Sincronizado com sua conta");
       }catch(e){syMsg('<span class="err">'+esc(e.message)+'</span>');}
@@ -540,10 +534,6 @@
     try { TOMB = JSON.parse(localStorage.getItem(acervo.chave("ini_tomb")) || "{}"); localStorage.removeItem("ini_sync"); localStorage.removeItem("ini_pub"); localStorage.removeItem("ini_admin"); } catch (_) {}
     const saveTomb = () => { try { localStorage.setItem(acervo.chave("ini_tomb"), JSON.stringify(TOMB)); } catch (_) {} };
     const syMsg = h => {try{localStorage.setItem(acervo.chave("ini_sync_status"),JSON.stringify({mensagem:String(h).replace(/<[^>]*>/g,""),em:Date.now()}));}catch(_){}};
-    window.addEventListener("storage", (e) => {
-      if (e.key !== acervo.chave("ini_ldj") || !e.newValue) return;
-      queueSync();
-    });
     window.addEventListener("online", () => queueSync());
     const touch = async (k) => { const m=BY[k];if(!m)return;if(m.custom){m.updatedAt=Date.now();await put("mon",[m]);queueSync();}else try{await CATALOGO.atualizar({registros:ALL,magias:SP,fotos:[{key:k,data:PH[k]||""}]});}catch(e){status("Não consegui sincronizar a foto: "+esc(e.message));} };
     function queueSync() { if (!window.nuvem?.usuario() || !acervo.ativo()) return; clearTimeout(syTimer); syTimer = setTimeout(syncNow, 1500); }
