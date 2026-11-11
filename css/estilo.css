@@ -486,3 +486,10 @@ a.doclink { color: var(--gold); text-decoration: underline; cursor: pointer; }
 .atk-res { color: var(--gold); margin-top: 4px; }
 .inv-h { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .num-h { width: 76px; text-align: center; }
+
+/* Ficha no celular e controles de consulta */
+.ca-num {font-size:42px;line-height:1.15;color:var(--gold)}
+.ca-desc {font-size:12px;max-width:42ch}
+.catalogo-lista {max-height:360px;overflow:auto;overscroll-behavior:contain}
+.crop-stage {touch-action:none;max-width:100%;height:auto}
+[hidden] {display:none!important}

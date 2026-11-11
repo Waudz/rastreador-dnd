@@ -1,0 +1,177 @@
+{
+  "edicao": "2014",
+  "classes": [
+    {
+      "id": "Barbarian",
+      "nome": "Bárbaro",
+      "habilidadesBasicas": 14,
+      "subclassesNoCatalogo": [
+        "Path of the Berserker"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Trilha do Berserker",
+        "Trilha do Guerreiro Totêmico"
+      ]
+    },
+    {
+      "id": "Bard",
+      "nome": "Bardo",
+      "habilidadesBasicas": 11,
+      "subclassesNoCatalogo": [
+        "College of Lore"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Colégio do Conhecimento",
+        "Colégio da Bravura"
+      ]
+    },
+    {
+      "id": "Cleric",
+      "nome": "Clérigo",
+      "habilidadesBasicas": 6,
+      "subclassesNoCatalogo": [
+        "Life Domain"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Domínio da Vida",
+        "Domínio da Luz",
+        "Domínio da Guerra",
+        "Domínio da Tempestade",
+        "Domínio do Conhecimento",
+        "Domínio da Natureza",
+        "Domínio da Trapaça"
+      ]
+    },
+    {
+      "id": "Druid",
+      "nome": "Druida",
+      "habilidadesBasicas": 8,
+      "subclassesNoCatalogo": [
+        "Circle of the Land"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Círculo da Terra",
+        "Círculo da Lua"
+      ]
+    },
+    {
+      "id": "Fighter",
+      "nome": "Guerreiro",
+      "habilidadesBasicas": 7,
+      "subclassesNoCatalogo": [
+        "Champion"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Campeão",
+        "Mestre de Batalha",
+        "Cavaleiro Místico"
+      ]
+    },
+    {
+      "id": "Monk",
+      "nome": "Monge",
+      "habilidadesBasicas": 19,
+      "subclassesNoCatalogo": [
+        "Way of the Open Hand"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Caminho da Mão Espalmada",
+        "Caminho das Sombras",
+        "Caminho dos Quatro Elementos"
+      ]
+    },
+    {
+      "id": "Paladin",
+      "nome": "Paladino",
+      "habilidadesBasicas": 13,
+      "subclassesNoCatalogo": [
+        "Oath of Devotion"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Juramento de Devoção",
+        "Juramento dos Anciões",
+        "Juramento de Vingança"
+      ]
+    },
+    {
+      "id": "Ranger",
+      "nome": "Patrulheiro",
+      "habilidadesBasicas": 13,
+      "subclassesNoCatalogo": [
+        "Hunter"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Caçador",
+        "Mestre das Feras"
+      ]
+    },
+    {
+      "id": "Rogue",
+      "nome": "Ladino",
+      "habilidadesBasicas": 13,
+      "subclassesNoCatalogo": [
+        "Thief"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Ladrão",
+        "Assassino",
+        "Trapaceiro Arcano"
+      ]
+    },
+    {
+      "id": "Sorcerer",
+      "nome": "Feiticeiro",
+      "habilidadesBasicas": 6,
+      "subclassesNoCatalogo": [
+        "Draconic Bloodline"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Linhagem Dracônica",
+        "Magia Selvagem"
+      ]
+    },
+    {
+      "id": "Warlock",
+      "nome": "Bruxo",
+      "habilidadesBasicas": 8,
+      "subclassesNoCatalogo": [
+        "The Fiend"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "A Arquifada",
+        "O Corruptor",
+        "O Grande Antigo"
+      ]
+    },
+    {
+      "id": "Wizard",
+      "nome": "Mago",
+      "habilidadesBasicas": 6,
+      "subclassesNoCatalogo": [
+        "School of Evocation"
+      ],
+      "opcoesDeSubclasseNaFicha": [
+        "Escola de Abjuração",
+        "Escola de Adivinhação",
+        "Escola de Conjuração",
+        "Escola de Encantamento",
+        "Escola de Evocação",
+        "Escola de Ilusão",
+        "Escola de Necromancia",
+        "Escola de Transmutação"
+      ]
+    },
+    {
+      "id": "Artificer",
+      "nome": "Artífice",
+      "habilidadesBasicas": 0,
+      "subclassesNoCatalogo": [],
+      "opcoesDeSubclasseNaFicha": [
+        "Alquimista",
+        "Armeiro",
+        "Artilheiro",
+        "Ferreiro de Batalha"
+      ]
+    }
+  ]
+}

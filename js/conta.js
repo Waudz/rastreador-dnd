@@ -49,6 +49,7 @@
       nuvem.get(`membros?select=papel,campanha:campanhas(id,nome)&usuario_id=eq.${u.id}&order=entrou_em.desc`),
       nuvem.get(`personagens?select=id,nome,pv_atual,pv_max,ca,ficha,campanha:campanhas(id,nome)&dono_id=eq.${u.id}&order=nome`)
     ]);
+    if(nuvem.usuario()?.id !== u.id) return;
     const nome = (perfil[0] && perfil[0].nome) || u.nome || u.email.split("@")[0];
     $("#quem").textContent = nome; $("#a-nome").value = nome;
 
@@ -57,19 +58,22 @@
       return `<a class="card" href="campanha.html?id=${encodeURIComponent(c.id)}"><b>${esc(c.nome)}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></a>`;
     }).join("") : '<span class="muted">Nenhuma campanha ainda.</span>';
 
-    $("#p-camp").innerHTML = membros.map((m) => `<option value="${esc(m.campanha.id)}">${esc(m.campanha.nome)}</option>`).join("") || '<option value="">(sem campanhas)</option>';
+    $("#p-camp").innerHTML = membros.filter(m=>m.papel==="jogador" && m.campanha).map((m) => `<option value="${esc(m.campanha.id)}">${esc(m.campanha.nome)}</option>`).join("") || '<option value="">(sem campanhas)</option>';
 
-    $("#personagens").innerHTML = pers.length ? pers.map((p) => {
+    const campanhasJogador = new Set(membros.filter(m=>m.papel==="jogador").map(m=>m.campanha.id));
+    const meusPersonagens = pers.filter(p=>!(p.ficha||{}).npc && campanhasJogador.has((p.campanha||{}).id));
+    $("#personagens").innerHTML = meusPersonagens.length ? meusPersonagens.map((p) => {
       const f = p.ficha || {}, sub = [f.classe, f.nivel ? "nível " + f.nivel : ""].filter(Boolean).join(" · ");
       return `<a class="card" href="personagem.html?id=${encodeURIComponent(p.id)}"><b>${esc(p.nome)}</b><div class="meta">${esc(sub)}${sub ? " · " : ""}${esc((p.campanha || {}).nome || "")}</div>${barraPV(p.pv_atual, p.pv_max)}</a>`;
-    }).join("") : '<span class="muted">Nenhum personagem ainda.</span>';
+    }).join("") : '<span class="muted">Seus personagens como jogador aparecem aqui. Como mestre, acesse os personagens dentro da campanha.</span>';
   }
 
   async function mostrarArea() {
+    $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = "";
     $("#entrar").hidden = true; $("#area").hidden = false;
     try { await carregar(); } catch (e) { $("#campanhas").innerHTML = `<span class="err">${esc(e.message)}</span>`; }
   }
-  function mostrarLogin() { $("#entrar").hidden = false; $("#area").hidden = true; }
+  function mostrarLogin() { $("#entrar").hidden = false; $("#area").hidden = true; $("#l-senha").value = ""; $("#campanhas").innerHTML = ""; $("#personagens").innerHTML = ""; $("#quem").textContent = ""; }
 
   $("#btn-sair").onclick = async () => { await nuvem.sair(); mostrarLogin(); };
   $("#abre-camp").onclick = () => { $("#form-entrar").hidden = true; alterna("#form-camp"); };
@@ -105,6 +109,15 @@
     try { await nuvem.trocarSenha(s); $("#a-senha").value = ""; msg(m, "Senha trocada."); } catch (e) { msg(m, e.message, true); }
   };
 
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+
+  $("#painel-backup-conta").hidden = !acervo.ativo();
+  $("#backup-conta").onchange=async e=>{
+    const f=e.target.files[0];if(!f)return; const m=$("#msg-backup");e.target.disabled=true;
+    try{const n=await acervo.importar(JSON.parse(await f.text()));msg(m,n+" criações salvas na sua conta, com fotos e traduções. Abra a campanha e use Importar do bestiário.");}
+    catch(err){msg(m,err.message,true);}finally{e.target.disabled=false;e.target.value="";}
+  };
   /* ---------- início ---------- */
   (async () => {
     nuvem.olhos();

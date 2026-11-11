@@ -1,5 +1,7 @@
   (async () => {
     try { if (/[?&]admin(=|&|$)/.test(location.search) || localStorage.getItem("ini_admin") === "1") document.body.classList.add("admin"); } catch (_) {}
+    const contaInicial=window.nuvem&&nuvem.usuario()?.id;
+    if(window.nuvem)nuvem.aoMudar(u=>{if(u?.id!==contaInicial)location.reload();});
     const API = "https://api.open5e.com/v2", $ = (s) => document.querySelector(s);
     let D;
     try { D = await fetch("dados/srd-pt.json").then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }); }
@@ -8,7 +10,7 @@
     let PUB = new Set();
     try { const r = await fetch("fotos/index.json", { cache: "no-cache" }); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}
     let CF = [];
-    try { const r = await fetch("dados/habilidades.json"); if (r.ok) CF = await r.json(); } catch (_) {}
+    try { const r = await fetch("dados/habilidades.json"); if (r.ok) CF = (await r.json()).filter(EDICOES.permitida); } catch (_) {}
     let CFT = {}, CFT0 = {};
     try { const r = await fetch("dados/habilidades-pt.json"); if (r.ok) CFT = await r.json(); } catch (_) {}
     CFT0 = { ...CFT };
@@ -62,7 +64,7 @@
       }
       if (LDJ.semPar.length) console.info("LDJ sem correspondência em inglês:", LDJ.semPar);
     }
-    try { aplicarLDJ(JSON.parse(localStorage.getItem("ini_ldj") || "null")); } catch (_) {}
+    try { aplicarLDJ(JSON.parse(localStorage.getItem(acervo.chave("ini_ldj")) || "null")); } catch (_) {}
     const tr = (s) => trW(s).replace(/(\d+(?:\.\d+)?)\s*(?:ft\.?|feet)/gi, (_, n) => fm(+n)).replace(/, (e|ou) /g, " $1 ");
     const trAL = mk({ unaligned: "sem tendência", "any alignment": "qualquer tendência", "any non-good alignment": "qualquer tendência não boa", "any non-lawful alignment": "qualquer tendência não leal", "any chaotic alignment": "qualquer tendência caótica", "any evil alignment": "qualquer tendência má", "non-good": "não bom", "non-lawful": "não leal", typically: "geralmente", usually: "geralmente", or: "ou", and: "e", lawful: "leal", chaotic: "caótico", neutral: "neutro", good: "bom", evil: "mau", alignment: "tendência" });
     const AL = (s) => { s = String(s || "").toLowerCase().trim(); if (!s || s === "—") return s || ""; return cap(trAL(s.replace(/\b(lawful|chaotic|neutral) (good|evil|neutral)\b/g, "$1 e $2"))); };
@@ -162,8 +164,8 @@
     const av = (m, size = 36) => { const src = m && ((PH[m.key]) || (!m.custom && PUB.has(m.key) ? pubName(m.key) : "") || illu(m)); const st = `width:${size}px;height:${size}px`; return src ? `<img class="av" style="${st}" src="${esc(src)}" alt="" loading="lazy">` : `<span class="av av0" style="${st};font-size:${Math.round(size * 0.45)}px">${esc(((m && (pt(m) || m.name)) || "?").charAt(0).toUpperCase())}</span>`; };
     const tsz = (m) => { const t = TP[m.type?.name] || m.type?.name || "", z = SZ[m.size?.name] || m.size?.name || ""; return t && z ? `${t} (${z})` : t || z; };
 
-    let TR = {}; try { TR = JSON.parse(localStorage.getItem("ini_tr") || "{}"); } catch (_) {}
-    const saveTR = () => { try { localStorage.setItem("ini_tr", JSON.stringify(TR)); } catch (_) {} };
+    let TR = {}; try { TR = JSON.parse(localStorage.getItem(acervo.chave("ini_tr")) || "{}"); } catch (_) {}
+    const saveTR = () => { try { localStorage.setItem(acervo.chave("ini_tr"), JSON.stringify(TR)); } catch (_) {} };
     const pt = (m) => { const k = m.name.toLowerCase(); return TR[k] || D.M[k] || ""; };
 
     /* banco local (IndexedDB) */
@@ -174,8 +176,8 @@
     const del = async (store, key) => { const t = db.transaction(store, "readwrite"); t.objectStore(store).delete(key); await done(t); };
     const status = (h) => { $("#dl-status").innerHTML = h; };
     async function reload() {
-      ALL = await rq(db.transaction("mon").objectStore("mon").getAll());
-      SP = await rq(db.transaction("spl").objectStore("spl").getAll());
+      ALL = (await rq(db.transaction("mon").objectStore("mon").getAll())).filter(EDICOES.permitida);
+      SP = (await rq(db.transaction("spl").objectStore("spl").getAll())).filter(EDICOES.permitida);
       PH = Object.fromEntries((await rq(db.transaction("img").objectStore("img").getAll())).map((x) => [x.key, x.data]));
       BY = Object.fromEntries(ALL.map((m) => [m.key, m]));
       ALL.sort((a, b) => a.name.localeCompare(b.name)); SP.sort((a, b) => a.name.localeCompare(b.name));
@@ -223,7 +225,7 @@
       const q = $("#name").value.trim(); sug.innerHTML = '<div class="muted">Buscando na Open5e…</div>';
       try {
         const j = await api("/creatures/?name__icontains=" + encodeURIComponent(q) + "&limit=30&ordering=name");
-        await put("mon", j.results || []); await reload(); sug.hidden = false; sugg();
+        await put("mon", (j.results || []).filter(EDICOES.permitida)); await reload(); sug.hidden = false; sugg();
         if (!(j.results || []).length) sug.innerHTML = '<div class="muted">A Open5e não tem nenhum monstro com esse nome.</div>';
       } catch (e) { sug.innerHTML = `<div class="err">Falha na busca online (${esc(e.message)}).</div>`; }
     }
@@ -268,14 +270,14 @@
       $("#docs-wrap").hidden = false;
       try {
         const j = await api("/documents/?limit=100");
-        $("#docs").innerHTML = j.results.map((d) => `<label><input type="checkbox" value="${esc(d.key)}" ${/^srd-20/.test(d.key) ? "checked" : ""}>${esc(d.display_name || d.name || d.key)}</label>`).join("");
+        $("#docs").innerHTML = (j.results || []).filter(EDICOES.permitida).map((d) => `<label><input type="checkbox" value="${esc(d.key)}" ${d.key === "srd-2014" ? "checked" : ""}>${esc(d.display_name || d.name || d.key)}</label>`).join("");
       } catch (e) { $("#docs").innerHTML = `<span class="err">Não foi possível listar as fontes (${esc(e.message)}). Verifique a conexão.</span>`; }
     };
     async function pull(path, store, label) {
       let url = API + path, n = 0, total = 0;
       while (url) {
         const j = await getPage(url.replace(/^http:/, "https:")); total = j.count ?? total;
-        await put(store, j.results || []); n += (j.results || []).length; status(`${esc(label)}: ${n} de ${total}…`); url = j.next;
+        await put(store, (j.results || []).filter(EDICOES.permitida)); n += (j.results || []).length; status(`${esc(label)}: ${n} de ${total}…`); url = j.next;
       }
       return [n, total];
     }
@@ -481,7 +483,7 @@
       cmSpells.push(ex ? { key: ex.key, name: ex.name } : { key: null, name: v }); spq.value = ""; spsug.hidden = true; chips();
     });
 
-    try { aplicarClassesLDJ(JSON.parse(localStorage.getItem("ini_ldj") || "null")); } catch (_) {}
+    try { aplicarClassesLDJ(JSON.parse(localStorage.getItem(acervo.chave("ini_ldj")) || "null")); } catch (_) {}
     /* busca de habilidade de classe no campo de características da ficha */
     const cfq = $("#cm-cfq"), cfsug = $("#cm-cfsug");
     setTimeout(() => { $("#cm-traits").addEventListener("input", refreshLineChips); $("#cm-acts").addEventListener("input", refreshLineChips); refreshLineChips(); }, 0);
@@ -607,51 +609,7 @@
     const toSquare = (file, size) => new Promise((ok, no) => { const url = URL.createObjectURL(file), im = new Image(); im.onload = () => { const c = document.createElement("canvas"); c.width = c.height = size; const q = Math.min(im.width, im.height); c.getContext("2d").drawImage(im, (im.width - q) / 2, (im.height - q) / 2, q, q, 0, 0, size, size); URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", 0.85)); }; im.onerror = () => no(new Error("imagem inválida")); im.src = url; });
 
     /* recorte da foto: zoom, arrastar e prévia do ícone redondo */
-    function cropPhoto(file) {
-      return new Promise((ok, no) => {
-        const url = URL.createObjectURL(file), im = new Image();
-        im.onerror = () => { URL.revokeObjectURL(url); no(new Error("imagem inválida")); };
-        im.onload = () => {
-          const S = 260, base = S / Math.min(im.width, im.height);
-          let zoom = 1, ox = 0, oy = 0;
-          const ov = document.createElement("div"); ov.className = "crop-ov";
-          ov.innerHTML = `<div class="crop-box" role="dialog" aria-label="Ajustar foto">
-            <h3>Ajustar foto</h3>
-            <canvas class="crop-stage" width="${S}" height="${S}"></canvas>
-            <div class="crop-zoom"><span>−</span><input type="range" min="1" max="4" step="0.01" value="1" aria-label="Zoom"><span>+</span></div>
-            <div class="crop-prev"><span class="muted">Como vai aparecer:</span><canvas width="72" height="72"></canvas><canvas width="34" height="34"></canvas></div>
-            <p class="muted" style="font-size:11px;margin:6px 0 10px">Arraste a imagem para posicionar. Use o controle ou a roda do mouse para o zoom.</p>
-            <div class="row" style="justify-content:flex-end;margin:0"><button type="button" class="small subtle" data-c="no">Cancelar</button><button type="button" class="small primary" data-c="ok">Usar foto</button></div></div>`;
-          document.body.appendChild(ov);
-          const stage = ov.querySelector(".crop-stage"), [p72, p34] = ov.querySelectorAll(".crop-prev canvas"), rg = ov.querySelector("input");
-          const clamp = () => { const sc = base * zoom, mx = Math.max(0, (im.width * sc - S) / 2), my = Math.max(0, (im.height * sc - S) / 2); ox = Math.max(-mx, Math.min(mx, ox)); oy = Math.max(-my, Math.min(my, oy)); };
-          const paint = (cv, size) => { const c = cv.getContext("2d"), k = size / S, sc = base * zoom; c.clearRect(0, 0, size, size); c.fillStyle = "#000"; c.fillRect(0, 0, size, size); c.drawImage(im, (S / 2 + ox - im.width * sc / 2) * k, (S / 2 + oy - im.height * sc / 2) * k, im.width * sc * k, im.height * sc * k); };
-          const draw = () => {
-            clamp(); paint(stage, S);
-            const c = stage.getContext("2d"); c.save(); c.fillStyle = "rgba(10,9,14,.62)"; c.beginPath(); c.rect(0, 0, S, S); c.arc(S / 2, S / 2, S / 2 - 2, 0, Math.PI * 2, true); c.fill("evenodd");
-            c.strokeStyle = "#9f7940"; c.lineWidth = 2; c.beginPath(); c.arc(S / 2, S / 2, S / 2 - 2, 0, Math.PI * 2); c.stroke(); c.restore();
-            for (const [cv, sz] of [[p72, 72], [p34, 34]]) { paint(cv, sz); const c2 = cv.getContext("2d"); c2.globalCompositeOperation = "destination-in"; c2.beginPath(); c2.arc(sz / 2, sz / 2, sz / 2, 0, Math.PI * 2); c2.fill(); c2.globalCompositeOperation = "source-over"; }
-          };
-          let drag = null;
-          stage.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, ox, oy }; stage.setPointerCapture(e.pointerId); });
-          stage.addEventListener("pointermove", (e) => { if (!drag) return; const r = stage.getBoundingClientRect(), k = S / r.width; ox = drag.ox + (e.clientX - drag.x) * k; oy = drag.oy + (e.clientY - drag.y) * k; draw(); });
-          stage.addEventListener("pointerup", () => { drag = null; });
-          const setZoom = (z) => { zoom = Math.max(1, Math.min(4, z)); rg.value = zoom; draw(); };
-          rg.addEventListener("input", () => setZoom(+rg.value));
-          stage.addEventListener("wheel", (e) => { e.preventDefault(); setZoom(zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08)); }, { passive: false });
-          const fim = (data) => { document.removeEventListener("keydown", esc, true); ov.remove(); URL.revokeObjectURL(url); ok(data); };
-          const esc = (e) => { if (e.key === "Escape") { e.stopPropagation(); fim(null); } };
-          document.addEventListener("keydown", esc, true);
-          ov.addEventListener("click", (e) => {
-            const b = e.target.closest("[data-c]"); if (!b) return;
-            if (b.dataset.c === "no") return fim(null);
-            const out = document.createElement("canvas"); out.width = out.height = 192; paint(out, 192); fim(out.toDataURL("image/jpeg", 0.85));
-          });
-          draw();
-        };
-        im.src = url;
-      });
-    }
+    const cropPhoto = file => window.recortarFoto(file);
     const askPhoto = (k) => { phKey = k; fileIn.value = ""; fileIn.click(); };
     const formPv = () => { const m = editKey && BY[editKey]; const src = formPhoto === undefined ? (m && (PH[m.key])) : formPhoto; $("#cm-phv").innerHTML = src ? `<img class="av" style="width:48px;height:48px" src="${esc(src)}" alt="">` : '<span class="muted">sem foto</span>'; };
     fileIn.onchange = async () => {
@@ -670,9 +628,22 @@
     }, true);
 
     /* sincronização das criações com um repositório privado do GitHub */
+
+    async function syncConta(){
+      if(syncing){syncDeNovo=true;return;}
+      syncing=true;syMsg("Sincronizando com sua conta…");
+      try{
+        const todos=await rq(db.transaction("mon").objectStore("mon").getAll()), fotos=await rq(db.transaction("img").objectStore("img").getAll()), porFoto=Object.fromEntries(fotos.map(i=>[i.key,i.data]));
+        const items=Object.fromEntries(todos.filter(m=>m.custom).map(m=>[m.key,{...m,photo:porFoto[m.key]||""}]));
+        const d=await acervo.mesclar({v:1,items,deleted:TOMB,tr:TR,ldj:JSON.parse(localStorage.getItem(acervo.chave("ini_ldj"))||"{}")});
+        await acervo.aplicar(d);TOMB=d.deleted||{};Object.assign(TR,d.tr||{});if(d.ldj){aplicarLDJ(d.ldj);aplicarClassesLDJ(d.ldj);} await reload();
+        localStorage.removeItem("ini_sync"); SY={};saveTR();syMsg("Sincronizado com sua conta");
+      }catch(e){syMsg('<span class="err">'+esc(e.message)+'</span>');}
+      finally{syncing=false;if(syncDeNovo){syncDeNovo=false;queueSync();}}
+    }
     let repoOk = null, TOMB = {}, SY = {}, syncing = false, syncDeNovo = false, syTimer = null;
-    try { TOMB = JSON.parse(localStorage.getItem("ini_tomb") || "{}"); SY = JSON.parse(localStorage.getItem("ini_sync") || "{}"); } catch (_) {}
-    const saveTomb = () => { try { localStorage.setItem("ini_tomb", JSON.stringify(TOMB)); } catch (_) {} };
+    try { TOMB = JSON.parse(localStorage.getItem(acervo.chave("ini_tomb")) || "{}"); SY = JSON.parse(localStorage.getItem("ini_sync") || "{}"); } catch (_) {}
+    const saveTomb = () => { try { localStorage.setItem(acervo.chave("ini_tomb"), JSON.stringify(TOMB)); } catch (_) {} };
     const saveSY = () => { try { localStorage.setItem("ini_sync", JSON.stringify(SY)); } catch (_) {} };
     [300, 1200, 3000].forEach((ms) => setTimeout(() => { const b = $("#bq"); if (b && SY.repo && b.value === SY.repo && document.activeElement !== b) { b.value = ""; renderBestiary(); } }, ms));
     $("#sy-repo").value = SY.repo || ""; $("#sy-token").value = SY.token || ""; $("#sy-path").value = SY.path || "criacoes.json";
@@ -715,10 +686,10 @@
       const p = SY.path.replace(/[^/]*$/, "traducoes.json");
       const { sha, json } = await ghGet(p);
       const remoto = json || {};
-      let ldj = null; try { ldj = JSON.parse(localStorage.getItem("ini_ldj") || "null"); } catch (_) {}
+      let ldj = null; try { ldj = JSON.parse(localStorage.getItem(acervo.chave("ini_ldj")) || "null"); } catch (_) {}
       if (remoto.ldj && (!ldj || (remoto.ldj.importadoEm || 0) > (ldj.importadoEm || 0))) {
         ldj = remoto.ldj;
-        try { localStorage.setItem("ini_ldj", JSON.stringify(ldj)); } catch (_) {}
+        try { localStorage.setItem(acervo.chave("ini_ldj"), JSON.stringify(ldj)); } catch (_) {}
         aplicarLDJ(ldj); aplicarClassesLDJ(ldj); spSearch();
       }
       const tr = { ...(remoto.tr || {}), ...TR };
@@ -727,13 +698,14 @@
       if (JSON.stringify(novo) !== JSON.stringify({ v: 1, tr: remoto.tr || {}, ldj: remoto.ldj || null })) await ghPut(p, novo, sha, "Sincronização das traduções");
     }
     window.addEventListener("storage", (e) => {
-      if (e.key !== "ini_ldj" || !e.newValue) return;
+      if (e.key !== acervo.chave("ini_ldj") || !e.newValue) return;
       try { const n = JSON.parse(e.newValue); aplicarLDJ(n); aplicarClassesLDJ(n); spSearch(); queueSync(); } catch (_) {}
     });
     window.addEventListener("online", () => queueSync());
     const touch = async (k) => { const m = BY[k]; if (m && m.custom) { m.updatedAt = Date.now(); await put("mon", [m]); queueSync(); } };
-    function queueSync() { if (!SY.repo || !SY.token) return; clearTimeout(syTimer); syTimer = setTimeout(syncNow, 1500); }
+    function queueSync() { if (!(window.nuvem && nuvem.usuario()) && (!SY.repo || !SY.token)) return; clearTimeout(syTimer); syTimer = setTimeout(syncNow, 1500); }
     async function syncNow() {
+      if(window.nuvem && nuvem.usuario() && acervo.ativo())return syncConta();
       if (!SY.repo || !SY.token) return; if (syncing) { syncDeNovo = true; return; }
       if (!/^[\w.-]+\/[\w.-]+$/.test(SY.repo)) { syMsg('<span class="err">Use o formato usuario/repositorio.</span>'); return; }
       syncing = true; syMsg("Sincronizando…");
@@ -790,8 +762,9 @@
       status(on ? "Modo administrador ligado neste aparelho." : "Modo administrador desligado.");
       if (on) document.querySelector(".syncbar").scrollIntoView({ behavior: "smooth", block: "center" });
     });
-    const showSyncTop = () => { $("#synctop").hidden = !(SY.repo && SY.token); };
-    showSyncTop();
+    const showSyncTop = () => { $("#synctop").hidden = !(window.nuvem && nuvem.usuario()) && !(SY.repo && SY.token); };
+    showSyncTop(); if(window.nuvem&&nuvem.usuario()&&acervo.ativo())$("#sync").hidden=true;
+    if(window.nuvem&&nuvem.usuario()&&!acervo.ativo()&&!SY.token){$("#sy-now").disabled=true;syMsg("Seus dados locais estão preservados. A migração para a conta ainda não foi concluída.");}
     $("#sy-save").addEventListener("click", () => { $("#sync").open = false; setTimeout(showSyncTop, 0); });
     $("#sy-clear").addEventListener("click", () => setTimeout(showSyncTop, 0));
     $("#sy-clear").onclick = () => { SY.token = ""; $("#sy-token").value = ""; saveSY(); syMsg("Token removido deste aparelho."); };
@@ -799,8 +772,8 @@
 
     /* pacotes embutidos no site (SRD 2014 e 2024): funcionam sem a API; ela só é usada para outras fontes */
     let PACKS = [], LP = {};
-    try { LP = JSON.parse(localStorage.getItem("ini_packs") || "{}"); } catch (_) {}
-    const saveLP = () => { try { localStorage.setItem("ini_packs", JSON.stringify(LP)); } catch (_) {} };
+    try { LP = JSON.parse(localStorage.getItem(acervo.chave("ini_packs")) || "{}"); } catch (_) {}
+    const saveLP = () => { try { localStorage.setItem(acervo.chave("ini_packs"), JSON.stringify(LP)); } catch (_) {} };
     function renderPacks() {
       $("#packs").innerHTML = PACKS.length ? '<div class="sub">Incluídos no site (não usam a API)</div>' + PACKS.map((p) =>
         `<div class="res"><span><b>${esc(p.name)}</b> <span class="muted">${+p.monsters || 0} monstros · ${+p.spells || 0} magias</span></span><button class="small" data-pack="${esc(p.key)}">${LP[p.key] === p.v ? "Recarregar" : "Carregar"}</button></div>`).join("") : "";
@@ -822,7 +795,7 @@
       b.disabled = false;
     });
     async function initPacks() {
-      try { const r = await fetch("dados/bestiario/index.json", { cache: "no-cache" }); if (r.ok) PACKS = await r.json(); } catch (_) {}
+      try { const r = await fetch("dados/bestiario/index.json", { cache: "no-cache" }); if (r.ok) PACKS = (await r.json()).filter(EDICOES.permitida); } catch (_) {}
       renderPacks();
       for (const p of PACKS) if (LP[p.key] !== p.v) { try { await loadPack(p); } catch (err) { console.error(err); } }
     }
@@ -847,7 +820,7 @@
         const imgs = (d.img || []).filter((i) => i && typeof i.key === "string" && typeof i.data === "string" && /^data:image\//.test(i.data));
         await put("mon", novos); await put("img", imgs);
         if (d.tr && typeof d.tr === "object") { for (const k in d.tr) TR[k] = String(d.tr[k]); saveTR(); }
-        if (d.ldj) { try { localStorage.setItem("ini_ldj", JSON.stringify(d.ldj)); } catch (_) {} aplicarLDJ(d.ldj); aplicarClassesLDJ(d.ldj); }
+        if (d.ldj) { try { localStorage.setItem(acervo.chave("ini_ldj"), JSON.stringify(d.ldj)); } catch (_) {} aplicarLDJ(d.ldj); aplicarClassesLDJ(d.ldj); }
         await reload(); queueSync();
         bkMsg(`Importado: ${novos.length} criações novas ou mais recentes e ${imgs.length} fotos.`);
       } catch (err) { bkMsg(`<span class="err">Não consegui importar (${esc(err.message)}).</span>`); }
@@ -855,9 +828,9 @@
     };
     if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
 
-    const o = indexedDB.open("bestiario", 3);
+    const o = indexedDB.open(acervo.banco(), 3);
     o.onupgradeneeded = () => { const d = o.result; ["mon", "spl", "img"].forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "key" }); }); };
     o.onblocked = () => { $("#mais").open = true; $("#dbinfo").innerHTML = '<span class="err">Atualização do banco bloqueada: feche as outras abas deste rastreador e recarregue a página.</span>'; };
-    o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(queueSync).then(initPacks); };
+    o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(syncNow).then(initPacks); };
     o.onerror = () => { $("#mais").open = true; $("#dbinfo").innerHTML = '<span class="err">Este navegador bloqueou o armazenamento local (IndexedDB).</span>'; };
   })();

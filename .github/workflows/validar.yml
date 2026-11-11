@@ -1,0 +1,47 @@
+name: Validar fichas e banco
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/regras.test.cjs
+      - run: node --test tests/acervo.test.cjs tests/conta.test.cjs tests/edicoes.test.cjs tests/personagens-dados.test.cjs tests/personagem-save.test.cjs tests/campanha-ini.test.cjs
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: teste-ci
+          POSTGRES_DB: rastreador_teste
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: teste-ci
+      PGDATABASE: rastreador_teste
+    steps:
+      - uses: actions/checkout@v4
+      - run: psql -v ON_ERROR_STOP=1 -f tests/supabase-fixture.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/01-schema.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/02-acervos-e-transferencia.sql
+      - name: Verificar reaplicação da migração
+        run: psql -v ON_ERROR_STOP=1 -f supabase/02-acervos-e-transferencia.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/supabase.test.sql
+      - run: bash tests/acervo-concorrencia.sh
