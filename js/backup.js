@@ -50,8 +50,8 @@
   $("#backup-legado").onclick = async () => {
     try {
       preparar(); msg("Procurando…");
-      const d = await acervo.lerLegado();
-      if (!d) { $("#backup-previa").hidden = true; pendente = null; msg("Não encontrei dados antigos de criações neste navegador."); return; }
+      const d = await acervo.lerLocais();
+      if (!d) { $("#backup-previa").hidden = true; pendente = null; msg("Não encontrei criações antigas nem de visitante neste navegador."); return; }
       await analisarEMostrar(d, d.origem);
     } catch (err) { $("#backup-previa").hidden = true; pendente = null; msg(err.message, true); }
   };
@@ -65,4 +65,20 @@
     } catch (err) { msg(err.message, true); botao.disabled = false; }
   };
   $("#backup-cancelar").onclick = () => { pendente = null; $("#backup-previa").hidden = true; msg(""); };
+
+  /* Quem usou o rastreador como visitante e depois entra na conta: oferece, uma vez, levar as criações deste navegador. Só mostra a prévia. */
+  (async () => {
+    try {
+      if (!nuvem.usuario() || !acervo.ativo()) return;
+      const chave = "backup_oferta_" + nuvem.usuario().id;
+      if (localStorage.getItem(chave)) return;
+      const d = await acervo.lerLocais(); if (!d) return;
+      const r = await acervo.analisar(d);
+      if (!r.novos.length && !r.trNovas.length) { localStorage.setItem(chave, "1"); return; }
+      localStorage.setItem(chave, "1");
+      $("#backup-conta").open = true;
+      mostrarPrevia(d, r, d.origem);
+      msg("Encontramos criações salvas neste navegador antes de você entrar. Confira e toque em Restaurar para levá-las para sua conta, ou em Cancelar para deixar como está.");
+    } catch (_) {}
+  })();
 })();

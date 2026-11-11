@@ -169,12 +169,13 @@
     conferir(conta);
     return resultado;
   }
-  /* dados de antes da migração para a conta: banco "bestiario" (sem id) e chaves de localStorage sem id. Só leitura; nada é apagado. */
-  async function lerLegado() {
+  /* Dados guardados neste navegador FORA da conta: o banco "bestiario" (anterior à migração) e "bestiario_publico" (uso como visitante).
+     Só leitura; nada é apagado. Quem restaura é restaurar(), que só adiciona e pede confirmação para o resto. */
+  async function lerBancoSolto(nome, origem, chaveTraducao, tipo) {
     if (typeof indexedDB === "undefined") return null;
-    if (typeof indexedDB.databases === "function") { try { if (!(await indexedDB.databases()).some(x => x.name === "bestiario")) return null; } catch (_) {} }
+    if (typeof indexedDB.databases === "function") { try { if (!(await indexedDB.databases()).some(x => x.name === nome)) return null; } catch (_) {} }
     const db = await new Promise((ok) => {
-      const r = indexedDB.open("bestiario");
+      const r = indexedDB.open(nome);
       r.onupgradeneeded = () => { try { r.transaction.abort(); } catch (_) {} };    // o banco não existia: não criar um vazio
       r.onerror = () => ok(null); r.onblocked = () => ok(null);
       r.onsuccess = () => ok(r.result);
@@ -186,9 +187,27 @@
       const img = db.objectStoreNames.contains("img") ? await lerStore(db, "img") : [];
       if (!mon.length) return null;
       const fotos = Object.fromEntries(img.filter(i => typeof i.data === "string" && /^data:image\//.test(i.data)).map(i => [i.key, i.data]));
-      return { v: 1, tipo: "legado", origem: "este navegador (dados anteriores à conta)", deleted: {}, tr: lerJSON("ini_tr"),
+      return { v: 1, tipo, origem, deleted: {}, tr: lerJSON(chaveTraducao),
         items: Object.fromEntries(mon.map(m => [m.key, { ...m, photo: fotos[m.key] || "" }])) };
     } finally { db.close(); }
   }
-  window.acervo = { exportar, analisar, restaurar, lerLegado, LIMITE_BYTES, ativo, banco, chave, aplicar, mesclar, importar, baixar, sincronizar, validar };
+  const lerLegado = () => lerBancoSolto("bestiario", "este navegador (dados anteriores à conta)", "ini_tr", "legado");
+  const lerPublico = () => lerBancoSolto("bestiario_publico", "este navegador (uso como visitante)", "ini_tr_publico", "visitante");
+  async function lerLocais() {
+    const partes = (await Promise.all([lerLegado(), lerPublico()])).filter(Boolean);
+    if (!partes.length) return null;
+    if (partes.length === 1) return partes[0];
+    const items = {}, tr = {};
+    for (const p of partes) {
+      Object.assign(tr, p.tr);
+      for (const [k, m] of Object.entries(p.items)) if (!items[k] || Number(m.updatedAt || 0) > Number(items[k].updatedAt || 0)) items[k] = m;
+    }
+    return { v: 1, tipo: "locais", origem: "este navegador (dados anteriores à conta e de visitante)", deleted: {}, tr, items };
+  }
+  /* backup das criações deste aparelho como visitante (não precisa de conta) */
+  async function exportarVisitante() {
+    const d = await lerPublico();
+    return d ? { ...d, tipo: "backup-criacoes", criadoEm: new Date().toISOString(), origem: "visitante" } : null;
+  }
+  window.acervo = { exportar, analisar, restaurar, lerLegado, lerPublico, lerLocais, exportarVisitante, LIMITE_BYTES, ativo, banco, chave, aplicar, mesclar, importar, baixar, sincronizar, validar };
 })();

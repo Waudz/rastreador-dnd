@@ -431,8 +431,34 @@
         if (e.target.id === "report-close") { report = null; render(); }
       });
 
+      /* backup do combate (arquivo do usuário). A importação valida tudo e só substitui depois de quem chamou confirmar. */
+      const CAMPOS = ["id", "name", "kind", "initiative", "hp", "maxHp", "ac", "order", "key", "pid", "campanhaId", "foto", "effects"];
+      function exportarCombate() { return { v: 1, tipo: "backup-combate", criadoEm: new Date().toISOString(), combatants, currentId, round, nextOrder, stats, report }; }
+      function limparCombatente(c, i) {
+        if (!c || typeof c !== "object" || typeof c.name !== "string" || !c.name.trim() || c.name.length > 120) throw new Error("Combatente inválido no arquivo (posição " + (i + 1) + ").");
+        const o = {}; for (const k of CAMPOS) if (k in c) o[k] = c[k];
+        o.id = typeof o.id === "string" && o.id ? o.id.slice(0, 60) : Date.now().toString(36) + Math.random().toString(36).slice(2, 7) + i;
+        for (const k of ["hp", "maxHp", "ac", "order"]) o[k] = Number.isFinite(Number(o[k])) ? Number(o[k]) : 0;
+        if (o.initiative !== null && o.initiative !== undefined && o.initiative !== "") { if (!Number.isFinite(Number(o.initiative))) throw new Error("Iniciativa inválida no arquivo."); o.initiative = Number(o.initiative); } else o.initiative = null;
+        if (o.foto && !/^data:image\//.test(String(o.foto))) o.foto = "";
+        o.effects = Array.isArray(o.effects) ? o.effects.filter((e) => e && typeof e === "object" && typeof e.name === "string").slice(0, 40) : [];
+        for (const k of ["kind", "key", "pid", "campanhaId"]) if (o[k] !== undefined) o[k] = String(o[k]).slice(0, 80);
+        return o;
+      }
+      function importarCombate(d) {
+        if (!d || typeof d !== "object" || d.tipo !== "backup-combate" || !Array.isArray(d.combatants)) throw new Error("O arquivo não é um backup de combate.");
+        if (d.combatants.length > 300) throw new Error("O backup tem combatentes demais (máximo 300).");
+        const lista = d.combatants.map(limparCombatente);
+        if (new Set(lista.map((c) => c.id)).size !== lista.length) throw new Error("O arquivo tem combatentes repetidos.");
+        combatants = lista; currentId = lista.some((c) => c.id === d.currentId) ? d.currentId : null;
+        round = Number(d.round) > 0 ? Number(d.round) : 1; nextOrder = Math.max(Number(d.nextOrder) || 0, lista.length);
+        stats = d.stats && typeof d.stats === "object" ? d.stats : {}; report = null; editId = null;
+        save(); render(); notificar();
+      }
       window.__ini = {
         pending: "",
+        exportarCombate,
+        importarCombate,
         aoAlterar:fn=>ouvintes.push(fn),
         render: () => render(),
         list: () => combatants,

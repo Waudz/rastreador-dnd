@@ -38,6 +38,7 @@
   <script src="js/texto-regras.js" defer></script>
   <script src="js/regras.js" defer></script>
   <script src="js/campanha-ini.js" defer></script>
+  <script src="js/dados-locais.js" defer></script>
   <script src="js/interface.js" defer></script>
 </head>
 <body>
@@ -135,7 +136,20 @@
       <div id="report" class="report" hidden></div>
       <p class="footer">A iniciativa é ordenada do maior para o menor. Em caso de empate, quem foi adicionado primeiro fica acima.</p>
     </section>
+
+    <details class="panel" id="dados-locais">
+      <summary class="panel-title"><i data-i="database"></i>Dados deste aparelho</summary>
+      <p class="muted">O combate e suas criações como visitante ficam só neste aparelho. Se limpar os dados do navegador, eles somem; por isso vale baixar um backup de vez em quando. Nada é enviado a nenhum servidor.</p>
+      <div class="row"><button type="button" class="small" id="dl-combate-baixar">Baixar backup do combate</button><label class="btnlike small">Restaurar combate de um arquivo<input type="file" id="dl-combate-arquivo" accept=".json,application/json" hidden></label><button type="button" class="small" id="dl-criacoes-baixar">Baixar backup das criações deste aparelho</button></div>
+      <p id="dl-msg" class="muted" role="status" aria-live="polite"></p>
+    </details>
     
+    <section class="panel" id="aviso-visitante">
+      <h2 class="panel-title"><i data-i="plus"></i>Criar fichas e fotos</h2>
+      <p class="muted">Você está usando o rastreador como visitante: pode pesquisar monstros e magias e usar toda a iniciativa, com combatentes manuais, sem conta. Criar fichas próprias, adicionar fotos, personagens e campanhas exige uma conta gratuita.</p>
+      <div class="row" style="margin:0"><a class="btnlike primary" href="entrar.html?voltar=iniciativa.html%3Faba%3Dmonstros">Entrar ou criar conta</a></div>
+    </section>
+
     <details class="panel" id="cm">
       <summary class="panel-title"><i data-i="plus"></i>Criar ficha (monstro, personagem ou NPC)</summary>
       <div class="cmg">

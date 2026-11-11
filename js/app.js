@@ -391,6 +391,7 @@
       $("#cm-save").textContent = "Salvar ficha"; $("#cm-cancel").hidden = true; formPv();
     }
     function editCustom(k) {
+      if (visitante()) return;
       const m = ALL.find((x) => x.key === k); if (!m) return;
       resetForm(); editKey = k; cmSpells = (m.spells || []).slice(); chips(); formPv();
       $("#cm-cat").value = catOf(m); $("#cm-cat").onchange(); $("#cm-name").value = m.name; $("#cm-sub").value = m.subtitle || "";
@@ -412,6 +413,7 @@
       return a;
     }
     $("#cm-save").onclick = async () => {
+      if (visitante()) { $("#cm-msg").textContent = "Criar e salvar fichas exige uma conta (gratuita)."; return; }
       const name = $("#cm-name").value.trim(); if (!name) { $("#cm-msg").textContent = "Informe o nome."; return; }
       const cat = $("#cm-cat").value, v = parseFloat($("#cm-cr").value) || 0, ab = {}, md = {};
       ABIL.forEach(([k]) => { ab[k] = parseInt($("#ab-" + k).value) || 10; md[k] = Math.floor((ab[k] - 10) / 2); });
@@ -499,7 +501,8 @@
 
     /* recorte da foto: zoom, arrastar e prévia do ícone redondo */
     const cropPhoto = file => window.recortarFoto(file);
-    const askPhoto = (k) => { phKey = k; fileIn.value = ""; fileIn.click(); };
+    const visitante = () => !(window.nuvem && nuvem.usuario && nuvem.usuario());
+    const askPhoto = (k) => { if (visitante()) { alert("Entre na sua conta para adicionar ou trocar fotos."); return; } phKey = k; fileIn.value = ""; fileIn.click(); };
     const formPv = () => { const m = editKey && BY[editKey]; const src = formPhoto === undefined ? (m && (PH[m.key])) : formPhoto; $("#cm-phv").innerHTML = src ? `<img class="av" style="width:48px;height:48px" src="${esc(src)}" alt="">` : '<span class="muted">sem foto</span>'; };
     fileIn.onchange = async () => {
       const f = fileIn.files[0]; if (!f) return;

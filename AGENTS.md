@@ -16,8 +16,8 @@ CSP por `<meta>`: `script-src 'self'`; Supabase só em `https://pdjzahpxjrlbqqtz
 
 ## Decisões de produto (11/11/2026)
 - O Rastreador D&D é **totalmente gratuito**.
-- **Modo visitante:** quem não tem conta pode pesquisar monstros, consultar magias e usar todo o rastreador de iniciativa. Login só para o que depende de conta: criar ou entrar em campanhas, personagens vinculados à conta e sincronização. Os dados locais do visitante devem ser preservados, inclusive se ele entrar na conta depois. **Ainda não implementado** (planejado na Fase B; o visitante nunca deve precisar de acesso ao Supabase).
-- Fase A (cadastro com confirmação de e-mail, recuperação/troca de senha, backup, testes de permissões) publicada. Fase B: SDK oficial de autenticação, CAPTCHA e modo visitante.
+- **Modo visitante:** quem não tem conta pode pesquisar monstros, consultar magias e usar todo o rastreador de iniciativa. Login só para o que depende de conta: criar ou entrar em campanhas, personagens vinculados à conta e sincronização. Os dados locais do visitante devem ser preservados, inclusive se ele entrar na conta depois. **Implementado (Fase B4, ainda não publicado):** a raiz sem sessão abre a iniciativa, o menu mostra "Entrar", criar fichas/fotos exigem conta (CSS e código), e há backup/restauração local do combate e das criações (`js/dados-locais.js`). O visitante nunca precisa de acesso ao Supabase.
+- Fase A (cadastro com confirmação de e-mail, recuperação/troca de senha, backup, testes de permissões) publicada. Fase B: SDK oficial (`vendor/supabase`, sessão persistente), `entrar.html` com Turnstile desligado por padrão (`turnstileSiteKey` em `js/config-nuvem.js`; só ligar depois de testar o fluxo completo) e modo visitante.
 
 ## Regras de trabalho
 - pt-BR, respostas curtas. **Sem emojis; usar ícones SVG** (`js/icones.js`).

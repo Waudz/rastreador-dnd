@@ -182,3 +182,11 @@ button.danger:hover { border-color:var(--red); background:#C74B4B25; }
 
 .rodape-licenca { max-width:1120px; margin:26px auto 8px; padding:0 4px; font-size:11px; line-height:1.6; color:var(--muted); }
 .rodape-licenca a { color:var(--gold); }
+
+/* modo visitante: criar fichas e fotos pedem conta; o aviso aparece no lugar do criador */
+#aviso-visitante { display:none; }
+body.visitante #aviso-visitante { display:block; }
+body.visitante #cm, body.visitante [data-ph], body.visitante [data-edit], body.visitante #cm-ph { display:none !important; }
+.appentrar { flex:0 0 auto; display:inline-flex; align-items:center; min-height:34px; padding:0 14px; border:1px solid var(--gold-dark); border-radius:99px; background:var(--panel); color:var(--gold); font-size:13px; font-weight:700; text-decoration:none; }
+.appentrar:hover { border-color:var(--gold); background:#D4AE7218; }
+.appentrar:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }

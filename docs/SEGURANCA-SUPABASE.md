@@ -94,3 +94,16 @@ Ou seja: o combate **não** sincroniza entre aparelhos. Se o mestre abrir a inic
 ## 5. Dados antigos e o repositório privado
 
 Veja `docs/MIGRACAO-REPOSITORIO-PRIVADO.md`. Em resumo: o site não usa mais o GitHub; arquive o repositório (não exclua e não revogue o token) só depois de baixar um ZIP e conferir que as criações estão na conta. A tela **Minha conta → Backup e restauração** serve para isso: baixar um backup, restaurar um arquivo e "Procurar dados antigos neste navegador" (lê o banco antigo `bestiario` sem apagar nada; restaura só o que falta).
+
+## 6. Fase B: sessão, CAPTCHA e modo visitante
+
+**Sessão.** O login usa o SDK oficial (`vendor/supabase/`, versão e procedência em `LEIA-ME.md`), com PKCE, sessão persistente e renovação automática. A sessão fica no navegador (também na PWA) até a pessoa sair. Falta de internet na renovação nunca desconecta nem apaga dados locais; só o servidor recusar a sessão (ou o botão Sair) encerra.
+
+**Entrada.** `entrar.html` concentra login, cadastro, recuperação e nova senha. As outras páginas que exigem conta enviam para `entrar.html?voltar=<página>` (só páginas do próprio site são aceitas como destino).
+
+**Turnstile (desligado por padrão).** Para ativar, nesta ordem: (1) criar o widget no Cloudflare (modo invisível/gerenciado) com o domínio do site; (2) colocar a chave de site (pública) em `turnstileSiteKey`, em `js/config-nuvem.js`; (3) no Supabase, Authentication, proteção contra bots: ativar CAPTCHA com o provedor Turnstile e colar a chave secreta SÓ lá; (4) testar cadastro, login manual e recuperação, conferindo se a política de segurança (CSP) de `entrar.html` basta, e ajustar se o Cloudflare exigir mais (por exemplo `worker-src`). O CAPTCHA é pedido somente nessas ações; nunca na navegação, na iniciativa, em monstros, em magias nem na renovação da sessão. Não ativar o item 3 antes dos testes.
+
+**Modo visitante.** Sem conta: pesquisar monstros, consultar magias e usar toda a iniciativa (combatentes manuais, estado salvo no aparelho). Exigem conta: criar fichas/monstros permanentes, fotos, personagens e campanhas. O visitante nunca chama o Supabase. Em "Dados deste aparelho" (iniciativa) é possível baixar/restaurar o combate e baixar as criações do visitante. Ao entrar numa conta, o site oferece uma vez levar as criações deste navegador (prévia e confirmação; nada é apagado nem sobrescrito).
+
+**Roteiro extra de testes.** Duas contas e um visitante; login, fechar e reabrir navegador/PWA sem novo login; duas abas com sair em uma; modo avião com a sessão aberta (continua conectado); link de confirmação aberto no mesmo navegador (PKCE); recuperação de senha; visitante usando a iniciativa e depois entrando (dados preservados).
+

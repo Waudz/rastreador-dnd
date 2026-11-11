@@ -5,8 +5,10 @@
  const links=[['conta.html?aba=campanhas','Campanhas','book'],['iniciativa.html?aba=iniciativa','Iniciativa','swords'],['conta.html?aba=personagens','Personagens','users'],['iniciativa.html?aba=monstros','Monstros','skull'],['iniciativa.html?aba=magias','Magias','sparkles']];
  const rotaAtual=location.pathname.split('/').pop(),abaPedida=new URLSearchParams(location.search).get('aba'),abaAtual=abaPedida==='consulta'?'monstros':abaPedida;   // 'consulta' era o endereço antigo de Monstros e Magias
  const destinoAtual=rotaAtual==='iniciativa.html'?'iniciativa.html?aba='+(['monstros','magias'].includes(abaAtual)?abaAtual:'iniciativa'):'conta.html?aba='+(['personagem.html','criar-personagem.html'].includes(rotaAtual)?'personagens':rotaAtual==='campanha.html'?'campanhas':['conta','personagens'].includes(abaAtual)?abaAtual:'campanhas');
- const contaAtual=destinoAtual==='conta.html?aba=conta';
- nav.innerHTML='<div class="appheader-topo"><a class="appmarca" href="conta.html?aba=campanhas"><img src="icones/logo-64.png" width="22" height="22" alt=""><span>Rastreador D&amp;D</span></a><span class="grow"></span><span class="appsino" aria-hidden="true"></span><a class="appavatar" href="conta.html?aba=conta" aria-label="Minha conta" title="Minha conta"'+(contaAtual?' aria-current="page"':'')+'>'+ic('user')+'</a></div><nav class="appnav" aria-label="Navegação principal">'+links.map(([url,nome,icone])=>`<a href="${url}"${url===destinoAtual&&!['licencas.html','entrar.html'].includes(rotaAtual)?' aria-current="page"':''}>${ic(icone)}<span>${esc(nome)}</span></a>`).join('')+'</nav>';
+ const contaAtual=destinoAtual==='conta.html?aba=conta',visitante=!nuvem.usuario();
+ /* modo visitante: tudo o que não depende de conta funciona; o resto mostra o convite para entrar */
+ if(document.body.classList&&document.body.classList.toggle)document.body.classList.toggle('visitante',visitante);
+ nav.innerHTML='<div class="appheader-topo"><a class="appmarca" href="conta.html?aba=campanhas"><img src="icones/logo-64.png" width="22" height="22" alt=""><span>Rastreador D&amp;D</span></a><span class="grow"></span><span class="appsino" aria-hidden="true"></span>'+(visitante?'<a class="appentrar" href="'+esc(nuvem.entradaUrl?nuvem.entradaUrl():'entrar.html')+'" title="Entrar ou criar conta (opcional)">Entrar</a>':'<a class="appavatar" href="conta.html?aba=conta" aria-label="Minha conta" title="Minha conta"'+(contaAtual?' aria-current="page"':'')+'>'+ic('user')+'</a>')+'</div><nav class="appnav" aria-label="Navegação principal">'+links.map(([url,nome,icone])=>`<a href="${url}"${url===destinoAtual&&!['licencas.html','entrar.html'].includes(rotaAtual)?' aria-current="page"':''}>${ic(icone)}<span>${esc(nome)}</span></a>`).join('')+'</nav>';
  document.body.prepend(nav);
  /* atribuição do SRD 5.1 (CC BY 4.0) em todas as páginas; o texto completo está em licencas.html */
  if(document.body.append&&rotaAtual!=='licencas.html'){const rodape=document.createElement('footer');rodape.className='rodape-licenca';rodape.innerHTML='Este site usa material do System Reference Document 5.1 da Wizards of the Coast LLC, licenciado sob a Creative Commons Attribution 4.0 International, traduzido e adaptado. Projeto de fãs, sem vínculo com a Wizards of the Coast. <a href="licencas.html">Licenças e créditos</a>';document.body.append(rodape);}
@@ -43,7 +45,7 @@
  if(pagina==='iniciativa.html'){
   const vista=['monstros','magias'].includes(aba)?aba:aba==='consulta'?'monstros':'iniciativa';document.body.dataset.appView=vista;
   for(const s of document.querySelectorAll('main > section, main > details')){
-   const magias=!!s.querySelector('#sq'),monstros=!!s.querySelector('#blist')||s.id==='cm'||s.classList.contains('only-admin');
+   const magias=!!s.querySelector('#sq'),monstros=!!s.querySelector('#blist')||s.id==='cm'||s.id==='aviso-visitante'||s.classList.contains('only-admin');
    s.classList.add(magias?'vista-magias':monstros?'vista-monstros':'vista-iniciativa');
   }
   const h=document.querySelector('h1'),sub=document.querySelector('.subtitle');
