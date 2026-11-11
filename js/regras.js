@@ -167,7 +167,7 @@ window.REGRAS = (() => {
       const titulo=t.split(":")[0].replace(/ \([^)]*\)/g,"").trim(),n=normalizar(titulo);
       const chave=Object.keys(window.TRACOS_2014||{}).find(k=>n===k||n.startsWith(k));
       const desc=chave?window.TRACOS_2014[chave]:t;
-      return {nome:titulo.charAt(0).toUpperCase()+titulo.slice(1),desc,origem:"Raça · "+nome};
+      return {nome:tituloTexto(titulo),desc,origem:"Raça · "+nome};
     });
   }
   const RACAS_BASE=['Anão (da Colina)','Anão (da Montanha)','Draconato','Elfo (Alto)','Elfo (da Floresta)','Elfo (Drow)','Gnomo (da Floresta)','Gnomo (da Rocha)','Halfling (Pés Leves)','Halfling (Robusto)','Humano','Humano (Variante)','Meio-elfo','Meio-orc','Tiefling','Fada'];
@@ -218,5 +218,13 @@ window.REGRAS = (() => {
       .map(h=>{const cf=h.e+"|"+h.c+"|"+h.n;return {nome:h.p||h.n,desc:pt[cf]||h.d,cf,auto:"classe"};});
   }
 
-  return { RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+  /* Fonte única dos valores derivados: ficha, criador e resumo do mestre. */
+  const chaveTexto=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const tituloTexto=v=>String(v||'').replace(/(^|\s)(\p{L})/gu,(m,a,b)=>a+b.toLocaleUpperCase('pt-BR'));
+  function tracosDaFicha(f){const atuais=tracosRaciais(f.raca),mapa=new Map(atuais.map(t=>[chaveTexto(t.nome),{...t,nome:tituloTexto(t.nome)}]));for(const t of f.tracosRaciais||[]){const k=chaveTexto(t.nome);if(!mapa.has(k))mapa.set(k,{...t,nome:tituloTexto(t.nome)});}return [...mapa.values()];}
+  function valorPericia(f,k){const p=PERICIAS.find(p=>p[0]===k);return mod(f.atributos?.[p?.[2]]??10)+bonusPericia(f,k);}
+  function percepcaoPassiva(f){return 10+valorPericia(f,'percepcao');}
+  function valoresAtaque(f,a){const attrs=f.atributos||{},at=a.atr==='acuidade'?Math.max(mod(attrs.for??10),mod(attrs.des??10)):mod(attrs[a.atr||'for']??10),mg=Number(a.magico)||0;return {ataque:at+(a.prof===false?0:prof(nivelTotal(f.classes||[])||f.nivel||1))+mg,dano:at+mg+(Number(a.extra)||0)};}
+  function resumoMestre(f){const fontes=fontesPericias(f),tracos=tracosDaFicha(f);return {passiva:percepcaoPassiva(f),pericias:PERICIAS.filter(([k])=>fontes.basicas.includes(k)).map(([k,n])=>({id:k,nome:n,valor:valorPericia(f,k),especializada:fontes.especializadas.includes(k)})),tracos,resistencias:[...(Array.isArray(f.resistencias)?f.resistencias:f.resistencias?[f.resistencias]:[]),...tracos.filter(t=>/resistência|imunidade/i.test(t.desc)).map(t=>t.desc)],ataques:(f.ataques||[]).map(a=>({...a,...valoresAtaque(f,a)})),magias:f.magias||[],caracteristicas:f.caracteristicas||[]};}
+  return { chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, resumoMestre, RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();

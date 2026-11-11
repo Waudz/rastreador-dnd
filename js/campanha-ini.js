@@ -12,17 +12,23 @@
   const emCombate = p => window.__ini.list().some(c => c.pid === p.id);
   function desenhar() {
     const html = pers.length ? pers.map(p => {
-      const f = p.ficha || {}, foto = f.foto && /^data:image\//.test(f.foto) ? '<img class="av" style="width:36px;height:36px" src="'+esc(f.foto)+'" alt="">' : "";
+      const f = p.ficha || {}, foto = f.foto && /^data:image\//.test(f.foto) ? '<img class="av" style="width:36px;height:36px" src="'+esc(f.foto)+'" alt="">' : '<span class="av av0" style="width:36px;height:36px" aria-hidden="true">'+esc((p.nome||'?').charAt(0).toUpperCase())+'</span>';
       return '<article class="ci-cartao"><button type="button" class="ci-personagem" data-ci-resumo="'+esc(p.id)+'" aria-label="Ver resumo de '+esc(p.nome)+'">'+foto+'<span><b>'+esc(p.nome)+'</b><small>'+esc(f.classe||[f.npc?"NPC":"Personagem",f.nivel?'Nível '+f.nivel:''].filter(Boolean).join(' · '))+'</small><small>PV '+p.pv_atual+'/'+p.pv_max+' · CA '+p.ca+'</small></span></button>'+(emCombate(p)?'<span class="muted ci-no-combate">No combate</span>':'<button type="button" class="small" data-ci="'+esc(p.id)+'">Adicionar à iniciativa</button>')+'</article>';
     }).join("") : '<span class="muted">Esta campanha ainda não tem personagens. Importe ou crie as fichas dentro da campanha.</span>';
     if(ultimaGrade!==html){$("#ci-lista").innerHTML=html;ultimaGrade=html;}
   }
   function abrirResumo(p){
     resumoId=p.id;focoAnterior=document.activeElement;
-    const f=p.ficha||{},r=window.REGRAS,atributos=f.atributos||{},fontes=r.fontesPericias(f);
-    const detalhes=(nome,desc)=>'<details class="item"><summary>'+esc(nome)+'</summary><p class="descricao-regra">'+esc(desc||'Sem descrição cadastrada.')+'</p></details>';
+    const f=p.ficha||{},r=window.REGRAS,atributos=f.atributos||{},fontes=r.fontesPericias(f),info=r.resumoMestre(f);
+    const titulo=r.tituloTexto;
+    const detalhes=(nome,desc)=>'<span class="ci-dica" tabindex="0">'+esc(titulo(nome))+'<span role="tooltip">'+esc(desc||'Descrição não cadastrada na ficha.')+'</span></span>';
+    const secao=(nome,itens)=>itens.length?'<h3>'+nome+'</h3><div class="ci-lista-compacta">'+itens.join('')+'</div>':'';
     const foto=f.foto&&/^data:image\//.test(f.foto)?'<img class="av" width="64" height="64" src="'+esc(f.foto)+'" alt="">':'';
-    $("#ci-resumo-corpo").innerHTML=foto+'<h2>'+esc(p.nome)+'</h2><p>'+esc([f.raca,f.classe||r.resumoClasses(f.classes||[]).descricao].filter(Boolean).join(' · '))+'</p><p>PV '+p.pv_atual+' / '+p.pv_max+' · CA '+p.ca+' · Proficiência +'+r.prof(r.nivelTotal(f.classes||[])||f.nivel||1)+'</p><div class="ci-atributos">'+r.ATR.map(k=>'<div><small>'+esc(r.ATR_NOME[k])+'</small><strong>'+(Number(atributos[k])||10)+'</strong><span>'+((r.mod(atributos[k]||10)>=0?'+':'')+r.mod(atributos[k]||10))+'</span></div>').join('')+'</div><h3>Perícias</h3><p>'+r.PERICIAS.filter(([k])=>fontes.basicas.includes(k)).map(([k,n])=>esc(n)+(fontes.especializadas.includes(k)?' (Especialização)':'')).join(', ')+'</p><h3>Traços Raciais</h3>'+(f.tracosRaciais||r.tracosRaciais(f.raca)).map(t=>detalhes(t.nome,t.desc)).join('')+(f.backgroundCaracteristica?'<h3>Origem · '+esc(f.background||'')+'</h3>'+detalhes(f.backgroundCaracteristica.nome,f.backgroundCaracteristica.desc):'')+'<h3>Características</h3>'+(f.caracteristicas||[]).map(h=>detalhes(h.nome,h.desc)).join('')+'<h3>Magias</h3>'+(f.magias||[]).map(m=>detalhes(m.n+' · '+(m.l?m.l+'º Círculo':'Truque')+(m.prep&&m.l?' · Preparada':''),m.d)).join('')+'<a class="btnlike" href="personagem.html?id='+encodeURIComponent(p.id)+'">Abrir ficha completa</a>';
+    const pericias=info.pericias.map(t=>esc(t.nome)+' '+(t.valor>=0?'+':'')+t.valor+(t.especializada?' (Especialização)':''));
+    const tracos=info.tracos.map(t=>detalhes(t.nome,t.desc)),resistencias=info.resistencias;
+    const ataques=info.ataques.map(t=>detalhes(t.nome||'Personalizado','Ataque '+(t.ataque>=0?'+':'')+t.ataque+' · Dano '+(t.dado||'—')+(t.dano>=0?'+':'')+t.dano+' '+(t.tipo||'')));
+    $('#ci-resumo-corpo').innerHTML=foto+'<h2>'+esc(p.nome)+'</h2><p>'+esc([f.raca,f.classe||r.resumoClasses(f.classes||[]).descricao].filter(Boolean).join(' · '))+'</p><p>PV '+p.pv_atual+' / '+p.pv_max+' · CA '+p.ca+' · Percepção Passiva <b>'+info.passiva+'</b></p><a class="btnlike" href="personagem.html?id='+encodeURIComponent(p.id)+'">Ver Ficha Completa</a><div class="ci-atributos">'+r.ATR.map(k=>'<div><small>'+esc(r.ATR_NOME[k])+'</small><strong>'+(atributos[k]??10)+'</strong><span>'+((r.mod(atributos[k]??10)>=0?'+':'')+r.mod(atributos[k]??10))+'</span></div>').join('')+'</div>'+secao('Perícias',pericias)+secao('Resistências e Defesas',resistencias.map(esc))+secao('Ataques',ataques)+secao('Traços Raciais',tracos)+(f.backgroundCaracteristica?secao('Origem · '+esc(f.background||''),[detalhes(f.backgroundCaracteristica.nome,f.backgroundCaracteristica.desc)]):'')+secao('Características',(f.caracteristicas||[]).map(h=>detalhes(h.nome,h.desc)))+secao('Magias',(f.magias||[]).map(m=>detalhes((m.n||m.nome)+' · '+(m.l?m.l+'º Círculo':'Truque')+(m.prep&&m.l?' · Preparada':''),m.d||m.desc)));
+
     $("#ci-resumo").hidden=false;$("#ci-resumo-fechar").focus?.();
   }
   function fecharResumo(){resumoId=null;$("#ci-resumo").hidden=true;focoAnterior?.focus?.();}
@@ -100,5 +106,6 @@
       catch(e){falhas++;msg("Não foi possível salvar os PV na ficha: "+e.message,true);}
     }
   },2500);
+  window.__ini.aoAlterar?.(desenhar);
   iniciar();
 })();

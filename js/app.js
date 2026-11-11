@@ -159,6 +159,7 @@
       $("#spinfo").textContent = "Catálogo D&D 2014 em português.";
       abiIndex(); buildFilter(); renderBestiary(); spSearch(); if (document.activeElement === $("#name")) sugg(); window.__ini.render();
     }
+    $('#exportar-criacoes').addEventListener('click',()=>{const mon=ALL.filter(m=>m.custom),spl=SP.filter(m=>m.custom),keys=new Set(mon.map(m=>m.key)),img=Object.entries(PH).filter(([k])=>keys.has(k)).map(([key,data])=>({key,data}));const url=URL.createObjectURL(new Blob([JSON.stringify({v:1,mon,spl,img},null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='minhas-criacoes.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
     /* o campo Nome de “Adicionar combatente” é a busca do bestiário */
     const match = (m, q) => nz(m.name + " " + pt(m) + " " + (m.subtitle || "")).includes(q);
     const sug = $("#sug");
@@ -224,6 +225,7 @@
       const margem=innerWidth<=800?14:22;
       document.body.style.paddingLeft = margem + (L && !full ? W : 0) + "px"; document.body.style.paddingRight = margem + (R && !full ? W : 0) + "px";
     }
+    window.reorganizarPaineis=layout;
     window.addEventListener("resize", layout);
     const closeSheet = () => { $("#sheet").hidden = true; $("#tip").style.display = "none"; layout(); };
     const closeSpell = () => { $("#spd").hidden = true; $("#tip").style.display = "none"; layout(); };
@@ -237,7 +239,7 @@
     /* remove uma característica, ação ou magia de uma ficha própria */
     function openSheet(k) {
       const m = ALL.find((x) => x.key === k), el = $("#sheet-body"); curSheet = k;
-      if (!m) { el.innerHTML = '<span class="muted">Ficha indisponível: não está no bestiário local.</span>'; $("#sheet").hidden = false; layout(); return; }
+      if (!m) { curSheet=null; return; }
       const r = m.resistances_and_immunities || {}, ln = (l, v) => v ? `<div><b>${l}:</b> ${esc(v)}</div>` : "";
       const saves = Object.entries(m.saving_throws || {}).filter(([a, v]) => v !== m.modifiers?.[a]).map(([a, v]) => `${ABIL.find((x) => x[0] === a)?.[1] || a} ${mod(v)}`).join(", ");
       const skills = Object.entries(m.skill_bonuses || {}).map(([a, v]) => `${SK[a] || a} ${mod(v)}`).join(", ");
@@ -483,7 +485,7 @@
       if (d.view && t.closest("#blist,#spd-body")) return openSheet(d.view);
       if (d.edit) { if (innerWidth < 700) closeSheet(); return editCustom(d.edit); }
       if (d.add) { const m = ALL.find((x) => x.key === d.add); if (m) addMon(m); return; }
-      if (d.tr) { const m = ALL.find((x) => x.key === d.tr), v = prompt("Nome em português para “" + m.name + "” (vazio remove):", pt(m) || m.name); if (v === null) return; v.trim() ? (TR[m.name.toLowerCase()] = v.trim()) : delete TR[m.name.toLowerCase()]; saveTR(); return renderBestiary(); }
+      if (d.tr) { const m = ALL.find((x) => x.key === d.tr), v = prompt("Nome em português para “" + m.name + "” (vazio remove):", pt(m) || m.name); if (v === null) return; v.trim() ? (TR[m.name.toLowerCase()] = v.trim()) : delete TR[m.name.toLowerCase()]; saveTR();if(!m.custom)try{await CATALOGO.atualizar({registros:ALL,magias:SP,nomes:{[m.name.toLowerCase()]:v.trim()}});}catch(e){status(esc(e.message));}return renderBestiary(); }
       if (d.del) {
         const m = ALL.find((x) => x.key === d.del); if (!m) return;
         if (!confirm(m.custom ? `Excluir “${m.name}” definitivamente?` : `Remover “${m.name}” do seu bestiário local? Você pode baixar de novo depois.`)) return;
@@ -549,7 +551,7 @@
       queueSync();
     });
     window.addEventListener("online", () => queueSync());
-    const touch = async (k) => { const m = BY[k]; if (m && m.custom) { m.updatedAt = Date.now(); await put("mon", [m]); queueSync(); } };
+    const touch = async (k) => { const m=BY[k];if(!m)return;if(m.custom){m.updatedAt=Date.now();await put("mon",[m]);queueSync();}else try{await CATALOGO.atualizar({registros:ALL,magias:SP,fotos:[{key:k,data:PH[k]||""}]});}catch(e){status("Não consegui sincronizar a foto: "+esc(e.message));} };
     function queueSync() { if (!window.nuvem?.usuario() || !acervo.ativo()) return; clearTimeout(syTimer); syTimer = setTimeout(syncNow, 1500); }
     async function syncNow() { if(window.nuvem?.usuario() && acervo.ativo()) return syncConta(); }
     document.addEventListener("visibilitychange", () => { if (!document.hidden) queueSync(); });
@@ -574,7 +576,8 @@
         if(!d)return;
         const mon=(d.mon||[]).filter(m=>!m.custom&&EDICOES.permitida(m)),keys=new Set(mon.map(m=>m.key));
         await put("mon",mon);await put("spl",(d.spl||[]).filter(m=>!m.custom&&EDICOES.permitida(m)));
-        await put("img",(d.img||[]).filter(i=>keys.has(i.key)&&String(i.data||"").startsWith("data:image/")));
+        await put("img",(d.img||[]).filter(i=>keys.has(i.key)&&(i.data===""||String(i.data||"").startsWith("data:image/"))));
+        Object.assign(TR,d.tr||{});saveTR();
         await reload();
       }catch(e){status('<span class="err">Não consegui atualizar o catálogo compartilhado: '+esc(e.message)+'</span>');}
     }

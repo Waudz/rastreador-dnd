@@ -28,4 +28,11 @@ SOFTWARE.
 
 ## Cobertura e idioma
 
-A automação de subclasses usa as 12 subclasses SRD 5.1 disponíveis no HeroQuill; isso não corresponde a todas as subclasses do Livro do Jogador. Os títulos e descrições públicos usam o catálogo 2014 traduzido da API. Rótulos de progressão e opções que não tinham tradução foram integrados em português a partir dos mesmos dados SRD, sem usar o livro pessoal sincronizado de qualquer conta.
+A automação usa as 12 subclasses SRD 5.1 disponíveis no HeroQuill e oito subclasses adicionais com resumos próprios em português: Bravura, Lua, Mestre de Batalha, Cavaleiro Místico, Assassino, Trapaceiro Arcano, Magia Selvagem e Guerreiro Totêmico. São 20 subclasses; isso não corresponde a todas as subclasses do Livro do Jogador. Os títulos e descrições públicos usam o catálogo 2014 traduzido da API. Rótulos de progressão e opções que não tinham tradução foram integrados em português a partir dos mesmos dados SRD, sem usar o livro pessoal sincronizado de qualquer conta.
+
+
+## Fonte única da ficha
+
+js/regras.js centraliza traços raciais, descrições, perícias, percepção passiva e bônus de ataque. A ficha e o resumo do mestre consomem essas funções. js/origens.js contém as descrições raciais canônicas; valores antigos salvos não substituem essas descrições. O resumo omite seções vazias e mantém detalhes por foco/toque/mouse.
+
+A expansão de subclasses não automatiza toda decisão de mesa, a tabela de Magia Selvagem ou o histórico de substituições de magias em cada nível.

@@ -1,15 +1,15 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
 const {vm,executar,documentoFalso,armazenamento,tick}=require("./helpers.cjs");
-async function fixture({search="",erro=false,user={id:"mestre"}}={}){
+async function fixture({search="",erro=false,user={id:"mestre"},ficha={}}={}){
   const document=documentoFalso(),localStorage=armazenamento(),lista=[],consultas=[];let atualizar;
   localStorage.setItem("ini_campanha","antiga");
   const nuvem={usuario:()=>user,esc:s=>String(s??""),observar(fn){atualizar=fn;},get:async q=>{
     consultas.push(q);if(erro)throw Error("Permissão recusada");
-    return q.startsWith("membros")?[{campanha:{id:"antiga",nome:"Antiga"}},{campanha:{id:"atual",nome:"Atual"}}]:[{id:"p",nome:"Herói",pv_atual:12,pv_max:15,ca:13,ficha:{foto:"data:image/png;base64,FOTO",classes:[{c:"Bard",n:2}],atributos:{des:14}}}];
+    return q.startsWith("membros")?[{campanha:{id:"antiga",nome:"Antiga"}},{campanha:{id:"atual",nome:"Atual"}}]:[{id:"p",nome:"Herói",pv_atual:12,pv_max:15,ca:13,ficha:{foto:"data:image/png;base64,FOTO",classes:[{c:"Bard",n:2}],atributos:{des:14},...ficha}}];
   }};
   const window={nuvem,__ini:{list:()=>lista,add:c=>lista.push(c),render(){}}};
   const c=vm.createContext({window,nuvem,document,location:{search},localStorage,URLSearchParams,setInterval(){}});
-  executar("js/regras.js",c);c.REGRAS=window.REGRAS;executar("js/campanha-ini.js",c);await tick();
+  executar("js/origens.js",c);executar("js/regras.js",c);c.REGRAS=window.REGRAS;executar("js/campanha-ini.js",c);await tick();
   return {document,lista,consultas,atualizar};
 }
 test("link da campanha escolhe a campanha atual em vez da preferência antiga",async()=>{
@@ -41,3 +41,6 @@ test("consulta automática sem alterações não refaz a grade nem exibe carrega
  await f.atualizar();assert.equal(escritas,0);assert.equal(f.document.el("ci-msg").innerHTML,"");
 });
 test("normalização de HTML pelo navegador não provoca redesenho em cada consulta",async()=>{const f=await fixture();let escritas=0;Object.defineProperty(f.document.el('ci-lista'),'innerHTML',{get:()=>'<article>HTML normalizado pelo navegador</article>',set(){escritas++;}});await f.atualizar();assert.equal(escritas,0);});
+
+test('resumo apresenta passiva, perícias, ataques e descrição racial em linhas compactas',async()=>{const f=await fixture({ficha:{raca:'Anão (da Colina)',atributos:{sab:14,for:16},perClasse:['percepcao'],classes:[{c:'Fighter',n:1}],tracosRaciais:[{nome:'resiliência anã',desc:'resiliência anã'}],ataques:[{nome:'Machado',dado:'1d8',tipo:'cortante'}],magias:[{n:'Luz',l:0,d:'Ilumina um objeto.'}]}});f.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci-resumo]'?{dataset:{ciResumo:'p'}}:null}});const h=f.document.el('ci-resumo-corpo').innerHTML;assert.match(h,/Percepção Passiva <b>14/);assert.match(h,/Percepção \+4/);assert.match(h,/Resiliência Anã/);assert.match(h,/resistência a dano de veneno/);assert.match(h,/Ataque \+5/);assert.match(h,/Ver Ficha Completa/);assert.match(h,/role="tooltip"/);assert.doesNotMatch(h,/<details/);});
+test('resumo não exibe seção de perícias vazia',async()=>{const f=await fixture();f.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci-resumo]'?{dataset:{ciResumo:'p'}}:null}});assert.doesNotMatch(f.document.el('ci-resumo-corpo').innerHTML,/<h3>Perícias/);});

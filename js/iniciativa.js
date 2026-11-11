@@ -9,6 +9,8 @@
       let editId = null;
       let stats = {};
       let report = null;
+      let edicaoIniciativa = null;const ouvintes=[];
+      const notificar=()=>ouvintes.forEach(fn=>fn());
 
       function save() {
         try {
@@ -192,7 +194,7 @@
 
         if (!ordered.length) {
           list.innerHTML = `<div class="empty"><strong>O campo de batalha está vazio.</strong>Cadastre os personagens e inimigos para montar a ordem de iniciativa.</div>`;
-          save();
+          save();notificar();
           return;
         }
 
@@ -231,7 +233,7 @@
             </article>`;
         }).join("");
 
-        save();
+        save();notificar();
       }
 
       $("add-form").addEventListener("submit", (event) => {
@@ -337,19 +339,23 @@
         if (!nm.hidden) nm.focus();
       });
 
-      $("combatants").addEventListener("input",e=>{
-        const id=e.target.dataset.iniciativa;if(!id||e.target.validity?.badInput)return;
-        const c=combatants.find(c=>c.id===id),valor=e.target.value.trim();
-        if(c&&(valor===""||Number.isFinite(Number(valor)))){c.initiative=valor===""?null:Number(valor);save();}
+      $("combatants").addEventListener("focusin",e=>{
+        if(!e.target.dataset.iniciativa)return;
+        const c=combatants.find(c=>c.id===e.target.dataset.iniciativa);if(!c)return;
+        edicaoIniciativa={id:c.id,original:c.initiative,cancelar:false};e.target.select?.();
       });
-      $("combatants").addEventListener("change", e => {
+      $("combatants").addEventListener("change",e=>{
         const id=e.target.dataset.iniciativa;if(!id)return;
         const c=combatants.find(c=>c.id===id);if(!c)return;
-        const valor=e.target.value.trim();
-        if(valor!==""&&!Number.isFinite(Number(valor)))return;
-        c.initiative=valor===""?null:Number(valor);render(true);
+        if(edicaoIniciativa?.id===id&&edicaoIniciativa.cancelar){edicaoIniciativa=null;render(true);return;}
+        const valor=e.target.value.trim();if(valor!==""&&!Number.isFinite(Number(valor)))return;
+        c.initiative=valor===""?null:Number(valor);edicaoIniciativa=null;render(true);
       });
-      $("combatants").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset.iniciativa){e.preventDefault();e.target.blur();}});
+      $("combatants").addEventListener("keydown",e=>{
+        const id=e.target.dataset.iniciativa;if(!id)return;
+        if(e.key==="Escape"){e.preventDefault();e.stopPropagation?.();const c=combatants.find(c=>c.id===id);e.target.value=c?.initiative==null?"":String(c.initiative);if(edicaoIniciativa)edicaoIniciativa.cancelar=true;e.target.blur();edicaoIniciativa=null;render(true);}
+        else if(e.key==="Enter"){e.preventDefault();e.target.blur();}
+      });
       $("start").addEventListener("click", () => {
         if(combatants.some(pendente))return;
         const first = sorted()[0];
@@ -399,6 +405,7 @@
 
       window.__ini = {
         pending: "",
+        aoAlterar:fn=>ouvintes.push(fn),
         render: () => render(),
         list: () => combatants,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }

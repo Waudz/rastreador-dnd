@@ -2,7 +2,7 @@
 (() => {
  const esc=nuvem.esc;
  const nav=document.createElement('nav');nav.className='appnav';nav.setAttribute('aria-label','Navegação principal');
- const links=[['iniciativa.html?aba=iniciativa','Iniciativa'],['conta.html?aba=campanhas','Campanhas'],['conta.html?aba=personagens','Personagens'],['iniciativa.html?aba=consulta','Consultas'],['conta.html?aba=conta','Minha conta']];
+ const links=[['iniciativa.html?aba=iniciativa','Iniciativa'],['conta.html?aba=campanhas','Campanhas'],['conta.html?aba=personagens','Personagens'],['iniciativa.html?aba=consulta','Monstros e Magias'],['conta.html?aba=conta','Minha conta']];
  nav.innerHTML=links.map(([url,n])=>`<a class="btnlike small" href="${url}">${esc(n)}</a>`).join('');document.body.prepend(nav);
  let admin=false;
  window.ACESSO={admin:()=>admin,pronto:null};
@@ -20,7 +20,7 @@
    const bestiario=!!s.querySelector('#blist,#sq')||s.id==='cm',dados=s.classList.contains('only-admin');
    if(bestiario||dados)s.classList.add('vista-consulta');else s.classList.add('vista-iniciativa');
   }
-  const h=document.querySelector('h1'),sub=document.querySelector('.subtitle');if(consulta){h.textContent='Monstros, Magias e Habilidades';if(sub)sub.textContent='Consulte o catálogo de regras de 2014.';}
+  const h=document.querySelector('h1'),sub=document.querySelector('.subtitle');if(consulta){h.textContent='Monstros e Magias';if(sub)sub.textContent='Consulte o catálogo de regras de 2014.';}
  }
  if(pagina==='conta.html'||pagina==='index.html'||pagina===''){
   const atual=['conta','personagens'].includes(aba)?aba:'campanhas';

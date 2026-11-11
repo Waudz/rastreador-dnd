@@ -43,10 +43,11 @@
   async function carregarCatalogo() {
     if(catalogo)return;
     const [a,b,d]=await Promise.all([fetch("dados/habilidades.json").then(r=>{if(!r.ok)throw Error("Catálogo indisponível");return r.json();}),fetch("dados/habilidades-pt.json").then(r=>r.ok?r.json():{}),fetch("dados/criacao-srd2014.json").then(r=>r.ok?r.json():{features:[]})]);
+    window.SUBCLASSES_2014?.aplicar(d);
     catalogo={itens:a.filter(h=>h.e==="2014"),pt:b,criador:d.features,achados:[]};
   }
   function sincronizarHabilidades() {
-    const f=F(), manuais=CAR().filter(x=>!x.auto||x.auto==="escolha"||x.auto==="criador"); f.tracosRaciais=R.tracosRaciais(f.raca); const raciais=[];
+    const f=F(), manuais=CAR().filter(x=>!x.auto||x.auto==="escolha"||x.auto==="criador"); f.tracosRaciais=R.tracosDaFicha(f); const raciais=[];
     const classes=f.criacao?.concluido?[]:catalogo?R.habilidadesAutomaticas(f,catalogo.itens,catalogo.pt):CAR().filter(x=>x.auto==="classe");
     const vistos=new Set(manuais.flatMap(x=>[x.cf,x.nome].filter(Boolean)));
     for(const h of manuais){const d=catalogo?.criador?.find(x=>x.id===h.cf);if(d){h.nome=d.nome;h.desc=d.descricao;}}
@@ -176,7 +177,7 @@
 
   const blocoAtr = () => `<div class="attrs">${ATR.map(([k, r]) => `<div class="attr"><label>${r}</label><input type="number" min="1" max="30" data-atr="${k}" value="${num(A()[k], 10)}"><div class="mod" id="mod-${k}">${fm(mod(A()[k]))}</div></div>`).join("")}</div><div class="muted" style="margin-top:8px" id="prof-txt"></div>`;
 
-  const itemCar = (c, i) => `<details class="item"><summary>${esc(c.nome)}</summary><div><div class="pre">${esc(c.desc || "")}</div>${!c.auto?`<div class="row" style="margin:8px 0 0"><button type="button" class="small danger" data-rm-car="${i}">Remover</button></div>`:""}</div></details>`;
+  const itemCar = (c, i) => `<details class="item"><summary>${esc(c.nome)}</summary><div><div class="pre">${TEXTO_REGRAS.html(c.desc || "")}</div>${!c.auto?`<div class="row" style="margin:8px 0 0"><button type="button" class="small danger" data-rm-car="${i}">Remover</button></div>`:""}</div></details>`;
 
   const racaSel = () => { const r = F().raca || ""; return R.RACAS.some((x) => x[0] === r) ? r : (r || F().racaCustom ? "__custom" : ""); };
   const blocoClasses = () => {
@@ -205,14 +206,14 @@
     const lim=R.limiteEspecializacao(CLS());
     if(lim)h+=`<p class="muted">Especializações: ${fontes.especializadas.length}/${lim}. Escolha entre as perícias proficientes.</p>`;
     h+='<div class="grade2">'+R.PERICIAS.map(([k,n,a])=>{
-      const e=pr[k]||0,v=modA(a)+R.bonusPericia(f,k);
+      const e=pr[k]||0,v=R.valorPericia(f,k);
       return `<div class="lin"><span class="pbol${e?' on':''}${e===2?' dup':''}"></span><b>${fm(v)}</b><span>${n}</span>${lim&&e?`<button type="button" class="small" data-per="${k}" aria-pressed="${e===2}">${e===2?'Especializada':'Especializar'}</button>`:''}</div>`;
     }).join("")+'</div>';
-    return h+`<p class="muted">Percepção passiva: <b>${10+modA("sab")+R.bonusPericia(f,"percepcao")}</b></p>`;
+    return h+`<p class="muted">Percepção passiva: <b>${R.percepcaoPassiva(f)}</b></p>`;
   }
   function blocoProf() {
     const c0 = CLS()[0] && R.classe(CLS()[0].c); if (!c0) return '<span class="muted">Escolha uma classe para ver as proficiências.</span>';
-    return `<div class="muted">Armaduras: <b style="color:var(--text)">${esc(c0.arm)}</b></div><div class="muted">Armas: <b style="color:var(--text)">${esc(c0.armas)}</b></div>${c0.ferr ? `<div class="muted">Ferramentas: <b style="color:var(--text)">${esc(c0.ferr)}</b></div>` : ""}<div class="muted">Salvaguardas: <b style="color:var(--text)">${c0.salv.map((k) => R.ATR_NOME[k]).join(", ")}</b></div>`;
+    return (F().proficienciasSubclasse?.length?'<div class="muted">Proficiências da Subclasse: <b>'+F().proficienciasSubclasse.map(esc).join(", ")+'</b></div>':"")+`<div class="muted">Armaduras: <b style="color:var(--text)">${esc(c0.arm)}</b></div><div class="muted">Armas: <b style="color:var(--text)">${esc(c0.armas)}</b></div>${c0.ferr ? `<div class="muted">Ferramentas: <b style="color:var(--text)">${esc(c0.ferr)}</b></div>` : ""}<div class="muted">Salvaguardas: <b style="color:var(--text)">${c0.salv.map((k) => R.ATR_NOME[k]).join(", ")}</b></div>`;
   }
   const blocoCA = () => { const { ca, desc } = calcCA(), on = autoOn("caAuto"); return `<div class="hp-top"><span>CA ${on ? "calculada" : "manual"}</span><strong class="ca-num">${on ? ca : P.ca}</strong></div><div class="muted ca-desc">${on ? esc(desc) : `A CA manual é ${P.ca}. A automática seria ${ca} (${esc(desc)}).`}</div>`; };
 
@@ -220,13 +221,12 @@
   function blocoDV() {
     const dv = dadosVida(), usados = F().dvUsados || {}, ks = Object.keys(dv).map(Number).sort((a, b) => b - a);
     if (!ks.length) return '<span class="muted">Escolha uma classe para ter dados de vida.</span>';
-    return ks.map((d) => { const tot = dv[d], us = Math.min(tot, num(usados[d], 0)); return `<div class="res"><span><b>d${d}</b> <span class="muted">· restam ${tot - us} de ${tot}</span></span><button type="button" class="small" data-dv="${d}" ${tot - us <= 0 ? "disabled" : ""}>Usar (descanso curto)</button></div>`; }).join("");
+    return ks.map((d) => { const tot = dv[d], us = Math.min(tot, num(usados[d], 0)); return `<div class="res"><span><b>d${d}</b> <span class="muted">· restam ${tot - us} de ${tot}</span></span><div class="dv-acoes"><button type="button" class="small" data-dv="${d}" ${tot-us<=0?"disabled":""}>Rolar no App</button><input type="number" min="1" max="${d}" data-rolagem-fisica="${d}" aria-label="Rolagem Física de d${d}, sem Constituição" placeholder="Dado Físico"><button type="button" class="small" data-dv-manual="${d}" ${tot-us<=0?"disabled":""}>Usar Rolagem Física</button><button type="button" class="small" data-dv-marcar="${d}" ${tot-us<=0?"disabled":""}>Só Marcar Uso</button></div></div>`; }).join("");
   }
 
   /* ataques */
   function resAtq(a) {
-    const pb = bonusProf(), at = a.atr === "acuidade" ? Math.max(modA("for"), modA("des")) : modA(a.atr || "for"), mg = num(a.magico, 0);
-    const hit = at + (a.prof === false ? 0 : pb) + mg, dm = at + mg + num(a.extra, 0);
+    const valores=R.valoresAtaque(F(),a),hit=valores.ataque,dm=valores.dano;
     return `Ataque ${fm(hit)} · Dano ${esc(a.dado || "—")}${dm ? fm(dm) : ""} ${esc(a.tipo || "")}`;
   }
   const linhaAtq = (a, i) => `<div class="panel2" data-ai="${i}"><div class="row" style="margin:0 0 6px"><input style="flex:1 1 160px" data-atq="nome" value="${esc(a.nome || "")}" placeholder="Nome do ataque" maxlength="60"><button type="button" class="small subtle" data-rm-atq="${i}" aria-label="Remover ataque">${window.ico ? window.ico("x") : "x"}</button></div>
@@ -257,7 +257,7 @@
     const f = F(), outro = souMestre && P.dono_id !== nuvem.usuario().id, rs = racaSel(), c = conj();
     const mostraMag = c.habilidades.length || MAG().length || f.magiaExtra || magiaRacial();
     $("#ficha").innerHTML = `
-      <header class="panel ficha-resumo"><div class="ficha-identidade">${fotoHTML()}<div><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p>Origem: ${esc(f.background||"Não definida")}</p></div></div><div class="ficha-destaques"><div><small>Nível</small><strong>${nivelTotal()}</strong></div><div><small>Vida</small><strong id="resumo-pv">${P.pv_atual} / ${P.pv_max}</strong></div><div><small>CA</small><strong id="resumo-ca">${P.ca}</strong></div><div><small>Proficiência</small><strong>${fm(bonusProf())}</strong></div></div><div class="row"><button type="button" id="editar-ficha">${editandoFicha?"Concluir Edição":"Editar Personagem"}</button><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de Nível</a><a class="btnlike" href="iniciativa.html?aba=iniciativa&campanha=${encodeURIComponent(P.campanha_id)}&personagem=${encodeURIComponent(id)}">Usar na Iniciativa</a><button type="button" class="danger" id="excluir-personagem">Excluir Personagem</button></div></header>
+      <header class="panel ficha-resumo"><div class="ficha-identidade">${fotoHTML()}<div><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p>Origem: ${esc(f.background||"Não definida")}</p></div></div><div class="ficha-destaques"><div><small>Nível</small><strong>${nivelTotal()}</strong></div><div><small>Vida</small><strong id="resumo-pv">${P.pv_atual} / ${P.pv_max}</strong></div><div><small>CA</small><strong id="resumo-ca">${P.ca}</strong></div><div><small>Proficiência</small><strong>${fm(bonusProf())}</strong></div></div><div class="ficha-acoes"><div class="ficha-acoes-jogo"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de Nível</a><a class="btnlike" href="iniciativa.html?aba=iniciativa&campanha=${encodeURIComponent(P.campanha_id)}&personagem=${encodeURIComponent(id)}">Usar na Iniciativa</a></div><div class="ficha-acoes-gestao"><button type="button" id="editar-ficha">${editandoFicha?"Concluir Edição":"Editar Personagem"}</button><button type="button" class="danger" id="excluir-personagem">Excluir Personagem</button></div></div></header>
       <div class="panel identidade-editor" style="${editandoFicha?"":"display:none"}">
         <div class="row" style="margin:0 0 8px;flex-wrap:nowrap;gap:12px"><span id="foto-box">${fotoHTML()}</span><div style="flex:1 1 auto;min-width:0">
           <input id="nome" data-col="nome" value="${esc(P.nome)}" maxlength="80" style="font-family:Georgia,serif;font-size:22px;height:46px;font-weight:700" aria-label="Nome">
@@ -273,15 +273,15 @@
         <div id="classes">${blocoClasses()}</div>
         <div class="row" style="margin:0"><button type="button" class="small" id="add-cls">${CLS().length ? "Adicionar classe (multiclasse)" : "Escolher classe"}</button></div>
       </div>
+      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2><p class="muted">${editandoFicha?"Editando os valores do personagem.":"Use Editar Personagem para alterar os atributos."}</p>${blocoAtr()}<div id="melhorias">${blocoMelhorias()}</div></div>
       <div class="panel"><h2 class="panel-title">Vida</h2><div id="bloco-pv">${blocoPV()}</div><div class="sub">Dados de vida</div><div id="bloco-dv">${blocoDV()}</div>
-        <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-longo">Descanso longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></div>
+        <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-curto">Registrar Descanso Curto</button><button type="button" class="small" id="b-longo">Descanso Longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></div>
       <div class="panel"><h2 class="panel-title">Classe de armadura</h2><div id="bloco-ca">${blocoCA()}</div>
         <div class="row" style="margin:8px 0 0"><div style="flex:1 1 200px"><label>Armadura</label><select id="eq-arm">${opt("", "Nenhuma", !EQ().armadura)}${R.ARMADURAS.map((a) => opt(a[0], `${a[1]} (${a[2]}, CA ${a[3]})`, EQ().armadura === a[0])).join("")}</select></div>
           <label class="inline" style="margin:18px 0 0"><input type="checkbox" style="width:auto;height:auto" id="eq-esc" ${EQ().escudo ? "checked" : ""}> Escudo (+2)</label>
           <div><label>Outros bônus</label><input class="num" type="number" id="eq-bonus" value="${num(EQ().bonus, 0)}" title="Armadura +1, anel de proteção, etc."></div>
           <label class="inline" style="margin:18px 0 0"><input type="checkbox" style="width:auto;height:auto" data-auto="caAuto" ${autoOn("caAuto") ? "checked" : ""}> CA automática</label></div>
         <div class="muted" id="aviso-arm"></div></div>
-      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2><p class="muted">${editandoFicha?"Editando os valores do personagem.":"Use Editar Personagem para alterar os atributos."}</p>${blocoAtr()}<div id="melhorias">${blocoMelhorias()}</div></div>
       <div class="panel"><h2 class="panel-title">Salvaguardas</h2><div id="bloco-sal">${blocoSal()}</div></div>
       <div class="panel"><h2 class="panel-title">Perícias</h2><div id="bloco-per">${blocoPer()}</div></div>
       <div class="panel"><h2 class="panel-title">Proficiências e idiomas</h2><div id="bloco-prof">${blocoProf()}</div>
@@ -300,7 +300,7 @@
         <div class="sub">Dinheiro</div>
         <div class="moedas">${MOEDAS.map(([k, r]) => `<div class="moeda-controle"><label>${r}</label><input class="num" type="number" min="0" step="1" data-din="${k}" value="${moeda(DIN()[k])}"><div class="inline"><button type="button" data-moeda="${k}" data-sinal="-1" aria-label="Diminuir ${r}">−</button><input class="num" type="number" min="1" step="1" id="ajuste-${k}" placeholder="1" aria-label="Quantidade de ${r}"><button type="button" data-moeda="${k}" data-sinal="1" aria-label="Somar ${r}">+</button></div></div>`).join("")}<div><label>Total em PO</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="total-po">${totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div></div>
       </div>
-      <div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosRaciais(f.raca).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Esta raça não concede traços adicionais.</p>'}</div>
+      <div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosDaFicha(f).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Esta raça não concede traços adicionais.</p>'}</div>
       ${f.backgroundCaracteristica?'<div class="panel"><h2 class="panel-title">Origem · '+esc(f.background||"")+'</h2><h3>'+esc(f.backgroundCaracteristica.nome)+'</h3><p class="descricao-regra">'+esc(f.backgroundCaracteristica.desc)+'</p></div>':""}
       <div class="panel"><h2 class="panel-title">Características de classe e outras habilidades</h2>
         <div id="lista-car">${CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>'}</div>
@@ -354,13 +354,15 @@
     atualizarPV(); const pv = $("#bloco-pv").querySelector('[data-col="pv_temp"]'); if (pv) pv.value = P.pv_temp;
     agendar({ pv_atual: P.pv_atual, pv_temp: P.pv_temp });
   }
-  function usarDado(d) {
+  function usarDado(d, modo="app") {
     const dv = dadosVida(), us = F().dvUsados = F().dvUsados || {};
     if (num(us[d], 0) >= (dv[d] || 0)) return;
-    const rolou = 1 + Math.floor(Math.random() * d), ganho = Math.max(0, rolou + modA("con"));
+    const fisico=modo==="fisico"?Number($('[data-rolagem-fisica="'+d+'"]').value):null;
+    if(modo==="fisico"&&(!Number.isInteger(fisico)||fisico<1||fisico>d)){aviso("Informe o resultado do d"+d+", entre 1 e "+d+", sem Constituição.",true);return;}
+    const rolou = modo==="marcar"?null:modo==="fisico"?fisico:1+Math.floor(Math.random()*d), ganho=rolou===null?0:Math.max(0,rolou+modA("con"));
     us[d] = num(us[d], 0) + 1; P.pv_atual = Math.min(P.pv_max, P.pv_atual + ganho);
     atualizarPV(); $("#bloco-dv").innerHTML = blocoDV(); agendar({ ficha: P.ficha, pv_atual: P.pv_atual });
-    aviso(`d${d}: ${rolou}${modA("con") ? " " + fm(modA("con")) : ""} = ${ganho} PV recuperados.`);
+    aviso(modo==="marcar"?`Uso de d${d} registrado. Ajuste a cura física nos PV.`:`d${d}: ${rolou}${modA("con")?" "+fm(modA("con")):""} = ${ganho} PV de cura, limitado ao PV máximo.`);
   }
   function descansoLongo() {
     if (!confirm("Descanso longo: recupera todos os PV, os espaços de magia e metade dos dados de vida. Continuar?")) return;
@@ -430,6 +432,9 @@
     if (c("#b-cura")) return mudarPV(false);
     if (c("#b-foto")) return $("#in-foto").click();
     if (c("#b-longo")) return descansoLongo();
+    if(c("#b-curto")){F().descansosCurtos=num(F().descansosCurtos,0)+1;F().pactoUsado=0;agendar({ficha:P.ficha});desenhar();aviso("Descanso curto registrado. Os dados de vida são gastos separadamente; os espaços de pacto foram recuperados.");return;}
+    if((b=c("[data-dv-manual]")))return usarDado(+b.dataset.dvManual,"fisico");
+    if((b=c("[data-dv-marcar]")))return usarDado(+b.dataset.dvMarcar,"marcar");
     if ((b = c("[data-dv]"))) return usarDado(+b.dataset.dv);
     if ((b = c("[data-slot]"))) {
       const f = F(), d = +b.dataset.d;

@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: '22'
       - run: node tests/regras.test.cjs
-      - run: node --test tests/acervo.test.cjs tests/conta.test.cjs tests/edicoes.test.cjs tests/personagens-dados.test.cjs tests/personagem-save.test.cjs tests/campanha-ini.test.cjs tests/criador.test.cjs tests/navegacao.test.cjs tests/iniciativa.test.cjs
+      - run: node --test tests/acervo.test.cjs tests/conta.test.cjs tests/edicoes.test.cjs tests/personagens-dados.test.cjs tests/personagem-save.test.cjs tests/campanha-ini.test.cjs tests/criador.test.cjs tests/navegacao.test.cjs tests/iniciativa.test.cjs tests/texto-regras.test.cjs tests/catalogo.test.cjs
   postgres:
     runs-on: ubuntu-latest
     services:

@@ -16,12 +16,15 @@
   <script src="js/config-nuvem.js" defer></script>
   <script src="js/nuvem.js" defer></script>
   <script src="js/navegacao.js" defer></script>
+  <script src="js/paineis.js" defer></script>
   <script src="js/acervo.js" defer></script>
+  <script src="js/catalogo.js" defer></script>
   <script src="js/iniciativa.js" defer></script>
   <script src="js/foto.js" defer></script>
   <script src="js/edicoes.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/origens.js" defer></script>
+  <script src="js/texto-regras.js" defer></script>
   <script src="js/regras.js" defer></script>
   <script src="js/campanha-ini.js" defer></script>
 </head>
@@ -43,6 +46,14 @@
     
 
     
+
+    <details class="panel" id="camp-ini" hidden>
+      <summary class="panel-title" style="cursor:pointer">Personagens da campanha</summary>
+      <div class="bar ci-filtros"><select id="ci-camp" aria-label="Campanha" style="width:auto"></select><span class="grow"></span><button type="button" class="small" id="ci-recarregar">Atualizar</button><button type="button" class="small primary" id="ci-todos">Adicionar todos</button></div>
+      <div id="ci-msg" class="muted"></div>
+      <div id="ci-lista" class="ci-grade"></div>
+      <p class="muted">Adicione os personagens e preencha a iniciativa com a rolagem de cada jogador.</p>
+    </details>
 
     <section class="panel">
       <h2 class="panel-title"><i data-i="plus"></i>Adicionar combatente</h2>
@@ -86,13 +97,7 @@
       </form>
     </section>
 
-    <details class="panel" id="camp-ini" hidden>
-      <summary class="panel-title" style="cursor:pointer">Personagens da campanha</summary>
-      <div class="bar ci-filtros"><select id="ci-camp" aria-label="Campanha" style="width:auto"></select><span class="grow"></span><button type="button" class="small" id="ci-recarregar">Atualizar</button><button type="button" class="small primary" id="ci-todos">Adicionar todos</button></div>
-      <div id="ci-msg" class="muted"></div>
-      <div id="ci-lista" class="ci-grade"></div>
-      <p class="muted">Adicione os personagens e preencha a iniciativa com a rolagem de cada jogador.</p>
-    </details>
+
 
     <section class="panel">
       <div class="combat-bar">
@@ -119,22 +124,6 @@
       <p class="footer">A iniciativa é ordenada do maior para o menor. Em caso de empate, quem foi adicionado primeiro fica acima.</p>
     </section>
     
-    <section class="panel">
-      <h2 class="panel-title"><i data-i="sparkles"></i>Consultar magias e habilidades</h2>
-      <p class="muted" id="spinfo"></p>
-      <div class="clearable"><input id="sq" placeholder="Magia ou habilidade de monstro (português ou inglês)" autocomplete="off"><button type="button" class="xbtn" id="sq-x" hidden aria-label="Limpar pesquisa" title="Limpar pesquisa"><i data-i="x"></i></button></div>
-      <div class="row" style="margin-bottom:8px">
-        <select id="sf-type" style="flex:1 1 200px" aria-label="Tipo"><option value="">Tudo</option><option value="spell">Só magias</option><option value="class">Só habilidades de classe</option><option value="monster">Só habilidades de monstro</option></select>
-        <button type="button" class="small" id="sf-more" aria-expanded="false" aria-controls="sf-adv"><i data-i="filter"></i>Filtros</button>
-      </div>
-      <div class="row" id="sf-adv" style="margin-bottom:8px" hidden>
-        <select id="sf-lvl" style="flex:1 1 120px" aria-label="Círculo"><option value="">Qualquer círculo</option><option value="0">Truques</option><option value="1">1º círculo</option><option value="2">2º círculo</option><option value="3">3º círculo</option><option value="4">4º círculo</option><option value="5">5º círculo</option><option value="6">6º círculo</option><option value="7">7º círculo</option><option value="8">8º círculo</option><option value="9">9º círculo</option></select>
-        <select id="sf-sch" style="flex:1 1 130px" aria-label="Escola"><option value="">Qualquer escola</option><option>Abjuração</option><option>Adivinhação</option><option>Conjuração</option><option>Encantamento</option><option>Evocação</option><option>Ilusão</option><option>Necromancia</option><option>Transmutação</option></select>
-        <select id="sf-ex" style="flex:1 1 130px" aria-label="Característica"><option value="">Ritual ou não</option><option value="ritual">Só rituais</option><option value="conc">Só concentração</option></select>
-      </div>
-      <div id="spells"></div>
-    </section>
-
     <details class="panel" id="cm">
       <summary class="panel-title"><i data-i="plus"></i>Criar ficha (monstro, personagem ou NPC)</summary>
       <div class="cmg">
@@ -167,11 +156,29 @@
     </details>
 
     <section class="panel">
+      <h2 class="panel-title"><i data-i="sparkles"></i>Consultar magias e habilidades</h2>
+      <p class="muted" id="spinfo"></p>
+      <div class="clearable"><input id="sq" placeholder="Magia ou habilidade de monstro (português ou inglês)" autocomplete="off"><button type="button" class="xbtn" id="sq-x" hidden aria-label="Limpar pesquisa" title="Limpar pesquisa"><i data-i="x"></i></button></div>
+      <div class="row" style="margin-bottom:8px">
+        <select id="sf-type" style="flex:1 1 200px" aria-label="Tipo"><option value="">Tudo</option><option value="spell">Só magias</option><option value="class">Só habilidades de classe</option><option value="monster">Só habilidades de monstro</option></select>
+        <button type="button" class="small" id="sf-more" aria-expanded="false" aria-controls="sf-adv"><i data-i="filter"></i>Filtros</button>
+      </div>
+      <div class="row" id="sf-adv" style="margin-bottom:8px" hidden>
+        <select id="sf-lvl" style="flex:1 1 120px" aria-label="Círculo"><option value="">Qualquer círculo</option><option value="0">Truques</option><option value="1">1º círculo</option><option value="2">2º círculo</option><option value="3">3º círculo</option><option value="4">4º círculo</option><option value="5">5º círculo</option><option value="6">6º círculo</option><option value="7">7º círculo</option><option value="8">8º círculo</option><option value="9">9º círculo</option></select>
+        <select id="sf-sch" style="flex:1 1 130px" aria-label="Escola"><option value="">Qualquer escola</option><option>Abjuração</option><option>Adivinhação</option><option>Conjuração</option><option>Encantamento</option><option>Evocação</option><option>Ilusão</option><option>Necromancia</option><option>Transmutação</option></select>
+        <select id="sf-ex" style="flex:1 1 130px" aria-label="Característica"><option value="">Ritual ou não</option><option value="ritual">Só rituais</option><option value="conc">Só concentração</option></select>
+      </div>
+      <div id="spells"></div>
+    </section>
+
+
+
+    <section class="panel">
       <h2 class="panel-title"><i data-i="book"></i>Meu bestiário</h2>
       <div class="row">
         <input id="bq" type="search" name="busca-bestiario" data-lpignore="true" data-1p-ignore placeholder="Pesquisar: nome, dragão, imenso, pequeno, fera, humanoide…" autocomplete="off" style="flex:1 1 240px">
         <select id="bf" style="flex:0 1 260px"></select>
-        <button type="button" class="small" id="ball">Mostrar tudo</button>
+        <button type="button" class="small" id="ball">Mostrar tudo</button><button type="button" class="small" id="exportar-criacoes">Exportar Minhas Criações</button>
       </div>
       <p id="dl-status" class="muted" role="status"></p>
       <div class="muted" id="bcount"></div>

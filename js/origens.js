@@ -17,6 +17,9 @@ window.ORIGENS = [
  {id:"personalizado",nome:"Background personalizado",per:[],perEscolhas:2,idiomas:2,ferrEscolhas:0,ferr:[],ouro:0,caracteristica:"Característica personalizada",descricao:"Escolha duas perícias e uma combinação de dois idiomas ou ferramentas. Combine a característica e o equipamento com o mestre.",equip:[]}
 ];
 window.TRACOS_2014 = {
+ "voo":"Seu deslocamento de voo é igual ao de caminhada (normalmente 9 m). Não pode usar esse voo enquanto vestir armadura média ou pesada.",
+ "magia de fada":"Conhece o Truque Arte Druídica. No nível 3 pode conjurar Fogo das Fadas; no nível 5, Aumentar/Reduzir. Cada uma dessas magias pode ser usada uma vez por descanso longo sem espaço, e também com espaços apropriados. Escolha Inteligência, Sabedoria ou Carisma como atributo de conjuração.",
+ "tipo feerico":"Seu tipo de criatura é Feérico, em vez de Humanoide. Isso altera quais magias e efeitos podem afetá-la, conforme os tipos de criatura indicados no efeito.",
  "sopro":"Como uma ação, expele energia na área determinada pelo ancestral dracônico. A CD é 8 + Constituição + proficiência. Causa 2d6 de dano, ou metade se a salvaguarda for bem-sucedida. O dano aumenta para 3d6 no nível 6, 4d6 no 11 e 5d6 no 16. Recupera o uso após um descanso curto ou longo. A cor do ancestral determina o dano, a área e a salvaguarda.",
  "ancestral draconico":"O ancestral define seu tipo de dano e sua resistência: negro ou cobre (ácido), azul ou bronze (elétrico), vermelho, latão ou ouro (fogo), verde (veneno), branco ou prata (frio). O sopro usa uma linha de 1,5 m por 9 m ou um cone de 4,5 m, conforme o ancestral.",
  "resistencia a um tipo de dano":"Tem resistência ao tipo de dano associado ao seu ancestral dracônico.",
