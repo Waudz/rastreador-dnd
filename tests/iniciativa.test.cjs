@@ -1,5 +1,5 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {vm,executar,documentoFalso,armazenamento}=require('./helpers.cjs');
+const {vm,executar,documentoFalso,armazenamento,ler}=require('./helpers.cjs');
 function fixture(saved){const document=documentoFalso(),localStorage=armazenamento();document.getElementById=id=>document.el(id);document.createElement=()=>({});document.el('current-turn').after=()=>{};if(saved)localStorage.setItem('dnd5e_initiative_tracker_v1',JSON.stringify(saved));const window={};const ctx=vm.createContext({window,document,localStorage,ico:()=>'',confirm:()=>true});executar('js/iniciativa.js',ctx);return{document,localStorage,ini:window.__ini};}
 const pessoa=(name,initiative)=>({name,initiative,hp:10,maxHp:10,ac:12,kind:'Personagem',pid:name});
 test('iniciativa pendente fica vazia e impede começar o combate',()=>{const f=fixture();f.ini.add(pessoa('Pendente',null));assert.match(f.document.el('combatants').innerHTML,/data-iniciativa="[^"]+" value=""/);assert.equal(f.document.el('start').disabled,true);f.document.el('start').events.click();assert.ok(!f.document.el('current-turn').innerHTML.includes('Vez de:'));});
@@ -42,8 +42,8 @@ test('efeitos ficam numa área própria abaixo do nome, sem selo sobre a foto, m
 test('iniciativa pendente fica explícita (campo vazio, d20 e aviso); valor registrado, inclusive zero, aparece',()=>{
  const f=fixture();f.ini.add(pessoa('Pendente',null));f.ini.add(pessoa('Zero',0));f.ini.add(pessoa('Doze',12));
  const h=f.document.el('combatants').innerHTML;
- assert.match(h,/value="" placeholder="d20"/);assert.match(h,/iniciativa pendente/);
+ assert.match(h,/value="" placeholder=" "/);assert.match(h,/iniciativa pendente/);
  assert.match(h,/value="0" placeholder/);assert.match(h,/value="12" placeholder/);
  assert.equal((h.match(/iniciativa pendente/g)||[]).length,1);
- assert.ok(!h.includes('placeholder="—"'));
+ assert.ok(!h.includes('placeholder="—"'));assert.match(ler('css/fichas.css'),/iniciativa-valor:placeholder-shown[^}]*background-position:center/);
 });

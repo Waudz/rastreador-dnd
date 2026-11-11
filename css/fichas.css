@@ -218,8 +218,9 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .combatant .name { display:flex; align-items:center; gap:8px; min-width:0; }
 .combatant .name .avfx { flex:0 0 auto; margin-right:0; }
 .combatant .name .av { margin-right:0; width:40px!important; height:40px!important; }
-.combatant input.iniciativa-valor[value=""] { border-style:dashed; border-color:var(--gold-dark); }
-.combatant input.iniciativa-valor::placeholder { color:var(--gold); font-size:11px; font-weight:700; letter-spacing:.02em; }
+/* iniciativa vazia: ícone de d20 centralizado no quadrado (o placeholder é um espaço só para ativar :placeholder-shown) */
+.combatant input.iniciativa-valor:placeholder-shown { border-style:dashed; border-color:var(--gold-dark); background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23D4AE72%22 stroke-width=%221.5%22 stroke-linejoin=%22round%22 stroke-linecap=%22round%22%3E%3Cpath d=%22M12 2 20.5 7v10L12 22 3.5 17V7z%22/%3E%3Cpath d=%22M12 8 16.8 16H7.2z%22/%3E%3Cpath d=%22M12 2v6M3.5 7 7.2 16M20.5 7 16.8 16M3.5 17 7.2 16M20.5 17 16.8 16M12 22v-6%22/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:center; background-size:56% auto; }
+.combatant input.iniciativa-valor::placeholder { color:transparent; }
 
 /* estatísticas do cartão: no desktop continuam na mesma grade; em telas estreitas descem para uma linha abaixo do nome */
 .combatant .stats-linha { display:contents; }
