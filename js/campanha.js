@@ -295,13 +295,14 @@
     const t = e.target, c = (s) => t.closest(s);
     try {
       let b;
-      if(c('[data-camp-aparencia]')){if(!responsavelVisual())return;const painel=$('#aparencia-painel');painel.hidden=false;painel.open=true;document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);window.CAMPANHA_VISUAL.montar({id,mestre:responsavelVisual()});painel.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
+      if(c('[data-camp-aparencia]')){if(!responsavelVisual())return;const painel=$('#aparencia-painel');painel.hidden=false;painel.open=true;$('#conteudo').hidden=true;document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);window.CAMPANHA_VISUAL.montar({id,mestre:responsavelVisual()});painel.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
+      if(c('#aparencia-painel > summary')){e.preventDefault();$('#visual-descartar')?.click();fecharAparencia();return;}
       if(c('[data-camp-grupo]')){if(!mestre())return;aba='membros';document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);return desenhar();}
       if(c('#grupo-todos')){if(!mestre())return;pers.forEach(p=>selecionados.add(p.id));return desenhar();}
       if(c('#grupo-nenhum')){selecionados.clear();return desenhar();}
       if(c('#grupo-rolar')){if(!mestre()||!selecionados.size)return;location.href=window.GRUPO_PERSONAGENS.destino(id,pers.filter(p=>selecionados.has(p.id)).map(p=>p.id));return;}
 
-      if ((b = c("[data-aba]"))) { aba = b.dataset.aba; editandoDoc = null; formAberto = false; anexosForm = []; return desenhar(); }
+      if ((b = c("[data-aba]"))) { fecharAparencia(); aba = b.dataset.aba; editandoDoc = null; formAberto = false; anexosForm = []; return desenhar(); }
       if ((b = c("[data-excluir-pers]"))) {const p=pers.find(p=>p.id===b.dataset.excluirPers);if(!p||!confirm("Excluir "+p.nome+"? Esta ação remove a ficha da campanha."))return;await nuvem.apagar("personagens?id=eq."+encodeURIComponent(p.id));return recarregar();}
       if ((b = c("[data-dano]"))) return mudarPV(c(".card"), true);
       if ((b = c("[data-cura]"))) return mudarPV(c(".card"), false);
@@ -382,6 +383,11 @@
   }
 
   document.addEventListener('toggle',e=>{if(e.target.matches?.('.campanha-ferramentas details')&&e.target.open&&e.target.querySelector('#conv'))mostrarConvite();},true);
+  /* A aparência substitui a lista (não aparece por cima nem embaixo); fechar, ou trocar de aba, volta ao conteúdo. */
+  function fecharAparencia() { const p = $('#aparencia-painel'); if (p) { p.hidden = true; p.open = false; } $('#conteudo').hidden = false; }
+
+  document.addEventListener('campanha-visual:fechar', fecharAparencia);   // Salvar (com sucesso) ou Cancelar voltam para onde a pessoa estava
+
   /* ---------- início ---------- */
   (async () => {
     try { await nuvem.retornoDoLink(); } catch (_) {}

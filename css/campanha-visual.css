@@ -56,3 +56,5 @@
 /* Sem imagem de fundo, o título não encosta nas abas; o painel de aparência não cola nos cartões acima. */
 .campanha-faixa .campanha-compacta:not(.com-backdrop) { padding-bottom:16px; }
 #aparencia-painel { margin-top:22px; }
+#aparencia-painel > summary { cursor:pointer; }
+#aparencia-painel > summary::after { content:"  (fechar)"; color:var(--muted); font-size:11px; }
