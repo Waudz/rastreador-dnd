@@ -4,7 +4,7 @@
     const $ = (s) => document.querySelector(s);
     let D;
     try { D = await fetch("dados/srd-pt.json").then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }); }
-    catch (e) { $("#blist").textContent="Não consegui carregar o catálogo 2014. Recarregue quando houver conexão."; throw e; }
+    catch (e) { if (window.ESQ) window.ESQ.erro($("#blist"), "Não consegui carregar o catálogo 2014.", () => location.reload(), " Seus dados locais continuam intactos."); else $("#blist").textContent="Não consegui carregar o catálogo 2014. Recarregue quando houver conexão."; throw e; }
     /* fotos públicas dos monstros da API (pasta fotos/ do site); as criações próprias nunca entram aqui */
     let PUB = new Set();
     try { const r = await fetch("fotos/index.json", { cache: "no-cache" }); if (r.ok) PUB = new Set(await r.json()); } catch (_) {}

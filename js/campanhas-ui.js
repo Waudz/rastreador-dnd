@@ -29,7 +29,7 @@
   }
   async function montarSeletor(atual){
     const box=document.querySelector('#campanha-contexto');if(!box||!nuvem.usuario())return;
-    box.hidden=false;box.innerHTML='<p role="status" class="muted">Carregando suas campanhas…</p>';
+    box.hidden=false;box.removeAttribute('aria-hidden');if(window.ESQ)window.ESQ.mostrar(box,'seletor','Carregando suas campanhas…');else box.innerHTML='<p role="status" class="muted">Carregando suas campanhas…</p>';
     const uid=nuvem.usuario().id;
     try{
       const membros=await nuvem.get('membros?select=papel,campanha:campanhas(id,nome)&usuario_id=eq.'+encodeURIComponent(uid)+'&order=entrou_em.desc');

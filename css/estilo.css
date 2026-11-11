@@ -544,11 +544,11 @@ input.iniciativa-valor{display:block;padding:0!important;text-align:center;line-
 
 /* enquanto se decide se abre direto a campanha ativa, a lista de campanhas não aparece (evita o "pisca");
    se o script falhar, o conteúdo volta sozinho depois de 2,5 s */
-/* enquanto ainda não se sabe para onde a abertura vai (campanha ativa ou lista), a página fica sem conteúdo: o rodapé também, para não aparecer sozinho */
-html.conta-verificando main, html.conta-verificando .rodape-licenca { visibility:hidden; animation:entrada-ok 0s 20s forwards; }
-/* conexão lenta: em vez de mostrar a lista de campanhas (que pode ser a errada) ou a tela de "nenhuma campanha", só uma mensagem neutra.
-   Só depois de 20 s a página aparece de qualquer jeito, para que um erro de rede possa ser lido e tentado de novo. */
+/* enquanto ainda não se sabe para onde a abertura vai (campanha ativa ou lista), a página mostra só o cabeçalho e o esqueleto da conta:
+   nada de lista de campanhas que depois pula, nem rodapé aparecendo sozinho. A vigia de 20 s em js/conta.js troca o esqueleto por um aviso com "Tentar novamente". */
+html.conta-verificando main > :not(header):not(#conta-abrindo), html.conta-verificando .rodape-licenca { display:none; }
 #conta-abrindo { display:none; }
-html.conta-verificando #conta-abrindo { display:block; visibility:visible; }
+html.conta-verificando #conta-abrindo { display:block; }
+html[data-conta-aba=campanhas] [data-esq-aba]:not([data-esq-aba=campanhas]), html[data-conta-aba=personagens] [data-esq-aba]:not([data-esq-aba=personagens]), html[data-conta-aba=conta] [data-esq-aba]:not([data-esq-aba=conta]) { display:none; }
 html[data-conta-aba] main.tracker { min-height:70vh; }
 @keyframes entrada-ok { to { visibility:visible; } }

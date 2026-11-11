@@ -47,7 +47,7 @@
   }
   async function carregar() {
     if (buscando || !podeUsar()) return;
-    buscando = true; if(!carregou)msg("Carregando personagens…");
+    buscando = true; if(!carregou&&window.ESQ){window.ESQ.mostrar($("#ci-lista"),"lista","Carregando personagens…",3);msg("");}
     const campanhaConsultada=atual;
     try {
       const mestre = await nuvem.rpc('eh_mestre', {c:atual});
@@ -71,13 +71,13 @@
         else { adicionar(p); adicionouPedido = true; msg("Personagem adicionado à iniciativa."); }
       } else msg("");
       desenhar();carregou=true;
-    } catch(e) { msg("Não foi possível carregar os personagens: "+e.message,true); }
+    } catch(e) { if(!carregou&&window.ESQ)window.ESQ.erro($("#ci-lista"),"Não foi possível carregar os personagens: "+e.message+".",()=>carregar(),""); else msg("Não foi possível carregar os personagens: "+e.message,true); }
     finally { buscando = false; }
   }
   async function iniciar() {
     if (!conta) { box.hidden = true; return; }   // visitante: o painel de campanhas nem aparece (a iniciativa continua com combatentes manuais)
     box.hidden = false; box.open = true;
-    msg("Carregando campanhas…");
+    if(window.ESQ){window.ESQ.mostrar($("#ci-lista"),"lista","Carregando campanhas…",3);msg("");}else msg("Carregando campanhas…");
     try {
       const ms = await nuvem.get("membros?select=campanha_id,papel,campanha:campanhas(id,nome)&usuario_id=eq."+encodeURIComponent(conta)+"&papel=eq.mestre");
       if (!mesmaConta()) return;
@@ -92,7 +92,7 @@
       window.__ini.trocarContexto?.(atual);
       await carregar();
       nuvem.observar?.(carregar,5000);
-    } catch(e) { msg("Não foi possível carregar as campanhas: "+e.message,true); }
+    } catch(e) { if(window.ESQ)window.ESQ.erro($("#ci-lista"),"Não foi possível carregar as campanhas: "+e.message+".",()=>iniciar(),""); else msg("Não foi possível carregar as campanhas: "+e.message,true); }
   }
   box.addEventListener("click",e=>{
     const resumo=e.target.closest("[data-ci-resumo]");if(resumo){const p=pers.find(p=>p.id===resumo.dataset.ciResumo);if(p)abrirResumo(p);return;}

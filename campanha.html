@@ -19,6 +19,7 @@
   <script src="vendor/supabase/supabase.js" defer></script>
   <script src="js/nuvem.js" defer></script>
   <script src="js/navegacao.js" defer></script>
+  <script src="js/esqueleto.js" defer></script>
   <script src="js/paineis.js" defer></script>
   <script src="js/acervo.js" defer></script>
   <script src="js/regras.js" defer></script>
@@ -31,11 +32,11 @@
 <body>
   <main class="tracker">
     <div class="bar nav-legado"><a class="btnlike muted" href="conta.html">Campanhas</a><span class="grow"></span><a class="btnlike muted" href="iniciativa.html" id="lnk-combate" hidden>Rastreador de combate</a></div>
-    <header class="header campanha-header"><div><p class="eyebrow" id="papel"></p><h1 id="titulo">Campanha</h1></div><div id="campanha-contexto" class="campanha-contexto" hidden></div></header>
+    <header class="header campanha-header"><div><p class="eyebrow" id="papel"><span class="esq esq-papel"></span></p><h1 id="titulo"><span class="esq esq-titulo"></span><span class="sr-only">Campanha</span></h1></div><div id="campanha-contexto" class="campanha-contexto" aria-hidden="true"><span class="esq esq-seletor"></span></div></header>
     <div id="erro" class="muted" role="status" aria-live="polite"></div>
     <div id="conv" class="bar" hidden></div>
-    <div class="tabs" id="abas" hidden></div>
-    <div id="conteudo"></div>
+    <div class="tabs esq-abas" id="abas" aria-hidden="true"><!--esq:abas--><span class="esq esq-aba"></span><span class="esq esq-aba"></span><span class="esq esq-aba"></span><span class="esq esq-aba"></span><!--/esq--></div>
+    <div id="conteudo" aria-busy="true"><span class="sr-only" role="status">Carregando a campanha…</span><!--esq:campanha--><div class="bar esq-ferramentas" aria-hidden="true"><span class="grow"></span><span class="esq esq-botao esq-botao-solto"></span><span class="esq esq-botao esq-botao-solto"></span></div><div class="cards" aria-hidden="true"><div class="card personagem-card esq-cartao"><span class="esq esq-linha curta"></span><span class="esq esq-linha media"></span><span class="esq esq-linha"></span><span class="esq esq-barra"></span><div class="esq-acoes"><span class="esq esq-botao"></span><span class="esq esq-botao"></span></div></div><div class="card personagem-card esq-cartao"><span class="esq esq-linha curta"></span><span class="esq esq-linha media"></span><span class="esq esq-linha"></span><span class="esq esq-barra"></span><div class="esq-acoes"><span class="esq esq-botao"></span><span class="esq esq-botao"></span></div></div><div class="card personagem-card esq-cartao"><span class="esq esq-linha curta"></span><span class="esq esq-linha media"></span><span class="esq esq-linha"></span><span class="esq esq-barra"></span><div class="esq-acoes"><span class="esq esq-botao"></span><span class="esq esq-botao"></span></div></div></div><!--/esq--></div>
   </main>
   <div id="leitor" class="leitor" hidden role="dialog" aria-modal="true" aria-label="Documento">
     <div class="leitor-caixa">

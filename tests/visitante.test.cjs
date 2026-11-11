@@ -73,7 +73,7 @@ test('abertura da PWA: sem passar por licenças nem pela tela de campanhas; dest
   const p=ler('js/pre-pagina.js'),m=JSON.parse(ler('manifest.json'));
   assert.equal(m.start_url,'./');
   assert.match(p,/campanha\.html\?id=/);assert.match(p,/conta-verificando/);
-  assert.match(ler('css/estilo.css'),/html\.conta-verificando main, html\.conta-verificando \.rodape-licenca/);   // rodapé de licenças nunca aparece sozinho
+  assert.match(ler('css/estilo.css'),/html\.conta-verificando \.rodape-licenca \{ display:none; \}/);   // rodapé de licenças nunca aparece sozinho
   assert.match(ler('js/conta.js'),/classList\?\.remove\('conta-verificando'\)/);
   assert.ok(!/licencas/.test(ler('manifest.json')));
 });
@@ -95,14 +95,14 @@ test('PWA com sessão e campanha ativa abre direto na campanha; sem preferência
 });
 
 test('conexão lenta na abertura: mensagem neutra, nunca a lista errada nem o modo visitante para quem tem sessão',()=>{
-  const css=ler('css/estilo.css');assert.match(css,/animation:entrada-ok 0s 20s forwards/);assert.match(css,/html\.conta-verificando #conta-abrindo \{ display:block; visibility:visible; \}/);
+  const css=ler('css/estilo.css');assert.match(css,/html\.conta-verificando #conta-abrindo \{ display:block; \}/);assert.match(ler('js/conta.js'),/falhaAbertura\("A conexão está lenta/);
   for(const h of ['conta.html','index.html'])assert.match(ler(h),/id="conta-abrindo"/);
   const p=ler('js/pre-pagina.js');assert.ok(!/iniciativa\.html/.test(p.slice(p.indexOf('if (logado && !retornoDeLink'))),'quem tem sessão nunca é enviado à iniciativa por esta rota');
 });
 
 test('limite de 20 s: aviso claro com "Tentar novamente", sem desconectar nem apagar dados',()=>{
   const c=ler('js/conta.js');
-  assert.match(c,/setTimeout\(\(\) => \{ liberar\(\); aviso\(/);assert.match(c,/data-tentar/);assert.match(c,/continua conectada e nada foi apagado/);
+  assert.match(c,/setTimeout\(\(\) => falhaAbertura\(/);assert.match(c,/ESQ\.erro\(/);assert.match(ler('js/esqueleto.js'),/data-esq-tentar/);assert.match(ler('js/esqueleto.js'),/continua conectada e nada foi apagado/);
   const m=c.slice(c.indexOf('async function mostrarArea'),c.indexOf('function mostrarLogin'));
   assert.ok(!/nuvem\.sair|encerrar|localStorage\.removeItem|clear\(/.test(m),'a falha de rede não mexe na sessão nem em dados');
 });

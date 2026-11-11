@@ -1,4 +1,5 @@
 /* Rascunho local: só altera a ficha depois da revisão e do salvamento confirmado. */
+let cancelar=()=>{};   // vigia de lentidão do esqueleto (js/esqueleto.js)
 (async()=>{
  'use strict';
  const $=s=>document.querySelector(s),C=CRIADOR,R=REGRAS,esc=nuvem.esc,params=new URLSearchParams(location.search),id=params.get('id'),evolucao=params.get('modo')==='nivel';
@@ -73,10 +74,11 @@
   if(b.id==='salvar')salvar();
  });
  if(!nuvem.usuario()){location.replace(window.nuvem&&nuvem.entradaUrl?nuvem.entradaUrl():'entrar.html');return;}
+cancelar=window.ESQ?window.ESQ.vigiar(document.querySelector('#criador-conteudo'),()=>location.reload(),20000,'A conexão está lenta e as regras ainda não chegaram.'):cancelar;
  const [rows,d,magias]=await Promise.all([nuvem.get('personagens?select=*&id=eq.'+encodeURIComponent(id)),fetch('dados/criacao-srd2014.json').then(r=>{if(!r.ok)throw Error('Catálogo indisponível');return r.json();}),fetch('dados/magias.json').then(r=>r.json())]);
  if(!rows[0])throw Error('Personagem não encontrado ou sem acesso.');original=rows[0];C.configurar(d,magias.filter(EDICOES.permitida).sort((a,b)=>a.l-b.l||a.n.localeCompare(b.n,'pt-BR')));
  p=C.iniciar(original,evolucao?'nivel':'criacao');
  if((original.inventario||[]).length)st().equipAplicado=true;
  try{const draft=JSON.parse(localStorage.getItem(chave())||'null');if(draft?.versao===original.versao){p=draft.p;etapa=draft.etapa;subiu=draft.subiu;}}catch(_){}
- $('#voltar').href='personagem.html?id='+encodeURIComponent(id);desenhar();
-})().catch(e=>{document.querySelector('#aviso').textContent=e.message;});
+ $('#voltar').href='personagem.html?id='+encodeURIComponent(id);desenhar();cancelar();window.ESQ?.pronto(document.querySelector('#criador-conteudo'));
+})().catch(e=>{cancelar();if(window.ESQ)window.ESQ.erro(document.querySelector('#criador-conteudo'),e.message,()=>location.reload());else document.querySelector('#aviso').textContent=e.message;});

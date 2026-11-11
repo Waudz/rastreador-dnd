@@ -20,6 +20,7 @@
   <script src="vendor/supabase/supabase.js" defer></script>
   <script src="js/nuvem.js" defer></script>
   <script src="js/navegacao.js" defer></script>
+  <script src="js/esqueleto.js" defer></script>
   <script src="js/paineis.js" defer></script>
   <script src="js/acervo.js" defer></script>
   <script src="js/backup.js" defer></script>
@@ -41,7 +42,7 @@
       </div>
     </header>
 
-    <p class="carregando" id="conta-abrindo" role="status">Abrindo suas campanhas…</p>
+    <div id="conta-abrindo" aria-busy="true"><span class="sr-only" role="status">Abrindo suas campanhas…</span><div class="bar esq-quem" aria-hidden="true"><span class="esq esq-linha curta"></span><span class="grow"></span><span class="esq esq-botao esq-botao-solto esq-sair"></span></div><section class="panel" data-esq-aba="campanhas" aria-hidden="true"><div class="bar"><span class="esq esq-titulo esq-titulo-painel"></span></div><!--esq:campanhas--><div class="cards" aria-hidden="true"><div class="card esq-cartao esq-uma"><span class="esq esq-linha media"></span></div><div class="card esq-cartao esq-uma"><span class="esq esq-linha media"></span></div></div><!--/esq--></section><section class="panel" data-esq-aba="personagens" aria-hidden="true"><div class="bar"><span class="esq esq-titulo esq-titulo-painel"></span></div><!--esq:personagens--><div class="cards" aria-hidden="true"><div class="card esq-cartao esq-biblioteca"><div class="esq-identidade"><span class="esq esq-retrato"></span><div><span class="esq esq-linha media"></span><span class="esq esq-linha curta"></span></div></div><span class="esq esq-linha media"></span><span class="esq esq-barra"></span></div><div class="card esq-cartao esq-biblioteca"><div class="esq-identidade"><span class="esq esq-retrato"></span><div><span class="esq esq-linha media"></span><span class="esq esq-linha curta"></span></div></div><span class="esq esq-linha media"></span><span class="esq esq-barra"></span></div><div class="card esq-cartao esq-biblioteca"><div class="esq-identidade"><span class="esq esq-retrato"></span><div><span class="esq esq-linha media"></span><span class="esq esq-linha curta"></span></div></div><span class="esq esq-linha media"></span><span class="esq esq-barra"></span></div></div><!--/esq--></section><section class="panel" data-esq-aba="conta" aria-hidden="true"><span class="esq esq-titulo esq-titulo-painel"></span><span class="esq esq-linha"></span><span class="esq esq-linha media"></span><span class="esq esq-botao esq-botao-solto"></span></section></div>
 
     <!-- entrar -->
     <div id="area" hidden>

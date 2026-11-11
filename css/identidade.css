@@ -206,3 +206,64 @@ html[data-conta-aba=campanhas] [data-c=campanhas], html[data-conta-aba=personage
 /* o cabeçalho é montado por js/navegacao.js; até lá, este espaço (última altura medida) evita que o conteúdo pule */
 html:not(.cab-pronto) body::before { content:""; display:block; height:var(--cab-h-est,96px); margin:calc(var(--pad-corpo) * -1) calc(var(--pad-corpo) * -1) 18px; border-bottom:1px solid var(--line); }
 @media (min-width:760px) { html:not(.cab-pronto) body::before { height:var(--cab-h-est,57px); } }
+
+/* ---------- esqueletos de carregamento (js/esqueleto.js) ---------- */
+.sr-only { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+:root { --esq-a:#202E3C; --esq-b:#2A3B4D; }
+.esq { display:block; border-radius:8px; background:linear-gradient(90deg,var(--esq-a) 0%,var(--esq-b) 50%,var(--esq-a) 100%); background-size:220% 100%; animation:esq-brilho 1.9s ease-in-out infinite; }
+@keyframes esq-brilho { 0% { background-position:110% 0; } 100% { background-position:-110% 0; } }
+@media (prefers-reduced-motion:reduce) { .esq { animation:none; background:var(--esq-a); } }
+.esq-linha { height:12px; margin:8px 0; } .esq-linha.media { width:72%; } .esq-linha.curta { width:46%; }
+.esq-eyebrow { height:10px; width:96px; margin:2px 0 8px; }
+.esq-titulo { height:30px; width:min(62%,340px); margin:0 0 8px; }
+h1 > .esq-titulo { height:41px; margin:0; }
+.esq-papel { height:11px; width:84px; margin:0; }
+.eyebrow:has(> .esq-papel) { padding:3px 0; }
+.esq-aba { height:34px; width:96px; border-radius:8px 8px 0 0; margin:0 4px 0 0; flex:0 0 auto; }
+.esq-abas { overflow:hidden; }
+.esq-barra { height:8px; width:100%; border-radius:99px; margin:10px 0; }
+.esq-botao { height:34px; flex:1 1 0; min-width:60px; border-radius:8px; }
+.esq-acoes { display:flex; gap:6px; margin-top:12px; }
+.esq-cartao { min-height:76px; pointer-events:none; }
+.esq-cartao.esq-curto { min-height:68px; }
+.esq-cartao:not(.esq-curto):not(.esq-biblioteca) { min-height:363px; }
+.esq-biblioteca { min-height:150px; }
+.esq-identidade { display:flex; align-items:center; gap:12px; }
+.esq-identidade > div { flex:1; min-width:0; }
+.esq-retrato { width:56px; height:56px; border-radius:10px; flex:0 0 auto; }
+.esq-retrato-grande { width:72px; height:72px; border-radius:12px; }
+.esq-retrato-pequeno { width:36px; height:36px; border-radius:8px; }
+.esq-resumo { margin:0 0 6px; }
+.esq-trio { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:12px; }
+.esq-ficha > .esq-trio:first-of-type { margin-bottom:1px; }
+.esq-ficha > .esq-trio:first-of-type .esq-caixa { height:71px; padding:0; display:flex; flex-direction:column; justify-content:center; }
+.esq-caixa { margin:0; padding:16px 12px; text-align:center; }
+.esq-caixa .esq-linha { margin:0 auto 10px; width:40%; }
+.esq-numero { height:26px; width:46%; margin:0 auto; }
+.esq-atributo { padding:20px 12px; }
+.esq-pv { min-height:165px; margin-bottom:8px; }
+.esq-pilulas { display:flex; gap:6px; margin:0 0 10px; padding:6px 0; height:46px; box-sizing:border-box; overflow:hidden; }
+.esq-pilula { height:34px; width:96px; border-radius:99px; flex:0 0 auto; }
+.esq-lista { display:grid; gap:10px; }
+.esq-item { display:flex; align-items:center; gap:10px; } .esq-item > div { flex:1; min-width:0; }
+.esq-item .esq-linha { margin:5px 0; }
+.esq-erro { padding:14px; border:1px dashed var(--line); border-radius:12px; }
+.esq-seletor { height:100px; width:100%; border-radius:10px; }
+.esq-ferramentas { margin:0 0 12px; min-height:29px; }
+.esq-ferramentas .esq-botao-solto { height:29px; width:130px; margin:0; }
+.esq-ficha { margin-top:2px; }
+#abas.esq-abas { overflow:hidden; min-height:47px; }
+.esq-titulo-painel { height:22px; width:min(46%,220px); margin:2px 0 14px; }
+.esq-botao-solto { width:140px; flex:none; margin-top:14px; }
+/* o rodapé de licenças não aparece embaixo de um esqueleto curto; ocupa o lugar, mas só se mostra com o conteúdo pronto */
+main:has(> :is(#ficha,#conteudo,#criador-conteudo,#conta-abrindo)[aria-busy="true"]) ~ .rodape-licenca { visibility:hidden; }
+/* barra de ações da ficha enquanto carrega: mesmas linhas e quebras da barra real */
+.esq-topo { display:flex; flex-wrap:wrap; align-items:center; gap:6px; flex:1 1 auto; }
+.esq-topo > .esq-botao { flex:1 1 0; min-width:90px; max-width:160px; }
+.esq-topo > .esq-perigo { margin-left:auto; max-width:140px; }
+@media (max-width:420px) { .esq-topo { width:100%; } .esq-topo > .esq-botao { max-width:none; } .esq-topo > .esq-perigo { flex:1 0 100%; margin:15px 0 0; } .estado-ficha:has(.esq-topo) .salvo { display:block; min-height:16px; } }
+.esq-quem { min-height:36px; margin-bottom:10px; } .esq-quem .esq-linha { margin:0; } .esq-sair { width:56px; height:30px; margin:0; }
+.esq-cartao.esq-curto { min-height:54px; }
+.esq-cartao.esq-uma { min-height:0; height:49px; display:flex; align-items:center; } .esq-uma .esq-linha { margin:0; flex:0 0 60%; }
+.esq-quem { min-height:29px; margin-bottom:12px; } .esq-sair { height:29px; }
+@media (min-width:700px) { .esq-resumo { margin-bottom:-12px; } }

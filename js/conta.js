@@ -69,14 +69,13 @@
     catch(e){el.textContent="Não foi possível sincronizar: "+e.message;}finally{b.disabled=false;}
   }
   $("#conta-sincronizar").onclick=sincronizarConta;
-  document.addEventListener?.("click", (e) => { if (e.target.closest && e.target.closest("[data-tentar]")) mostrarArea(); });
+  /* Falha ou lentidão na abertura: a pessoa continua conectada e nada é apagado; vê um aviso claro e pode tentar de novo. */
+  const falhaAbertura = (texto) => { liberar(); $("#area").hidden = false; if (window.ESQ) { window.ESQ.erro($("#campanhas"), texto, mostrarArea); window.ESQ.erro($("#personagens"), texto, mostrarArea); } };
   async function mostrarArea() {
-    $("#campanhas").innerHTML = '<p class="carregando" role="status">Carregando suas campanhas…</p>'; $("#personagens").innerHTML = '<p class="carregando" role="status">Carregando seus personagens…</p>';
+    if (window.ESQ) { window.ESQ.mostrar($("#campanhas"), "campanhas", "Carregando suas campanhas…"); window.ESQ.mostrar($("#personagens"), "personagens", "Carregando seus personagens…"); }
     $("#area").hidden = false;
-    /* Se a rede demora ou falha, a pessoa continua conectada e nada é apagado: vê um aviso claro e pode tentar de novo. */
-    const aviso = (texto) => { const h = `<p class="err" role="alert">${texto} Sua conta continua conectada e nada foi apagado. <button type="button" class="small" data-tentar>Tentar novamente</button></p>`; $("#campanhas").innerHTML = h; $("#personagens").innerHTML = h; };
-    const lento = setTimeout(() => { liberar(); aviso("A conexão está lenta e seus dados ainda não chegaram."); }, 20000);
-    try { await carregar(); if(acervo.ativo())await sincronizarConta(); } catch (e) { liberar(); aviso("Não foi possível carregar seus dados: " + esc(e.message) + "."); } finally { clearTimeout(lento); }
+    const lento = setTimeout(() => falhaAbertura("A conexão está lenta e seus dados ainda não chegaram."), 20000);
+    try { await carregar(); if(acervo.ativo())await sincronizarConta(); } catch (e) { falhaAbertura("Não foi possível carregar seus dados: " + e.message + "."); } finally { clearTimeout(lento); }
   }
   /* sem sessão: página de entrada; depois de sair por vontade própria: volta ao uso como visitante (os dados locais ficam) */
   function mostrarLogin(comoVisitante) {
@@ -134,6 +133,10 @@
   /* ---------- início ---------- */
   (async () => {
     nuvem.olhos();
+    const guarda = setTimeout(() => { if (document.documentElement.classList.contains("conta-verificando")) falhaAbertura("A conexão está lenta e seus dados ainda não chegaram."); }, 20000);   // nem a sessão respondeu: aviso, sem desconectar
+    try { await abrirConta(); } finally { clearTimeout(guarda); }
+  })();
+  async function abrirConta() {
     try { await nuvem.retornoDoLink(); } catch (e) { mostrarLogin(); return; }
     if (nuvem.usuario() && nuvem.retornoTipo?.() === "recovery") { location.replace("entrar.html?recuperar=1"); return; }   // link de nova senha: a tela dele é a página de entrada
     const rapido = nuvem.usuario() ? window.CAMPANHAS_UI?.entradaRapida(location.search) : '';
@@ -142,5 +145,5 @@
     /* a página inicial do aplicativo (index.html / "./") para quem não tem conta é a iniciativa: ninguém é obrigado a entrar */
     if (/(^|\/)index\.html$|\/$/.test(String((window.location || location).pathname || ""))) { location.replace("iniciativa.html"); return; }
     mostrarLogin();
-  })();
+  }
 })();

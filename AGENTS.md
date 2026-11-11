@@ -11,6 +11,7 @@ CSP por `<meta>`: `script-src 'self'`; Supabase só em `https://pdjzahpxjrlbqqtz
 - Páginas: `index.html`/`conta.html` (campanhas, personagens, conta), `campanha.html`, `personagem.html`, `criar-personagem.html`, `iniciativa.html` (iniciativa + Monstros + Magias por `?aba=`), `admin.html`.
 - `js/campanhas-ui.js` campanha ativa por usuário (`ini_campanha:<id>`); `js/iniciativa.js` combate (chave por campanha `dnd5e_initiative_tracker_v1:<id>`); `js/campanha-ini.js` personagens da campanha na iniciativa.
 - `js/painel-detalhes.js` + `js/paineis-layout.js`: painel único `#dock-r` (ficha, monstro, magia; Voltar/Fechar).
+- `js/esqueleto.js` (+ estilos `.esq*` em `css/identidade.css`): sistema único de skeleton loading. Páginas com espera de rede trazem o esqueleto no HTML entre `<!--esq:tipo-->`; ao mudar `esqueleto.js`, regenerar esses blocos (`tests/esqueleto.test.cjs` falha se divergirem). `js/pre-pagina.js` decide vista/visitante antes da pintura.
 - `js/regras.js` regras de classes/raças/magias; `js/personagem.js` ficha; `dados/` SRD em português (`magias.json`, `bestiario/`, `srd-pt.json`).
 - `supabase/` SQL; mudar o banco exige o William rodar o SQL no Supabase.
 

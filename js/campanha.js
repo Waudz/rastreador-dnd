@@ -52,7 +52,7 @@
     $("#papel").textContent = mestre() ? "Mestre" : "Jogador";
     $("#lnk-combate").href = "iniciativa.html?campanha="+encodeURIComponent(id); $("#lnk-combate").hidden = false; $("#lnk-combate").textContent=mestre()?"Combate e consultas":"Consultar monstros e habilidades";
     const abas = [["pers", "Personagens"], ["diario", "Diário"], ["docs", "Documentos"]].concat(mestre() ? [["membros", "Grupo"]] : []);
-    $("#abas").hidden = false;
+    $("#abas").hidden = false; $("#abas").className = "tabs"; $("#abas").removeAttribute("aria-hidden");
     $("#abas").innerHTML = abas.map(([k, t]) => `<button type="button" data-aba="${k}" class="${aba === k ? "on" : ""}">${t}</button>`).join("");
   }
 
@@ -273,7 +273,7 @@
     $("#leitor-voltar").hidden = pilha.length < 2; $("#leitor-baixar").hidden = true;
     const corpo = $("#leitor-corpo");
     if (d.tipo !== "arquivo") { corpo.innerHTML = `<div class="pre">${renderTexto(d.conteudo)}</div>${anexosDe(d)}`; return; }
-    corpo.innerHTML = '<span class="muted">Carregando…</span>';
+    if (window.ESQ) window.ESQ.mostrar(corpo, "linhas", "Carregando o arquivo…", 5); else corpo.innerHTML = '<span class="muted">Carregando…</span>';
     try {
       const url = await nuvem.urlDoArquivo(d.arquivo_path, 300), resp = await fetch(url);
       if (!resp.ok) throw new Error("Não consegui abrir o arquivo.");
@@ -351,13 +351,32 @@
     }
   });
 
+  /* abre a campanha: esqueleto (já no HTML) até os dados chegarem; erro ou lentidão viram mensagem com "Tentar novamente" nesta área */
+  function esqueletoDaPagina() {
+    if (!window.ESQ) return;
+    $("#abas").className = "tabs esq-abas"; $("#abas").setAttribute("aria-hidden", "true"); $("#abas").hidden = false; $("#abas").innerHTML = window.ESQ.html("abas");
+    window.ESQ.mostrar($("#conteudo"), "campanha", "Carregando a campanha…");
+  }
+  async function abrir() {
+    const area = $("#conteudo");
+    if (!area.hasAttribute("aria-busy")) esqueletoDaPagina();
+    const cancelar = window.ESQ ? window.ESQ.vigiar(area, abrir, 20000, "A conexão está lenta e a campanha ainda não chegou.") : () => {};
+    try { await carregar(); await desenhar(); cancelar(); window.ESQ?.pronto(area); aviso(''); await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre()}); window.ESQ?.pronto($("#campanha-contexto")); await mostrarConvite(); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); }
+    catch (e) {
+      cancelar(); camp = null;
+      $("#abas").hidden = true; $("#campanha-contexto").hidden = true; $("#titulo").textContent = "Campanha"; $("#papel").textContent = "";
+      if (window.ESQ) window.ESQ.erro(area, e.message, abrir); else aviso(e.message, true);
+      if (/não encontrada|não participa/.test(e.message)) { window.CAMPANHAS_UI?.esquecer(id); area.insertAdjacentHTML("beforeend", ' <a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1">Escolher outra campanha</a>'); }
+    }
+  }
+
   /* ---------- início ---------- */
   (async () => {
     try { await nuvem.retornoDoLink(); } catch (_) {}
     if (!nuvem.usuario()) { location.replace((window.nuvem && nuvem.entradaUrl ? nuvem.entradaUrl() : "entrar.html")); return; }
     if (!id) { location.replace("conta.html"); return; }
-    aviso('Carregando a campanha…');
-    try { await carregar(); await desenhar();aviso('');await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre()}); await mostrarConvite(); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); } catch (e) { aviso(e.message, true); if (/não encontrada|não participa/.test(e.message)) { window.CAMPANHAS_UI?.esquecer(id); $("#erro").insertAdjacentHTML("beforeend", ' <a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1">Escolher outra campanha</a>'); } return; }
+    await abrir();
+    if (!camp) return;
     nuvem.observar(async () => {
       const ativo = document.activeElement;
       if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;     // não interrompe quem está digitando

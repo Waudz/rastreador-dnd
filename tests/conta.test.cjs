@@ -9,7 +9,7 @@ async function fixture(user){
     return[{id:"1",nome:"Preparado pelo mestre",ficha:{},campanha:{id:"mestrada"}},{id:"2",nome:"Meu herói",ficha:{raca:'Humano',classes:[{c:'Fighter',n:4}]},campanha:{id:"jogada",nome:'Jogada'}},{id:"3",nome:"NPC",ficha:{npc:true},campanha:{id:"jogada"}}];
   }};
   const c=vm.createContext({window:{},document,nuvem,confirm:()=>estado.confirmar,acervo:{ativo:()=>false},navigator:{},location:{protocol:"https:",search:"",replace:u=>destinos.push(u)},URLSearchParams,setTimeout,clearTimeout});
-  executar('js/regras.js',c);executar('js/ficha-componentes.js',c);executar("js/conta.js",c);await tick();return {document,nuvem,consultas,destinos,estado};
+  executar('js/esqueleto.js',c);executar('js/regras.js',c);executar('js/ficha-componentes.js',c);executar("js/conta.js",c);await tick();return {document,nuvem,consultas,destinos,estado};
 }
 test("sem sessão, a conta manda para a página de entrada e não mostra dados",async()=>{const f=await fixture(null);assert.deepEqual(f.destinos,["entrar.html?voltar=conta.html"]);assert.equal(f.document.el("area").hidden,true);assert.equal(f.consultas.length,0);});
 test("sessão existente abre campanhas e apenas personagens como jogador",async()=>{

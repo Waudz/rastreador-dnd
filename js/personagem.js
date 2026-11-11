@@ -324,7 +324,7 @@
     for(const [id,chave] of [["mag-nivel","nivel"],["mag-escola","escola"],["mag-extra","tipo"]]){const el=$("#"+id);if(el)el.value=filtrosMagia[chave];}
     /* ações do topo (Ficha completa / Editar): ficam fora do #ficha, então são atualizadas aqui */
     const topo = document.querySelector(".ficha-topo-acoes"), be = $("#editar-ficha"), fc = $("#ficha-completa");
-    if (topo) topo.hidden = false;
+    if (topo) { topo.hidden = false; document.querySelector(".esq-topo")?.remove?.(); }
     if (be) be.textContent = editandoFicha ? "Concluir Edição" : "Editar Personagem";
     const ui = $("#usar-iniciativa"), ex = $("#excluir-personagem");
     if (ui) { ui.href = "iniciativa.html?aba=iniciativa&campanha=" + encodeURIComponent(P.campanha_id) + "&personagem=" + encodeURIComponent(id); ui.hidden = !!emPainel; }
@@ -531,10 +531,11 @@
     const box = $("#mag-res"), q = nz($("#mag-q").value.trim());
 
     if (!magiasCat) {
-      box.innerHTML = '<span class="muted">Carregando magias…</span>';
+      if (window.ESQ) window.ESQ.mostrar(box, "linhas", "Carregando magias…", 3); else box.innerHTML = '<span class="muted">Carregando magias…</span>';
       try { magiasCat = await fetch("dados/magias.json").then((r) => r.json()); } catch (_) { box.innerHTML = '<span class="err">Não consegui carregar as magias.</span>'; return; }
     }
     if(!document.contains(box))return;
+    window.ESQ?.pronto(box);
     const meus = CLS().map((c) => c.c), so = $("#mag-cls") && $("#mag-cls").checked && meus.length, ws = q.split(/\s+/);
     achadosM = magiasCat.filter((m) => ws.every((w) => nz(m.n + " " + m.en).includes(w)) && (!so || m.c.some((x) => meus.includes(x))) && (filtrosMagia.nivel==="" || +filtrosMagia.nivel===m.l) && (!filtrosMagia.escola || (m.cab||"").startsWith(filtrosMagia.escola)) && (!filtrosMagia.tipo || (filtrosMagia.tipo==="conc" ? m.conc : m.ritual || /ritual/i.test(m.cab||"")))).sort((a,b)=>a.l-b.l||a.n.localeCompare(b.n,"pt-BR"));
     box.innerHTML = achadosM.length ? achadosM.map((m, i) => `<div class="res" data-mag="${i}" style="cursor:pointer"><span><b>${esc(m.n)}</b> <span class="muted">· ${m.l === 0 ? "truque" : m.l + "º círculo"} · ${esc(m.c.map((x) => CLASSES[x] || x).join(", "))}</span></span><span class="small">Adicionar</span></div>`).join("") : '<span class="muted">Nada encontrado.</span>';
@@ -543,13 +544,14 @@
     const box = $("#cat-res"); q = nz(q.trim());
 
     if (!catalogo) {
-      box.innerHTML = '<span class="muted">Carregando catálogo…</span>';
+      if (window.ESQ) window.ESQ.mostrar(box, "linhas", "Carregando catálogo…", 3); else box.innerHTML = '<span class="muted">Carregando catálogo…</span>';
       try {
         const [a, b] = await Promise.all([fetch("dados/habilidades.json").then((r) => r.json()), fetch("dados/habilidades-pt.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}))]);
         catalogo = { itens: a.filter((f) => f.e === "2014"), pt: b, achados: [] };
       } catch (_) { box.innerHTML = '<span class="err">Não consegui carregar o catálogo.</span>'; return; }
     }
     if(!document.contains(box))return;
+    window.ESQ?.pronto(box);
     const ws = q.split(/\s+/);
     catalogo.achados = catalogo.itens.filter((f) => { const h = nz(`${f.n} ${f.p} ${CLASSES[f.u || f.c] || ""} ${f.u || f.c}`); return ws.every((w) => h.includes(w)); }).sort((a,b)=>(a.l?.[0]??99)-(b.l?.[0]??99)||(a.p||a.n).localeCompare(b.p||b.n,"pt-BR")).map((f) => {
       const chave = `${f.e}|${f.c}|${f.n}`;
@@ -563,7 +565,8 @@
     try { await nuvem.retornoDoLink(); } catch (_) {}
     if (!nuvem.usuario()) { location.replace((window.nuvem && nuvem.entradaUrl ? nuvem.entradaUrl() : "entrar.html")); return; }
     if (!id) { location.replace("conta.html"); return; }
-    try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); } catch (e) { aviso(e.message, true); return; }
+    const recarregar = () => location.reload(), cancelar = window.ESQ ? window.ESQ.vigiar($("#ficha"), recarregar, 20000, "A conexão está lenta e a ficha ainda não chegou.") : () => {};
+    try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); cancelar(); window.ESQ?.pronto($("#ficha")); } catch (e) { cancelar(); document.querySelector(".esq-topo")?.remove?.(); if (window.ESQ) window.ESQ.erro($("#ficha"), e.message, recarregar); else aviso(e.message, true); return; }
     nuvem.observar(async () => {
       if (pend) return;
       if(emPainel && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true){$('#ficha').innerHTML='';aviso('Este painel é exclusivo do mestre da campanha.',true);return;}
