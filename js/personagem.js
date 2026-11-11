@@ -5,7 +5,7 @@
   "use strict";
   const $ = (s) => document.querySelector(s), esc = nuvem.esc, R = window.REGRAS;
   const id = new URLSearchParams(location.search).get("id");
-  let P = null, camp = null, souMestre = false, donoNome = "", pend = null, salvando = false, timer = null, catalogo = null, magiasCat = null, achadosM = [];
+  let editandoFicha = false, P = null, camp = null, souMestre = false, donoNome = "", pend = null, salvando = false, timer = null, catalogo = null, magiasCat = null, achadosM = [];
   const ATR = [["for", "FOR"], ["des", "DES"], ["con", "CON"], ["int", "INT"], ["sab", "SAB"], ["car", "CAR"]];
   const MOEDAS = [["pc", "Cobre (PC)"], ["pp", "Prata (PP)"], ["po", "Ouro (PO)"]];
   const CLASSES = { Barbarian: "Bárbaro", Bard: "Bardo", Cleric: "Clérigo", Druid: "Druida", Fighter: "Guerreiro", Monk: "Monge", Paladin: "Paladino", Ranger: "Patrulheiro", Rogue: "Ladino", Sorcerer: "Feiticeiro", Warlock: "Bruxo", Wizard: "Mago" };
@@ -42,13 +42,14 @@
   }
   async function carregarCatalogo() {
     if(catalogo)return;
-    const [a,b]=await Promise.all([fetch("dados/habilidades.json").then(r=>{if(!r.ok)throw Error("Catálogo indisponível");return r.json();}),fetch("dados/habilidades-pt.json").then(r=>r.ok?r.json():{})]);
-    catalogo={itens:a.filter(h=>h.e==="2014"),pt:b,achados:[]};
+    const [a,b,d]=await Promise.all([fetch("dados/habilidades.json").then(r=>{if(!r.ok)throw Error("Catálogo indisponível");return r.json();}),fetch("dados/habilidades-pt.json").then(r=>r.ok?r.json():{}),fetch("dados/criacao-srd2014.json").then(r=>r.ok?r.json():{features:[]})]);
+    catalogo={itens:a.filter(h=>h.e==="2014"),pt:b,criador:d.features,achados:[]};
   }
   function sincronizarHabilidades() {
     const f=F(), manuais=CAR().filter(x=>!x.auto||x.auto==="escolha"||x.auto==="criador"); f.tracosRaciais=R.tracosRaciais(f.raca); const raciais=[];
     const classes=f.criacao?.concluido?[]:catalogo?R.habilidadesAutomaticas(f,catalogo.itens,catalogo.pt):CAR().filter(x=>x.auto==="classe");
     const vistos=new Set(manuais.flatMap(x=>[x.cf,x.nome].filter(Boolean)));
+    for(const h of manuais){const d=catalogo?.criador?.find(x=>x.id===h.cf);if(d){h.nome=d.nome;h.desc=d.descricao;}}
     f.caracteristicas=manuais.concat([...raciais,...classes].filter(x=>{const k=x.cf||x.nome;if(vistos.has(k)||vistos.has(x.nome))return false;vistos.add(k);vistos.add(x.nome);return true;}));
   }
   document.addEventListener("focusin",e=>{if(!P)return;if(e.target.id==="cat-q")buscarCatalogo(e.target.value);if(e.target.id==="mag-q")buscarMagias();});
@@ -107,6 +108,8 @@
       f.especializacoes = Object.keys(antigas).filter(k=>antigas[k]===2 && f.perClasse.includes(k)).slice(0,R.limiteEspecializacao(CLS()));
       mudou = true;
     }
+    if(f.criacao?.concluido&&!f.criacao.revisaoEquipamento){const couro=INV().some(i=>i.id==="srd51:item/leather-armor"),acolchoada=INV().some(i=>i.id==="srd51:item/padded-armor");if(couro&&!acolchoada&&EQ().armadura==="acolchoada"){EQ().armadura="couro";mudou=true;}f.criacao.revisaoEquipamento=true;mudou=true;}
+    for(const x of R.preparacao(f)){let contagem=0;for(const m of MAG()){if(m.prep&&m.l>0&&!m.semprePreparada&&m.origem!=="Raça"&&x.pertence(m)){contagem++;if(contagem>x.limite){m.prep=false;mudou=true;}}}}
     // Não reaplica bônus raciais em fichas antigas: seus atributos já podem incluí-los.
     if (mudou) agendar({ ficha: P.ficha });
   }
@@ -173,7 +176,7 @@
 
   const blocoAtr = () => `<div class="attrs">${ATR.map(([k, r]) => `<div class="attr"><label>${r}</label><input type="number" min="1" max="30" data-atr="${k}" value="${num(A()[k], 10)}"><div class="mod" id="mod-${k}">${fm(mod(A()[k]))}</div></div>`).join("")}</div><div class="muted" style="margin-top:8px" id="prof-txt"></div>`;
 
-  const itemCar = (c, i) => `<details class="item"><summary>${esc(c.nome)}</summary><div><div class="pre">${esc(c.desc || "")}</div><div class="row" style="margin:8px 0 0"><button type="button" class="small danger" data-rm-car="${i}" ${c.auto ? 'disabled title="Concedida automaticamente pela raça ou classe"' : ""}>${c.auto ? "Automática" : "Remover"}</button></div></div></details>`;
+  const itemCar = (c, i) => `<details class="item"><summary>${esc(c.nome)}</summary><div><div class="pre">${esc(c.desc || "")}</div>${!c.auto?`<div class="row" style="margin:8px 0 0"><button type="button" class="small danger" data-rm-car="${i}">Remover</button></div>`:""}</div></details>`;
 
   const racaSel = () => { const r = F().raca || ""; return R.RACAS.some((x) => x[0] === r) ? r : (r || F().racaCustom ? "__custom" : ""); };
   const blocoClasses = () => {
@@ -242,10 +245,10 @@
     const info = c.habilidades.map((h) => { const m = modA(h.atr), prep = h.id === "Cleric" || h.id === "Druid" ? niv(h.id) + m : h.id === "Wizard" ? niv(h.id) + m : h.id === "Paladin" ? Math.floor(niv(h.id) / 2) + m : h.id === "Artificer" ? Math.floor(niv(h.id) / 2) + m : null; return `<div class="muted">${esc(h.classe)}: atributo ${R.ATR_NOME[h.atr]} · CD ${8 + pb + m} · ataque ${fm(pb + m)}${prep != null ? ` · preparar até ${Math.max(1, prep)} magias` : ""}</div>`; }).join("");
     return info + (partes.join("") || '<span class="muted">Sem espaços de magia para esta combinação de classes.</span>');
   }
-  const linhaMag = (m, i) => `<details class="item"><summary>${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "truque" : m.l + "º círculo"}</span>${m.prep ? ' <span class="badge">Preparada</span>' : ""}</summary><div>${m.cab ? `<div class="muted" style="margin-bottom:6px">${esc(m.cab)}</div>` : ""}<div class="pre">${esc(m.d || "")}</div><div class="row" style="margin:8px 0 0">${m.l > 0 ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span><button type="button" class="small danger" data-rm-mag="${i}">Remover</button></div></div></details>`;
+  const linhaMag = (m, i) => `<details class="item"><summary>${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${m.l===0?' <span class="badge">Truque</span>':m.semprePreparada?' <span class="badge">Sempre Preparada</span>':m.origem==='Raça'?' <span class="badge">Magia Racial</span>':R.preparacao(F()).some(x=>x.pertence(m))?(m.prep?' <span class="badge">Preparada</span>':' <span class="muted">Não Preparada</span>'):' <span class="badge">Conhecida</span>'}</summary><div>${m.cab ? `<div class="muted" style="margin-bottom:6px">${esc(m.cab)}</div>` : ""}<div class="pre">${esc(m.d || "")}</div><div class="row" style="margin:8px 0 0">${m.l > 0 && !m.semprePreparada && m.origem!=="Raça" && R.preparacao(F()).some(x=>x.pertence(m)) ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span><button type="button" class="small danger" data-rm-mag="${i}">Remover</button></div></div></details>`;
   function listaMagias() {
     const l = MAG().map((m, i) => ({ m, i })).sort((a, b) => a.m.l - b.m.l || a.m.n.localeCompare(b.m.n));
-    return l.length ? l.map((x) => linhaMag(x.m, x.i)).join("") : '<span class="muted">Nenhuma magia ainda.</span>';
+    return l.length ? R.preparacao(F()).map(x=>`<p class="muted">${esc(x.nome)}: ${x.usadas} de ${x.limite} magias preparadas. Truques e magias sempre preparadas não contam nesse limite.</p>`).join("")+l.map((x) => linhaMag(x.m, x.i)).join("") : '<span class="muted">Nenhuma magia ainda.</span>';
   }
 
   const fotoHTML = () => { const f = F().foto; return f && /^data:image\//.test(f) ? `<img class="av" style="width:72px;height:72px;margin:0" src="${esc(f)}" alt="Foto">` : `<span class="av av0" style="width:72px;height:72px;font-size:30px;margin:0">${esc((P.nome || "?").charAt(0).toUpperCase())}</span>`; };
@@ -254,12 +257,13 @@
     const f = F(), outro = souMestre && P.dono_id !== nuvem.usuario().id, rs = racaSel(), c = conj();
     const mostraMag = c.habilidades.length || MAG().length || f.magiaExtra || magiaRacial();
     $("#ficha").innerHTML = `
-      <div class="panel">
+      <header class="panel ficha-resumo"><div class="ficha-identidade">${fotoHTML()}<div><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p>Origem: ${esc(f.background||"Não definida")}</p></div></div><div class="ficha-destaques"><div><small>Nível</small><strong>${nivelTotal()}</strong></div><div><small>Vida</small><strong id="resumo-pv">${P.pv_atual} / ${P.pv_max}</strong></div><div><small>CA</small><strong id="resumo-ca">${P.ca}</strong></div><div><small>Proficiência</small><strong>${fm(bonusProf())}</strong></div></div><div class="row"><button type="button" id="editar-ficha">${editandoFicha?"Concluir Edição":"Editar Personagem"}</button><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de Nível</a><a class="btnlike" href="iniciativa.html?aba=iniciativa&campanha=${encodeURIComponent(P.campanha_id)}&personagem=${encodeURIComponent(id)}">Usar na Iniciativa</a><button type="button" class="danger" id="excluir-personagem">Excluir Personagem</button></div></header>
+      <div class="panel identidade-editor" style="${editandoFicha?"":"display:none"}">
         <div class="row" style="margin:0 0 8px;flex-wrap:nowrap;gap:12px"><span id="foto-box">${fotoHTML()}</span><div style="flex:1 1 auto;min-width:0">
           <input id="nome" data-col="nome" value="${esc(P.nome)}" maxlength="80" style="font-family:Georgia,serif;font-size:22px;height:46px;font-weight:700" aria-label="Nome">
           <div class="muted" style="margin-top:4px"><button type="button" class="small" id="b-foto">Trocar foto</button><input type="file" id="in-foto" accept="image/*" hidden> ${esc(camp.nome)}${donoNome ? " · responsável: " + esc(donoNome) : ""}${outro ? ' · <span class="badge">editando como mestre</span>' : ""}</div></div></div>
         <div class="row" style="margin:0">
-          <div style="flex:1 1 200px"><label>Raça</label><select id="raca-sel">${opt("", "Escolha…", !rs)}${R.RACAS.map((r) => opt(r[0], r[0], rs === r[0])).join("")}${opt("__custom", "Outra (personalizada)…", rs === "__custom")}</select></div>
+          <div style="flex:1 1 200px"><label>Raça</label><select id="raca-sel">${opt("", "Escolha…", !rs)}${R.RACAS.filter(r=>R.RACAS_BASE.includes(r[0])||r[0]===f.raca).map((r) => opt(r[0], r[0], rs === r[0])).join("")}${opt("__custom", "Outra (personalizada)…", rs === "__custom")}</select></div>
           <div style="flex:1 1 200px" id="raca-txt-box" ${rs === "__custom" ? "" : "hidden"}><label>Nome da raça personalizada</label><input id="raca-txt" value="${esc(R.RACAS.some((x) => x[0] === f.raca) ? "" : f.raca || "")}" maxlength="60" placeholder="Ex.: Fada, Sereia…"></div>
           <div><label>Deslocamento (m)</label><input class="num" type="number" min="0" step="1.5" data-f="deslocamento" value="${f.deslocamento != null ? f.deslocamento : 9}"></div>
           <div><label>Nível total</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="nivel-total">${nivelTotal() || "—"}</div></div>
@@ -267,7 +271,7 @@
         <div id="info-raca">${infoRaca()}${escolhasAtributosRaca()}</div>
         <div class="sub">Classes</div>
         <div id="classes">${blocoClasses()}</div>
-        <div class="row" style="margin:0"><button type="button" class="small" id="add-cls">${CLS().length ? "Adicionar classe (multiclasse)" : "Escolher classe"}</button>${!CLS().length && f.classe ? `<span class="muted">Classe anterior: ${esc(f.classe)}</span>` : ""}</div>
+        <div class="row" style="margin:0"><button type="button" class="small" id="add-cls">${CLS().length ? "Adicionar classe (multiclasse)" : "Escolher classe"}</button></div>
       </div>
       <div class="panel"><h2 class="panel-title">Vida</h2><div id="bloco-pv">${blocoPV()}</div><div class="sub">Dados de vida</div><div id="bloco-dv">${blocoDV()}</div>
         <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-longo">Descanso longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></div>
@@ -277,7 +281,7 @@
           <div><label>Outros bônus</label><input class="num" type="number" id="eq-bonus" value="${num(EQ().bonus, 0)}" title="Armadura +1, anel de proteção, etc."></div>
           <label class="inline" style="margin:18px 0 0"><input type="checkbox" style="width:auto;height:auto" data-auto="caAuto" ${autoOn("caAuto") ? "checked" : ""}> CA automática</label></div>
         <div class="muted" id="aviso-arm"></div></div>
-      <div class="panel"><h2 class="panel-title">Atributos</h2>${blocoAtr()}<div id="melhorias">${blocoMelhorias()}</div></div>
+      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2><p class="muted">${editandoFicha?"Editando os valores do personagem.":"Use Editar Personagem para alterar os atributos."}</p>${blocoAtr()}<div id="melhorias">${blocoMelhorias()}</div></div>
       <div class="panel"><h2 class="panel-title">Salvaguardas</h2><div id="bloco-sal">${blocoSal()}</div></div>
       <div class="panel"><h2 class="panel-title">Perícias</h2><div id="bloco-per">${blocoPer()}</div></div>
       <div class="panel"><h2 class="panel-title">Proficiências e idiomas</h2><div id="bloco-prof">${blocoProf()}</div>
@@ -294,10 +298,10 @@
         <div class="row"><button type="button" class="small" id="add-item">Adicionar item</button><select id="eq-pre" style="flex:1 1 180px">${opt("", "Adicionar equipamento comum…", true)}${presets().map((p, i) => opt(i, `${p[0]} (${p[1]} kg)`)).join("")}</select><button type="button" class="small" id="add-pre">Adicionar</button></div>
         <div id="bloco-carga">${blocoCarga()}</div>
         <div class="sub">Dinheiro</div>
-        <div class="row" style="margin:0">${MOEDAS.map(([k, r]) => `<div><label>${r}</label><input class="num" type="number" min="0" step="1" data-din="${k}" value="${moeda(DIN()[k])}"><div class="inline"><button type="button" data-moeda="${k}" data-sinal="-1" aria-label="Diminuir ${r}">−</button><input class="num" type="number" min="1" step="1" id="ajuste-${k}" placeholder="1" aria-label="Quantidade de ${r}"><button type="button" data-moeda="${k}" data-sinal="1" aria-label="Somar ${r}">+</button></div></div>`).join("")}<div><label>Total em PO</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="total-po">${totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div></div>
+        <div class="moedas">${MOEDAS.map(([k, r]) => `<div class="moeda-controle"><label>${r}</label><input class="num" type="number" min="0" step="1" data-din="${k}" value="${moeda(DIN()[k])}"><div class="inline"><button type="button" data-moeda="${k}" data-sinal="-1" aria-label="Diminuir ${r}">−</button><input class="num" type="number" min="1" step="1" id="ajuste-${k}" placeholder="1" aria-label="Quantidade de ${r}"><button type="button" data-moeda="${k}" data-sinal="1" aria-label="Somar ${r}">+</button></div></div>`).join("")}<div><label>Total em PO</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="total-po">${totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div></div>
       </div>
-      <div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosRaciais(f.raca).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Escolha uma raça para ver seus traços.</p>'}</div>
-      ${f.backgroundCaracteristica?'<div class="panel"><h2 class="panel-title">Background · '+esc(f.background||"")+'</h2><h3>'+esc(f.backgroundCaracteristica.nome)+'</h3><p class="descricao-regra">'+esc(f.backgroundCaracteristica.desc)+'</p></div>':""}
+      <div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosRaciais(f.raca).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Esta raça não concede traços adicionais.</p>'}</div>
+      ${f.backgroundCaracteristica?'<div class="panel"><h2 class="panel-title">Origem · '+esc(f.background||"")+'</h2><h3>'+esc(f.backgroundCaracteristica.nome)+'</h3><p class="descricao-regra">'+esc(f.backgroundCaracteristica.desc)+'</p></div>':""}
       <div class="panel"><h2 class="panel-title">Características de classe e outras habilidades</h2>
         <div id="lista-car">${CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>'}</div>
         <div class="sub">Adicionar do catálogo (SRD)</div>
@@ -308,6 +312,7 @@
       </div>
       <div class="panel"><h2 class="panel-title">Notas</h2><textarea data-f="notas" rows="6" style="width:100%" placeholder="Anotações do personagem">${esc(f.notas || "")}</textarea></div>`;
     document.title = P.nome + " — Rastreador D&D"; profTxt(); avisoArm();
+    document.querySelectorAll(".atributos-ficha input,.atributos-ficha select").forEach(el=>{el.disabled=!editandoFicha;});
   }
   const presets = () => R.ARMADURAS.map((a) => [a[1], a[6]]).concat([["Escudo", 3], ["Mochila", 2.5], ["Saco de dormir", 3.5], ["Corda de cânhamo (15 m)", 5], ["Tocha", 0.5], ["Ração (1 dia)", 1], ["Cantil", 2.5], ["Kit de curandeiro", 1.5], ["Poção de cura", 0.25], ["Ferramentas de ladrão", 0.5], ["Foco arcano", 0.5], ["Símbolo sagrado", 0.5], ["Grimório", 1.5]]);
 
@@ -338,6 +343,7 @@
     const bs = $("#bloco-slots"); if (bs) bs.innerHTML = blocoSlots();
     ATQ().forEach((a, i) => { const e = $("#atk-res-" + i); if (e) e.innerHTML = `<b>${resAtq(a)}</b>`; });
     profTxt(); avisoArm(); atualizarCarga();
+    if($("#resumo-pv"))$("#resumo-pv").textContent=P.pv_atual+" / "+P.pv_max;if($("#resumo-ca"))$("#resumo-ca").textContent=P.ca;
   }
 
   /* ---------- edições ---------- */
@@ -402,12 +408,12 @@
       else { f.raca = v; f.racaCustom = false; $("#raca-txt-box").hidden = true; const r = R.RACAS.find((x) => x[0] === v); if (r) { f.deslocamento = r[1]; const d = $('[data-f="deslocamento"]'); if (d) d.value = r[1]; } $("#info-raca").innerHTML = infoRaca(); }
       R.aplicarRaca(f,antes); refrescar(); desenhar(); agendar({ ficha: P.ficha }); return;
     }
-    if (t.dataset.prep) { MAG()[+t.dataset.prep].prep = t.checked; $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
+    if (t.dataset.prep) { const magia=MAG()[+t.dataset.prep],limites=R.preparacao(F()).filter(x=>x.pertence(magia)),disponivel=limites.find(x=>x.usadas<x.limite);if(t.checked&&!magia.prep&&!disponivel){t.checked=false;aviso("Limite de magias preparadas atingido. Desmarque uma magia antes de preparar outra.",true);return;}if(disponivel)magia.classePreparacao=disponivel.id; magia.prep = t.checked; $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
     if (t.id === "mag-cls") return buscarMagias();
     if (t.id === "in-foto" && t.files[0]) { trocarFoto(t.files[0]); t.value = ""; }
   });
 
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", async (e) => {
     const t = e.target, c = (s) => t.closest(s); if (!P) return;
     let b;
 
@@ -436,6 +442,8 @@
     if ((b = c("[data-per]"))) { const k=b.dataset.per, f=F(), fontes=R.fontesPericias(f); f.especializacoes=fontes.especializadas; const i=f.especializacoes.indexOf(k); if(i>=0)f.especializacoes.splice(i,1); else if(fontes.basicas.includes(k)&&f.especializacoes.length<R.limiteEspecializacao(CLS()))f.especializacoes.push(k); $("#bloco-per").innerHTML = blocoPer(); agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-idi]"))) { IDI().splice(+b.dataset.rmIdi, 1); desenhar(); agendar({ ficha: P.ficha }); return; }
     if (c("#add-idi")) { const v = ($("#idi-txt").value.trim() || $("#idi-sel").value); if (v && !IDI().includes(v)) { IDI().push(v); desenhar(); agendar({ ficha: P.ficha }); } return; }
+    if(c("#editar-ficha")){editandoFicha=!editandoFicha;desenhar();return;}
+    if(c("#excluir-personagem")){if(!confirm("Excluir "+P.nome+" e sua ficha?"))return;try{await nuvem.apagar("personagens?id=eq."+encodeURIComponent(id));location.href="campanha.html?id="+encodeURIComponent(P.campanha_id);}catch(e){aviso(e.message,true);}return;}
     if (c("#add-atq")) { ATQ().push({ nome: "Personalizado", atr: "for", dado: "1d6", tipo: "cortante", magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); agendar({ ficha: P.ficha }); return; }
     if (c("#add-atq-arma")) { const v = $("#atq-arma").value; if (v === "") return; const a = R.ARMAS[+v]; ATQ().push({ nome: a[0], atr: a[3], dado: a[1], tipo: a[2], magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); $("#atq-arma").value = ""; agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-atq]"))) { ATQ().splice(+b.dataset.rmAtq, 1); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'; agendar({ ficha: P.ficha }); return; }

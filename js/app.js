@@ -626,7 +626,7 @@
       t.replaceWith(s);
     }, true);
 
-    /* sincronização das criações com um repositório privado do GitHub */
+    /* Sincronização das criações com a conta autenticada. */
 
     async function syncConta(){
       if(syncing){syncDeNovo=true;return;}
@@ -636,11 +636,11 @@
         const items=Object.fromEntries(todos.filter(m=>m.custom).map(m=>[m.key,{...m,photo:porFoto[m.key]||""}]));
         const d=await acervo.mesclar({v:1,items,deleted:TOMB,tr:TR,ldj:JSON.parse(localStorage.getItem(acervo.chave("ini_ldj"))||"{}")});
         await acervo.aplicar(d);TOMB=d.deleted||{};Object.assign(TR,d.tr||{});if(d.ldj){aplicarLDJ(d.ldj);aplicarClassesLDJ(d.ldj);} await reload();
-        localStorage.removeItem("ini_sync"); SY={};saveTR();syMsg("Sincronizado com sua conta");
+        localStorage.removeItem("ini_sync"); saveTR();syMsg("Sincronizado com sua conta");
       }catch(e){syMsg('<span class="err">'+esc(e.message)+'</span>');}
       finally{syncing=false;if(syncDeNovo){syncDeNovo=false;queueSync();}}
     }
-    let TOMB = {}, SY = {}, syncing = false, syncDeNovo = false, syTimer = null;
+    let TOMB = {}, syncing = false, syncDeNovo = false, syTimer = null;
     try { TOMB = JSON.parse(localStorage.getItem(acervo.chave("ini_tomb")) || "{}"); localStorage.removeItem("ini_sync"); localStorage.removeItem("ini_pub"); localStorage.removeItem("ini_admin"); } catch (_) {}
     const saveTomb = () => { try { localStorage.setItem(acervo.chave("ini_tomb"), JSON.stringify(TOMB)); } catch (_) {} };
     const syMsg = h => { $("#sy-status").innerHTML = h; };

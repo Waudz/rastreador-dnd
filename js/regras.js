@@ -167,8 +167,16 @@ window.REGRAS = (() => {
       const titulo=t.split(":")[0].replace(/ \([^)]*\)/g,"").trim(),n=normalizar(titulo);
       const chave=Object.keys(window.TRACOS_2014||{}).find(k=>n===k||n.startsWith(k));
       const desc=chave?window.TRACOS_2014[chave]:t;
-      return {nome:titulo,desc,origem:"Raça · "+nome};
+      return {nome:titulo.charAt(0).toUpperCase()+titulo.slice(1),desc,origem:"Raça · "+nome};
     });
+  }
+  const RACAS_BASE=['Anão (da Colina)','Anão (da Montanha)','Draconato','Elfo (Alto)','Elfo (da Floresta)','Elfo (Drow)','Gnomo (da Floresta)','Gnomo (da Rocha)','Halfling (Pés Leves)','Halfling (Robusto)','Humano','Humano (Variante)','Meio-elfo','Meio-orc','Tiefling','Fada'];
+  function preparacao(f){
+    const mapa={Cleric:'sab',Druid:'sab',Wizard:'int',Paladin:'car',Artificer:'int'},out=[];
+    for(const c of f.classes||[]){if(!mapa[c.c]||!conjuracao([c]).habilidades.length)continue;const limite=Math.max(1,Math.floor(c.n/(['Paladin','Artificer'].includes(c.c)?2:1))+mod(f.atributos?.[mapa[c.c]]||10));
+      const pertence=m=>(m.classePreparacao||'').toLowerCase()===c.c.toLowerCase()||!m.classePreparacao&&((m.classes||m.c||[]).some(id=>id.toLowerCase()===c.c.toLowerCase())||!(m.classes||m.c||[]).length&&(f.classes||[]).filter(x=>mapa[x.c]).length===1);
+      const usadas=(f.magias||[]).filter(m=>m.l>0&&m.prep&&!m.semprePreparada&&m.origem!=='Raça'&&pertence(m)).length;out.push({id:c.c,nome:classe(c.c).n,limite,usadas,pertence});
+    }return out;
   }
   function limiteEspecializacao(cls) {
     return (cls || []).reduce((s,c) => s + (c.c === "Rogue" ? (c.n >= 6 ? 4 : c.n >= 1 ? 2 : 0) : c.c === "Bard" ? (c.n >= 10 ? 4 : c.n >= 3 ? 2 : 0) : 0), 0);
@@ -210,5 +218,5 @@ window.REGRAS = (() => {
       .map(h=>{const cf=h.e+"|"+h.c+"|"+h.n;return {nome:h.p||h.n,desc:pt[cf]||h.d,cf,auto:"classe"};});
   }
 
-  return { tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+  return { RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();

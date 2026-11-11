@@ -500,3 +500,20 @@ a.doclink { color: var(--gold); text-decoration: underline; cursor: pointer; }
 .card{min-width:0}.card select{max-width:100%;width:100%}.jogador-vinculo{margin-bottom:12px}.pv-acoes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}.pv-acoes a{flex:1 0 100%;text-align:center}.pv-acoes .num{width:64px;min-width:0;flex:1 1 50px}.pv-acoes button{flex:1 1 60px}.cards{grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr))}
 
 .descricao-regra{white-space:pre-wrap;line-height:1.6}.criador-opcoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:8px}.escolha{border:1px solid var(--line);border-radius:8px;padding:10px;min-width:0}.escolha label{display:flex;gap:8px;align-items:center}.escolha input{width:auto;height:auto}.escolha small{display:block;color:var(--muted)}.criador-atributos{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.criador-atributos strong{display:block;font-size:30px;color:var(--gold)}.criador-atributos small{display:block}.pontos{font-size:24px;color:var(--gold);font-weight:bold}#etapas{flex-wrap:wrap}#criador-conteudo select{max-width:100%}
+
+/* Padrão visual único e navegação sem sobrepor conteúdo. */
+body{background:var(--bg)}button,.btnlike,.round-box{background:var(--panel-2);box-shadow:none}button.primary{background:#514027;color:var(--text)}
+.appnav{position:static;max-width:980px;margin:0 auto 24px;padding:0 0 14px;backdrop-filter:none;background:transparent;align-items:stretch;gap:8px}
+.appnav a{flex:1 1 120px;display:flex;align-items:center;justify-content:center;text-align:center;min-height:40px}
+.nav-legado{display:none!important}.estado-ficha{justify-content:flex-end;min-height:20px}
+body[data-view=consulta] .vista-iniciativa,body[data-view=iniciativa] .vista-consulta{display:none!important}
+body[data-conta-aba=conta] [data-conta-painel]:not([data-conta-painel=conta]),body[data-conta-aba=campanhas] [data-conta-painel]:not([data-conta-painel=campanhas]),body[data-conta-aba=personagens] [data-conta-painel]:not([data-conta-painel=personagens]){display:none}
+.item{margin:10px 0;padding:0;overflow-wrap:anywhere}.item>summary{padding:12px 14px}.item>div,.item>p,.item>.descricao-regra{margin:0;padding:12px 14px}.item .item{margin:8px}.descricao-regra{line-height:1.65}
+.personagem-card{display:flex;flex-direction:column}.personagem-card>a{min-height:70px}.personagem-card .cartao-vida{margin-top:auto;padding-top:14px}
+.criador-pericias{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.criador-pericias span{color:var(--text);border:1px solid var(--line);padding:5px 9px;border-radius:6px}
+.moedas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.moeda-controle{display:flex;flex-direction:column;gap:8px}.moeda-controle>input{width:100%;font-size:22px;text-align:center}.moeda-controle .inline{display:grid;grid-template-columns:40px minmax(40px,1fr) 40px}.moeda-controle .inline input{width:100%}
+@media(max-width:520px){.moedas{grid-template-columns:1fr}.appnav a{flex-basis:90px}.personagem-card>a{min-height:80px}}
+
+.ficha-identidade{display:flex;gap:18px;align-items:center}.ficha-identidade h1{font-size:30px}.ficha-identidade p{margin:5px 0}.ficha-destaques{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}.ficha-destaques>div{padding:12px;border:1px solid var(--line);border-radius:8px;text-align:center}.ficha-destaques small{display:block;color:var(--muted)}.ficha-destaques strong{font-size:26px}.atributos-ficha input:disabled{opacity:1;border-color:transparent;font-size:24px;background:transparent;color:var(--text)}@media(max-width:520px){.ficha-destaques{grid-template-columns:repeat(2,minmax(0,1fr))}.ficha-identidade{align-items:flex-start}.ficha-identidade h1{font-size:25px}}
+
+button,.btnlike{background-image:none!important}.criador-opcoes{margin-top:12px}.escolha label{font-size:13px;color:var(--text)}.escolha small{line-height:1.5;margin-top:6px}.criador-pericias{margin-top:18px;margin-bottom:18px}

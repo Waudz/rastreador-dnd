@@ -17,6 +17,9 @@ window.ORIGENS = [
  {id:"personalizado",nome:"Background personalizado",per:[],perEscolhas:2,idiomas:2,ferrEscolhas:0,ferr:[],ouro:0,caracteristica:"Característica personalizada",descricao:"Escolha duas perícias e uma combinação de dois idiomas ou ferramentas. Combine a característica e o equipamento com o mestre.",equip:[]}
 ];
 window.TRACOS_2014 = {
+ "sopro":"Como uma ação, expele energia na área determinada pelo ancestral dracônico. A CD é 8 + Constituição + proficiência. Causa 2d6 de dano, ou metade se a salvaguarda for bem-sucedida. O dano aumenta para 3d6 no nível 6, 4d6 no 11 e 5d6 no 16. Recupera o uso após um descanso curto ou longo. A cor do ancestral determina o dano, a área e a salvaguarda.",
+ "ancestral draconico":"O ancestral define seu tipo de dano e sua resistência: negro ou cobre (ácido), azul ou bronze (elétrico), vermelho, latão ou ouro (fogo), verde (veneno), branco ou prata (frio). O sopro usa uma linha de 1,5 m por 9 m ou um cone de 4,5 m, conforme o ancestral.",
+ "resistencia a um tipo de dano":"Tem resistência ao tipo de dano associado ao seu ancestral dracônico.",
  "visao no escuro":"Na penumbra, enxerga como se houvesse luz plena; na escuridão, como penumbra. Nessa escuridão distingue tons de cinza, e não cores.",
  "resiliencia ana":"Vantagem nas salvaguardas contra veneno e resistência a dano de veneno.",
  "robustez ana":"Seu máximo de PV aumenta em 1, e aumenta mais 1 para cada nível adquirido. Esse bônus entra no cálculo automático de PV.",

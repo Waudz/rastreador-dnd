@@ -48,13 +48,14 @@
     finally { buscando = false; }
   }
   async function iniciar() {
-    box.hidden = false;
+    box.hidden = false; box.open = true;
     if (!conta) { msg("Entre na sua conta para usar personagens de campanhas na iniciativa.",true); return; }
     msg("Carregando campanhas…");
     try {
       const ms = await nuvem.get("membros?select=campanha_id,papel,campanha:campanhas(id,nome)&usuario_id=eq."+encodeURIComponent(conta)+"&papel=eq.mestre");
       if (!mesmaConta()) return;
       camps = ms.filter(m => m.campanha).map(m => m.campanha);
+      if(window.ACESSO && await ACESSO.pronto)camps=await nuvem.get("campanhas?select=id,nome&order=nome");
       if (!camps.length) { msg("Você pode consultar o bestiário. Para adicionar o grupo à iniciativa, abra uma campanha onde você é mestre."); return; }
       $("#ci-camp").innerHTML = camps.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join("");
       let anterior = ""; try { anterior = localStorage.getItem("ini_campanha") || ""; } catch (_) {}

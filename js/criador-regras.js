@@ -102,18 +102,22 @@ window.CRIADOR = (() => {
   const FERR=["Ferramentas de carpinteiro","Ferramentas de cartógrafo","Ferramentas de coureiro","Ferramentas de ferreiro","Ferramentas de funileiro","Ferramentas de pedreiro","Ferramentas de sapateiro","Ferramentas de tecelão","Ferramentas de ladrão","Kit de disfarce","Kit de falsificação","Kit de herbalismo","Kit de jogo de dados","Jogo de cartas","Flauta","Alaúde","Lira","Tambor","Trompa","Gaita de foles"];
   function listaFerramentas(tipo){return FERR.filter(n=>!tipo||tipo==="artesao"&&/^Ferramentas de (?!ladrão)/.test(n)||tipo==="instrumento"&&["Flauta","Alaúde","Lira","Tambor","Trompa","Gaita de foles"].includes(n)||tipo==="jogo"&&/dados|cartas/.test(n)).map(n=>"ferramenta:"+n);}
   function idiomasRaca(nome){if(!nome)return [];const n=norm(nome);return ["Comum",...(/elfo/.test(n)?["Élfico"]:/anao/.test(n)?["Anão"]:/gnomo/.test(n)?["Gnômico"]:/halfling/.test(n)?["Halfling"]:/orc/.test(n)?["Orc"]:/tiefling/.test(n)?["Infernal"]:/draconato/.test(n)?["Dracônico"]:[])];}
-  function rotulo(id){const h=feature(id);if(h)return h.nome||h.en;const m=magiaPorId(id);if(m)return m.n+" · "+(m.l?m.l+"º círculo":"truque");if(per(id))return R.PERICIAS.find(p=>p[0]===per(id))[1];if(/^idioma:|^ferramenta:/.test(id))return id.split(":").slice(1).join(":");const i=D.items.find(i=>i.id===id);return i?.nome||i?.en||id.replace(/^tool:/,"").replaceAll("-"," ");}
+  function rotulo(id){const h=feature(id);if(h)return h.nome||h.en;const m=magiaPorId(id);if(m)return m.n+" · "+(m.l?m.l+"º Círculo":"Truque");if(per(id))return R.PERICIAS.find(p=>p[0]===per(id))[1];if(/^idioma:|^ferramenta:/.test(id))return id.split(":").slice(1).join(":");const i=D.items.find(i=>i.id===(id.startsWith("tool:")?"srd51:item/"+id.slice(5):id));return i?.nome||i?.en||id.replace(/^tool:/,"").replaceAll("-"," ");}
   function perfilMagias(c,f){
     const d=classe(c.c),l=d?.data.levels.find(l=>l.level===c.n);if(!d||!l||!d.data.spellcasting||c.n<d.data.spellcasting.startsAtLevel)return null;
     const s=R.conjuracao([c]),max=s.pact?.nivel||s.slots.reduce((n,x,i)=>x?i+1:n,0),a={str:"for",dex:"des",con:"con",int:"int",wis:"sab",cha:"car"}[d.data.spellcasting.ability],mod=R.mod(f.atributos?.[a]||10);
     const prep=d.data.spellcasting.preparation,segredos=Object.entries(l.classSpecific||{}).filter(([k])=>k.startsWith("magicalSecretsMax_")).reduce((n,[,v])=>n+v,0);
     return {classe:c.c,nome:R.classe(c.c).n,truques:l.cantripsKnown||0,qtd:prep.type==="spellbook"?prep.initial+prep.perLevel*(c.n-1):prep.type==="prepared"?Math.max(1,Math.floor(c.n/(prep.levelDivisor||1))+mod):Math.max(0,(l.spellsKnown||0)-segredos),tipo:prep.type,max};
   }
+  function magiasConcedidas(f){const out=[];
+    for(const c of f.classes||[]){for(const x of subclasse(c)?.data.spells||[])if(c.n>=x.classLevel)out.push({id:x.spell,classe:c.c,semprePreparada:true,origem:'Subclasse'});}
+    for(const h of caracteristicas(f)){const c=(f.classes||[]).find(c=>idClasse(c.c)===h.data.class);for(const e of h.effects||[])if(e.type==='grantSpell'&&c&&c.n>=(e.minLevel||h.data.level||1))out.push({id:e.spell,classe:c.c,semprePreparada:true,origem:'Característica de classe'});}return out;
+  }
   function gruposMagias(f){
     const out=[];
     for(const c of f.classes||[]){const p=perfilMagias(c,f);if(!p)continue;
       for(const tipo of ["truques","magias"]){const qtd=tipo==="truques"?p.truques:p.qtd;if(!qtd)continue;
-        const key="magias|"+c.c+"|"+tipo,opts=MAGIAS.filter(m=>m.c.includes(c.c)&&(tipo==="truques"?m.l===0:m.l>0&&m.l<=p.max)).map(magiaId);
+        const concedidas=new Set(magiasConcedidas(f).map(m=>m.id));const key="magias|"+c.c+"|"+tipo,opts=MAGIAS.filter(m=>!concedidas.has(magiaId(m))&&m.c.includes(c.c)&&(tipo==="truques"?m.l===0:m.l>0&&m.l<=p.max)).map(magiaId);
         const antigos=(f.magias||[]).filter(m=>tipo==="truques"?m.l===0:m.l>0).map(magiaId);
         out.push({key,source:idClasse(c.c),titulo:p.nome+" · "+(tipo==="truques"?"truques":p.tipo==="spellbook"?"grimório":p.tipo==="prepared"?"magias preparadas":"magias conhecidas"),grants:"spell",qtd,opts,selecionadas:[...new Set(estado(f).selecoes[key]||antigos)].filter(id=>opts.includes(id)).slice(0,qtd),max:p.max});
       }
@@ -143,6 +147,7 @@ window.CRIADOR = (() => {
     const escolhidas=[...gs,...gruposMagias(f)].filter(g=>g.grants==="spell").flatMap(g=>g.selecionadas.map(id=>({id,classe:g.source.split("/").pop()})));
     const mapa=new Map();
     for(const {id,classe:fonteClasse} of escolhidas){const m=magiaPorId(id);if(!m)continue;const antigo=mapa.get(id);if(antigo){antigo.classes.push(fonteClasse);continue;}mapa.set(id,{...m,prep:m.l===0||classe(fonteClasse)?.data?.spellcasting?.preparation?.type==="prepared",classes:[fonteClasse],en:m.en,autoCriador:true});}
+    for(const x of magiasConcedidas(f)){const m=magiaPorId(x.id);if(m)mapa.set(x.id,{...m,prep:true,semprePreparada:x.semprePreparada,classes:[x.classe],origem:x.origem,autoCriador:true});}
     for(const [nome,nivel] of (f.raca==="Gnomo (da Floresta)"?[["Minor Illusion",1]]:f.raca==="Tiefling"?[["Thaumaturgy",1],["Hellish Rebuke",3],["Darkness",5]]:f.raca==="Elfo (Drow)"?[["Dancing Lights",1],["Faerie Fire",3],["Darkness",5]]:[])){const m=MAGIAS.find(m=>m.en===nome);if(m&&R.nivelTotal(f.classes)>=nivel)mapa.set(magiaId(m),{...m,prep:true,origem:"Raça",autoCriador:true});}
     for(const m of f.magias||[])if(!m.autoCriador&&!mapa.has(magiaId(m)))mapa.set(magiaId(m),m);f.magias=[...mapa.values()];return q;
   }
@@ -171,7 +176,7 @@ window.CRIADOR = (() => {
     f.equip ||= {armadura:'',escudo:false,bonus:0};f.ataques ||= [];
     for(const i of eq.itens){const d=D.items.find(x=>x.id===i.id);if(!d)continue;
       if(d.id.endsWith('/shield'))f.equip.escudo=true;
-      else if(d.data.armor&&!f.equip.armadura){const a=R.ARMADURAS.find(a=>a[1]===i.nome||a[3]===d.data.armor.base&&a[2]===({light:'leve',medium:'media',heavy:'pesada'}[d.data.armor.category]));if(a)f.equip.armadura=a[0];}
+      else if(d.data.armor&&!f.equip.armadura){const ids={"padded-armor":"acolchoada","leather-armor":"couro","studded-leather-armor":"couro-batido","hide-armor":"gibao","chain-shirt":"camisao","scale-mail":"escamas","breastplate":"peitoral","half-plate-armor":"meia","ring-mail":"anel","chain-mail":"malha","splint-armor":"talas","plate-armor":"placas"};const a=R.ARMADURAS.find(a=>a[0]===ids[d.id.split("/").pop()]||a[1]===i.nome);if(a)f.equip.armadura=a[0];}
       const a=R.ARMAS.find(a=>a[0]===i.nome);if(a&&!f.ataques.some(x=>x.nome===a[0]))f.ataques.push({nome:a[0],dado:a[1],tipo:a[2],atr:a[3],prof:true,magico:0,extra:0,distancia:d.data.weapon?.kind==='ranged'});
     }
     st.equipAplicado=true;return q;
@@ -210,6 +215,6 @@ window.CRIADOR = (() => {
     return q;
   }
   function diferenca(antes,depois){const a=caracteristicas(antes.ficha),b=caracteristicas(depois.ficha),ids=new Set(a.map(h=>h.id));return {nivel:[R.nivelTotal(antes.ficha.classes),R.nivelTotal(depois.ficha.classes)],pv:[antes.pv_max,depois.pv_max],prof:[R.prof(R.nivelTotal(antes.ficha.classes)),R.prof(R.nivelTotal(depois.ficha.classes))],novas:b.filter(h=>!ids.has(h.id)),espacos:R.conjuracao(depois.ficha.classes),escolhas:validar(depois,{evolucao:true})};}
-  const api={configurar,estado,origem,requisitosMulti,classe,subclasse,nivelSub,caracteristicas,requisitos,grupos,gruposMagias,perfilMagias,rotulo,per,magiaId,magiaPorId,custo,CUSTOS,iniciar,derivar,equipamento,aplicarEquipamento,itemCategoria,validar,subir,diferenca,idiomasRaca,copiar,get dados(){return D;}};
+  const api={configurar,estado,origem,requisitosMulti,classe,subclasse,nivelSub,caracteristicas,requisitos,grupos,gruposMagias,perfilMagias,rotulo,per,magiasConcedidas,magiaId,magiaPorId,custo,CUSTOS,iniciar,derivar,equipamento,aplicarEquipamento,itemCategoria,validar,subir,diferenca,idiomasRaca,copiar,get dados(){return D;}};
   return api;
 })();

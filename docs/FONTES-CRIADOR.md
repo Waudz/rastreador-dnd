@@ -25,3 +25,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Cobertura e idioma
+
+A automação de subclasses usa as 12 subclasses SRD 5.1 disponíveis no HeroQuill; isso não corresponde a todas as subclasses do Livro do Jogador. Os títulos e descrições públicos usam o catálogo 2014 traduzido da API. Rótulos de progressão e opções que não tinham tradução foram integrados em português a partir dos mesmos dados SRD, sem usar o livro pessoal sincronizado de qualquer conta.

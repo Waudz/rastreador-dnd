@@ -48,7 +48,7 @@
     <div id="area" hidden>
       <div class="bar"><span class="muted grow" id="quem"></span><button type="button" class="small" id="btn-sair">Sair</button></div>
 
-      <section class="panel">
+      <section class="panel" data-conta-painel="campanhas">
         <div class="bar"><h2 class="panel-title grow" style="margin:0">Campanhas</h2>
           <button type="button" class="small" id="abre-camp">Nova</button>
           <button type="button" class="small" id="abre-codigo">Entrar com código</button>
@@ -59,7 +59,7 @@
         <div id="campanhas" class="cards"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel" data-conta-painel="personagens">
         <div class="bar"><h2 class="panel-title grow" style="margin:0">Meus personagens</h2>
           <button type="button" class="small" id="abre-pers">Novo</button>
         </div>
@@ -71,11 +71,11 @@
         <div class="muted" id="msg-pers" style="margin-bottom:8px"></div>
         <div id="personagens" class="cards"></div>
       </section>
-      <details class="panel">
+      <details class="panel" data-conta-painel="conta" open>
         <summary class="panel-title" style="font-size:14px">Conta</summary>
         <div class="row" style="margin-top:10px"><input id="a-nome" maxlength="60" placeholder="Seu nome" style="flex:1 1 220px"><button type="button" class="small" id="btn-nome">Salvar nome</button></div>
         <div class="row"><div class="pw" style="flex:1 1 220px"><input id="a-senha" type="password" minlength="8" autocomplete="new-password" placeholder="Nova senha"><button type="button" class="pw-eye"></button></div><button type="button" class="small" id="btn-senha">Trocar senha</button></div>
-        <div class="muted" id="msg-conta"></div>
+        <div class="muted" id="msg-conta"></div><div id="opcoes-admin" hidden><h3>Opções de administrador</h3><a class="btnlike" href="admin.html">Gerenciar catálogo, campanhas e perfis</a></div>
       </details>
     </div>
 
