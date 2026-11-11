@@ -216,28 +216,31 @@
 
     /* abas laterais: ficha (direita) e magia (esquerda, ou empilhada na direita) */
     function layout() {
-      const full = innerWidth < 700, W = full ? innerWidth : Math.round(Math.min(460, Math.max(320, innerWidth * 0.34)));
+      const full = innerWidth < 1200, W = Math.min(440,innerWidth);
       document.documentElement.style.setProperty("--dw", W + "px");
       const sp = $("#spd"), dest = $(innerWidth < 1100 || spOrigin === "sheet" ? "#dock-r" : "#dock-l");
       if (sp.parentNode !== dest) dest.appendChild(sp);
       let L = false, R = false;
       [["#dock-l", false], ["#dock-r", true]].forEach(([s, r]) => { const dk = $(s), vis = [...dk.children].some((c) => !c.hidden); dk.hidden = !vis; if (r) R = vis; else L = vis; });
+      R=R||!$("#ci-resumo").hidden;
       const margem=innerWidth<=800?14:22;
       document.body.style.paddingLeft = margem + (L && !full ? W : 0) + "px"; document.body.style.paddingRight = margem + (R && !full ? W : 0) + "px";
     }
     window.reorganizarPaineis=layout;
     window.addEventListener("resize", layout);
-    const closeSheet = () => { $("#sheet").hidden = true; $("#tip").style.display = "none"; layout(); };
+    let focoFicha = null;
+    const closeSheet = () => { focoFicha?.focus?.(); $("#sheet").hidden = true; $("#tip").style.display = "none"; layout(); };
     const closeSpell = () => { $("#spd").hidden = true; $("#tip").style.display = "none"; layout(); };
 
     /* ficha do monstro */
     const speed = (sp) => sp ? Object.entries(sp).filter(([k, v]) => k !== "unit" && v).map(([k, v]) => k === "walk" ? fm(v) : `${SPD[k] || k} ${fm(v)}`).join(", ") : "—";
-    const habD = (n, i, x = "", pre = "") => `<div class="hab" data-desc="${esc(i.plain)}"><b>${esc(n)}</b>${x}${pre}<div class="full">${i.html}${i.tr && i.orig && i.orig !== i.plain ? `<div class="orig">Original: ${esc(i.orig)}</div>` : ""}</div></div>`;
+    const habD = (n, i, x = "", pre = "") => `<details class="hab item" data-desc="${esc(i.plain)}"><summary><b>${esc(n)}</b></summary>${x||pre?`<div class="hab-acoes">${x}${pre}</div>`:''}<div class="full">${i.html}${i.tr && i.orig && i.orig !== i.plain ? `<div class="orig">Original: ${esc(i.orig)}</div>` : ""}</div></details>`;
     const spRow = (name, key, x = "") => { const d = D.S[String(name).toLowerCase()]; return `<div class="hab" data-spopen="${esc(key || String(name).toLowerCase())}" data-desc="${esc(d ? d[1] : "")}" style="cursor:pointer"><b>${esc(d ? d[0] : name)}</b>${d ? ` <span class="muted">(${esc(d[3] || name)})</span>` : ""}${x}</div>`; };
     const rmBtn = (m, t, ix, cf) => m.custom && cf ? ` <button type="button" class="small subtle" data-cfk="${esc(cf)}" title="Abrir a habilidade no catálogo">Abrir</button>` : "";
 
     /* remove uma característica, ação ou magia de uma ficha própria */
     function openSheet(k) {
+      focoFicha=document.activeElement;
       const m = ALL.find((x) => x.key === k), el = $("#sheet-body"); curSheet = k;
       if (!m) { curSheet=null; return; }
       const r = m.resistances_and_immunities || {}, ln = (l, v) => v ? `<div><b>${l}:</b> ${esc(v)}</div>` : "";
@@ -251,13 +254,18 @@
       }).join("")).join("");
       const spl = (m.spells || []).map((s, ix) => spRow(s.name, s.key, rmBtn(m, "s", ix))).join("");
       const p = pt(m), cat = catOf(m);
-      el.innerHTML = `<div class="row" style="gap:12px">${av(m, 72)}<span>${m.custom ? `<button class="small primary" data-edit="${esc(m.key)}">Editar ficha</button> ` : ""}<button class="small" data-ph="${esc(m.key)}">${PH[m.key] ? "Trocar foto" : "Adicionar foto"}</button>${PH[m.key] ? ` <button class="small subtle" data-phx="${esc(m.key)}">${m.custom ? "Remover foto" : "Voltar à foto padrão"}</button>` : ""}</span></div><h3>${esc(p || m.name)}</h3><div class="muted">${[p ? m.name : "", cat !== "monster" || m.custom ? CAT[cat] : "", tsz(m), m.alignment && m.alignment !== "—" ? AL(m.alignment) : "", m.subtitle || "", srcOf(m)].filter(Boolean).map(esc).join(" · ")}</div>
-        <div class="stats"><span>CA <b>${m.armor_class}</b>${m.armor_detail ? " (" + esc(tr(m.armor_detail)) + ")" : ""}</span><span>PV <b>${m.hit_points}</b> ${esc(m.hit_dice || "")}</span><span>Deslocamento <b>${esc(speed(m.speed))}</b></span><span>${cat === "monster" ? "ND" : "Nível"} <b>${cat === "monster" ? CRV(m) : (m.level ?? "—")}</b></span></div>
-        <table class="ab"><tr>${ABIL.map((a) => `<th>${a[1]}</th>`).join("")}</tr><tr>${ABIL.map((a) => `<td>${m.ability_scores?.[a[0]]} (${mod(m.modifiers?.[a[0]])})</td>`).join("")}</tr></table>
-        ${ln("Salvaguardas", saves)}${ln("Perícias", skills)}${ln("Resistências", tr(r.damage_resistances_display))}${ln("Imunidades", tr(r.damage_immunities_display))}${ln("Vulnerabilidades", tr(r.damage_vulnerabilities_display))}${ln("Imunidades a condições", tr(r.condition_immunities_display))}${ln("Sentidos", senses)}${ln("Idiomas", tr(m.languages?.as_string))}
-        ${(m.traits || []).length ? '<div class="grp">Características</div>' + m.traits.map((t, ix) => habD(nm(t.name), descInfo(t.name, t.desc, m), rmBtn(m, "t", ix, t.cf))).join("") : ""}${acts}${spl ? '<div class="grp">Magias</div>' + spl : ""}
-        <p class="muted" style="font-size:11px;margin-top:14px">Descrições traduzidas quando há tradução confiável; o restante segue em inglês. Clique em uma descrição para ver o original.</p>`;
-      $("#sheet").hidden = false; $("#sheet").scrollTop = 0; layout();
+      el.innerHTML = window.FICHA_MONSTRO.renderizar({
+        monstro:m,nome:p||m.name,retrato:av(m,64),
+        subtitulo:[p?m.name:'',cat!=='monster'||m.custom?CAT[cat]:'',tsz(m),m.alignment&&m.alignment!=='—'?AL(m.alignment):'',m.subtitle||''].filter(Boolean).join(' · '),
+        meta:'<p class="ficha-meta"><span class="badge">'+esc(cat==='monster'?'ND '+CRV(m):'Nível '+(m.level??'—'))+'</span><span>'+esc(srcOf(m))+'</span></p>',
+        velocidade:speed(m.speed),
+        atributos:ABIL.map(([k,n])=>({sigla:n,valor:m.ability_scores?.[k]??'—',modificador:mod(m.modifiers?.[k]??0),rolagem:'<button type="button" class="rolar-atributo" data-sheet-atributo="'+esc(n)+'" data-bonus="'+esc(m.modifiers?.[k]??0)+'" aria-label="Rolar '+esc(n)+'">Rolar d20</button>'})),
+        informacoes:ln('Salvaguardas',saves)+ln('Perícias',skills)+ln('Resistências',tr(r.damage_resistances_display))+ln('Imunidades',tr(r.damage_immunities_display))+ln('Vulnerabilidades',tr(r.damage_vulnerabilities_display))+ln('Imunidades a condições',tr(r.condition_immunities_display))+ln('Sentidos',senses)+ln('Idiomas',tr(m.languages?.as_string)),
+        tracos:(m.traits||[]).map(t=>habD(nm(t.name),descInfo(t.name,t.desc,m),rmBtn(m,'t',0,t.cf))).join(''),acoes:acts,magias:spl,
+        gerenciar:(m.custom?'<button class="small primary" data-edit="'+esc(m.key)+'">Editar ficha</button> ':'')+'<button class="small" data-ph="'+esc(m.key)+'">'+(PH[m.key]?'Trocar foto':'Adicionar foto')+'</button>'+(PH[m.key]?'<button class="small subtle" data-phx="'+esc(m.key)+'">'+(m.custom?'Remover foto':'Voltar à foto padrão')+'</button>':'')
+      });
+      document.dispatchEvent(new Event('ficha:fechar-personagem'));
+      $("#sheet").hidden = false; $("#sheet-body").scrollTop = 0; layout(); $("#sh-close").focus();
     }
 
     /* magias: lista no painel, texto na aba lateral */

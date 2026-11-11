@@ -41,3 +41,34 @@ A edição ativa é 2014. A automação usa as habilidades disponíveis no catá
 O relatório cobertura-2014.json identifica quais subclasses e classes estão representadas no catálogo. Completar as ausências exige dados revisados ou importação privada de material do usuário, sem publicar esses textos no repositório público.
 
 Fontes das regras: https://www.dndbeyond.com/sources/dnd/basic-rules-2014/classes e https://www.dndbeyond.com/sources/dnd/basic-rules-2014/races.
+
+## Refinamento das fichas — 11/11/2026
+
+Esta seção registra a rodada posterior ao commit `c6c7f1d`, preservando as pendências anteriores. Os arquivos locais também contêm a reformulação anterior, enviada ao GitHub por conector; o HEAD local ainda aponta para sua base anterior. Conferir o estado remoto antes de qualquer publicação futura.
+
+| Ajuste | Implementação | Verificação desta rodada |
+|---|---|---|
+| Componentes comuns | `js/ficha-componentes.js`: estatísticas com ícones, atributos, cabeçalho, vida-base e indicadores de espaços | Testes de renderização, escape de texto e imutabilidade dos dados |
+| Design compacto | `css/fichas.css`: cabeçalho menor, três indicadores, vida em faixa, ações e abas compactas, atributos clicáveis | Revisão do CSS; conferência visual pendente |
+| CSS conflitante | Estilos de ficha retirados de `identidade.css` e centralizados em `fichas.css`; estilos gerais preservados | Revisão de dependências e carregamento em todas as páginas principais |
+| Grade pela largura do componente | Container queries em `#ficha` e `.ficha-criatura`, com seis/três colunas | Implementação revisada; checagem em navegador pendente |
+| Visão geral | Salvaguardas roláveis, perícias em linhas, escolhas recolhíveis, inspiração, proficiências expansíveis | Testes existentes de regras preservados; nova gravação usa o mesmo JSON da ficha |
+| Combate | Evolução movida para Personagem; defesa e ataques priorizados; configurações de armas expansíveis; consulta aos recursos cadastrados | Teste do HTML das seções e persistência |
+| Magias | Espaços com indicadores; agrupamento por círculo; filtros de círculo/escola/concentração/ritual; estado vazio orientado à busca | Testes de consumo/recuperação de espaço e preservação de preparação e diário |
+| Inventário e notas | Moedas em cartões, espaçamentos comuns, diário com leitura e escrita mais confortáveis | Modelo, quantidades, pesos e notas existentes preservados |
+| Monstros e NPCs do acervo | `openSheet()` passa os dados reais e descrições existentes ao adaptador `ficha-monstro.js`; tabela substituída por cartões, abas e seções expansíveis | Testes do adaptador e análise sintática do aplicativo; integração visual pendente |
+| Painéis laterais | Largura de 440 px, cabeçalho consistente, rolagem interna e posicionamento comum; abrir personagem fecha monstro e vice-versa | Código revisado; testes de preservação da iniciativa continuam passando |
+| Vida do catálogo | O renderizador de monstro mostra PV-base identificados e não lê instâncias privadas do combate | Teste de ausência de acesso a estado de combate e preservação do objeto original |
+| Offline | Cache v57 inclui componentes, adaptador de monstro e CSS compartilhado | Referências revisadas |
+
+### Validação e limites
+
+- Suíte JavaScript local: **81 testes aprovados**, incluindo os testes de regras existentes. O workflow inclui os novos testes. O envio desta rodada foi autorizado pelo usuário; consultar o resultado do workflow para a validação remota.
+- Sem mudança de schema, migração, credenciais ou dados de produção. Os controles de mestre e as consultas autorizadas da ficha embutida foram preservados; os testes locais usam objetos simulados.
+- O navegador integrado não alcançou `http://127.0.0.1:8766`, mesmo após tentativa de iniciar o servidor local fora do isolamento. A alternativa `file://` foi rejeitada pela política de URL. Não foi possível obter capturas das alterações locais.
+- Permanecem pendentes: comparação visual em desktop/celular, todas as abas, painéis reais de personagem/monstro/NPC, múltiplos combatentes, formulários, persistência após recarregar e sessão real de mestre/jogador. Os testes automáticos não substituem essas verificações.
+- A iniciativa existente mantém o combate neste navegador. Esta rodada não cria uma transmissão de combate entre contas. Validar qualquer futura visão compartilhada e ocultação de PV no servidor antes de disponibilizá-la a jogadores.
+- Recursos de classe são consultados a partir das características já cadastradas; condições e durações permanecem no controle de cada combatente. Não foi acrescentado um novo motor de recursos ou regras.
+- Magias antigas mantêm seus dados. Metadados ausentes de concentração/ritual não são inferidos como se estivessem cadastrados; novas adições preservam esses indicadores quando presentes no catálogo. Inventário mantém o modelo atual, sem classificar itens mágicos/consumíveis automaticamente.
+
+Próxima etapa: executar a revisão visual acima em um navegador com acesso ao site atualizado e registrar o resultado. A autorização de envio ao GitHub não substitui essa verificação visual.

@@ -32,9 +32,10 @@
     if($('#ci-ficha-frame')?.dataset?.personagem !== p.id) $("#ci-resumo-corpo").innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(p.id)+'" title="Ficha de '+esc(p.nome)+'" src="personagem.html?id='+encodeURIComponent(p.id)+'&modo=painel"></iframe>';
     $('#ci-ficha-completa').href='personagem.html?id='+encodeURIComponent(p.id);
     document.body.classList.add('com-ficha-lateral');
-    $("#ci-resumo").hidden=false;$("#ci-resumo-fechar").focus?.();
+    if(window.reorganizarPaineis){$("#sheet").hidden=true;}
+    $("#ci-resumo").hidden=false;window.reorganizarPaineis?.();$("#ci-resumo-fechar").focus?.();
   }
-  function fecharResumo(){$("#ci-resumo").hidden=true;document.body.classList.remove('com-ficha-lateral');focoAnterior?.focus?.();}
+  function fecharResumo(){$("#ci-resumo").hidden=true;document.body.classList.remove('com-ficha-lateral');window.reorganizarPaineis?.();focoAnterior?.focus?.();}
 
   function adicionar(p) {
     if (!podeUsar() || emCombate(p)) return;
@@ -103,6 +104,7 @@
     try{localStorage.setItem("ini_campanha",atual);}catch(_){}
     carregar();
   });
+  document.addEventListener("ficha:fechar-personagem",()=>{if(!$("#ci-resumo").hidden)fecharResumo();});
   $("#ci-resumo-fechar").addEventListener("click",fecharResumo);
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&resumoId)fecharResumo();});
   $("#combatants").addEventListener("click",e=>{if(e.target.closest("button,input,select"))return;const artigo=e.target.closest("[data-pid]");const p=artigo&&pers.find(p=>p.id===artigo.dataset.pid);if(p)abrirResumo(p);});

@@ -1,6 +1,8 @@
 # Identidade visual
 
-O tema usa fundo `#101820`, cartões `#202D3A`, texto `#F3E9D5`, texto secundário `#AAB7C5`, dourado `#D4AE72`, verde `#409B79` e vermelho `#C74B4B`. Os tokens ficam em `css/estilo.css`; os componentes e adaptações responsivas ficam em `css/identidade.css`, carregado depois em todas as páginas principais.
+O tema usa fundo `#101820`, cartões `#202D3A`, texto `#F3E9D5`, texto secundário `#AAB7C5`, dourado `#D4AE72`, verde `#409B79` e vermelho `#C74B4B`. Os tokens ficam em `css/estilo.css`; a base geral fica em `css/identidade.css` e os componentes de ficha em `css/fichas.css`, carregado por último nas páginas principais.
+
+`js/ficha-componentes.js` fornece cartões de estatística, atributos, cabeçalho e indicadores de vida/espaços. A ficha de personagem e o adaptador de monstros/NPCs do acervo usam esses componentes, mantendo seus próprios modelos de dados. Container queries adaptam a grade à largura da ficha, inclusive no iframe. `ficha-monstro.js` apresenta dados e descrições preparados por `openSheet()` e não consulta PV de instâncias em combate.
 
 A ficha tem cabeçalho com retrato, nível e proficiência, indicadores de CA, iniciativa e deslocamento, painel de vida permanente e seis abas. Modificadores são destacados nos atributos. Testes de atributo e perícia, ataques e danos usam `js/rolagens.js`. Rolagens informam o resultado, sem aplicar dano automaticamente a um alvo.
 

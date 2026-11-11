@@ -3,11 +3,12 @@
    O dono e o mestre da campanha podem editar; o banco de dados garante isso (regras de acesso). */
 (() => {
   "use strict";
-  const $ = (s) => document.querySelector(s), esc = nuvem.esc, R = window.REGRAS;
+  const $ = (s) => document.querySelector(s), esc = nuvem.esc, R = window.REGRAS, C = window.FICHA_COMPONENTES;
   const id = new URLSearchParams(location.search).get("id");
   const emPainel = new URLSearchParams(location.search).get("modo") === "painel";
   if (emPainel) document.body.classList.add('ficha-embutida');
   const notificar = tipo => { if(emPainel && window.parent !== window) window.parent.postMessage({tipo,id},location.origin); };
+  const filtrosMagia={nivel:"",escola:"",tipo:""};
   let editandoFicha = false, P = null, camp = null, souMestre = false, donoNome = "", pend = null, salvando = false, timer = null, catalogo = null, magiasCat = null, achadosM = [];
   const ATR = [["for", "FOR"], ["des", "DES"], ["con", "CON"], ["int", "INT"], ["sab", "SAB"], ["car", "CAR"]];
   const MOEDAS = [["pc", "Cobre (PC)"], ["pp", "Prata (PP)"], ["po", "Ouro (PO)"]];
@@ -169,11 +170,9 @@
   const totalPO = () => { const d = DIN(); return num(d.pc, 0) / 100 + num(d.pp, 0) / 10 + num(d.po, 0); };
   const opt = (v, t, sel) => `<option value="${esc(v)}"${sel ? " selected" : ""}>${esc(t)}</option>`;
 
-  const blocoPV = () => `<div class="row" style="align-items:flex-end;gap:16px">
-      <div><div class="big" id="pv-num">${P.pv_atual}<span class="muted" style="font-size:18px"> / ${P.pv_max}</span></div><div class="muted" id="pv-temp-txt">${P.pv_temp ? `+${P.pv_temp} PV temporários` : "&nbsp;"}</div></div>
-      <div class="inline"><input class="num" id="qtd" type="number" min="1" value="1" aria-label="Quantidade"><button type="button" class="danger" id="b-dano">Dano</button><button type="button" id="b-cura">Cura</button></div>
-    </div>
-    <div class="hp-track" role="progressbar" aria-label="Pontos de vida" aria-valuemin="0" aria-valuemax="${P.pv_max}" aria-valuenow="${P.pv_atual}" style="height:9px;margin:10px 0"><div class="hp-fill ${pctPV() <= 25 ? "low" : pctPV() <= 50 ? "mid" : ""}" id="pv-barra" style="width:${pctPV()}%"></div></div>
+  const blocoPV = () => `<div class="vida-cabecalho"><h2 class="panel-title">Pontos de vida</h2><div class="big" id="pv-num">${P.pv_atual}<span class="muted"> / ${P.pv_max} PV</span></div></div>
+    <div class="hp-track" role="progressbar" aria-label="Pontos de vida" aria-valuemin="0" aria-valuemax="${P.pv_max}" aria-valuenow="${P.pv_atual}"><div class="hp-fill ${pctPV()<=25?'low':pctPV()<=50?'mid':''}" id="pv-barra" style="width:${pctPV()}%"></div></div>
+    <div class="vida-controles"><div class="inline"><button type="button" class="danger" id="b-dano">− Dano</button><input class="num" id="qtd" type="number" min="1" value="1" aria-label="Quantidade de dano ou cura"><button type="button" id="b-cura">+ Cura</button></div><span class="muted" id="pv-temp-txt">${P.pv_temp ? '+'+P.pv_temp+' PV temporários' : 'PV temporários: 0'}</span></div>
     <details class="vida-config"><summary>Ajustes de vida</summary><div class="row" style="margin:0"><div><label>PV máximo</label><input class="num" type="number" min="0" data-col="pv_max" value="${P.pv_max}"></div><div><label>PV temporário</label><input class="num" type="number" min="0" data-col="pv_temp" value="${P.pv_temp}"></div></div>
     <div class="row" style="margin:8px 0 0"><label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-auto="pvAuto" ${autoOn("pvAuto") ? "checked" : ""}> PV máximo automático (dado de vida médio + Constituição)</label><div class="inline"><label style="margin:0">PV extra por nível</label><input class="num" type="number" step="1" data-f="pvExtra" value="${num(F().pvExtra, 0)}" title="Ex.: anão da colina +1, talento Robusto +2"></div></div></details>`;
 
@@ -181,9 +180,11 @@
   const cabInv = '<div class="row inv-h" style="margin:0 0 4px"><span style="flex:1 1 160px">Item</span><span class="num-h">Qtd.</span><span class="num-h">Peso cada (kg)</span><span style="width:34px"></span></div>';
   const blocoCarga = () => { const c = capacidade(), p = pesoTotal(), pc = Math.min(100, c > 0 ? (p / c) * 100 : 0); return `<div class="hp-top"><span>Carga total (qtd. × peso)</span><strong id="carga-txt" ${p > c ? 'class="err"' : ""}>${kg(p)} / ${kg(c)} kg</strong></div><div class="hp-track"><div class="hp-fill ${p > c ? "low" : pc > 66 ? "mid" : ""}" id="carga-barra" style="width:${pc}%"></div></div>`; };
 
-  const blocoAtr = () => `<div class="attrs">${ATR.map(([k, r]) => `<div class="attr"><label for="atributo-${k}">${r}</label><input id="atributo-${k}" type="number" min="1" max="30" data-atr="${k}" value="${num(A()[k], 10)}"><div class="mod" id="mod-${k}">${fm(mod(A()[k]))}</div><button type="button" class="rolar-atributo" data-rolar-atr="${k}" aria-label="Rolar teste de ${R.ATR_NOME[k]}">Rolar</button></div>`).join("")}</div><div class="muted" style="margin-top:8px" id="prof-txt"></div>`;
+  const blocoAtr = () => '<div class="attrs">'+ATR.map(([k,r])=>C.atributo({sigla:r,valor:num(A()[k],10),modificador:fm(modA(k)),id:'mod-'+k,controle:`<input id="atributo-${k}" aria-label="${R.ATR_NOME[k]}" type="number" min="1" max="30" data-atr="${k}" value="${num(A()[k],10)}">`,rolagem:`<button type="button" class="rolar-atributo" data-rolar-atr="${k}" aria-label="Rolar teste de ${R.ATR_NOME[k]}">Rolar d20</button>`})).join('')+'</div><div class="muted" id="prof-txt"></div>';
 
   const itemCar = (c, i) => `<details class="item"><summary>${esc(c.nome)}</summary><div><div class="pre">${TEXTO_REGRAS.html(c.desc || "")}</div>${!c.auto?`<div class="row" style="margin:8px 0 0"><button type="button" class="small danger" data-rm-car="${i}">Remover</button></div>`:""}</div></details>`;
+  const recursosCombate = () => CAR().map(c=>`<details class="item"><summary>${esc(c.nome)}</summary><div class="pre">${TEXTO_REGRAS.html(c.desc||'')}</div></details>`).join('') || '<p class="muted">As habilidades e recursos cadastrados em Personagem aparecem aqui para consulta durante o combate.</p>';
+  const atualizarRecursos = () => { const e=$('#recursos-combate');if(e)e.innerHTML=recursosCombate(); };
 
   const racaSel = () => { const r = F().raca || ""; return R.RACAS.some((x) => x[0] === r) ? r : (r || F().racaCustom ? "__custom" : ""); };
   const blocoClasses = () => {
@@ -195,7 +196,7 @@
   /* salvaguardas e perícias */
   function blocoSal() {
     const pb = bonusProf(), ps = salvaProf();
-    return `<div class="grade2">${ATR.map(([k, r]) => { const p = ps.includes(k), v = modA(k) + (p ? pb : 0); return `<div class="lin"><span class="pbol${p ? " on" : ""}"></span><b>${fm(v)}</b><span>${R.ATR_NOME[k]}</span></div>`; }).join("")}</div>`;
+    return `<div class="grade2">${ATR.map(([k, r]) => { const p = ps.includes(k), v = modA(k) + (p ? pb : 0); return `<div class="lin"><span class="pbol${p ? " on" : ""}"></span><b>${fm(v)}</b><button type="button" class="rolar-pericia" data-rolar-sal="${k}" aria-label="Rolar salvaguarda de ${R.ATR_NOME[k]}">${R.ATR_NOME[k]}</button></div>`; }).join("")}</div>`;
   }
 
   function blocoPer() {
@@ -211,7 +212,7 @@
     CLS().slice(1).forEach((c,i)=>{const d=R.classe(c.c);if(d&&["Bard","Ranger","Rogue"].includes(c.c))h+=`<div class="sub">Multiclasse: ${esc(d.n)} · uma perícia</div>${escolhas("multi-"+(i+1),d.per[1],c.per||[],1)}`;});
     const lim=R.limiteEspecializacao(CLS());
     if(lim)h+=`<p class="muted">Especializações: ${fontes.especializadas.length}/${lim}. Escolha entre as perícias proficientes.</p>`;
-    h+='<div class="grade2">'+R.PERICIAS.map(([k,n,a])=>{
+    h='<details class="config-pericias" '+(editandoFicha?'open':'')+'><summary>Escolhas e especializações</summary>'+h+'</details><div class="grade2">'+R.PERICIAS.map(([k,n,a])=>{
       const e=pr[k]||0,v=R.valorPericia(f,k);
       return `<div class="lin"><span class="pbol${e?' on':''}${e===2?' dup':''}"></span><b>${fm(v)}</b><button type="button" class="rolar-pericia" data-rolar-per="${k}" aria-label="Rolar ${n}">${n}</button>${lim&&e?`<button type="button" class="small" data-per="${k}" aria-pressed="${e===2}">${e===2?'Especializada':'Especializar'}</button>`:''}</div>`;
     }).join("")+'</div>';
@@ -235,26 +236,26 @@
     const valores=R.valoresAtaque(F(),a),hit=valores.ataque,dm=valores.dano;
     return `Ataque ${fm(hit)} · Dano ${esc(a.dado || "—")}${dm ? fm(dm) : ""} ${esc(a.tipo || "")}`;
   }
-  const linhaAtq = (a, i) => `<div class="panel2" data-ai="${i}"><div class="row" style="margin:0 0 6px"><input style="flex:1 1 160px" data-atq="nome" value="${esc(a.nome || "")}" placeholder="Nome do ataque" maxlength="60"><button type="button" class="small subtle" data-rm-atq="${i}" aria-label="Remover ataque">${window.ico ? window.ico("x") : "x"}</button></div>
+  const linhaAtq = (a, i) => `<article class="panel2 ataque-ficha" data-ai="${i}"><h3>${esc(a.nome||"Ataque personalizado")}</h3><details class="ataque-editor"><summary>Ajustar arma e bônus</summary><div class="row" style="margin:0 0 6px"><input style="flex:1 1 160px" data-atq="nome" value="${esc(a.nome || "")}" placeholder="Nome do ataque" maxlength="60"><button type="button" class="small subtle" data-rm-atq="${i}" aria-label="Remover ataque">${window.ico ? window.ico("x") : "x"}</button></div>
       <div class="row" style="margin:0 0 6px"><div><label>Atributo</label><select data-atq="atr">${opt("for", "Força", (a.atr || "for") === "for")}${opt("des", "Destreza", a.atr === "des")}${opt("acuidade", "Acuidade (maior)", a.atr === "acuidade")}${opt("int", "Inteligência", a.atr === "int")}${opt("sab", "Sabedoria", a.atr === "sab")}${opt("car", "Carisma", a.atr === "car")}</select></div>
       <div><label>Dano</label><input class="num" data-atq="dado" value="${esc(a.dado || "1d6")}" maxlength="12"></div><div><label>Tipo de dano</label><select data-atq="tipo">${R.TIPOS_DANO.map((t) => opt(t, t, t === a.tipo)).join("")}</select></div>
       <div><label>Bônus mágico</label><input class="num" type="number" data-atq="magico" value="${num(a.magico, 0)}"></div><div><label>Dano extra</label><input class="num" type="number" data-atq="extra" value="${num(a.extra, 0)}" title="Somado ao dano (ex.: fúria, estilo de luta)"></div>
       <label class="inline" style="margin:14px 0 0"><input type="checkbox" style="width:auto;height:auto" data-atq="prof" ${a.prof === false ? "" : "checked"}> Proficiente</label></div>
-      <div class="atk-res" id="atk-res-${i}"><b>${resAtq(a)}</b></div><div class="row"><button type="button" class="small" data-rolar-atq="${i}">Rolar ataque</button><button type="button" class="small" data-rolar-dano="${i}">Rolar dano</button></div></div>`;
+      </details><div class="atk-res" id="atk-res-${i}"><b>${resAtq(a)}</b></div><div class="row"><button type="button" class="small" data-rolar-atq="${i}">Rolar ataque</button><button type="button" class="small" data-rolar-dano="${i}">Rolar dano</button></div></article>`;
 
   /* magias */
   function blocoSlots() {
     const c = conj(), f = F(), us = f.slotsUsados || [], partes = [];
-    if (c.slots.length) partes.push(c.slots.map((tot, i) => { const g = Math.min(tot, num(us[i], 0)); return `<div class="res"><span><b>${i + 1}º círculo</b> <span class="muted">· restam ${tot - g} de ${tot}</span></span><span class="inline"><button type="button" class="small" data-slot="${i}" data-d="1" ${tot - g <= 0 ? "disabled" : ""}>Gastar</button><button type="button" class="small" data-slot="${i}" data-d="-1" ${g <= 0 ? "disabled" : ""}>Recuperar</button></span></div>`; }).join(""));
-    if (c.pact) { const g = Math.min(c.pact.qtd, num(f.pactoUsado, 0)); partes.push(`<div class="res"><span><b>Pacto</b> <span class="muted">· ${c.pact.qtd} espaço(s) de ${c.pact.nivel}º círculo · restam ${c.pact.qtd - g}</span></span><span class="inline"><button type="button" class="small" data-slot="p" data-d="1" ${c.pact.qtd - g <= 0 ? "disabled" : ""}>Gastar</button><button type="button" class="small" data-slot="p" data-d="-1" ${g <= 0 ? "disabled" : ""}>Recuperar</button></span></div>`); }
+    if (c.slots.length) partes.push(c.slots.map((tot, i) => { const g = Math.min(tot, num(us[i], 0)); return `<div class="res"><span><b>${i + 1}º círculo</b> ${C.espacos(tot,g)} <span class="muted">· restam ${tot - g} de ${tot}</span></span><span class="inline"><button type="button" class="small" data-slot="${i}" data-d="1" ${tot - g <= 0 ? "disabled" : ""}>Gastar</button><button type="button" class="small" data-slot="${i}" data-d="-1" ${g <= 0 ? "disabled" : ""}>Recuperar</button></span></div>`; }).join(""));
+    if (c.pact) { const g = Math.min(c.pact.qtd, num(f.pactoUsado, 0)); partes.push(`<div class="res"><span><b>Pacto</b> ${C.espacos(c.pact.qtd,g)} <span class="muted">· ${c.pact.qtd} espaço(s) de ${c.pact.nivel}º círculo · restam ${c.pact.qtd - g}</span></span><span class="inline"><button type="button" class="small" data-slot="p" data-d="1" ${c.pact.qtd - g <= 0 ? "disabled" : ""}>Gastar</button><button type="button" class="small" data-slot="p" data-d="-1" ${g <= 0 ? "disabled" : ""}>Recuperar</button></span></div>`); }
     const pb = bonusProf(), niv = (id) => (CLS().find((x) => x.c === id) || {}).n || 0;
     const info = c.habilidades.map((h) => { const m = modA(h.atr), prep = h.id === "Cleric" || h.id === "Druid" ? niv(h.id) + m : h.id === "Wizard" ? niv(h.id) + m : h.id === "Paladin" ? Math.floor(niv(h.id) / 2) + m : h.id === "Artificer" ? Math.floor(niv(h.id) / 2) + m : null; return `<div class="muted">${esc(h.classe)}: atributo ${R.ATR_NOME[h.atr]} · CD ${8 + pb + m} · ataque ${fm(pb + m)}${prep != null ? ` · preparar até ${Math.max(1, prep)} magias` : ""}</div>`; }).join("");
-    return info + (partes.join("") || '<span class="muted">Sem espaços de magia para esta combinação de classes.</span>');
+    return '<div class="conjuracao-info">'+info+'</div><h3 class="sub">Espaços de magia</h3>' + (partes.join("") || '<span class="muted">Sem espaços de magia para esta combinação de classes.</span>');
   }
-  const linhaMag = (m, i) => `<details class="item"><summary>${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${m.l===0?' <span class="badge">Truque</span>':m.semprePreparada?' <span class="badge">Sempre Preparada</span>':m.origem==='Raça'?' <span class="badge">Magia Racial</span>':R.preparacao(F()).some(x=>x.pertence(m))?(m.prep?' <span class="badge">Preparada</span>':' <span class="muted">Não Preparada</span>'):' <span class="badge">Conhecida</span>'}</summary><div>${m.cab ? `<div class="muted" style="margin-bottom:6px">${esc(m.cab)}</div>` : ""}<div class="pre">${esc(m.d || "")}</div><div class="row" style="margin:8px 0 0">${m.l > 0 && !m.semprePreparada && m.origem!=="Raça" && R.preparacao(F()).some(x=>x.pertence(m)) ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span><button type="button" class="small danger" data-rm-mag="${i}">Remover</button></div></div></details>`;
+  const linhaMag = (m, i) => `<details class="item"><summary>${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${m.l===0?' <span class="badge">Truque</span>':m.semprePreparada?' <span class="badge">Sempre Preparada</span>':m.origem==='Raça'?' <span class="badge">Magia Racial</span>':R.preparacao(F()).some(x=>x.pertence(m))?(m.prep?' <span class="badge">Preparada</span>':' <span class="muted">Não Preparada</span>'):' <span class="badge">Conhecida</span>'}</summary><div>${m.conc ? '<span class="badge">Concentração</span>' : ""}${m.ritual ? '<span class="badge">Ritual</span>' : ""}${m.cab ? `<div class="muted" style="margin-bottom:6px">${esc(m.cab)}</div>` : ""}<div class="pre">${esc(m.d || "")}</div><div class="row" style="margin:8px 0 0">${m.l > 0 && !m.semprePreparada && m.origem!=="Raça" && R.preparacao(F()).some(x=>x.pertence(m)) ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span><button type="button" class="small danger" data-rm-mag="${i}">Remover</button></div></div></details>`;
   function listaMagias() {
     const l = MAG().map((m, i) => ({ m, i })).sort((a, b) => a.m.l - b.m.l || a.m.n.localeCompare(b.m.n));
-    return l.length ? R.preparacao(F()).map(x=>`<p class="muted">${esc(x.nome)}: ${x.usadas} de ${x.limite} magias preparadas. Truques e magias sempre preparadas não contam nesse limite.</p>`).join("")+l.map((x) => linhaMag(x.m, x.i)).join("") : '<span class="muted">Nenhuma magia ainda.</span>';
+    return l.length ? R.preparacao(F()).map(x=>`<p class="muted">${esc(x.nome)}: ${x.usadas} de ${x.limite} magias preparadas. Truques e magias sempre preparadas não contam nesse limite.</p>`).join("")+l.map((x,i) => (i===0 || l[i-1].m.l!==x.m.l ? '<h3 class="circulo-titulo">'+(x.m.l?x.m.l+"º círculo":"Truques")+'</h3>':'')+linhaMag(x.m,x.i)).join("") : '<div class="estado-vazio"><strong>Seu repertório começa aqui</strong><p>Busque no catálogo abaixo para adicionar as magias conhecidas e preparar as disponíveis para sua classe.</p><button type="button" class="small" id="focar-catalogo-magias">Buscar uma magia</button></div>';
   }
 
   const fotoHTML = () => { const f = F().foto; return f && /^data:image\//.test(f) ? `<img class="av" style="width:72px;height:72px;margin:0" src="${esc(f)}" alt="Foto">` : `<span class="av av0" style="width:72px;height:72px;font-size:30px;margin:0">${esc((P.nome || "?").charAt(0).toUpperCase())}</span>`; };
@@ -263,7 +264,7 @@
     const f = F(), outro = souMestre && P.dono_id !== nuvem.usuario().id, rs = racaSel(), c = conj();
     const mostraMag = c.habilidades.length || MAG().length || f.magiaExtra || magiaRacial();
     $("#ficha").innerHTML = `
-      <header class="panel ficha-resumo"><div class="ficha-identidade">${fotoHTML()}<div><p class="eyebrow">Ficha de personagem · D&D 2014</p><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p class="ficha-meta"><span class="badge">Nível ${nivelTotal()}</span> Proficiência ${fm(bonusProf())} · ${esc(f.background||"Origem não definida")}</p></div></div><div class="ficha-destaques"><div><small>Classe de armadura</small><strong id="resumo-ca">${P.ca}</strong></div><div><small>Iniciativa</small><strong id="resumo-iniciativa">${fm(modA("des")+R.bonusSemProf(F()))}</strong></div><div><small>Deslocamento</small><strong id="resumo-deslocamento">${f.deslocamento ?? 9}<span class="unidade"> m</span></strong></div></div><div class="ficha-acoes"><div class="ficha-acoes-jogo"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de Nível</a><a class="btnlike" href="iniciativa.html?aba=iniciativa&campanha=${encodeURIComponent(P.campanha_id)}&personagem=${encodeURIComponent(id)}">Usar na Iniciativa</a></div><div class="ficha-acoes-gestao"><button type="button" id="editar-ficha">${editandoFicha?"Concluir Edição":"Editar Personagem"}</button><button type="button" class="danger" id="excluir-personagem">Excluir Personagem</button></div></div></header>
+      <header class="panel ficha-resumo"><div class="ficha-identidade">${fotoHTML()}<div><p class="eyebrow">Ficha de personagem · D&D 2014</p><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p class="ficha-meta"><span class="badge">Nível ${nivelTotal()}</span> Proficiência ${fm(bonusProf())} · ${esc(f.background||"Origem não definida")}</p></div></div><div class="ficha-destaques">${C.estatistica({rotulo:"CA",valor:P.ca,id:"resumo-ca"})}${C.estatistica({rotulo:"Iniciativa",valor:fm(modA("des")+R.bonusSemProf(F())),id:"resumo-iniciativa",tipo:"iniciativa"})}${C.estatistica({rotulo:"Desloc.",valor:String(f.deslocamento ?? 9).replace(".",",")+" m",id:"resumo-deslocamento",tipo:"deslocamento"})}</div><div class="ficha-acoes"><div class="ficha-acoes-jogo"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de Nível</a><a class="btnlike" href="iniciativa.html?aba=iniciativa&campanha=${encodeURIComponent(P.campanha_id)}&personagem=${encodeURIComponent(id)}">Usar na Iniciativa</a></div><div class="ficha-acoes-gestao"><button type="button" id="editar-ficha">${editandoFicha?"Concluir Edição":"Editar Personagem"}</button><button type="button" class="danger" id="excluir-personagem">Excluir Personagem</button></div></div></header>
       <div class="panel identidade-editor" style="${editandoFicha?"":"display:none"}">
         <div class="row" style="margin:0 0 8px;flex-wrap:nowrap;gap:12px"><span id="foto-box">${fotoHTML()}</span><div style="flex:1 1 auto;min-width:0">
           <input id="nome" data-col="nome" value="${esc(P.nome)}" maxlength="80" style="font-family:Georgia,serif;font-size:22px;height:46px;font-weight:700" aria-label="Nome">
@@ -279,26 +280,27 @@
         <div id="classes">${blocoClasses()}</div>
         <div class="row" style="margin:0"><button type="button" class="small" id="add-cls">${CLS().length ? "Adicionar classe (multiclasse)" : "Escolher classe"}</button></div>
       </div>
-      <div class="panel vida-ficha"><h2 class="panel-title">Pontos de vida</h2><div id="bloco-pv">${blocoPV()}</div><details class="vida-descanso"><summary>Dados de vida e descanso</summary><div id="bloco-dv">${blocoDV()}</div>
+      <div class="panel vida-ficha"><div id="bloco-pv">${blocoPV()}</div><details class="vida-descanso"><summary>Dados de vida e descanso</summary><div id="bloco-dv">${blocoDV()}</div>
         <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-curto">Registrar Descanso Curto</button><button type="button" class="small" id="b-longo">Descanso Longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></details></div>
-<nav class="ficha-abas" aria-label="Seções da ficha" role="tablist"><button type="button" role="tab" id="aba-principal" aria-controls="secao-principal" data-ficha-aba="principal">Principal</button><button type="button" role="tab" id="aba-combate" aria-controls="secao-combate" data-ficha-aba="combate">Combate</button><button type="button" role="tab" id="aba-magias" aria-controls="secao-magias" data-ficha-aba="magias">Magias</button><button type="button" role="tab" id="aba-inventario" aria-controls="secao-inventario" data-ficha-aba="inventario">Inventário</button><button type="button" role="tab" id="aba-personagem" aria-controls="secao-personagem" data-ficha-aba="personagem">Personagem</button><button type="button" role="tab" id="aba-notas" aria-controls="secao-notas" data-ficha-aba="notas">Notas</button></nav><section id="secao-principal" role="tabpanel" aria-labelledby="aba-principal" data-ficha-secao="principal" class="ficha-conteudo" tabindex="0">      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2><p class="muted">${editandoFicha?"Editando os valores do personagem.":"Use Editar Personagem para alterar os atributos."}</p>${blocoAtr()}<div id="melhorias">${blocoMelhorias()}</div></div>
-      <div class="panel"><h2 class="panel-title">Salvaguardas</h2><div id="bloco-sal">${blocoSal()}</div></div>
+<nav class="ficha-abas" aria-label="Seções da ficha" role="tablist"><button type="button" role="tab" id="aba-principal" aria-controls="secao-principal" data-ficha-aba="principal">Principal</button><button type="button" role="tab" id="aba-combate" aria-controls="secao-combate" data-ficha-aba="combate">Combate</button><button type="button" role="tab" id="aba-magias" aria-controls="secao-magias" data-ficha-aba="magias">Magias</button><button type="button" role="tab" id="aba-inventario" aria-controls="secao-inventario" data-ficha-aba="inventario">Inventário</button><button type="button" role="tab" id="aba-personagem" aria-controls="secao-personagem" data-ficha-aba="personagem">Personagem</button><button type="button" role="tab" id="aba-notas" aria-controls="secao-notas" data-ficha-aba="notas">Notas</button></nav><section id="secao-principal" role="tabpanel" aria-labelledby="aba-principal" data-ficha-secao="principal" class="ficha-conteudo" tabindex="0">      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2>${blocoAtr()}</div>
+      <div class="panel"><h2 class="panel-title">Testes de resistência</h2><div id="bloco-sal">${blocoSal()}</div></div>
       <details class="panel pericias-ficha" open><summary class="panel-title">Perícias <span class="muted">Expandir / recolher</span></summary><div id="bloco-per">${blocoPer()}</div></details>
-      <div class="panel"><h2 class="panel-title">Proficiências e idiomas</h2><div id="bloco-prof">${blocoProf()}</div>
+      <div class="panel inspiracao-ficha"><label class="inline"><input type="checkbox" id="inspiracao" ${f.inspiracao?"checked":""}> Inspiração</label><span class="muted">Concedida pelo mestre · marque quando disponível.</span></div><details class="panel proficiencias-ficha"><summary class="panel-title">Proficiências e idiomas</summary><div id="bloco-prof">${blocoProf()}</div>
         <div class="sub">Idiomas</div><div id="idiomas" class="anexos">${IDI().map((x, i) => `<span class="chip">${esc(x)}<button type="button" class="chip-x" data-rm-idi="${i}" aria-label="Tirar">${window.ico ? window.ico("x") : "x"}</button></span>`).join("") || '<span class="muted">Nenhum ainda.</span>'}</div>
         <div class="row" style="margin:8px 0 0"><select id="idi-sel" style="flex:1 1 160px">${opt("", "Adicionar idioma…", true)}${R.IDIOMAS.filter((x) => !IDI().includes(x)).map((x) => opt(x, x)).join("")}</select><input id="idi-txt" style="flex:1 1 160px" maxlength="40" placeholder="Outro idioma"><button type="button" class="small" id="add-idi">Adicionar</button></div>
-        <div class="sub">Outras proficiências (ferramentas, veículos, jogos…)</div><textarea data-f="outrasProf" rows="2" style="width:100%">${esc(f.outrasProf || "")}</textarea></div>
+        <div class="sub">Outras proficiências (ferramentas, veículos, jogos…)</div><textarea data-f="outrasProf" rows="2" style="width:100%">${esc(f.outrasProf || "")}</textarea></details>
       </section><section id="secao-combate" role="tabpanel" aria-labelledby="aba-combate" data-ficha-secao="combate" class="ficha-conteudo" tabindex="0">      <div class="panel"><h2 class="panel-title">Classe de armadura</h2><div id="bloco-ca">${blocoCA()}</div>
         <div class="row" style="margin:8px 0 0"><div style="flex:1 1 200px"><label>Armadura</label><select id="eq-arm">${opt("", "Nenhuma", !EQ().armadura)}${R.ARMADURAS.map((a) => opt(a[0], `${a[1]} (${a[2]}, CA ${a[3]})`, EQ().armadura === a[0])).join("")}</select></div>
           <label class="inline" style="margin:18px 0 0"><input type="checkbox" style="width:auto;height:auto" id="eq-esc" ${EQ().escudo ? "checked" : ""}> Escudo (+2)</label>
           <div><label>Outros bônus</label><input class="num" type="number" id="eq-bonus" value="${num(EQ().bonus, 0)}" title="Armadura +1, anel de proteção, etc."></div>
           <label class="inline" style="margin:18px 0 0"><input type="checkbox" style="width:auto;height:auto" data-auto="caAuto" ${autoOn("caAuto") ? "checked" : ""}> CA automática</label></div>
         <div class="muted" id="aviso-arm"></div></div>
-<div class="panel"><h2 class="panel-title">Criação e evolução</h2><div class="row"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}">Criação guiada</a><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a></div></div><div class="panel"><h2 class="panel-title">Ataques</h2><div id="lista-atq">${ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'}</div>
+<div class="panel"><h2 class="panel-title">Ataques</h2><div id="lista-atq">${ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'}</div>
         <div class="row" style="margin:8px 0 0"><select id="atq-arma" style="flex:1 1 180px">${opt("", "Adicionar arma comum…", true)}${R.ARMAS.map((a, i) => opt(i, `${a[0]} (${a[1]} ${a[2]})`)).join("")}</select><button type="button" class="small" id="add-atq-arma">Adicionar arma</button><button type="button" class="small" id="add-atq">Personalizado</button></div></div>
+      <details class="panel recursos-combate"><summary class="panel-title">Recursos e habilidades</summary><div id="recursos-combate">${recursosCombate()}</div><p class="muted">Condições e duração dos efeitos são controladas por combatente no rastreador de iniciativa.</p></details>
       </section><section id="secao-magias" role="tabpanel" aria-labelledby="aba-magias" data-ficha-secao="magias" class="ficha-conteudo" tabindex="0">${mostraMag ? `<div class="panel" id="painel-mag"><h2 class="panel-title">Magias</h2><div id="bloco-slots">${blocoSlots()}</div>
         ${f.magiaExtra ? '<button type="button" class="small subtle" id="b-mag-fechar">Desativar fonte adicional</button>' : ""}<div class="sub">Magias conhecidas e preparadas</div><div id="lista-mag">${listaMagias()}</div>
-        <div class="sub">Adicionar do catálogo (SRD)</div><div class="row" style="margin:0 0 6px"><input id="mag-q" style="flex:1 1 200px" placeholder="Buscar: bola de fogo, curar…" autocomplete="off"><label class="inline" style="margin:0"><input type="checkbox" id="mag-cls" style="width:auto;height:auto" ${c.habilidades.length ? "checked" : ""}> Só da minha classe</label></div><div id="mag-res" class="catalogo-lista"></div></div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia.</span><details><summary>Conjuração por raça, talento ou item</summary><p class="muted">Essas fontes podem conceder magias sem espaços de classe.</p><button type="button" class="small" id="b-mag-abrir">Habilitar magias de outra fonte</button></details></div>`}
+        <div class="sub">Adicionar do catálogo (SRD)</div><div class="row" style="margin:0 0 6px"><input id="mag-q" style="flex:1 1 200px" placeholder="Buscar: bola de fogo, curar…" autocomplete="off"><label class="inline" style="margin:0"><input type="checkbox" id="mag-cls" style="width:auto;height:auto" ${c.habilidades.length ? "checked" : ""}> Só da minha classe</label></div><div class="filtros-magias"><label>Círculo<select id="mag-nivel">${opt("","Todos",true)}${Array.from({length:10},(_,i)=>opt(i,i?i+"º círculo":"Truques",false)).join("")}</select></label><label>Escola<select id="mag-escola">${opt("","Todas",true)}${["Abjuração","Conjuração","Adivinhação","Encantamento","Evocação","Ilusão","Necromancia","Transmutação"].map(x=>opt(x,x,false)).join("")}</select></label><label>Característica<select id="mag-extra">${opt("","Todas",true)}${opt("conc","Concentração",false)}${opt("ritual","Ritual",false)}</select></label></div><div id="mag-res" class="catalogo-lista"></div></div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia.</span><details><summary>Conjuração por raça, talento ou item</summary><p class="muted">Essas fontes podem conceder magias sem espaços de classe.</p><button type="button" class="small" id="b-mag-abrir">Habilitar magias de outra fonte</button></details></div>`}
       </section><section id="secao-inventario" role="tabpanel" aria-labelledby="aba-inventario" data-ficha-secao="inventario" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
         ${cabInv}<div id="inv">${INV().map(linhaInv).join("")}</div>
         <div class="row"><button type="button" class="small" id="add-item">Adicionar item</button><select id="eq-pre" style="flex:1 1 180px">${opt("", "Adicionar equipamento comum…", true)}${presets().map((p, i) => opt(i, `${p[0]} (${p[1]} kg)`)).join("")}</select><button type="button" class="small" id="add-pre">Adicionar</button></div>
@@ -306,7 +308,7 @@
         <div class="sub">Dinheiro</div>
         <div class="moedas">${MOEDAS.map(([k, r]) => `<div class="moeda-controle"><label>${r}</label><input class="num" type="number" min="0" step="1" data-din="${k}" value="${moeda(DIN()[k])}"><div class="inline"><button type="button" data-moeda="${k}" data-sinal="-1" aria-label="Diminuir ${r}">−</button><input class="num" type="number" min="1" step="1" id="ajuste-${k}" placeholder="1" aria-label="Quantidade de ${r}"><button type="button" data-moeda="${k}" data-sinal="1" aria-label="Somar ${r}">+</button></div></div>`).join("")}<div><label>Total em PO</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="total-po">${totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div></div>
       </div>
-      </section><section id="secao-personagem" role="tabpanel" aria-labelledby="aba-personagem" data-ficha-secao="personagem" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosDaFicha(f).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Esta raça não concede traços adicionais.</p>'}</div>
+      </section><section id="secao-personagem" role="tabpanel" aria-labelledby="aba-personagem" data-ficha-secao="personagem" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Criação e evolução</h2><div class="row"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}">Criação guiada</a><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a></div></div><details class="panel" ${editandoFicha?"open":""}><summary class="panel-title">Melhorias de atributos e talentos</summary><div id="melhorias">${blocoMelhorias()}</div></details><div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosDaFicha(f).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Esta raça não concede traços adicionais.</p>'}</div>
       ${f.backgroundCaracteristica?'<div class="panel"><h2 class="panel-title">Origem · '+esc(f.background||"")+'</h2><h3>'+esc(f.backgroundCaracteristica.nome)+'</h3><p class="descricao-regra">'+esc(f.backgroundCaracteristica.desc)+'</p></div>':""}
       <div class="panel"><h2 class="panel-title">Características de classe e outras habilidades</h2>
         <div id="lista-car">${CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>'}</div>
@@ -316,8 +318,10 @@
           <input id="car-nome" maxlength="80" placeholder="Nome" style="margin-bottom:6px"><textarea id="car-desc" rows="4" placeholder="O que ela faz" style="width:100%"></textarea>
           <div class="row" style="margin:6px 0 0"><button type="button" class="small primary" id="add-car">Adicionar</button></div></div></details>
       </div>
-      </section><section id="secao-notas" role="tabpanel" aria-labelledby="aba-notas" data-ficha-secao="notas" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Notas</h2><textarea data-f="notas" rows="6" style="width:100%" placeholder="Anotações do personagem">${esc(f.notas || "")}</textarea></div></section>`;
+      </section><section id="secao-notas" role="tabpanel" aria-labelledby="aba-notas" data-ficha-secao="notas" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Diário de aventuras</h2><p class="muted">História, objetivos, personalidade, aparência e aliados. Suas anotações permanecem reunidas neste diário.</p><textarea data-f="notas" rows="12" style="width:100%" placeholder="Anotações do personagem">${esc(f.notas || "")}</textarea></div></section>`;
     window.atualizarAbasFicha?.();
+    document.querySelector("#ficha").classList?.toggle("editando-ficha",editandoFicha);
+    for(const [id,chave] of [["mag-nivel","nivel"],["mag-escola","escola"],["mag-extra","tipo"]]){const el=$("#"+id);if(el)el.value=filtrosMagia[chave];}
     document.title = P.nome + " — Rastreador D&D"; profTxt(); avisoArm();
     document.querySelectorAll(".atributos-ficha input,.atributos-ficha select").forEach(el=>{el.disabled=!editandoFicha;});
   }
@@ -334,7 +338,7 @@
   }
   function atualizarPV() {
     $("#bloco-pv .big").innerHTML = `${P.pv_atual}<span class="muted" style="font-size:18px"> / ${P.pv_max}</span>`;
-    $("#pv-temp-txt").innerHTML = P.pv_temp ? `+${P.pv_temp} PV temporários` : "&nbsp;";
+    $("#pv-temp-txt").innerHTML = P.pv_temp ? `+${P.pv_temp} PV temporários` : "PV temporários: 0";
     const trilho = $("#bloco-pv .hp-track"); trilho?.setAttribute("aria-valuemax", P.pv_max); trilho?.setAttribute("aria-valuenow", P.pv_atual);
     const b = $("#pv-barra"); b.style.width = pctPV() + "%"; b.className = "hp-fill " + (pctPV() <= 25 ? "low" : pctPV() <= 50 ? "mid" : "");
     const m = $('#bloco-pv [data-col="pv_max"]'); if (m && document.activeElement !== m) m.value = P.pv_max;
@@ -346,7 +350,7 @@
     ATR.forEach(([k])=>{const campo=document.querySelector('[data-atr="'+k+'"]');if(campo&&document.activeElement!==campo)campo.value=num(A()[k],10);const m=$("#mod-"+k);if(m)m.textContent=fm(modA(k));});
     $("#bloco-ca").innerHTML = blocoCA(); $("#bloco-sal").innerHTML = blocoSal(); $("#bloco-per").innerHTML = blocoPer(); $("#bloco-dv").innerHTML = blocoDV(); $("#bloco-prof").innerHTML = blocoProf();
     const bm=$("#melhorias");if(bm)bm.innerHTML=blocoMelhorias();
-    const lc=$("#lista-car");if(lc)lc.innerHTML=CAR().map(itemCar).join("");
+    const lc=$("#lista-car");if(lc)lc.innerHTML=CAR().map(itemCar).join("");atualizarRecursos();
     const nt = $("#nivel-total"); if (nt) nt.textContent = nivelTotal() || "—";
     const bs = $("#bloco-slots"); if (bs) bs.innerHTML = blocoSlots();
     ATQ().forEach((a, i) => { const e = $("#atk-res-" + i); if (e) e.innerHTML = `<b>${resAtq(a)}</b>`; });
@@ -420,17 +424,21 @@
       R.aplicarRaca(f,antes); refrescar(); desenhar(); agendar({ ficha: P.ficha }); return;
     }
     if (t.dataset.prep) { const magia=MAG()[+t.dataset.prep],limites=R.preparacao(F()).filter(x=>x.pertence(magia)),disponivel=limites.find(x=>x.usadas<x.limite);if(t.checked&&!magia.prep&&!disponivel){t.checked=false;aviso("Limite de magias preparadas atingido. Desmarque uma magia antes de preparar outra.",true);return;}if(disponivel)magia.classePreparacao=disponivel.id; magia.prep = t.checked; $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
+    if(["mag-nivel","mag-escola","mag-extra"].includes(t.id)){filtrosMagia[{"mag-nivel":"nivel","mag-escola":"escola","mag-extra":"tipo"}[t.id]]=t.value;return buscarMagias();}
+    if(t.id==="inspiracao"){F().inspiracao=t.checked;agendar({ficha:P.ficha});return;}
     if (t.id === "mag-cls") return buscarMagias();
     if (t.id === "in-foto" && t.files[0]) { trocarFoto(t.files[0]); t.value = ""; }
   });
 
   document.addEventListener("click", async (e) => {
     const t = e.target, c = (s) => t.closest(s); if (!P) return;
+    if(c("#focar-catalogo-magias")){ $("#mag-q").focus();buscarMagias();return;}
     let b;
-    if((b=c('[data-rolar-atr],[data-rolar-per],[data-rolar-atq],[data-rolar-dano]'))){
+    if((b=c('[data-rolar-atr],[data-rolar-sal],[data-rolar-per],[data-rolar-atq],[data-rolar-dano]'))){
       try {
         let expressao='1d20', bonus=0, nome='Teste';
         if(b.dataset.rolarAtr){nome=R.ATR_NOME[b.dataset.rolarAtr];bonus=modA(b.dataset.rolarAtr);}
+        if(b.dataset.rolarSal){const k=b.dataset.rolarSal;nome="Salvaguarda de "+R.ATR_NOME[k];bonus=modA(k)+(salvaProf().includes(k)?bonusProf():0);}
         if(b.dataset.rolarPer){const k=b.dataset.rolarPer;nome=R.PERICIAS.find(p=>p[0]===k)?.[1]||k;bonus=R.valorPericia(F(),k);}
         if(b.dataset.rolarAtq!==undefined || b.dataset.rolarDano!==undefined){
           const dano=b.dataset.rolarDano!==undefined,a=ATQ()[+(dano?b.dataset.rolarDano:b.dataset.rolarAtq)],v=R.valoresAtaque(F(),a);
@@ -475,12 +483,12 @@
     if (c("#add-atq-arma")) { const v = $("#atq-arma").value; if (v === "") return; const a = R.ARMAS[+v]; ATQ().push({ nome: a[0], atr: a[3], dado: a[1], tipo: a[2], magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); $("#atq-arma").value = ""; agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-atq]"))) { ATQ().splice(+b.dataset.rmAtq, 1); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'; agendar({ ficha: P.ficha }); return; }
     if (c("#b-mag-abrir")) { abrirMagias(); return; }
-    if ((b = c("[data-mag]"))) { const m = achadosM[+b.dataset.mag]; if (m && !MAG().some((x) => x.en === m.en)) { MAG().push({ n: m.n, en: m.en, l: m.l, cab: m.cab, d: m.d, prep: m.l === 0 }); $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); } $("#mag-q").value = ""; $("#mag-res").innerHTML = ""; return; }
+    if ((b = c("[data-mag]"))) { const m = achadosM[+b.dataset.mag]; if (m && !MAG().some((x) => x.en === m.en)) { MAG().push({ n: m.n, en: m.en, l: m.l, cab: m.cab, d: m.d, conc:!!m.conc, ritual:!!m.ritual, prep: m.l === 0 }); $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); } $("#mag-q").value = ""; $("#mag-res").innerHTML = ""; return; }
     if ((b = c("[data-rm-mag]"))) { const i = +b.dataset.rmMag; if (!confirm(`Remover “${MAG()[i].n}”?`)) return; MAG().splice(i, 1); $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
     if (c("#add-item")) { INV().push({ nome: "", qtd: 1, peso: 0 }); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector("input").focus(); agendar({ inventario: P.inventario }); return; }
     if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; INV().push({ nome: p[0], qtd: 1, peso: p[1] }); $("#inv").innerHTML = INV().map(linhaInv).join(""); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
     if ((b = c("[data-rm-item]"))) { INV().splice(+b.dataset.rmItem, 1); $("#inv").innerHTML = INV().map(linhaInv).join(""); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
-    if ((b = c("[data-rm-car]"))) { const i = +b.dataset.rmCar; if(CAR()[i].auto)return; if (!confirm(`Remover “${CAR()[i].nome}” da ficha?`)) return; CAR().splice(i, 1); $("#lista-car").innerHTML = CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>'; agendar({ ficha: P.ficha }); return; }
+    if ((b = c("[data-rm-car]"))) { const i = +b.dataset.rmCar; if(CAR()[i].auto)return; if (!confirm(`Remover “${CAR()[i].nome}” da ficha?`)) return; CAR().splice(i, 1); $("#lista-car").innerHTML = CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>';atualizarRecursos(); agendar({ ficha: P.ficha }); return; }
     if (c("#add-car")) { const nome = $("#car-nome").value.trim(); if (!nome) return; adicionarCar({ nome, desc: $("#car-desc").value }); $("#car-nome").value = ""; $("#car-desc").value = ""; return; }
     if ((b = c("[data-cat]"))) { const r = (catalogo || {}).achados[+b.dataset.cat]; if (r) { adicionarCar({ nome: r.titulo, desc: r.desc, cf: r.chave }); $("#cat-q").value = ""; $("#cat-res").innerHTML = ""; } return; }
   });
@@ -491,7 +499,7 @@
   function adicionarCar(c) {
     if (CAR().some((x) => x.nome === c.nome)) { aviso(`Você já tem “${c.nome}”.`, true); return; }
     aviso(""); CAR().push(c);
-    $("#lista-car").innerHTML = CAR().map(itemCar).join("");
+    $("#lista-car").innerHTML = CAR().map(itemCar).join("");atualizarRecursos();
     agendar({ ficha: P.ficha });
   }
 
@@ -512,7 +520,7 @@
     }
     if(!document.contains(box))return;
     const meus = CLS().map((c) => c.c), so = $("#mag-cls") && $("#mag-cls").checked && meus.length, ws = q.split(/\s+/);
-    achadosM = magiasCat.filter((m) => ws.every((w) => nz(m.n + " " + m.en).includes(w)) && (!so || m.c.some((x) => meus.includes(x)))).sort((a,b)=>a.l-b.l||a.n.localeCompare(b.n,"pt-BR"));
+    achadosM = magiasCat.filter((m) => ws.every((w) => nz(m.n + " " + m.en).includes(w)) && (!so || m.c.some((x) => meus.includes(x))) && (filtrosMagia.nivel==="" || +filtrosMagia.nivel===m.l) && (!filtrosMagia.escola || (m.cab||"").startsWith(filtrosMagia.escola)) && (!filtrosMagia.tipo || (filtrosMagia.tipo==="conc" ? m.conc : m.ritual || /ritual/i.test(m.cab||"")))).sort((a,b)=>a.l-b.l||a.n.localeCompare(b.n,"pt-BR"));
     box.innerHTML = achadosM.length ? achadosM.map((m, i) => `<div class="res" data-mag="${i}" style="cursor:pointer"><span><b>${esc(m.n)}</b> <span class="muted">· ${m.l === 0 ? "truque" : m.l + "º círculo"} · ${esc(m.c.map((x) => CLASSES[x] || x).join(", "))}</span></span><span class="small">Adicionar</span></div>`).join("") : '<span class="muted">Nada encontrado.</span>';
   }
   async function buscarCatalogo(q) {
