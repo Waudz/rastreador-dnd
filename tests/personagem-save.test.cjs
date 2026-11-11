@@ -7,7 +7,7 @@ async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={}}={}){
   Object.assign(p.ficha,fichaInicial);
   const nuvem={usuario:()=>({id:"u"}),esc:s=>String(s??""),retornoDoLink:async()=>{},observar(){},rpc:async()=>mestre,patch,get:async q=>q.startsWith("personagens")?[p]:q.startsWith("campanhas")?[{id:"c",nome:"Campanha"}]:q.startsWith("membros")?[{papel:"mestre"}]:[{id:"u",nome:"Pessoa"}]};
   const c=vm.createContext({window:{addEventListener(){}},document,nuvem,location:{search},URLSearchParams,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
-  executar("js/ficha-componentes.js",c);executar("js/regras.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
+  executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
   const nome=v=>eventos.input.forEach(fn=>fn({target:{dataset:{col:"nome"},value:v}}));
   const salvar=async()=>{const a=[...timers.values()];timers.clear();for(const fn of a)await fn();};
   return {document,nome,salvar,timers,p,eventos};
@@ -51,4 +51,11 @@ test("gravações são serializadas e a alteração mais recente é enviada em s
   const f=await ficha(async(_q,d)=>{chamadas.push(d);if(chamadas.length===1)return new Promise(ok=>terminar=()=>ok([{versao:2}]));return[{versao:3}];});
   f.nome("Primeira");const primeira=f.salvar();await tick();f.nome("Segunda");await f.salvar();assert.equal(chamadas.length,1);
   terminar();await primeira;await f.salvar();assert.equal(chamadas.length,2);assert.equal(chamadas[0].nome,"Primeira");assert.equal(chamadas[1].nome,"Segunda");
+});
+
+test('pacto usa as ações existentes e mantém o repertório ao gastar e recuperar',async()=>{
+ const f=await ficha(async()=>[{versao:2}],{fichaInicial:{classes:[{c:'Warlock',n:3}],magias:[{n:'Bruxaria',l:1,d:'Texto preservado'}]}});
+ assert.match(f.document.el('ficha').innerHTML,/magia-slot-acoes/);
+ for(const d of ['1','-1']){for(const fn of f.eventos.click)await fn({target:{closest:s=>s==='[data-slot]'?{dataset:{slot:'p',d}}:null}});assert.equal(f.p.ficha.pactoUsado,d==='1'?1:0);}
+ assert.equal(f.p.ficha.magias[0].d,'Texto preservado');
 });

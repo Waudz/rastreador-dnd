@@ -1,0 +1,82 @@
+/* Estilos limitados aos componentes de magia, sem mudar os demais .res ou botões. */
+.magia-slots { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:10px; margin:10px 0 18px; min-width:0; }
+.magia-slot { display:grid; grid-template-rows:auto auto auto; gap:11px; padding:13px; min-width:0; max-width:100%; border:1px solid var(--line); border-radius:11px; background:#10182050; text-align:left; }
+.magia-slot-cabecalho { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:8px; min-width:0; }
+.magia-slot-cabecalho h4 { font-size:13px; margin:0; color:var(--text); line-height:1.5; white-space:nowrap; }
+.magia-slot-cabecalho small { display:block; font-size:10px; color:var(--muted); line-height:1.5; }
+.magia-slot-quantidade { font-size:11px; line-height:1.7; color:var(--muted); white-space:nowrap; }
+.magia-slot-indicadores { min-height:18px; display:flex; align-items:center; }
+.magia-slot .espacos-magia { display:flex; flex-wrap:wrap; gap:7px; margin:0; }
+.magia-slot .espaco { width:13px; height:13px; }
+.magia-slot-acoes { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; min-width:0; }
+.magia-slot-acoes button { width:100%; min-width:0; max-width:100%; min-height:38px; padding:7px 8px; font-size:12px; line-height:1.4; white-space:nowrap; word-break:normal; overflow-wrap:normal; margin:0; }
+.magia-slot-acoes button:first-child:not(:disabled) { border-color:#D4AE7266; color:var(--gold); }
+.magia-slot-acoes button:disabled { opacity:.42; }
+.magia-conjuradores { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:10px; margin:0 0 16px; }
+.magia-conjurador { background:#10182050; border:1px solid var(--line); border-top:2px solid var(--gold); padding:12px; border-radius:10px; min-width:0; }
+.magia-conjurador > h3 { font:650 14px/1.5 ui-sans-serif,system-ui,sans-serif; color:var(--gold); margin:0 0 10px; }
+.magia-propriedades { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:0; min-width:0; }
+.magia-propriedades > div { min-width:0; }
+.magia-propriedades dt { color:var(--muted); font-size:10px; line-height:1.5; margin:0 0 3px; }
+.magia-propriedades dd { color:var(--text); font-size:13px; font-weight:550; line-height:1.6; margin:0; overflow-wrap:anywhere; }
+.magia-conjurador .magia-propriedades dd { font-size:15px; font-variant-numeric:tabular-nums; }
+.magia-conjurador .magia-propriedades > div:first-child dd { font-size:13px; }
+.magia-secao-titulo { color:var(--muted); font-size:11px; font-weight:650; letter-spacing:.04em; margin:18px 0 10px; }
+.catalogo-magias { container-type:inline-size; }
+.catalogo-magias #spinfo { font-size:12px; margin:0 0 14px; }
+.catalogo-magias .clearable { margin-bottom:10px; }
+.catalogo-magias #sq { min-height:46px; padding:10px 42px 10px 14px; font-size:14px; border-radius:10px; background:#15212C; }
+.catalogo-magias .magias-busca-controles { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.catalogo-magias #sf-type { flex:1 1 180px!important; min-width:0; width:auto; font-size:12px; }
+.catalogo-magias #sf-more { min-height:40px; white-space:nowrap; }
+.catalogo-magias .magias-filtros { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:12px; margin-bottom:10px; background:#10182050; border:1px solid var(--line); border-radius:10px; }
+.catalogo-magias .magias-filtros select { flex:none!important; min-width:0; width:100%; font-size:12px; }
+.magias-resultados-status { font-size:11px; color:var(--muted); margin:10px 0; min-height:18px; }
+#spells.magias-resultados { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:10px; min-width:0; }
+.magia-resultado { display:flex; flex-direction:column; gap:8px; width:100%; min-width:0; padding:14px; border:1px solid var(--line); border-radius:11px; background:var(--panel); text-align:left; color:var(--text); font-weight:400; cursor:pointer; margin:0; box-shadow:none; }
+.magia-resultado:hover { border-color:var(--gold); background:#2B3C4B; transform:none; }
+.magia-resultado-topo { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; min-width:0; width:100%; }
+.magia-resultado-nome { min-width:0; }
+.magia-resultado-nome strong { display:block; font-size:15px; line-height:1.45; color:var(--text); overflow-wrap:anywhere; }
+.magia-resultado-nome > small { display:block; font-size:10px; color:var(--muted); margin-top:3px; line-height:1.5; }
+.magia-circulo { display:inline-flex; align-items:center; width:fit-content; max-width:100%; border:1px solid #D4AE7240; border-radius:99px; background:#D4AE7212; color:var(--gold); padding:3px 8px; font-size:10px; font-weight:600; line-height:1.5; white-space:nowrap; flex-shrink:0; }
+.magia-resultado-escola { color:var(--muted); font-size:11px; line-height:1.5; }
+.magia-resultado-propriedades { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; width:100%; padding-top:8px; border-top:1px solid #34445380; }
+.magia-resultado-propriedades > span { font-size:12px; line-height:1.5; color:var(--text); overflow-wrap:anywhere; min-width:0; }
+.magia-resultado-propriedades small { display:block; color:var(--muted); font-size:10px; margin-bottom:2px; }
+.magia-selos { display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-width:0; }
+.magia-selos:empty { display:none; }
+.magia-selo, .magia-escola { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:6px; padding:2px 7px; color:var(--muted); font-size:10px; line-height:1.6; font-weight:450; }
+.magia-selo-concentracao { color:#A8C8E5; border-color:#83A8D84D; background:#83A8D80D; }
+.magia-resultado-alias { font-size:10px; color:var(--muted); line-height:1.5; }
+.magia-resultado-abrir { display:flex; justify-content:space-between; color:var(--gold); font-size:11px; margin-top:auto; padding-top:4px; width:100%; }
+.magia-resultado-abrir span { font-size:16px; line-height:1; }
+.magia-detalhe { min-width:0; container-type:inline-size; }
+.magia-detalhe-cabecalho { margin:0 0 16px; padding-bottom:14px; border-bottom:1px solid var(--line); }
+#spd .magia-detalhe-cabecalho h3 { font:700 clamp(22px,6cqi,28px)/1.2 ui-sans-serif,system-ui,sans-serif; letter-spacing:-.025em; margin:0 0 6px; color:var(--text); overflow-wrap:anywhere; }
+.magia-detalhe-cabecalho .eyebrow { font-size:9px; letter-spacing:.12em; margin-bottom:7px; }
+.magia-nome-original { color:var(--muted); font-size:11px; margin:0 0 12px; line-height:1.5; }
+.magia-detalhe > .magia-propriedades { padding:13px; background:var(--panel); border:1px solid var(--line); border-radius:10px; gap:13px; }
+.magia-texto { font-size:13px; line-height:1.85; color:var(--text); min-width:0; overflow-wrap:anywhere; }
+.magia-texto h4 { color:var(--gold); font-size:12px; font-weight:650; margin:20px 0 9px; }
+.magia-texto p { white-space:pre-line; margin:0 0 13px; }
+.magia-texto p:last-child { margin-bottom:0; }
+.magia-materiais { color:var(--muted); font-size:12px; }
+.magia-nota { margin:15px 0; padding:10px 12px; border-left:2px solid var(--gold); background:#D4AE720A; border-radius:0 8px 8px 0; color:var(--muted); font-size:11px; line-height:1.7; }
+.magia-original { border-top:1px solid var(--line); margin-top:18px; padding-top:6px; }
+.magia-original > summary { padding:8px 0; color:var(--muted); font-size:12px; min-height:36px; }
+.magia-original .magia-texto { color:var(--muted); font-size:12px; }
+.magia-fonte { font-size:10px; color:var(--muted); padding-top:14px; margin-top:18px; border-top:1px solid var(--line); line-height:1.6; }
+.magia-vazio { grid-column:1/-1; padding:18px; border:1px dashed var(--line); border-radius:10px; background:#10182040; color:var(--muted); font-size:12px; line-height:1.7; }
+.magia-vazio strong { display:block; color:var(--text); font-size:14px; margin-bottom:5px; }
+.magia-vazio p { margin:0; max-width:65ch; }
+.magia-conhecida > summary { line-height:1.7; }
+.magia-conhecida .magia-propriedades { margin:10px 0 15px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+@container (max-width:480px) {
+  .catalogo-magias .magias-filtros { grid-template-columns:1fr; }
+}
+@media(pointer:coarse) {
+  .magia-slot-acoes button { min-height:44px; }
+}
+
+.catalogo-magias .magias-filtros[hidden] { display:none; }

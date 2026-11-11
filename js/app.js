@@ -281,9 +281,7 @@
         .filter((s) => { const k = kOf(s); return nz(s.name + " " + (D.S[k]?.[0] || "") + " " + (LDJ.alias[k] || "")).includes(q); }).slice(0, 30);
       box.innerHTML = r.map((s) => {
         const k = kOf(s), d = D.S[k], pm = LDJ.meta[k];
-        const al = LDJ.alias[k] && d && nz(LDJ.alias[k]) !== nz(d[0]) ? ` · no LDJ: ${esc(LDJ.alias[k])}` : "";
-        const info = [s.level == null ? "" : s.level ? s.level + "º círculo" : "Truque", SCH[s.school?.name] || pm?.escola || "", srcOf(s)].filter(Boolean).join(" · ");
-        return `<div class="res" data-spopen="${esc(s.key)}"><span><b>${esc(d ? d[0] : s.name)}</b>${d && d[0] !== s.name ? ` <span class="muted">(${esc(s.name)})</span>` : ""}<br><span class="muted">${info}${al}</span></span></div>`;
+        return window.MAGIAS_UI.resultado({chave:s.key,nome:d?d[0]:s.name,original:s.name,nivel:s.level,escola:SCH[s.school?.name]||pm?.escola,tempo:s.casting_time?cap(tr(s.casting_time)):pm?.tempo,alcance:s.range_text?tr(s.range_text):pm?.alcance,ritual:s.ritual||pm?.ritual,concentracao:s.concentration,fonte:srcOf(s),alias:LDJ.alias[k]&&d&&nz(LDJ.alias[k])!==nz(d[0])?LDJ.alias[k]:''});
       }).join("") + (soMagia || (tipo && tipo !== "monster") ? "" : abilityRows(q, src)) + (soMagia || (tipo && tipo !== "class") ? "" : classRows(q, src)) || '<span class="muted">Nada encontrado.</span>';
     }
     function abilityRows(q, src = "") {
@@ -353,10 +351,7 @@
       const meta = rec ? [["Círculo", rec.level ? rec.level + "º círculo" : "Truque"], ["Escola", SCH[rec.school?.name] || rec.school?.name], ["Tempo de conjuração", cap(tr(rec.casting_time || ""))], ["Alcance", tr(rec.range_text || "")], ["Componentes", [rec.verbal && "V", rec.somatic && "S", rec.material && "M"].filter(Boolean).join(", ")], ["Duração", cap(tr(rec.duration || "")) + (rec.concentration ? " (concentração)" : "")], ["Ritual", rec.ritual ? "Sim" : ""], ["Fonte", srcOf(rec)]] : pm ? [["Círculo", pm.nivel ? pm.nivel + "º círculo" : "Truque"], ["Escola", pm.escola], ["Tempo de conjuração", pm.tempo], ["Alcance", pm.alcance], ["Componentes", pm.comp], ["Duração", pm.dur], ["Ritual", pm.ritual ? "Sim" : ""], ["Fonte", "Livro do Jogador (tradução pessoal)"]] : [];
       const mat = d?.[2] || rec?.material_specified || "", en = rec ? (rec.desc || "") + (rec.higher_level ? "\n\n" + rec.higher_level : "") : "";
       const other = d && rec && rec.document?.key !== "srd-2014";
-      $("#spd-body").innerHTML = `<h3>${esc(d ? d[0] : rec.name)}</h3><div class="muted">${esc(rec ? rec.name : d[3])}</div>
-        <div class="sp-meta">${meta.filter(([, v]) => v).map(([k, v]) => `<div><b>${k}:</b> ${esc(v)}</div>`).join("")}</div>
-        ${other ? '<div class="sp-note">Texto em português do SRD 5.1 (2014). A versão desta fonte pode ter diferenças; o original está no final.</div>' : ""}
-        <div class="sp-body">${esc(d ? d[1] : en)}</div>${mat ? `<div class="sp-body"><b>Materiais:</b> ${esc(mat)}</div>` : ""}${other && en ? `<div class="orig">Original: ${esc(en)}</div>` : ""}`;
+      $("#spd-body").innerHTML = window.MAGIAS_UI.detalhes({nome:d?d[0]:rec.name,original:rec?rec.name:d[3],meta,descricao:d?d[1]:en,materiais:mat,nota:other?'Texto em português do SRD 5.1 (2014). A versão desta fonte pode ter diferenças; o original está no final.':'',originalTexto:other&&en?en:'',concentracao:!!rec?.concentration});
       window.PAINEL.empilhar("spd");
     }
 

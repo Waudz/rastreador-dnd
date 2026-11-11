@@ -14,7 +14,9 @@
   <link rel="stylesheet" href="css/estilo.css">
   <link rel="stylesheet" href="css/identidade.css">
   <link rel="stylesheet" href="css/fichas.css">
+  <link rel="stylesheet" href="css/magias.css">
   <script src="js/ficha-componentes.js" defer></script>
+  <script src="js/magias-ui.js" defer></script>
   <script src="js/icones.js" defer></script>
   <script src="js/config-nuvem.js" defer></script>
   <script src="js/nuvem.js" defer></script>
@@ -164,20 +166,20 @@
       <button type="button" id="cm-cancel" hidden>Cancelar edição</button> <span class="muted" id="cm-msg"></span>
     </details>
 
-    <section class="panel">
+    <section class="panel catalogo-magias">
       <h2 class="panel-title"><i data-i="sparkles"></i>Consultar magias e habilidades</h2>
       <p class="muted" id="spinfo"></p>
       <div class="clearable"><input id="sq" placeholder="Magia ou habilidade de monstro (português ou inglês)" autocomplete="off"><button type="button" class="xbtn" id="sq-x" hidden aria-label="Limpar pesquisa" title="Limpar pesquisa"><i data-i="x"></i></button></div>
-      <div class="row" style="margin-bottom:8px">
+      <div class="row magias-busca-controles" style="margin-bottom:8px">
         <select id="sf-type" style="flex:1 1 200px" aria-label="Tipo"><option value="">Tudo</option><option value="spell">Só magias</option><option value="class">Só habilidades de classe</option><option value="monster">Só habilidades de monstro</option></select>
         <button type="button" class="small" id="sf-more" aria-expanded="false" aria-controls="sf-adv"><i data-i="filter"></i>Filtros</button>
       </div>
-      <div class="row" id="sf-adv" style="margin-bottom:8px" hidden>
+      <div class="row magias-filtros" id="sf-adv" style="margin-bottom:8px" hidden>
         <select id="sf-lvl" style="flex:1 1 120px" aria-label="Círculo"><option value="">Qualquer círculo</option><option value="0">Truques</option><option value="1">1º círculo</option><option value="2">2º círculo</option><option value="3">3º círculo</option><option value="4">4º círculo</option><option value="5">5º círculo</option><option value="6">6º círculo</option><option value="7">7º círculo</option><option value="8">8º círculo</option><option value="9">9º círculo</option></select>
         <select id="sf-sch" style="flex:1 1 130px" aria-label="Escola"><option value="">Qualquer escola</option><option>Abjuração</option><option>Adivinhação</option><option>Conjuração</option><option>Encantamento</option><option>Evocação</option><option>Ilusão</option><option>Necromancia</option><option>Transmutação</option></select>
         <select id="sf-ex" style="flex:1 1 130px" aria-label="Característica"><option value="">Ritual ou não</option><option value="ritual">Só rituais</option><option value="conc">Só concentração</option></select>
       </div>
-      <div id="spells"></div>
+      <div id="spells" class="magias-resultados"></div>
     </section>
 
 
