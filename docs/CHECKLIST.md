@@ -139,3 +139,19 @@ Esta verificação não equivale a teste em PWA instalado ou sessão autenticada
 - **Ficha:** "Ficha completa" (só na ficha embutida na iniciativa) e "Editar Personagem" ficam no topo, ao lado do indicador "Salvo", acima da foto. O botão do painel da iniciativa foi removido para não duplicar.
 - **Retratos:** todos usam `.av` (quadrado, cantos de 10 px, `object-fit: cover`); sem foto aparece a inicial. O avatar da conta (`.appavatar`) é a única exceção circular.
 - **Iniciativa:** iniciativa pendente aparece como campo tracejado com "d20" e "iniciativa pendente" no cartão; nenhum valor é sorteado automaticamente. Efeitos ficam numa área própria (`.fxbar`) abaixo do nome, sem selo sobre a foto. Em telas estreitas as estatísticas descem para uma linha abaixo do nome.
+
+## Identidade, ícones e PWA
+
+- **Causa da diferença web x PWA:** (1) o logotipo do cabeçalho usava `favicon-32.png`, um PNG RGB sem transparência (quadrado escuro com o d20), por isso aparecia a "área preta"; (2) só `index.html` e `iniciativa.html` tinham `manifest` e `apple-touch-icon`; (3) o service worker só era registrado por `conta.js` e `app.js`, então `campanha.html`, `personagem.html` etc. podiam vir do cache HTTP do navegador (GitHub Pages usa `max-age=600`), enquanto o app instalado (sempre controlado pelo SW, que revalida com `no-cache`) mostrava a versão nova; (4) um app instalado que fica aberto/em segundo plano continua com o DOM antigo até recarregar.
+- **O que mudou:** o registro do SW é único, em `js/navegacao.js` (todas as páginas), com `updateViaCache: 'none'`, verificação ao voltar para a aba e aviso "Nova versão disponível / Atualizar" (nunca recarrega sozinho, para não perder edição). Todas as páginas têm o mesmo bloco de manifest, favicons, apple-touch e `theme-color`.
+- **Ícones:** `icones/icone-512.png` é a arte original e não foi alterada. Para a interface: `icones/logo.png` (256) e `icones/logo-64.png`, PNG RGBA com fundo transparente. Para instalação: `icone-192/512.png` (propósito `any`, originais) e `icone-maskable-192/512.png` (d20 a ~62% sobre `#101820`, dentro da zona segura). Favicons e `apple-touch-icon.png` seguem os originais (arte opaca, mesma identidade).
+- **Transparência:** fundo e linhas internas do d20 têm a mesma cor, então não se apaga "preto". `ferramentas/gerar-icones.py` calcula o casco convexo da parte dourada e só o que fica fora dele vira transparente (alfa por cobertura, sem halo); as linhas internas e o "20" ficam intactos. Reexecutar o script regenera os arquivos.
+- **Cabeçalho:** logotipo 22 px ao lado do texto; avatar da conta 34 px circular; retratos de personagens seguem quadrados (`.av`). Cor de fundo do manifest igual à das páginas (`#101820`).
+- **Offline:** o pré-cache inclui logotipo, ícones, `apple-touch-icon`, `manifest.json` e `dados/magias.json`.
+- **Não validado aqui:** o navegador do ambiente de teste não registra service worker; instalação, atualização e modo offline precisam ser conferidos num celular real.
+
+## Controles da campanha
+
+- Três botões em grade de três colunas numa única linha (rótulos curtos abaixo de 480 px: "Nova campanha", "Entrar c/ código", "Ver campanhas"; completos acima disso). "Gerenciar grupo" saiu: o gerenciamento fica na aba Grupo.
+- Código de convite: um único controle (código + ícone de copiar) com confirmação "Copiado"; só o mestre o vê. "Trocar código" foi para a aba Grupo (só mestre), com a mesma confirmação e a mesma chamada ao servidor.
+- As abas da campanha cabem sem rolagem em 320 px.

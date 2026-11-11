@@ -31,8 +31,10 @@ summary { cursor: pointer; min-height: 40px; }
 .campanha-contexto { flex:0 1 440px; min-width:0; }
 .campanha-contexto > label { display:block; color:var(--muted); font-size:11px; }
 .campanha-contexto select { width:100%; margin-top:5px; }
-.campanha-contexto-acoes { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
-.campanha-contexto-acoes .btnlike, .campanha-contexto-acoes button { font-size:10px; min-height:32px; padding:5px 8px; }
+.campanha-contexto-acoes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin-top:7px; }
+.campanha-contexto-acoes .btnlike, .campanha-contexto-acoes button { display:flex; align-items:center; justify-content:center; min-width:0; font-size:10px; min-height:36px; padding:5px 4px; text-align:center; white-space:nowrap; text-decoration:none; }
+.campanha-contexto-acoes .rot-longo { display:none; }
+@media (min-width:480px) { .campanha-contexto-acoes .rot-curto { display:none; } .campanha-contexto-acoes .rot-longo { display:inline; } .campanha-contexto-acoes .btnlike { padding:5px 8px; } }
 .carregando { padding:18px; border:1px dashed var(--line); border-radius:12px; color:var(--muted); }
 .estado-vazio { grid-column:1/-1; }
 .biblioteca-filtros { display:grid; grid-template-columns:minmax(170px,2fr) minmax(120px,1fr) minmax(120px,1fr) auto; align-items:end; gap:10px; padding:14px 0; }
@@ -114,7 +116,7 @@ button.danger:hover { border-color:var(--red); background:#C74B4B25; }
   .biblioteca-filtros { gap:8px; }
   .biblioteca-filtros > button { grid-column:1/-1; }
   .biblioteca-identidade h3 { font-size:16px; }
-  .campanha-contexto-acoes .btnlike, .campanha-contexto-acoes button { min-height:40px; font-size:11px; }
+  .campanha-contexto-acoes .btnlike, .campanha-contexto-acoes button { min-height:40px; font-size:10.5px; }
   .combatant .hp-controls { gap:6px; }
   .combatant .hp-controls input { height:38px; font-size:13px; }
   .combatant .hp-controls button, .combatant .row-actions button { min-height:40px; }
@@ -134,13 +136,13 @@ button.danger:hover { border-color:var(--red); background:#C74B4B25; }
 @media (max-width:800px) { :root { --pad-corpo:14px; } }
 @media (max-width:560px) { :root { --pad-corpo:12px; } }
 .appheader { position:sticky; top:0; z-index:40; margin:calc(var(--pad-corpo) * -1) calc(var(--pad-corpo) * -1) 18px; padding:6px var(--pad-corpo) 0; background:var(--bg); border-bottom:1px solid var(--line); }
-.appheader-topo { display:flex; align-items:center; gap:10px; min-height:44px; max-width:1120px; margin:0 auto; }
+.appheader-topo { display:flex; align-items:center; gap:10px; min-height:40px; max-width:1120px; margin:0 auto; }
 .appmarca { display:inline-flex; align-items:center; gap:8px; min-width:0; color:var(--text); text-decoration:none; font-weight:800; font-size:15px; letter-spacing:-.02em; }
-.appmarca img { border-radius:6px; flex:0 0 auto; }
+.appmarca img { width:22px; height:22px; flex:0 0 auto; object-fit:contain; }
 .appmarca span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.appsino { flex:0 0 36px; height:36px; } /* espaço reservado para o sino de notificações */
-.appavatar { flex:0 0 auto; display:grid; place-items:center; width:38px; height:38px; border-radius:50%; background:var(--panel); border:1px solid var(--gold-dark); color:var(--gold); text-decoration:none; }
-.appavatar .ico { width:20px; height:20px; }
+.appsino { flex:0 0 34px; height:34px; } /* espaço reservado para o sino de notificações */
+.appavatar { flex:0 0 auto; display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--panel); border:1px solid var(--gold-dark); color:var(--gold); text-decoration:none; }
+.appavatar .ico { width:18px; height:18px; }
 .appavatar[aria-current="page"] { background:#D4AE7218; border-color:var(--gold); }
 .appnav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:2px; max-width:1120px; margin:0 auto; padding:2px 0 6px; }
 .appnav a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-width:0; min-height:48px; padding:4px 2px; border:1px solid transparent; border-radius:10px; color:var(--muted); font-size:10px; font-weight:700; line-height:1.15; text-decoration:none; }
@@ -162,3 +164,18 @@ button.danger:hover { border-color:var(--red); background:#C74B4B25; }
 /* "Dano causado por" nunca estoura a largura da tela (o select tem largura natural do maior texto) */
 .dmgby { max-width:100%; min-width:0; }
 .dmgby select { min-width:0; max-width:100%; text-overflow:ellipsis; }
+
+/* código de convite: um único controle clicável (código + ícone de copiar) */
+#conv { display:flex; align-items:center; flex-wrap:nowrap; gap:8px; margin:6px 0 10px; }
+#conv[hidden] { display:none; }
+.convite-rotulo { font-size:12px; white-space:nowrap; }
+.convite-cod { display:inline-flex; align-items:center; gap:8px; min-height:36px; padding:4px 10px; border:1px solid var(--gold-dark); border-radius:9px; background:var(--panel); color:var(--text); cursor:pointer; }
+.convite-cod:hover { border-color:var(--gold); }
+.convite-cod code { font:700 14px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:.08em; overflow-wrap:anywhere; }
+.convite-cod .convite-icone { display:inline-flex; color:var(--gold); }
+.convite-aviso { font-size:11px; color:#8BCEB2; white-space:nowrap; }
+.convite-aviso:empty { display:none; }
+
+.nova-versao { position:fixed; left:50%; bottom:14px; transform:translateX(-50%); z-index:90; display:flex; align-items:center; gap:10px; max-width:calc(100% - 24px); padding:8px 8px 8px 14px; border:1px solid var(--gold-dark); border-radius:12px; background:var(--panel); box-shadow:0 8px 24px #0008; font-size:13px; }
+/* abas da campanha: as quatro (inclusive Grupo) cabem sem rolagem em 320 px */
+@media (max-width:430px) { .tabs { gap:0; justify-content:space-between; } .tabs button { padding:8px 6px; font-size:11.5px; flex:1 1 auto; } }

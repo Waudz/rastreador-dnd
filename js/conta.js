@@ -144,7 +144,6 @@
     try { await nuvem.trocarSenha(s); $("#a-senha").value = ""; msg(m, "Senha trocada."); } catch (e) { msg(m, e.message, true); }
   };
 
-  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(()=>{});
 
 
   /* ---------- início ---------- */

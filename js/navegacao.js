@@ -6,11 +6,28 @@
  const rotaAtual=location.pathname.split('/').pop(),abaPedida=new URLSearchParams(location.search).get('aba'),abaAtual=abaPedida==='consulta'?'monstros':abaPedida;   // 'consulta' era o endereço antigo de Monstros e Magias
  const destinoAtual=rotaAtual==='iniciativa.html'?'iniciativa.html?aba='+(['monstros','magias'].includes(abaAtual)?abaAtual:'iniciativa'):'conta.html?aba='+(['personagem.html','criar-personagem.html'].includes(rotaAtual)?'personagens':rotaAtual==='campanha.html'?'campanhas':['conta','personagens'].includes(abaAtual)?abaAtual:'campanhas');
  const contaAtual=destinoAtual==='conta.html?aba=conta';
- nav.innerHTML='<div class="appheader-topo"><a class="appmarca" href="conta.html?aba=campanhas"><img src="icones/favicon-32.png" width="24" height="24" alt=""><span>Rastreador D&amp;D</span></a><span class="grow"></span><span class="appsino" aria-hidden="true"></span><a class="appavatar" href="conta.html?aba=conta" aria-label="Minha conta" title="Minha conta"'+(contaAtual?' aria-current="page"':'')+'>'+ic('user')+'</a></div><nav class="appnav" aria-label="Navegação principal">'+links.map(([url,nome,icone])=>`<a href="${url}"${url===destinoAtual?' aria-current="page"':''}>${ic(icone)}<span>${esc(nome)}</span></a>`).join('')+'</nav>';
+ nav.innerHTML='<div class="appheader-topo"><a class="appmarca" href="conta.html?aba=campanhas"><img src="icones/logo-64.png" width="22" height="22" alt=""><span>Rastreador D&amp;D</span></a><span class="grow"></span><span class="appsino" aria-hidden="true"></span><a class="appavatar" href="conta.html?aba=conta" aria-label="Minha conta" title="Minha conta"'+(contaAtual?' aria-current="page"':'')+'>'+ic('user')+'</a></div><nav class="appnav" aria-label="Navegação principal">'+links.map(([url,nome,icone])=>`<a href="${url}"${url===destinoAtual?' aria-current="page"':''}>${ic(icone)}<span>${esc(nome)}</span></a>`).join('')+'</nav>';
  document.body.prepend(nav);
  /* o cabeçalho é fixo: informa a altura para painéis e rolagens não ficarem por baixo dele */
  const medir=()=>{const h=nav.offsetHeight;if(h)document.documentElement.style.setProperty('--cab-h',h+'px');};
  medir();window.addEventListener?.('resize',medir);if(window.ResizeObserver&&nav.nodeType===1)new ResizeObserver(medir).observe(nav);
+ /* service worker: registrado aqui, uma vez, para todas as páginas (antes só conta e iniciativa registravam, então as outras páginas
+    podiam vir do cache HTTP do navegador, até 10 min velho). Avisa quando há versão nova, sem recarregar sozinho. */
+ if(typeof navigator!=='undefined'&&navigator.serviceWorker&&/^https?:$/.test(location.protocol)){
+  const sw=navigator.serviceWorker,tinhaControle=!!sw.controller;
+  sw.register('sw.js',{updateViaCache:'none'}).then(r=>{
+   const verificar=()=>r.update().catch(()=>{});
+   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')verificar();});
+   setInterval(verificar,30*60*1000);
+  }).catch(()=>{});
+  let avisado=false;
+  sw.addEventListener('controllerchange',()=>{
+   if(!tinhaControle||avisado)return;avisado=true;
+   const b=document.createElement('div');b.className='nova-versao';b.setAttribute('role','status');
+   b.innerHTML='<span>Nova versão disponível.</span><button type="button" class="small">Atualizar</button>';
+   b.querySelector('button').onclick=()=>location.reload();document.body.append(b);
+  });
+ }
  let admin=false;
  window.ACESSO={admin:()=>admin,pronto:null};
  ACESSO.pronto=(async()=>{

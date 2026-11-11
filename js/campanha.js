@@ -198,7 +198,8 @@
   }
 
   function abaMembros() {
-    return membros.map((m) => `<div class="res"><span><b>${esc(nomes[m.usuario_id] || "Jogador")}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></span>${m.papel !== "mestre" ? `<button type="button" class="small danger" data-remover="${esc(m.usuario_id)}">Remover</button>` : ""}</div>`).join("");
+    const convite = mestre() ? `<div class="panel convite-gestao"><h3 class="sub" style="margin-top:0">Código de convite</h3><p class="muted" style="margin:0 0 8px">Quem tem o código entra na campanha como jogador. Ao trocar, o código antigo deixa de valer para novos jogadores; quem já entrou continua no grupo.</p><button type="button" class="small" id="novo-cod">Trocar código</button></div>` : "";
+    return convite + membros.map((m) => `<div class="res"><span><b>${esc(nomes[m.usuario_id] || "Jogador")}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></span>${m.papel !== "mestre" ? `<button type="button" class="small danger" data-remover="${esc(m.usuario_id)}">Remover</button>` : ""}</div>`).join("");
   }
 
   async function desenhar() {
@@ -211,7 +212,7 @@
     const box = $("#conv"); box.hidden = false;
     try {
       const cod = await nuvem.rpc("codigo_da_campanha", { p_campanha: id });
-      box.innerHTML = `<span class="muted">Código de convite</span> <b id="codigo" style="letter-spacing:.12em">${esc(cod)}</b><button type="button" class="small" id="copiar-cod">Copiar</button><button type="button" class="small subtle" id="novo-cod">Trocar código</button>`;
+      box.innerHTML = `<span class="muted convite-rotulo">Código de convite:</span><button type="button" class="convite-cod" id="copiar-cod" title="Copiar código" aria-label="Copiar código de convite ${esc(cod)}"><code id="codigo">${esc(cod)}</code><span class="convite-icone">${window.ico ? window.ico("copy") : ""}</span></button><span id="convite-aviso" class="convite-aviso" role="status" aria-live="polite"></span>`;
     } catch (e) { box.hidden = true; }
   }
 
@@ -321,7 +322,13 @@
         if (!confirm(`Remover ${nomes[b.dataset.remover] || "este jogador"} da campanha?`)) return;
         await nuvem.apagar(`membros?campanha_id=eq.${encodeURIComponent(id)}&usuario_id=eq.${encodeURIComponent(b.dataset.remover)}`); return recarregar();
       }
-      if (c("#copiar-cod")) { const ok = await nuvem.copiar($("#codigo").textContent); $("#copiar-cod").textContent = ok ? "Copiado" : "Selecione e copie"; return; }
+      if (c("#copiar-cod")) {
+        const ok = await nuvem.copiar($("#codigo").textContent), ic = $("#copiar-cod .convite-icone"), av = $("#convite-aviso");
+        if (ic && window.ico) ic.innerHTML = window.ico(ok ? "check" : "copy");
+        if (av) av.textContent = ok ? "Copiado" : "Selecione e copie";
+        clearTimeout(window.__conviteTimer); window.__conviteTimer = setTimeout(() => { const i2 = $("#copiar-cod .convite-icone"), a2 = $("#convite-aviso"); if (i2 && window.ico) i2.innerHTML = window.ico("copy"); if (a2) a2.textContent = ""; }, 2200);
+        return;
+      }
       if (c("#novo-cod")) { if (!confirm("Gerar um novo código? O código antigo deixa de valer para novos jogadores.")) return; await nuvem.rpc("novo_codigo_da_campanha", { p_campanha: id }); return mostrarConvite(); }
     } catch (err) { aviso(err.message, true); }
   });
