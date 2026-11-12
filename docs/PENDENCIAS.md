@@ -54,6 +54,11 @@ Resolvidas nesta integração: auditoria das oito listas padrão contra as pági
 - 390 testes JS passaram e sete suítes SQL passaram localmente. Migrações/reaplicação e recuperação verificadas no PostgreSQL descartável; CI atualizado, ainda não rodado no GitHub. Nenhuma dependência adicionada ao aplicativo; CLI oficial utilizada apenas para gerar arquivo local. Temporários da CLI ignorados pelo Git.
 - Bloqueios para publicar: autorização para confirmar projeto/migrações/backup e executar o preflight real; revisão de concessões legadas pelo mestre; autorização e aplicação da migração; advisors e testes reais de papéis/Auth; autorização separada para push/deploy. PWA Android continua pendente. Não presumir dados legados aprovados nem configurações de produção verificadas.
 
+## Aguardando o William (banco): aba Grupo dos jogadores
+- Migração proposta, NÃO aplicada: `supabase/migrations/20261112210000_grupo_basico.sql` (funções `private.grupo_basico` e `public.grupo_basico`; só devolve foto, nome, jogador, PV e CA dos personagens com jogador vinculado, só para membros; fora NPCs e criaturas; nenhuma política muda). Sem ela a aba mostra "Não foi possível carregar o grupo agora".
+- Interface pronta: aba "Grupo" (só jogadores) em `js/campanha.js`; `personagem.html?id=..&grupo=<campanha>` abre a visão restrita (`visaoGrupo` em `js/personagem.js`) para quem não é dono nem mestre.
+- Feedback de jogador atendido: CD pronta nas características (Ki do Monge, Canalizar Divindade, Santuário Natural, Lançar no Inferno, manobras do Mestre de Batalha), com fórmula, e resumo "CDs das suas características" em Recursos e habilidades.
+
 ## Próxima tarefa
 Aguardar revisão e autorização do plano de publicação/segurança. Não aplicar SQL, acessar o Supabase real, fazer push ou deploy por conta própria.
 

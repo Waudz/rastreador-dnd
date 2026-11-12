@@ -4,7 +4,7 @@
   const $ = (s) => document.querySelector(s), esc = nuvem.esc;
   let id = new URLSearchParams(location.search).get("id");
   let geracaoCampanha=0;
-  let camp = null, papel = "", membros = [], nomes = {}, pers = [], docs = [], aba = "pers", editandoDoc = null, anexosForm = [], formAberto = false;
+  let grupoBasico = null, camp = null, papel = "", membros = [], nomes = {}, pers = [], docs = [], aba = "pers", editandoDoc = null, anexosForm = [], formAberto = false;
   const mestre = () => papel === "mestre";
   const responsavelVisual=()=>camp?.mestre_id===meuId()&&membros.some(m=>m.usuario_id===meuId()&&m.papel==="mestre");
   const meuId = () => nuvem.usuario().id;
@@ -56,7 +56,7 @@
     $("#titulo").textContent = camp.nome; document.title = camp.nome + " — Compêndio 5e";
     $("#papel").textContent = mestre() ? "Mestre" : "Jogador";
     $("#lnk-combate").href = "iniciativa.html?campanha="+encodeURIComponent(id); $("#lnk-combate").hidden = false; $("#lnk-combate").textContent=mestre()?"Combate e consultas":"Consultar monstros e habilidades";
-    const abas = [["pers", "Personagens"], ["diario", "Diário"], ["docs", "Documentos"]].concat(mestre() ? [["membros", "Grupo"]] : []);
+    const abas = [["pers", "Personagens"], ["diario", "Diário"], ["docs", "Documentos"]].concat(mestre() ? [["membros", "Grupo"]] : [["grupo", "Grupo"]]);
     $("#abas").hidden = false; $("#abas").className = "tabs"; $("#abas").removeAttribute("aria-hidden");
     $("#abas").innerHTML = abas.map(([k, t]) => `<button type="button" data-aba="${k}" class="${aba === k ? "on" : ""}">${t}</button>`).join("");
   }
@@ -208,10 +208,32 @@
     return convite + membros.map((m) => `<div class="res"><span><b>${esc(nomes[m.usuario_id] || "Jogador")}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></span>${m.papel !== "mestre" ? `<button type="button" class="small danger" data-remover="${esc(m.usuario_id)}">Remover</button>` : ""}</div>`).join("");
   }
 
+  /* Aba Grupo (jogadores): foto, nome, jogador, PV e CA dos personagens do grupo, via função do banco que só devolve esses campos. */
+  const ordemAba = ["pers", "diario", "docs", "grupo", "membros"];
+  async function carregarGrupo() {
+    const consultada = id;
+    try { const r = await nuvem.rpc("grupo_basico", { p_campanha: id }); if (consultada === id) grupoBasico = Array.isArray(r) ? r : []; }
+    catch (e) { if (consultada === id) grupoBasico = { erro: e.message || "indisponível" }; }
+    if (consultada === id && aba === "grupo") $("#conteudo").innerHTML = abaGrupo();
+  }
+  function cartaoGrupo(p) {
+    const foto = p.foto && /^data:image\//.test(p.foto) ? `<img class="av" style="width:48px;height:48px;margin:0" src="${esc(p.foto)}" alt="Foto de ${esc(p.nome)}">` : `<span class="av av0" style="width:48px;height:48px;font-size:20px;margin:0">${esc((p.nome || "?").charAt(0).toUpperCase())}</span>`;
+    const pct = p.pv_max > 0 ? Math.max(0, Math.min(100, Math.round((p.pv_atual / p.pv_max) * 100))) : 0;
+    const vida = `<span class="grupo-numeros"><span><b>PV</b> ${p.pv_atual}/${p.pv_max}${p.pv_temp ? ` <span class="muted">(+${p.pv_temp})</span>` : ""}</span><span><b>CA</b> ${p.ca}</span></span>`;
+    return `<a class="res grupo-cartao" style="text-decoration:none;color:inherit" href="personagem.html?id=${encodeURIComponent(p.id)}&grupo=${encodeURIComponent(id)}" aria-label="Ver dados de ${esc(p.nome)}">${foto}<span class="grow"><b>${esc(p.nome)}</b><br><span class="muted">${esc(nomes[p.dono_id] || "Jogador")}</span></span>${vida}</a>`;
+  }
+  function abaGrupo() {
+    if (grupoBasico === null) return '<span class="muted" role="status">Carregando o grupo…</span>';
+    if (!Array.isArray(grupoBasico)) return '<div class="panel"><p class="err">Não foi possível carregar o grupo agora.</p><p class="muted">Este recurso depende de uma atualização do banco de dados que ainda pode não ter sido aplicada.</p><button type="button" class="small" id="grupo-tentar">Tentar novamente</button></div>';
+    return grupoBasico.length ? `<p class="muted">Foto, nome, jogador, PV e CA dos personagens do grupo. Toque em um personagem para ver os dados dele. A ficha completa é vista só pelo dono e pelo mestre.</p>${grupoBasico.map(cartaoGrupo).join("")}` : '<div class="estado-vazio"><strong>Nenhum personagem no grupo ainda</strong><p>Quando os jogadores tiverem personagens vinculados, eles aparecem aqui.</p></div>';
+  }
+
   async function desenhar() {
     for(const pid of selecionados)if(!pers.some(p=>p.id===pid))selecionados.delete(pid);
     cabecalho();
-    $("#conteudo").innerHTML = aba === "pers" ? abaPers() : aba === "diario" ? abaDiario() : aba === "docs" ? abaDocs() : abaMembros();
+    if (aba === "grupo" && mestre()) aba = "pers";
+    $("#conteudo").innerHTML = aba === "pers" ? abaPers() : aba === "diario" ? abaDiario() : aba === "docs" ? abaDocs() : aba === "grupo" ? abaGrupo() : abaMembros();
+    if (aba === "grupo") { grupoBasico = grupoBasico && Array.isArray(grupoBasico) ? grupoBasico : null; carregarGrupo(); }
     if(aba==="membros")await mostrarConvite();
   }
 

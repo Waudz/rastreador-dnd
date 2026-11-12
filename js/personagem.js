@@ -74,6 +74,22 @@
   }
   window.addEventListener("beforeunload", () => { if (pend) enviar(); });
 
+  /* ---------- visão restrita do grupo ---------- */
+  async function visaoGrupo(campId, recarregar) {
+    const box = $("#ficha"), voltar = $("#voltar"); if (voltar) { voltar.href = "campanha.html?id=" + encodeURIComponent(campId); voltar.textContent = "Voltar ao grupo"; }
+    const est = $("#estado"); if (est) est.textContent = "";
+    try {
+      const [lista, perfis] = await Promise.all([nuvem.rpc("grupo_basico", { p_campanha: campId }), nuvem.get("perfis?select=id,nome")]);
+      const p = (Array.isArray(lista) ? lista : []).find((x) => x.id === id);
+      if (!p) throw new Error("Personagem não encontrado neste grupo.");
+      const dono = (perfis.find((x) => x.id === p.dono_id) || {}).nome || "Jogador", pct = p.pv_max > 0 ? Math.max(0, Math.min(100, Math.round(p.pv_atual / p.pv_max * 100))) : 0;
+      const foto = p.foto && /^data:image\//.test(p.foto) ? `<img class="av" style="width:96px;height:96px;margin:0" src="${esc(p.foto)}" alt="Foto de ${esc(p.nome)}">` : `<span class="av av0" style="width:96px;height:96px;font-size:40px;margin:0">${esc((p.nome || "?").charAt(0).toUpperCase())}</span>`;
+      document.title = p.nome + " — Compêndio 5e";
+      box.removeAttribute("aria-busy");
+      box.innerHTML = `<header class="panel ficha-resumo"><div class="ficha-identidade"><div class="ficha-foto">${foto}</div><div><p class="eyebrow">Personagem do grupo</p><h1>${esc(p.nome)}</h1><p>Jogador: ${esc(dono)}</p></div></div><div class="ficha-destaques"><div class="est"><span class="muted">PV</span><strong>${p.pv_atual} / ${p.pv_max}</strong>${p.pv_temp ? `<small>+${p.pv_temp} temporários</small>` : ""}</div><div class="est"><span class="muted">CA</span><strong>${p.ca}</strong></div></div></header><div class="panel"><div class="hp-track" aria-hidden="true"><div class="hp-fill" style="width:${pct}%"></div></div><p class="muted">Você vê só os dados básicos. Atributos, magias, inventário e o resto da ficha são vistos apenas pelo dono e pelo mestre.</p></div>`;
+    } catch (e) { if (window.ESQ) window.ESQ.erro(box, e.message, recarregar); else box.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+  }
+
   /* ---------- carregar ---------- */
   async function carregar() {
     const r = await nuvem.get(`personagens?select=*&id=eq.${encodeURIComponent(id)}`);
@@ -180,8 +196,26 @@
 
   const blocoAtr = () => '<div class="attrs">'+ATR.map(([k,r])=>C.atributo({sigla:r,valor:R.atributoEf(F(),k),modificador:fm(modA(k)),id:'mod-'+k,controle:`<span class="atr-valor" id="atributo-${k}" role="text" aria-label="${R.ATR_NOME[k]}: ${R.atributoEf(F(),k)}">${R.atributoEf(F(),k)}${num(F().modTemp?.[k],0)?`<small class="atr-temp" title="Modificador temporário de jogo">${fm(num(F().modTemp[k],0))} temp.</small>`:""}</span>`,rolagem:`<button type="button" class="rolar-atributo" data-rolar-atr="${k}" aria-label="Rolar teste de ${R.ATR_NOME[k]}">Rolar d20</button>`})).join('')+'</div><div class="muted" id="prof-txt"></div>';
 
-  const itemCar = (c, i) => `<details class="item"><summary>${esc(c.nome)}</summary><div><div class="pre">${TEXTO_REGRAS.html(c.desc || "")}</div>${!c.auto?`<div class="row" style="margin:8px 0 0"><button type="button" class="small danger" data-rm-car="${i}">Remover</button></div>`:""}</div></details>`;
-  const recursosCombate = () => CAR().map(c=>`<details class="item"><summary>${esc(c.nome)}</summary><div class="pre">${TEXTO_REGRAS.html(c.desc||'')}</div></details>`).join('') || '<p class="muted">As habilidades e recursos cadastrados em Personagem aparecem aqui para consulta durante o combate.</p>';
+  /* CD (classe de dificuldade) das características que pedem salvaguarda do alvo: o jogador vê o número pronto na própria característica (2014: 8 + proficiência + modificador). */
+  const cdSoma = (rotulo, atrNome, mod, extra = 0) => { const pb = bonusProf(); return { rotulo, cd: 8 + pb + mod + extra, formula: `8 + proficiência (${fm(pb)}) + ${atrNome} (${fm(mod)})${extra ? " " + fm(extra) + " temporário" : ""}` }; };
+  const cdMagiaClasse = (cid) => { const h = conj().habilidades.find((x) => x.id === cid); return h ? cdSoma("CD de magia de " + h.classe, R.ATR_NOME[h.atr], modA(h.atr), R.bonusTemp(F(), "cdMagia")) : null; };
+  const cdKi = () => (CLS().some((c) => c.c === "Monk" && c.n >= 2) ? cdSoma("CD de Ki", R.ATR_NOME.sab, modA("sab")) : null);
+  const cdManobras = () => (CLS().some((c) => c.c === "Fighter" && /Mestre de Batalha/i.test(c.sub || "")) ? cdSoma("CD de manobra", "Força ou Destreza (o maior)", Math.max(modA("for"), modA("des"))) : null);
+  function cdDaCaracteristica(c) {
+    const id = String(c.cf || "").replace(/^srd51:feature\//, ""), nome = String(c.nome || "");
+    if (/^(stunning-strike|open-hand-technique|quivering-palm|ki|tranquility)$/.test(id) || /Ataque Atordoante|Mão Aberta|Palma Vibrante|Tranquilidade/i.test(nome)) return cdKi();
+    if (id === "channel-divinity" || /sacred-weapon|turn-the-unholy/.test(id)) return cdMagiaClasse("Paladin");
+    if (/^channel-divinity-/.test(id) || /Canalizar Divindade/i.test(nome) && !id) return cdMagiaClasse("Cleric");
+    if (id === "natures-sanctuary") return cdMagiaClasse("Druid");
+    if (id === "hurl-through-hell") return cdMagiaClasse("Warlock");
+    if (/manobra|superioridade em combate/i.test(nome)) return cdManobras();
+    return null;
+  }
+  const marcaCD = (c) => { const d = cdDaCaracteristica(c); return d ? ` <span class="badge" title="${esc(d.formula)}">CD ${d.cd}</span>` : ""; };
+  const linhaCD = (c) => { const d = cdDaCaracteristica(c); return d ? `<p class="cd-linha"><b>${esc(d.rotulo)}: ${d.cd}</b> <span class="muted">= ${esc(d.formula)}</span></p>` : ""; };
+  const resumoCDs = () => { const l = [cdKi(), cdManobras(), ...conj().habilidades.map((h) => cdMagiaClasse(h.id))].filter(Boolean); return l.length ? `<div class="cds-resumo"><h3 class="sub">CDs das suas características</h3>${l.map((d) => `<p class="cd-linha"><b>${esc(d.rotulo)}: ${d.cd}</b> <span class="muted">= ${esc(d.formula)}</span></p>`).join("")}</div>` : ""; };
+  const itemCar = (c, i) => `<details class="item"><summary>${esc(c.nome)}${marcaCD(c)}</summary><div>${linhaCD(c)}<div class="pre">${TEXTO_REGRAS.html(c.desc || "")}</div>${!c.auto?`<div class="row" style="margin:8px 0 0"><button type="button" class="small danger" data-rm-car="${i}">Remover</button></div>`:""}</div></details>`;
+  const recursosCombate = () => resumoCDs() + CAR().map(c=>`<details class="item"><summary>${esc(c.nome)}${marcaCD(c)}</summary>${linhaCD(c)}<div class="pre">${TEXTO_REGRAS.html(c.desc||'')}</div></details>`).join('') || '<p class="muted">As habilidades e recursos cadastrados em Personagem aparecem aqui para consulta durante o combate.</p>';
   const atualizarRecursos = () => { const e=$('#recursos-combate');if(e)e.innerHTML=recursosCombate(); };
 
   const racaSel = () => { const r = F().raca || ""; return R.RACAS.some((x) => x[0] === r) ? r : (r || F().racaCustom ? "__custom" : ""); };
@@ -787,6 +821,12 @@
     if (!nuvem.usuario()) { location.replace((window.nuvem && nuvem.entradaUrl ? nuvem.entradaUrl() : "entrar.html")); return; }
     if (!id) { location.replace("conta.html"); return; }
     const recarregar = () => location.reload(), cancelar = window.ESQ ? window.ESQ.vigiar($("#ficha"), recarregar, 20000, "A conexão está lenta e a ficha ainda não chegou.") : () => {};
+    /* Visão do grupo (?grupo=<campanha>): quem não é dono nem mestre abre a ficha, mas só vê os dados básicos; o resto não é carregado nem desenhado. */
+    const campGrupo = new URLSearchParams(location.search).get("grupo");
+    if (campGrupo) {
+      let visivel = true; try { visivel = !!(await nuvem.get(`personagens?select=id&id=eq.${encodeURIComponent(id)}`))[0]; } catch (_) {}
+      if (!visivel) { await visaoGrupo(campGrupo, recarregar); cancelar(); return; }
+    }
     try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); cancelar(); window.ESQ?.pronto($("#ficha")); } catch (e) { cancelar(); document.querySelector(".esq-topo")?.remove?.(); if (window.ESQ) window.ESQ.erro($("#ficha"), e.message, recarregar); else aviso(e.message, true); return; }
     nuvem.observar(async () => {
       if (pend || salvando) return;

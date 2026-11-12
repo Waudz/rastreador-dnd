@@ -6,7 +6,7 @@ async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={},registro=
   const p={id:"p",nome:"Inicial",campanha_id:"c",dono_id:"u",pv_atual:10,pv_max:10,pv_temp:0,ca:10,versao:1,ficha:{classes:[{c:"Fighter",n:1}]}};
   Object.assign(p.ficha,fichaInicial);Object.assign(p,registro);
   const nuvem={usuario:()=>({id:"u"}),esc:s=>String(s??""),retornoDoLink:async()=>{},observar(){},rpc:async()=>mestre,patch,get:async q=>q.startsWith("personagens")?[p]:q.startsWith("campanhas")?[{id:"c",nome:"Campanha"}]:q.startsWith("membros")?[{papel:mestre?"mestre":"jogador"}]:[{id:"u",nome:"Pessoa"}]};
-  const c=vm.createContext({window:{addEventListener(){},parent:{postMessage(){}}},document,nuvem,location:{search},URLSearchParams,confirm:()=>true,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
+  const c=vm.createContext({window:{addEventListener(){},parent:{postMessage(){}}},TEXTO_REGRAS:{html:t=>String(t??"")},document,nuvem,location:{search},URLSearchParams,confirm:()=>true,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
   executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/magias-jogo.js",c);executar("js/inventario.js",c);executar("js/itens-efeitos.js",c);executar("js/recursos.js",c);executar("js/jogo.js",c);executar("js/jogo-ui.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
   const nome=v=>eventos.input.forEach(fn=>fn({target:{dataset:{col:"nome"},value:v}}));
   const salvar=async()=>{const a=[...timers.values()];timers.clear();for(const fn of a)await fn();};
@@ -156,4 +156,13 @@ test('painel revalida o mestre antes de gravar: revogação bloqueia os novos mo
  let patches=0,cheques=0;const f=await ficha(async()=>{patches++;return[{versao:2}];},{search:'?id=p&modo=painel'});
  // O harness deixa a função RPC substituível pelo teste, sem conexão remota.
  f.rpc(()=>++cheques===0);f.document.el('qtd').value='1';await clicar(f,'#b-dano');await f.salvar();assert.equal(patches,0);assert.match(f.document.el('estado').innerHTML,/exclusivo do mestre/);
+});
+test('CD pronta nas características: Ki (Monge), magia de Clérigo/Paladino e manobras; sem CD nas demais',async()=>{
+ const f=await ficha(async()=>[{versao:2}],{fichaInicial:{classes:[{c:'Monk',n:5,sub:''},{c:'Paladin',n:3,sub:''}],atributos:{for:10,des:16,con:12,int:10,sab:16,car:14},caracteristicas:[
+  {nome:'Ataque Atordoante',desc:'x',cf:'srd51:feature/stunning-strike',auto:'criador'},{nome:'Técnica da Mão Aberta',desc:'x',cf:'srd51:feature/open-hand-technique',auto:'criador'},
+  {nome:'Canalizar Divindade',desc:'x',cf:'srd51:feature/channel-divinity',auto:'criador'},{nome:'Rajada de Golpes',desc:'x',cf:'srd51:feature/flurry-of-blows',auto:'criador'}]}});
+ const h=f.document.el('ficha').innerHTML;
+ assert.match(h,/Ataque Atordoante <span class="badge"[^>]*>CD 14<\/span>/,'Ki: 8 + 3 (prof. nível 8) + 3 (Sab 16)');assert.match(h,/Técnica da Mão Aberta <span class="badge"[^>]*>CD 14/);
+ assert.match(h,/CD de Ki: 14/);assert.match(h,/Canalizar Divindade <span class="badge"[^>]*>CD 13/,'Paladino: 8 + 3 + 2 (Car 14)');
+ assert.ok(!/Rajada de Golpes <span class="badge"/.test(h),'sem salvaguarda do alvo, sem CD');assert.match(h,/8 \+ proficiência \(\+3\) \+ Sabedoria \(\+3\)/);
 });
