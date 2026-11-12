@@ -21,6 +21,7 @@
   <script src="js/pre-pagina.js"></script>
   <script src="js/ficha-componentes.js" defer></script>
   <script src="js/grupo-personagens.js" defer></script>
+  <script src="js/menus.js" defer></script>
   <script src="js/magias-ui.js" defer></script>
   <script src="js/icones.js" defer></script>
   <script src="js/config-nuvem.js" defer></script>
@@ -39,13 +40,15 @@
   <script src="js/ficha-monstro.js" defer></script>
   <script src="js/paineis-layout.js" defer></script>
   <script src="js/painel-detalhes.js" defer></script>
+  <script src="js/leitura-mobile.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/origens.js" defer></script>
   <script src="js/texto-regras.js" defer></script>
   <script src="js/regras.js" defer></script>
   <script src="js/campanha-ini.js" defer></script>
-  <script src="js/dados-locais.js" defer></script>
+
   <script src="js/interface.js" defer></script>
+  <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body>
   <main class="tracker">
@@ -66,16 +69,34 @@
 
     
 
-    <details class="vista-iniciativa panel" id="camp-ini" hidden>
-      <summary class="panel-title" style="cursor:pointer">Personagens da campanha</summary>
-      <div class="bar ci-filtros"><select id="ci-camp" aria-label="Campanha" style="width:auto"></select><span class="grow"></span><button type="button" class="small" id="ci-recarregar">Atualizar</button></div>
-      <div id="ci-msg" class="muted"></div>
-      <div id="ci-selecao"></div><div id="ci-lista" class="ci-grade"></div>
-      <p class="muted">Selecione as fichas para rolar iniciativa sem remover os participantes atuais. Recolha esta área pelo título quando terminar.</p>
-    </details>
+    <section class="vista-iniciativa panel" id="ini-selecao" hidden><h2 class="panel-title">Escolher campanha</h2><div id="ini-campanhas"></div></section>
+    <div class="vista-iniciativa bar" id="ini-contexto" hidden><button type="button" id="ini-voltar">Voltar</button><strong id="ini-campanha-nome"></strong></div>
+    <section class="vista-iniciativa panel" id="iniciativa-atual">
+      <div class="combat-bar">
+        <div>
+          <h2 class="panel-title" style="margin-bottom:4px"><i data-i="swords"></i>Ordem do combate</h2>
+          <div class="turn-label" id="current-turn" role="status" aria-live="polite">Adicione os combatentes para começar.</div>
+        </div>
+        <div class="turn-actions">
+          <div class="dmgby"><label for="dmg-by">Dano causado por</label><select id="dmg-by"><option value="">Quem está na vez</option></select></div>
+          <button id="start" class="primary" type="button">Começar combate</button>
+          <button id="previous" type="button" disabled><i data-i="left"></i>Anterior</button>
+          <button id="next" type="button" disabled>Próximo<i data-i="right"></i></button>
+          <button id="reset" class="subtle" type="button" disabled>Encerrar</button>
+        </div>
+      </div>
 
-    <section class="vista-iniciativa panel">
-      <h2 class="panel-title"><i data-i="plus"></i>Adicionar combatente</h2>
+      <div id="combatants" class="combatants">
+        <div class="empty">
+          <strong>O campo de batalha está vazio.</strong>
+          Cadastre os personagens e inimigos para montar a ordem de iniciativa.
+        </div>
+      </div>
+      <div id="report" class="report" hidden></div>
+      <p class="footer">A iniciativa é ordenada do maior para o menor. Em caso de empate, quem foi adicionado primeiro fica acima.</p>
+    </section>
+    <details class="vista-iniciativa panel" id="adicionar-combatente" open>
+      <summary class="panel-title"><i data-i="plus"></i>Adicionar combatente</summary>
       <form id="add-form" class="form-grid">
         <div class="field-name">
           <label for="name">Nome</label>
@@ -114,42 +135,14 @@
           <button class="primary" type="submit">Adicionar</button>
         </div>
       </form>
-    </section>
-
-
-
-    <section class="vista-iniciativa panel">
-      <div class="combat-bar">
-        <div>
-          <h2 class="panel-title" style="margin-bottom:4px"><i data-i="swords"></i>Ordem do combate</h2>
-          <div class="turn-label" id="current-turn" role="status" aria-live="polite">Adicione os combatentes para começar.</div>
-        </div>
-        <div class="turn-actions">
-          <div class="dmgby"><label for="dmg-by">Dano causado por</label><select id="dmg-by"><option value="">Quem está na vez</option></select></div>
-          <button id="start" class="primary" type="button">Começar combate</button>
-          <button id="previous" type="button" disabled><i data-i="left"></i>Anterior</button>
-          <button id="next" type="button" disabled>Próximo<i data-i="right"></i></button>
-          <button id="reset" class="subtle" type="button" disabled>Encerrar</button>
-        </div>
-      </div>
-
-      <div id="combatants" class="combatants">
-        <div class="empty">
-          <strong>O campo de batalha está vazio.</strong>
-          Cadastre os personagens e inimigos para montar a ordem de iniciativa.
-        </div>
-      </div>
-      <div id="report" class="report" hidden></div>
-      <p class="footer">A iniciativa é ordenada do maior para o menor. Em caso de empate, quem foi adicionado primeiro fica acima.</p>
-    </section>
-
-    <details class="vista-iniciativa panel" id="dados-locais">
-      <summary class="panel-title"><i data-i="database"></i>Dados deste aparelho</summary>
-      <p class="muted">O combate e suas criações como visitante ficam só neste aparelho. Se limpar os dados do navegador, eles somem; por isso vale baixar um backup de vez em quando. Nada é enviado a nenhum servidor.</p>
-      <div class="row"><button type="button" class="small" id="dl-combate-baixar">Baixar backup do combate</button><label class="btnlike small">Restaurar combate de um arquivo<input type="file" id="dl-combate-arquivo" accept=".json,application/json" hidden></label><button type="button" class="small" id="dl-criacoes-baixar">Baixar backup das criações deste aparelho</button></div>
-      <p id="dl-msg" class="muted" role="status" aria-live="polite"></p>
     </details>
-    
+    <details class="vista-iniciativa panel" id="camp-ini" hidden>
+      <summary class="panel-title" style="cursor:pointer">Personagens</summary>
+      <div class="bar ci-filtros" hidden><select id="ci-camp" aria-label="Campanha" style="width:auto"></select><span class="grow"></span><button type="button" class="small" id="ci-recarregar">Atualizar</button></div>
+      <div id="ci-msg" class="muted"></div>
+      <div id="ci-selecao"></div><div id="ci-lista" class="ci-grade"></div>
+      <p class="muted">Selecione as fichas para rolar iniciativa sem remover os participantes atuais. Recolha esta área pelo título quando terminar.</p>
+    </details>
     <section class="vista-monstros panel" id="aviso-visitante">
       <h2 class="panel-title"><i data-i="plus"></i>Criar fichas e fotos</h2>
       <p class="muted">Você está usando o rastreador como visitante: pode pesquisar monstros e magias e usar toda a iniciativa, com combatentes manuais, sem conta. Criar fichas próprias, adicionar fotos, personagens e campanhas exige uma conta gratuita.</p>

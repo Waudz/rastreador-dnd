@@ -11,6 +11,12 @@ test('substituição só limpa a imagem antiga depois da confirmação versionad
  const f=fixture();const r=await f.I.salvar('c',f.base,{simbolo:{type:'image/png',size:100},posicao:40,posicaoMobile:65});
  assert.deepEqual(f.chamadas.map(c=>c[0]),['upload','rpc','url','url','apagar']);assert.equal(f.chamadas[0][2],'campanhas-visuais');assert.equal(f.chamadas[1][2].p_versao,4);assert.equal(r.visual.backdrop_path,f.base.backdrop_path);assert.deepEqual([...f.chamadas[4][1]],[f.base.simbolo_path]);
 });
+
+test('novos enquadramentos enviam posições verticais coerentes com o JSON',async()=>{const f=fixture(),frame={desktop:{x:25,y:41.7,zoom:1.5},mobile:{x:80,y:80,zoom:2}};f.base.enquadramento=frame;await f.I.salvar('c',f.base,{posicao:10,posicaoMobile:10,enquadramento:frame});const r=f.chamadas.find(c=>c[0]==='rpc');assert.equal(r[1],'salvar_visual_campanha_enquadrada');assert.equal(r[2].p_y,42);assert.equal(r[2].p_y_mobile,80);assert.deepEqual(r[2].p_enquadramento,frame);assert.ok(!f.chamadas.some(c=>c[0]==='upload'||c[0]==='apagar'));});
+
+test('apresentação de dados antigos usa 50 para NULL e preserva posição zero',async()=>{const f=fixture(),v=await f.I.apresentar({...f.base,backdrop_y:null,backdrop_y_mobile:0});assert.equal(v.posicao,50);assert.equal(v.posicaoMobile,0);});
+
+test('servidor sem suporte a enquadramento rejeita antes de enviar qualquer imagem',async()=>{const f=fixture();f.nuvem.get=async()=>{throw Error('coluna inexistente');};await assert.rejects(f.I.salvar('c',f.base,{backdrop:{type:'image/jpeg',size:100},enquadramento:{desktop:{x:50,y:50,zoom:2},mobile:{x:50,y:50,zoom:1}}}),/Nenhuma imagem foi enviada/);assert.equal(f.chamadas.length,0);});
 test('falha de upload preserva todos os arquivos e não grava referências',async()=>{
  const f=fixture();f.estado.falhaUpload=true;await assert.rejects(f.I.salvar('c',f.base,{simbolo:{type:'image/png',size:100}}),/upload/);assert.deepEqual(f.chamadas.map(c=>c[0]),['upload']);
 });

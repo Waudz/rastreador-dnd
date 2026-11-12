@@ -10,13 +10,13 @@
       let nextOrder = 0;
       let editId = null;
       let stats = {};
-      let report = null;
+      let report = null, relatorioLegado = null;
       let edicaoIniciativa = null;const ouvintes=[];
       const notificar=()=>ouvintes.forEach(fn=>fn());
 
       function save() {
         try {
-          localStorage.setItem(chaveAtual(), JSON.stringify({ combatants, currentId, round, nextOrder, stats, report }));
+          localStorage.setItem(chaveAtual(), JSON.stringify({ combatants, currentId, round, nextOrder, stats, report:relatorioLegado }));
         } catch (_) {
           // O preview incorporado pode bloquear armazenamento local; o rastreador continua funcionando nesta sessão.
         }
@@ -34,7 +34,7 @@
           else localStorage.removeItem(STORAGE_KEY);
         } catch (_) {}
       }
-      function zerar() { combatants = []; currentId = null; round = 1; nextOrder = 0; editId = null; stats = {}; report = null; edicaoIniciativa = null; }
+      function zerar() { combatants = []; currentId = null; round = 1; nextOrder = 0; editId = null; stats = {}; report = null; relatorioLegado = null; edicaoIniciativa = null; }
       /* troca a campanha ativa: guarda o combate atual na chave da campanha antiga e carrega o da nova, sem misturar */
       function trocarContexto(novo) {
         novo = novo || "";
@@ -52,7 +52,7 @@
           round = Number(saved.round) > 0 ? Number(saved.round) : 1;
           nextOrder = Number(saved.nextOrder) || combatants.length;
           stats = saved.stats || {};
-          report = saved.report || null;
+          report = null; relatorioLegado = saved.report || null;
         } catch (_) {
           combatants = [];
         }
@@ -420,7 +420,7 @@
 
       $("reset").addEventListener("click", () => {
         if (round > 1 && !confirm("Encerrar o combate na rodada " + round + "?")) return;
-        report = buildReport();
+        report = null;
         currentId = null;
         round = 1;
         stats = {};

@@ -2,6 +2,22 @@
 
 Atualizado em 11/11/2026. Este arquivo registra limites conhecidos; não significa que todo o Livro do Jogador já esteja automatizado.
 
+## Atualização visual — base a371875
+
+Base remota novamente verificada na branch main. A cópia antiga sem `.git` foi preservada e um clone limpo atualizado foi usado. O usuário autorizou o envio da implementação visual ao GitHub após os testes. A migração do Supabase continua sem autorização e não foi aplicada.
+
+- Implementados localmente: navegação inferior mobile e cabeçalho compacto; leitura de ficha/magia em tela completa com Voltar; rodapé discreto; campanha com dois controles e menu na camada superior; cartões sem edição rápida de PV e fotos de 72 px; novos rótulos; seleção da campanha antes da iniciativa; combate acima de Adicionar combatente e Personagens, ambos recolhíveis; remoção de Dados deste aparelho e da exibição/restauração de relatórios anteriores.
+- Editor circular da capa reutiliza o Bestiário. Editor do fundo possui prévias e zoom/arraste independentes para PC e celular, com arquivo original de fundo inteiro e geometria compartilhada. A altura mobile não foi alterada.
+- **Pendente de autorização:** coluna JSONB de enquadramento e RPC versionada para salvar x/y/zoom dos dois dispositivos. Proposta preparada, não aplicada. Sem suporte no servidor, o app bloqueia a gravação antes do upload e informa o motivo.
+- **Testes:** 264 testes do aplicativo passaram. SQL definitivo validado com 45/45 casos em PostgreSQL 17.5 e 45/45 em PostgreSQL 18.6 (PGlite local descartável), incluindo rollback/reativação. Produção 17.11 foi consultada somente em leitura para conferir funções, permissões e campos; nada aplicado. Navegador da rodada anterior com dados fictícios: menu, aparência/cancelar, zoom independente, ficha/magia em tela inteira, retorno preservando a pesquisa, seleção da campanha e recolhimento das seções ao iniciar o combate.
+- **Cabeçalho B escolhido pelo usuário:** implementado no aplicativo. Somente a camada de fundo ocupa toda a largura útil; conteúdo e cartões continuam centralizados, no máximo 1120 px. A capa mantém 28 px de recuo desktop. A geometria usa clientWidth para evitar overflow causado pela barra vertical e preserva as posições/zoom sem gravá-los no servidor.
+- **Validação visual B:** navegador local com backend fictício, em 320, 375, 430, 768, 839, 840, 900, 1280, 1440 e 1920 px. Sem rolagem horizontal; menus sobre o fundo; teste adicional em 1280 × 500 com scrollbar e largura útil de 1265 px. Fundo de 0 a 1265 e conteúdo central preservado. Conferida a compatibilidade com o modelo atual sem enquadramento JSON: troca normal de imagens continua disponível, mas o enquadramento avançado fica desabilitado até a migração autorizada.
+- **Ainda não validados:** integração real do novo SQL/Storage; dois dispositivos; permissões reais de imagens mestre/jogador; aparelho físico Android/iOS; instalação/desconexão real da PWA. Os testes SQL locais usam papéis e fixtures, sem JWT/upload reais.
+- **Opcional não implementado:** zoom por gesto de pinça. Há zoom por slider/roda e arraste por ponteiro/toque.
+- Envio visual autorizado pelo usuário; cache v86. Não aplicar SQL com essa autorização de publicação visual.
+
+As seções abaixo registram o histórico e as pendências de regras de jogo anteriores a esta revisão; não são uma declaração de que a revisão mobile foi publicada.
+
 ## Entregue neste envio
 
 - Resumo lateral do personagem com espaço reservado no desktop, percepção passiva, perícias com bônus, defesas raciais, ataques, magias e acesso à ficha completa.

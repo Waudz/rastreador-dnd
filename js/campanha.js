@@ -65,7 +65,7 @@
       ${mestre()?G.checkbox(p,selecionados.has(p.id)):''}${G.identidade(p,{jogador:nomes[p.dono_id]||'Sem vínculo'})}
       <div class="grupo-cartao-acoes">${mestre()?`<a class="grupo-icone" href="${esc(G.destino(id,[p.id]))}" title="Adicionar à iniciativa" aria-label="Adicionar ${esc(p.nome)} à iniciativa">${ico('swords')}</a>`:''}
       <details class="compact-menu"><summary title="Mais opções" aria-label="Mais opções de ${esc(p.nome)}">${ico('more')}</summary><div class="compact-popover"><a href="personagem.html?id=${encodeURIComponent(p.id)}">Abrir ficha</a>${dono}<button type="button" class="small danger" data-excluir-pers="${esc(p.id)}">Excluir personagem</button></div></details></div></div>
-      <div class="grupo-pv"><strong>PV ${p.pv_atual}/${p.pv_max}</strong><input class="num" type="number" min="1" value="1" aria-label="Quantidade de dano ou cura para ${esc(p.nome)}"><button type="button" class="small danger" data-dano="1" title="Aplicar dano" aria-label="Aplicar dano em ${esc(p.nome)}">${ico('minus')}</button><button type="button" class="small cura" data-cura="1" title="Aplicar cura" aria-label="Aplicar cura em ${esc(p.nome)}">${ico('plus')}</button></div>
+      <div class="grupo-pv"><strong>PV ${p.pv_atual}/${p.pv_max}</strong></div>
       <div class="hp-track" role="meter" aria-label="Pontos de vida de ${esc(p.nome)}" aria-valuemin="0" aria-valuemax="${Math.max(1,p.pv_max)}" aria-valuenow="${p.pv_atual}"><div class="hp-fill ${v<=25?'low':v<=50?'mid':''}" style="width:${v}%"></div></div>${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''}</article>`;
   };
 
@@ -295,8 +295,10 @@
     const t = e.target, c = (s) => t.closest(s);
     try {
       let b;
+      const cartao=c('.personagem-card');if(cartao&&!c('a,button,input,select,textarea,summary,label,details')){location.href='personagem.html?id='+encodeURIComponent(cartao.dataset.id);return;}
       if(c('[data-camp-aparencia]')){if(!responsavelVisual())return;const painel=$('#aparencia-painel');painel.hidden=false;painel.open=true;$('#conteudo').hidden=true;document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);window.CAMPANHA_VISUAL.montar({id,mestre:responsavelVisual()});painel.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
       if(c('#aparencia-painel > summary')){e.preventDefault();$('#visual-descartar')?.click();fecharAparencia();return;}
+      if(c('[data-camp-convite]')){mostrarConvite();return;}
       if(c('[data-camp-grupo]')){if(!mestre())return;aba='membros';document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);return desenhar();}
       if(c('#grupo-todos')){if(!mestre())return;pers.forEach(p=>selecionados.add(p.id));return desenhar();}
       if(c('#grupo-nenhum')){selecionados.clear();return desenhar();}

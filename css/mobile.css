@@ -1,0 +1,49 @@
+/* Uma navegação principal: superior no PC, inferior no celular. */
+.rodape-licenca{font-size:10px;line-height:1.6;color:var(--muted);opacity:.8;margin:40px auto 18px;max-width:1120px;padding:0 var(--pad-corpo)}
+.leitura-mobile-topo{display:none}
+.compact-popover[popover]{position:fixed;inset:auto;margin:0;z-index:1000;overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px;box-shadow:0 8px 26px #0008}
+.compact-popover>a,.compact-popover>button{display:flex;align-items:center;justify-content:flex-start;width:100%;min-height:44px;margin:0;padding:10px 12px;border:0;border-radius:6px;background:transparent;color:var(--text);font:inherit;text-decoration:none;text-align:left;gap:8px}
+.compact-popover>a:hover,.compact-popover>button:hover{background:#D4AE7218}
+.campanha-ferramentas{display:flex;justify-content:space-between;gap:12px}
+.campanha-ferramentas summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 12px}
+.campanha-ferramentas .compact-menu:first-child>summary{width:auto;min-width:120px}
+.campanha-ferramentas .compact-menu:last-child>summary{width:44px}
+.campanha-faixa{overflow:visible} /* O recorte pertence à camada de fundo. */
+.crop-fundo{width:min(740px,96vw);max-height:95dvh;overflow:auto}
+.crop-fundo .crop-stage{width:100%;height:auto;max-height:55dvh;object-fit:contain;touch-action:none}
+.crop-fundo button[aria-pressed=true]{border-color:var(--gold);color:var(--gold)}
+.personagem-card .grupo-pv{margin-top:4px;min-height:0;padding:0;border:0;display:block}
+.personagem-card .hp-track{height:4px}
+.personagem-card .grupo-identidade b{white-space:normal;overflow:visible;overflow-wrap:anywhere}
+.personagem-card .grupo-cartao-acoes{align-self:start}
+@media(max-width:759px){
+ :root{--nav-inferior:calc(66px + env(safe-area-inset-bottom,0px))}
+ body{padding-bottom:calc(var(--nav-inferior) + 20px)}
+ .appheader{grid-template-areas:'marca dir';padding-top:env(safe-area-inset-top,0px);padding-bottom:6px;min-height:56px}
+ .appheader>.appnav{position:fixed;top:auto;bottom:0;left:0;right:0;z-index:90;width:100%;max-width:none;margin:0;border-top:1px solid var(--line);border-radius:0;background:var(--bg);padding:4px max(4px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));min-height:66px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+ .appnav a{min-height:54px;font-size:10px;gap:4px}
+ .personagem-card .grupo-identidade .av{width:72px!important;height:72px!important;min-width:72px}
+ .personagem-card .grupo-cartao-topo{flex-wrap:nowrap;align-items:center;gap:8px}
+ .personagem-card .grupo-cartao-topo>.grupo-identidade{flex:1 1 0;min-width:0}
+ .personagem-card .grupo-cartao-acoes{flex-direction:column;margin:0;gap:4px}
+ .personagem-card .grupo-identidade small{white-space:normal}
+ .personagem-card{padding:12px;gap:4px}
+ .grupo-marcar{min-width:24px;min-height:44px;display:grid;place-items:center}
+ .appavatar,.appentrar{min-width:44px;min-height:44px}
+ .appsino{display:none}
+ body.teclado-aberto .appnav{display:none}
+ body.leitura-mobile{overflow:hidden}
+ body.leitura-mobile>.appheader,body.leitura-mobile>.rodape-licenca{display:none}
+ body.leitura-mobile main.tracker> :not(#dock-r){visibility:hidden}
+ body.leitura-mobile #dock-r{position:fixed!important;inset:0!important;z-index:100!important;width:100%!important;max-width:none!important;height:100dvh!important;margin:0!important;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)!important;display:flex!important;flex-direction:column!important;background:var(--bg)!important;overflow:hidden!important;border:0!important;border-radius:0!important}
+ body.leitura-mobile #dock-r>.drawer:not([hidden]){display:flex!important;flex:1;flex-direction:column;min-height:0;overflow:auto;width:100%;position:static!important}
+ body.leitura-mobile #ci-resumo-corpo{flex:1;min-height:0;overflow:hidden}
+ body.leitura-mobile #ci-ficha-frame{width:100%;height:100%;min-height:0;border:0}
+ .leitura-mobile .leitura-mobile-topo{display:flex!important;align-items:center;gap:16px;padding:8px 12px;border-bottom:1px solid var(--line);flex-shrink:0}
+ .leitura-mobile .leitura-mobile-topo button{min-width:70px;min-height:44px}
+ .leitura-mobile .sh-top,.leitura-mobile .ci-resumo-topo{display:none}
+ body.ficha-embutida .appheader,body.ficha-embutida>.rodape-licenca{display:none!important}
+ body.ficha-embutida{padding-bottom:12px!important}
+ body.ficha-pagina .appnav{display:none}
+ body.ficha-pagina{padding-bottom:16px}
+}

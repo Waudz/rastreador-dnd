@@ -26,7 +26,9 @@ test('aparência trata as quatro combinações de imagens e não fornece ediçã
   document.el('.campanha-compacta').classList.toggle=(nome,valor)=>classes.set(nome,valor);
   document.el('.campanha-compacta').style.setProperty=()=>{};
   document.el('campanha-backdrop').removeAttribute=()=>{};
-  const contexto=vm.createContext({window:{FICHA_COMPONENTES:c.window.FICHA_COMPONENTES},document,URL:{revokeObjectURL(){}}});
+  document.documentElement={clientWidth:1280};document.el('campanha-faixa').getBoundingClientRect=()=>({left:80});
+  const contexto=vm.createContext({window:{FICHA_COMPONENTES:c.window.FICHA_COMPONENTES},document,innerWidth:1280,URL:{revokeObjectURL(){}}});
+  executar('js/enquadramento.js',contexto);contexto.ENQUADRAMENTO=contexto.window.ENQUADRAMENTO;
   executar('js/campanha-visual.js',contexto);const V=contexto.window.CAMPANHA_VISUAL;
   V.montar({id:'c',mestre:false,visual});
   assert.equal(document.el('campanha-backdrop').hidden,!visual.backdrop);assert.equal(classes.get('com-backdrop'),!!visual.backdrop);

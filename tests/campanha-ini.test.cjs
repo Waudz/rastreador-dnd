@@ -1,6 +1,6 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
 const {vm,executar,documentoFalso,armazenamento,tick}=require("./helpers.cjs");
-async function fixture({search="",erro=false,user={id:"mestre"},ficha={},papel='mestre',autorizado=true}={}){
+async function fixture({search="?campanha=antiga",erro=false,user={id:"mestre"},ficha={},papel='mestre',autorizado=true}={}){
   const document=documentoFalso(),localStorage=armazenamento(),lista=[],consultas=[],eventos={};let atualizar;
   localStorage.setItem("ini_campanha","antiga");
   const nuvem={usuario:()=>user,esc:s=>String(s??""),rpc:async()=>autorizado,observar(fn){atualizar=fn;},get:async q=>{
@@ -17,6 +17,8 @@ test("link da campanha escolhe a campanha atual em vez da preferência antiga",a
   assert.equal(f.document.el("ci-camp").value,"atual");assert(f.consultas.some(q=>q.includes("campanha_id=eq.atual")));
   assert.equal(f.lista.length,1);assert.equal(f.lista[0].pid,"p");assert.equal(f.lista[0].foto,"data:image/png;base64,FOTO");
 });
+
+test('sem campanha na URL mostra seleção antes de carregar personagens',async()=>{const f=await fixture({search:''});assert.equal(f.document.el('ini-selecao').hidden,false);assert.equal(f.document.el('iniciativa-atual').hidden,true);assert.match(f.document.el('ini-campanhas').innerHTML,/campanha=atual/);assert(!f.consultas.some(q=>q.startsWith('personagens')));});
 test("adicionar manualmente preserva foto e evita duplicação",async()=>{
   const f=await fixture({search:"?campanha=atual"});
   const e={target:{closest:s=>s==="[data-ci]"?{dataset:{ci:"p"}}:null}};

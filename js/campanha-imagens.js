@@ -7,8 +7,12 @@
   async function carregar(id){const u=usuario(),r=await nuvem.get('campanha_visual?select=*&campanha_id=eq.'+encodeURIComponent(id));mesma(u);return r[0]||vazio(id);}
   async function assinar(path){if(!path)return '';const u=usuario(),k=u+':'+path,c=cache.get(k);if(c&&c.expira>Date.now())return c.url;
     const url=await nuvem.urlDoArquivo(path,300,BUCKET);mesma(u);cache.set(k,{url,expira:Date.now()+240000});return url;}
-  async function apresentar(v){const [simbolo,backdrop]=await Promise.all([assinar(v.simbolo_path),assinar(v.backdrop_path)]);return {simbolo,backdrop,posicao:v.backdrop_y,posicaoMobile:v.backdrop_y_mobile};}
+  async function apresentar(v){const [simbolo,backdrop]=await Promise.all([assinar(v.simbolo_path),assinar(v.backdrop_path)]);return {simbolo,backdrop,posicao:v.backdrop_y??50,posicaoMobile:v.backdrop_y_mobile??50,...(v.enquadramento?{enquadramento:v.enquadramento}:{})};}
   async function salvar(id,base,edicao){
+    if(edicao.enquadramento && !Object.prototype.hasOwnProperty.call(base,'enquadramento')){
+      try{await nuvem.get('campanha_visual?select=enquadramento&limit=0');}
+      catch(_){throw Error('O servidor ainda precisa habilitar os enquadramentos de PC e celular. Nenhuma imagem foi enviada.');}
+    }
     const u=usuario(),payload={p_campanha:id,p_versao:base.versao,p_simbolo:base.simbolo_path,p_backdrop:base.backdrop_path,p_y:edicao.posicao,p_y_mobile:edicao.posicaoMobile};
     for(const tipo of ['simbolo','backdrop']){
       if(!(tipo in edicao))continue;const blob=edicao[tipo];if(blob===null){payload['p_'+tipo]=null;continue;}
@@ -18,7 +22,8 @@
       await nuvem.enviarArquivo(path,blob,BUCKET);mesma(u);payload['p_'+tipo]=path;
     }
     // Em falha de rede a RPC pode ter concluído. Não apagar uploads com resultado incerto.
-    const resposta=await nuvem.rpc('salvar_visual_campanha',payload);mesma(u);
+    if(edicao.enquadramento){payload.p_enquadramento=edicao.enquadramento;payload.p_y=Math.round(edicao.enquadramento.desktop.y);payload.p_y_mobile=Math.round(edicao.enquadramento.mobile.y);}
+    const resposta=await nuvem.rpc(edicao.enquadramento?'salvar_visual_campanha_enquadrada':'salvar_visual_campanha',payload);mesma(u);
     const visual=Array.isArray(resposta)?resposta[0]:resposta;
     if(!visual||visual.campanha_id!==id||visual.versao!==base.versao+1)throw Error('O servidor não confirmou a gravação. Atualize antes de tentar novamente.');
     let apresentacao;

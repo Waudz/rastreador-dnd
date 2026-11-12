@@ -14,7 +14,7 @@ async function fixture(papel='mestre'){
 }
 test('cards da campanha exibem seleção e espada sem botão grande de iniciativa',async()=>{
  const f=await fixture(),h=f.document.el('conteudo').innerHTML;
- assert.match(h,/data-grupo-sel="p"/);assert.match(h,/Adicionar à iniciativa/);assert.match(h,/grupo-pv/);assert.match(h,/PV 12\/20/);assert.match(h,/Aplicar dano/);assert.doesNotMatch(h,/Usar na iniciativa/);
+ assert.match(h,/data-grupo-sel="p"/);assert.match(h,/Adicionar à iniciativa/);assert.match(h,/grupo-pv/);assert.match(h,/PV 12\/20/);assert.doesNotMatch(h,/Aplicar dano|Aplicar cura|Quantidade de dano/);assert.doesNotMatch(h,/Usar na iniciativa/);
 });
 test('seleção da campanha abre o fluxo de iniciativa com os IDs escolhidos',async()=>{
  const f=await fixture();await f.click('#grupo-todos');await f.click('#grupo-rolar');

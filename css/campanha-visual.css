@@ -58,3 +58,20 @@
 #aparencia-painel { margin-top:22px; }
 #aparencia-painel > summary { cursor:pointer; }
 #aparencia-painel > summary::after { content:"  (fechar)"; color:var(--muted); font-size:11px; }
+
+/* Fundo independente do conteúdo: apenas esta camada alcança as bordas da janela.
+   O JS usa clientWidth (sem a largura da barra de rolagem), sem alterar o tracker. */
+.campanha-faixa{overflow:visible}
+.campanha-faixa.com-backdrop::after{content:none}
+.campanha-fundo{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.campanha-fundo[hidden]{display:none}
+.campanha-fundo #campanha-backdrop{z-index:0}
+.campanha-fundo::after{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,#10182055 0%,#10182066 25%,#101820CC 72%,var(--bg) 100%);pointer-events:none}
+
+/* Recuo da capa e alinhamento da identificação dentro do conteúdo central. */
+@media(min-width:840px){
+ .campanha-faixa .campanha-identificacao{padding-inline:28px;}
+}
+@media(max-width:839px){
+ .campanha-faixa .campanha-identificacao{padding-inline:4px;}
+}

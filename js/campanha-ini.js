@@ -87,6 +87,16 @@
     } catch(e) { if(!carregou&&window.ESQ)window.ESQ.erro($("#ci-lista"),"Não foi possível carregar os personagens: "+e.message+".",()=>carregar(),""); else msg("Não foi possível carregar os personagens: "+e.message,true); }
     finally { buscando = false; }
   }
+  function contextoVisual(ativa){
+    const lista=$('#ini-selecao'),topo=$('#ini-contexto');
+    if(!lista||!topo)return;
+    lista.hidden=ativa;topo.hidden=!ativa;
+    for(const id of ['iniciativa-atual','adicionar-combatente']){const el=$('#'+id);if(el)el.hidden=!ativa;}
+    box.hidden=!ativa;
+    if(ativa){$('#ini-campanha-nome').textContent=camps.find(c=>c.id===atual)?.nome||'';box.querySelector('.ci-filtros')?.setAttribute('hidden','');}
+    else $('#ini-campanhas').innerHTML=camps.map(c=>'<a class="card" href="iniciativa.html?aba=iniciativa&campanha='+encodeURIComponent(c.id)+'">'+esc(c.nome)+'</a>').join('');
+  }
+  $('#ini-voltar')?.addEventListener('click',()=>{fecharResumo();atual='';window.__ini.trocarContexto?.('');location.href='iniciativa.html?aba=iniciativa';});
   async function iniciar() {
     if (!conta) { box.hidden = true; return; }   // visitante: o painel de campanhas nem aparece (a iniciativa continua com combatentes manuais)
     box.hidden = false; box.open = true;
@@ -99,7 +109,10 @@
       if (!camps.length) { box.hidden=true; msg("Você pode consultar o bestiário. Para adicionar o grupo à iniciativa, abra uma campanha onde você é mestre."); return; }
       $("#ci-camp").innerHTML = camps.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join("");
       let anterior = ""; try { anterior = (window.CAMPANHAS_UI ? window.CAMPANHAS_UI.ativaId() : localStorage.getItem("ini_campanha")) || ""; } catch (_) {}
-      atual = camps.find(c=>c.id===pedido)?.id || camps.find(c=>c.id===anterior)?.id || camps[0].id;
+      const escolhida=camps.find(c=>c.id===pedido);
+      if(!escolhida && $('#ini-selecao')){contextoVisual(false);return;}
+      atual = escolhida?.id || camps.find(c=>c.id===anterior)?.id || camps[0].id;
+      contextoVisual(true);
       $("#ci-camp").value = atual;
       if(window.CAMPANHAS_UI)window.CAMPANHAS_UI.lembrar(atual);
       window.__ini.trocarContexto?.(atual);
@@ -165,6 +178,7 @@
       enviado[pid]=p.pv_atual;ocupadas.delete(pid);basesPV.delete(pid);window.__ini.render();desenhar();
     } catch(e){msg(e.message,true);}
   });
-  window.__ini.aoAlterar?.(desenhar);
+  let estavaEmCombate=null;
+  window.__ini.aoAlterar?.(()=>{desenhar();const em=!!document.querySelector('.combatant.active');if(em!==estavaEmCombate){estavaEmCombate=em;if(em){box.open=false;const add=$('#adicionar-combatente');if(add)add.open=false;}else if(!window.__ini.list().length){const add=$('#adicionar-combatente');if(add)add.open=true;}}});
   iniciar();
 })();
