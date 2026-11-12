@@ -92,3 +92,12 @@ body.ficha-embutida { padding-top:0!important; padding-bottom:0!important; }
  body.ficha-embutida .ficha-topo { margin-top:0; }
  body:not(.ficha-embutida) #voltar { display:inline-flex!important; min-height:44px; align-items:center; }
 }
+
+/* Iniciativa: faixa "Vez de ..." (alvo, ataque e rolagem num clique) e painel Atacar dentro da ordem do combate */
+.acoes-vez { border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:8px 0 12px; }
+.acoes-vez-cab { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; margin-bottom:8px; }
+.acoes-vez-cab select { max-width:100%; }
+.acoes-vez-botoes { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 6px; }
+#vez-res p { margin:4px 0; }
+.painel-ataque-inline { margin:0 0 12px; padding:8px 12px; border:1px solid var(--line); border-radius:12px; }
+.painel-ataque-inline > summary { cursor:pointer; font-weight:700; }

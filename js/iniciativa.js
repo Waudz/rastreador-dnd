@@ -262,6 +262,7 @@
                   <input type="number" min="1" step="1" value="1" aria-label="Quantidade de PV para alterar" data-amount="${c.id}">
                   <button class="small danger" type="button" data-damage="${c.id}">${ico("minus")}Dano</button>
                   <button class="small" type="button" data-heal="${c.id}">${ico("plus")}Cura</button>
+                  <button class="small primary" type="button" data-atacar="${c.id}">${ico("swords")}Atacar</button>
                 </div>
               </div>
               <div class="row-actions">
@@ -334,6 +335,8 @@
           }
           return;
         }
+
+        if (button.dataset.atacar) { window.dispatchEvent?.(new CustomEvent("ini:atacar", { detail: { id: button.dataset.atacar } })); return; }
 
         if (button.dataset.damage || button.dataset.heal) {
           const id = button.dataset.damage || button.dataset.heal;

@@ -65,3 +65,25 @@ test('modo treino: sempre ligado para quem não é mestre da campanha; só o mes
   assert.match(j,/if \(emTreino\(\) \|\| a\.tipo !== "magia"/,'em treino nada é gasto');
   assert.match(c,/window\.__ini\.papel = \(\) =>/);assert.match(c,/if \(!sincroniza\(\)\) return \{ ok: false, msg: "Só o mestre gasta espaços/);assert.match(c,/&versao=eq\./,'gravação com controle de versão');
 });
+test('faixa "Vez de ...": quem está na vez, escolher em quem atacar e qual ataque, rolando ataque e dano num clique; o painel Atacar fica dentro da ordem do combate com botão Atacar em cada cartão',()=>{
+  const j=ler('js/ataque-ini.js'),html=ler('iniciativa.html'),ini=ler('js/iniciativa.js');
+  assert.match(html,/id="acoes-da-vez"/);assert.ok(html.indexOf('id="acoes-da-vez"')<html.indexOf('id="combatants"')&&html.indexOf('id="painel-ataque"')<html.indexOf('id="combatants"'),'painel e faixa ficam acima da lista, não no fim da página');
+  assert.ok(html.indexOf('id="painel-ataque"')>html.indexOf('id="iniciativa-atual"')&&html.indexOf('id="painel-ataque"')<html.indexOf('id="camp-ini"'),'o painel está dentro da seção da ordem do combate');
+  assert.match(j,/<b>Vez de \$\{esc\(atk\.name\)\}<\/b>/);assert.match(j,/id="vez-alvo"/);assert.match(j,/data-vez="\$\{i\}"/);assert.match(j,/rolar\("tudo", \{ rapido: true/);assert.match(j,/const cur = window\.__ini\.atual\?\.\(\), l = lista\(\), atk = l\.find/);
+  assert.match(j,/if \(!sel\.manualAtacante && cur/,'sem escolha manual, o atacante acompanha a vez');assert.match(ini,/data-atacar="\$\{c\.id\}"/);assert.match(ini,/new CustomEvent\("ini:atacar"/);
+});
+test('faixa da vez roda de verdade: lista ataques de quem está na vez, rola no clique e o botão Aplicar reduz os PV uma vez só',async()=>{
+  const el=()=>{const o={innerHTML:'',hidden:false,open:false,value:'',listeners:{},dataset:{},style:{},addEventListener(n,f){(o.listeners[n]??=[]).push(f);},querySelector:s=>caches.get(s)||(caches.set(s,el()),caches.get(s)),insertAdjacentHTML(_,h){o.innerHTML+=h;},scrollIntoView(){},closest:()=>null};return o;},caches=new Map();
+  const faixa=el(),raiz=el(),res=el(),docEls={'painel-ataque':raiz,'acoes-da-vez':faixa};
+  const document={getElementById:id=>docEls[id],querySelector:s=>s==='#vez-res'?res:null,activeElement:null};
+  const lista=[{id:'a',name:'Goblin',kind:'Monstro',hp:7,maxHp:7,ac:13,key:'gob'},{id:'b',name:'Herói',kind:'Personagem',hp:20,maxHp:20,ac:15}],aplicados=[];
+  const ini={list:()=>lista,atual:()=>'a',papel:()=>'jogador',acoesDe:k=>k==='gob'?[{nome:'Cimitarra',hit:4,dmg:[{n:1,f:6,b:2,t:'cortante'}]}]:[],aoAlterar(){},aplicarDano:(id,n,q)=>{aplicados.push([id,n,q]);lista.find(c=>c.id===id).hp-=n;return true;}};
+  const w={__ini:ini,addEventListener(){},crypto:{getRandomValues:a=>{a[0]=0xFFFFFFFF;return a;}}};   // d20 = 20: crítico
+  const c=vm.createContext({window:w,document,crypto:w.crypto,Event:function(){}});vm.runInContext(ler("js/ataque-ini.js"),c);
+  assert.equal(faixa.hidden,false);assert.match(faixa.innerHTML,/Vez de Goblin/);assert.match(faixa.innerHTML,/Cimitarra \+4/);assert.match(faixa.innerHTML,/<option value="b" selected>Herói/,'o alvo padrão é o adversário');
+  const clique=sel=>faixa.listeners.click.forEach(f=>f({target:{closest:()=>sel}}));
+  clique({dataset:{vez:'0'},id:''});await new Promise(r=>setTimeout(r,5));
+  assert.match(res.innerHTML,/CRÍTICO/);assert.match(res.innerHTML,/Aplicar \d+ de dano em Herói/);
+  clique({dataset:{},id:'atk-aplicar',disabled:false});assert.equal(aplicados.length,1);assert.equal(aplicados[0][0],'b');assert.equal(aplicados[0][2],'a');
+  clique({dataset:{},id:'atk-aplicar',disabled:false});assert.equal(aplicados.length,1,'o segundo clique não aplica de novo');assert.ok(!/id="atk-aplicar"/.test(res.innerHTML),'o botão some depois de aplicar');
+});

@@ -95,6 +95,12 @@
       </div>
 
       <p id="inicio-aviso" class="muted" role="status"></p>
+      <div id="acoes-da-vez" class="acoes-vez" hidden></div>
+      <details class="painel-ataque-inline" id="painel-ataque">
+        <summary class="panel-title"><i data-i="swords"></i>Atacar e causar dano</summary>
+        <p class="muted">Escolha quem ataca, o ataque e o alvo. O app rola o d20 contra a CA do alvo e o dano (em dobro nos dados se for crítico). Aplique o dano com um clique.</p>
+        <div id="atk-corpo"></div>
+      </details>
       <div id="combatants" class="combatants">
         <div class="empty">
           <strong>O campo de batalha está vazio.</strong>
@@ -152,13 +158,6 @@
         </div>
       </form>
     </details>
-
-    <details class="vista-iniciativa panel" id="painel-ataque">
-      <summary class="panel-title"><i data-i="swords"></i>Atacar e causar dano</summary>
-      <p class="muted">Escolha quem ataca, o ataque e o alvo. O app rola o d20 contra a CA do alvo e o dano (em dobro nos dados se for crítico). Aplique o dano com um clique.</p>
-      <div id="atk-corpo"></div>
-    </details>
-
     <section class="vista-monstros panel" id="aviso-visitante">
       <h2 class="panel-title"><i data-i="plus"></i>Criar fichas e fotos</h2>
       <p class="muted">Você está usando o rastreador como visitante: pode pesquisar monstros e magias e usar toda a iniciativa, com combatentes manuais, sem conta. Criar fichas próprias, adicionar fotos, personagens e campanhas exige uma conta gratuita.</p>

@@ -103,7 +103,7 @@
   const raiz = typeof document !== "undefined" && document.getElementById("painel-ataque");
   if (!raiz || !window.__ini) return;
   const $ = (s) => raiz.querySelector(s), esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  let fontes = [], ultimo = null, gastando = false;
+  let fontes = [], ultimo = null, gastando = false, msgVez = "";
   const lista = () => window.__ini.list();
   const estado = () => window.__ini.__atk || (window.__ini.__atk = {});
   const papel = () => (window.__ini.papel ? window.__ini.papel() : "sem-campanha");
@@ -125,6 +125,7 @@
     const l = lista(), corpo = $("#atk-corpo");
     if (l.length < 1) { corpo.innerHTML = '<p class="muted">Adicione combatentes para usar os ataques.</p>'; return; }
     const sel = estado(), cur = window.__ini.atual?.();
+    if (!sel.manualAtacante && cur && l.some((c) => c.id === cur)) sel.atacante = cur;          // sem escolha manual, quem ataca é quem está na vez
     if (!l.some((c) => c.id === sel.atacante)) sel.atacante = cur && l.some((c) => c.id === cur) ? cur : l[0].id;
     if (!l.some((c) => c.id === sel.alvo) || (sel.alvo === sel.atacante && l.length > 1)) sel.alvo = (l.find((c) => c.id !== sel.atacante) || l[0]).id;
     const atacante = l.find((c) => c.id === sel.atacante);
@@ -149,9 +150,9 @@
     <div class="row"><button type="button" id="atk-rolar" class="primary">${magia ? "Conjurar e rolar" : "Rolar ataque e dano"}</button>${magia ? "" : '<button type="button" id="atk-so-ataque" class="small">Só o ataque</button>'}<button type="button" id="atk-so-dano" class="small">Só o dano</button><label class="inline"><input type="checkbox" id="atk-metade" style="width:auto;height:auto"> Metade do dano</label></div>
     <div id="atk-res" role="status" aria-live="polite"></div>`;
   }
-  function escolhido() {
+  function escolhido(opts = {}) {
     const sel = estado(), l = lista(), atacante = l.find((c) => c.id === sel.atacante), alvo = l.find((c) => c.id === sel.alvo), manual = sel.idx === "manual";
-    const base = { atacante, alvo, modo: $("#atk-modo")?.value || "normal", metade: !!$("#atk-metade")?.checked };
+    const base = { atacante, alvo, modo: opts.rapido ? (opts.modo || "normal") : ($("#atk-modo")?.value || "normal"), metade: opts.rapido ? false : !!$("#atk-metade")?.checked };
     if (manual) { const partes = parseExpressao($("#atk-dano")?.value || sel.dano); sel.dano = $("#atk-dano")?.value ?? sel.dano; sel.bonus = num($("#atk-bonus")?.value, num(sel.bonus, 0)); return { ...base, a: { nome: "Ataque manual", tipo: "ataque", hit: sel.bonus, dmg: partes } }; }
     return { ...base, a: fontes[sel.idx] };
   }
@@ -159,15 +160,19 @@
     if (emTreino() || a.tipo !== "magia" || !Number(a.m.l) || !atacante.pid || !window.__ini.gastarEspaco) return { ok: true, msg: "" };
     return window.__ini.gastarEspaco(atacante.pid, circulo);
   }
-  async function rolar(parte) {
+  async function rolar(parte, opts = {}) {
     if (gastando) return; gastando = true;
     try {
-      const { atacante, alvo, a, modo, metade } = escolhido(), res = $("#atk-res");
+      if (opts.rapido) {                                    // ataque rápido da vez: atacante = quem está na vez, alvo e ataque escolhidos na faixa "Vez de ..."
+        const sel = estado(), cur = window.__ini.atual?.(), atk = lista().find((c) => c.id === cur); if (!atk) return;
+        sel.atacante = cur; sel.manualAtacante = false; sel.alvo = opts.alvo || sel.alvo; fontes = fontesDe(atk); sel.idx = opts.idx; sel.circulo = null;
+      }
+      const { atacante, alvo, a, modo, metade } = escolhido(opts), res = opts.destino ? document.querySelector(opts.destino) : $("#atk-res");
       if (!atacante || !alvo || !a) return;
       let atq = null, dano = null, salva = null, linhas = [], partes = a.dmg, critico = false, metadeFinal = metade;
       if (a.tipo === "magia") {
-        const sel = estado(), circulo = Number($("#atk-circulo")?.value) || Number(a.m.l) || null, expr = $("#atk-dano-magia")?.value || "";
-        sel.circulo = circulo; sel.danoMagia = expr; sel.danoMagiaDe = a.m.en + "|" + circulo; sel.salvaBonus = num($("#atk-salva-bonus")?.value, 0);
+        const sel = estado(), circulo = opts.rapido ? (Number(a.m.l) || null) : (Number($("#atk-circulo")?.value) || Number(a.m.l) || null), expr = opts.rapido ? danoSugerido(a.m, a.an, { circulo, nivelTotal: a.st.nivelTotal }) : ($("#atk-dano-magia")?.value || "");
+        if (!opts.rapido) { sel.circulo = circulo; sel.danoMagia = expr; sel.danoMagiaDe = a.m.en + "|" + circulo; sel.salvaBonus = num($("#atk-salva-bonus")?.value, 0); }
         partes = expr.trim() ? parseExpressao(expr) : null;
         if (parte !== "dano") {
           if (expr.trim() && !partes) { res.innerHTML = '<span class="err">Dano inválido. Use algo como 8d6.</span>'; return; }
@@ -200,11 +205,41 @@
       ultimo = { dano, alvoId: alvo.id, atacanteId: atacante.id };
       if (dano && dano.total >= 0) linhas.push(`<div class="row"><button type="button" id="atk-aplicar" class="danger">Aplicar ${dano.total} de dano em ${esc(alvo.name)}</button><span class="muted">PV ${num(alvo.hp)} → ${Math.max(0, num(alvo.hp) - dano.total)}</span></div>`);
       res.innerHTML = linhas.join("");
+      if (opts.destino) msgVez = linhas.join("");
     } finally { gastando = false; }
+  }
+  /* ---- faixa "Vez de ...": quem está na vez, em quem ataca e qual ataque usar, com a rolagem de ataque e dano num clique ---- */
+  const faixa = document.getElementById("acoes-da-vez");
+  const alvoPadrao = (l, atk) => { const grupo = (c) => (c.kind === "Personagem" ? "p" : "m"); return (l.find((c) => c.id !== atk.id && grupo(c) !== grupo(atk) && num(c.hp) > 0) || l.find((c) => c.id !== atk.id && num(c.hp) > 0) || l.find((c) => c.id !== atk.id) || atk); };
+  function desenharVez() {
+    if (!faixa) return;
+    const cur = window.__ini.atual?.(), l = lista(), atk = l.find((c) => c.id === cur);
+    if (!atk || l.length < 2) { faixa.hidden = true; faixa.innerHTML = ""; return; }
+    const sel = estado(), fx = fontesDe(atk);
+    if (!sel.alvoVez || !l.some((c) => c.id === sel.alvoVez) || sel.alvoVez === atk.id) sel.alvoVez = alvoPadrao(l, atk).id;
+    faixa.hidden = false;
+    faixa.innerHTML = `<div class="acoes-vez-cab"><b>Vez de ${esc(atk.name)}</b><label class="inline">Atacar<select id="vez-alvo" aria-label="Em quem atacar">${l.filter((c) => c.id !== atk.id).map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvoVez ? "selected" : ""}>${esc(c.name)} (CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)})</option>`).join("")}</select></label><label class="inline">Jogada<select id="vez-modo" aria-label="Vantagem ou desvantagem"><option value="normal" ${sel.modoVez !== "vantagem" && sel.modoVez !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modoVez === "vantagem" ? "selected" : ""}>Vantagem</option><option value="desvantagem" ${sel.modoVez === "desvantagem" ? "selected" : ""}>Desvantagem</option></select></label></div>
+      <div class="row acoes-vez-botoes">${fx.length ? fx.map((a, i) => `<button type="button" class="small primary" data-vez="${i}" title="Rola o ataque contra a CA do alvo e o dano">${esc(a.tipo === "magia" ? a.nome + " (magia)" : a.nome)}${a.tipo !== "magia" && a.hit != null ? " " + (a.hit >= 0 ? "+" : "") + a.hit : ""}</button>`).join("") : '<span class="muted">Sem ataques cadastrados: use o painel Atacar abaixo para um ataque manual.</span>'}<button type="button" class="small" data-vez-painel>Outras opções…</button></div>
+      <div id="vez-res" role="status" aria-live="polite">${msgVez}</div>`;
+  }
+  faixa?.addEventListener("change", (e) => { const sel = estado(); if (e.target.id === "vez-alvo") sel.alvoVez = e.target.value; else if (e.target.id === "vez-modo") sel.modoVez = e.target.value; });
+  faixa?.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.vez !== undefined) { const sel = estado(); rolar("tudo", { rapido: true, idx: +b.dataset.vez, alvo: $("#vez-alvo")?.value || sel.alvoVez, modo: $("#vez-modo")?.value || "normal", destino: "#vez-res" }); }
+    else if (b.dataset.vezPainel !== undefined) { raiz.open = true; const sel = estado(); sel.atacante = window.__ini.atual?.() || sel.atacante; sel.manualAtacante = false; sel.alvo = sel.alvoVez || sel.alvo; sel.idx = null; desenhar(); raiz.scrollIntoView?.({ block: "nearest", behavior: "smooth" }); }
+    else if (b.id === "atk-aplicar" && ultimo && ultimo.dano) aplicarUltimo(b, "#vez-res");
+  });
+  function aplicarUltimo(b, destino) {
+    const U = ultimo; ultimo = null;                                   // um clique aplica uma vez só
+    window.__ini.aplicarDano(U.alvoId, U.dano.total, U.atacanteId);
+    const alvo = lista().find((c) => c.id === U.alvoId), nota = `<p><b>Dano aplicado.</b> ${esc(alvo ? alvo.name : "Alvo")}: PV ${alvo ? num(alvo.hp) : "?"}/${alvo ? num(alvo.maxHp) : "?"}.</p>`;
+    if (destino === "#vez-res") { msgVez = msgVez.replace(/<div class="row"><button type="button" id="atk-aplicar"[\s\S]*?<\/div>/, "") + nota; const r = document.querySelector("#vez-res"); if (r) r.innerHTML = msgVez; }
+    else $("#atk-res")?.insertAdjacentHTML("beforeend", nota);
+    if (b) b.disabled = true;
   }
   raiz.addEventListener("change", (e) => {
     const sel = estado();
-    if (e.target.id === "atk-atacante") { sel.atacante = e.target.value; sel.idx = null; sel.circulo = null; desenhar(); }
+    if (e.target.id === "atk-atacante") { sel.atacante = e.target.value; sel.manualAtacante = true; sel.idx = null; sel.circulo = null; desenhar(); }
     else if (e.target.id === "atk-alvo") sel.alvo = e.target.value;
     else if (e.target.id === "atk-ataque") { sel.idx = e.target.value === "manual" ? "manual" : +e.target.value; sel.circulo = null; desenhar(); }
     else if (e.target.id === "atk-modo") sel.modo = e.target.value;
@@ -214,14 +249,14 @@
   raiz.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.id === "atk-rolar") rolar("tudo"); else if (b.id === "atk-so-ataque") rolar("ataque"); else if (b.id === "atk-so-dano") rolar("dano");
-    else if (b.id === "atk-aplicar" && ultimo && ultimo.dano) {
-      const U = ultimo; ultimo = null;                                   // um clique aplica uma vez só
-      window.__ini.aplicarDano(U.alvoId, U.dano.total, U.atacanteId);
-      const alvo = lista().find((c) => c.id === U.alvoId);
-      $("#atk-res").insertAdjacentHTML("beforeend", `<p><b>Dano aplicado.</b> ${esc(alvo ? alvo.name : "Alvo")}: PV ${alvo ? num(alvo.hp) : "?"}/${alvo ? num(alvo.maxHp) : "?"}.</p>`);
-      b.disabled = true;
-    }
+    else if (b.id === "atk-aplicar" && ultimo && ultimo.dano) aplicarUltimo(b, "#atk-res");
   });
-  window.__ini.aoAlterar?.(() => { if (!raiz.hidden && !document.activeElement?.closest?.("#painel-ataque")) desenhar(); });
-  desenhar();
+  /* botão "Atacar" no cartão do combatente: abre o painel aqui em cima com ele como atacante */
+  window.addEventListener?.("ini:atacar", (e) => {
+    const sel = estado(), id = e.detail && e.detail.id; if (!id) return;
+    sel.atacante = id; sel.manualAtacante = true; sel.idx = null; sel.circulo = null; raiz.open = true; raiz.hidden = false; desenhar();
+    raiz.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  });
+  window.__ini.aoAlterar?.(() => { if (!raiz.hidden && !document.activeElement?.closest?.("#painel-ataque")) desenhar(); if (!document.activeElement?.closest?.("#acoes-da-vez")) desenharVez(); });
+  desenhar(); desenharVez();
 })();
