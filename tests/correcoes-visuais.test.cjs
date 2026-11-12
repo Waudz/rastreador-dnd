@@ -36,10 +36,10 @@ test('editor de enquadramento: o preview usa a proporção real da faixa (comput
   assert.match(ler('css/mobile.css'),/\.crop-fundo \.crop-stage\{[^}]*aspect-ratio:auto/);
 });
 
-test('Subir de nível fica junto do nível do personagem, some no nível 20 e na ficha embutida',()=>{
+test('Subir de nível fica junto do nível, inclusive no painel, e some no nível 20',()=>{
   const j=ler('js/personagem.js');
   assert.match(j,/<span class="badge">Nível \$\{nivelTotal\(\)\}<\/span>\$\{nivelTotal\(\)<20\?`<a class="btnlike small ficha-subir-nivel" href="criar-personagem\.html\?id=\$\{encodeURIComponent\(id\)\}&modo=nivel">Subir de nível<\/a>`:""\}/);
-  assert.match(ler('css/fichas.css'),/\.ficha-embutida \.ficha-subir-nivel \{ display:none; \}/);
+  assert.doesNotMatch(ler('css/fichas.css'),/\.ficha-embutida \.ficha-subir-nivel \{ display:none; \}/);
 });
 
 test('subir de nível é guiado, nível por nível, com etapas dinâmicas e vários níveis em sequência',()=>{
