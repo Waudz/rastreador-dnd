@@ -5,12 +5,12 @@ async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={},registro=
   document.addEventListener=(n,fn)=>(eventos[n]??=[]).push(fn);
   const p={id:"p",nome:"Inicial",campanha_id:"c",dono_id:"u",pv_atual:10,pv_max:10,pv_temp:0,ca:10,versao:1,ficha:{classes:[{c:"Fighter",n:1}]}};
   Object.assign(p.ficha,fichaInicial);Object.assign(p,registro);
-  const nuvem={usuario:()=>({id:"u"}),esc:s=>String(s??""),retornoDoLink:async()=>{},observar(){},rpc:async()=>mestre,patch,get:async q=>q.startsWith("personagens")?[p]:q.startsWith("campanhas")?[{id:"c",nome:"Campanha"}]:q.startsWith("membros")?[{papel:"mestre"}]:[{id:"u",nome:"Pessoa"}]};
-  const c=vm.createContext({window:{addEventListener(){}},document,nuvem,location:{search},URLSearchParams,confirm:()=>true,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
+  const nuvem={usuario:()=>({id:"u"}),esc:s=>String(s??""),retornoDoLink:async()=>{},observar(){},rpc:async()=>mestre,patch,get:async q=>q.startsWith("personagens")?[p]:q.startsWith("campanhas")?[{id:"c",nome:"Campanha"}]:q.startsWith("membros")?[{papel:mestre?"mestre":"jogador"}]:[{id:"u",nome:"Pessoa"}]};
+  const c=vm.createContext({window:{addEventListener(){},parent:{postMessage(){}}},document,nuvem,location:{search},URLSearchParams,confirm:()=>true,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
   executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/magias-jogo.js",c);executar("js/inventario.js",c);executar("js/itens-efeitos.js",c);executar("js/recursos.js",c);executar("js/jogo.js",c);executar("js/jogo-ui.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
   const nome=v=>eventos.input.forEach(fn=>fn({target:{dataset:{col:"nome"},value:v}}));
   const salvar=async()=>{const a=[...timers.values()];timers.clear();for(const fn of a)await fn();};
-  return {document,nome,salvar,timers,p,eventos};
+  return {document,nome,salvar,timers,p,eventos,rpc:fn=>nuvem.rpc=fn};
 }
 test("resposta vazia do banco não é exibida como Salvo",async()=>{
   const f=await ficha(async()=>[]);await f.salvar();assert.match(f.document.el("estado").innerHTML,/Não salvou/);
@@ -142,4 +142,18 @@ test('condição de item passa pelo motor: incapacitação encerra concentraçã
 
 test('exaustão 6 mostra morte mesmo com PV positivos e cura não revive o personagem',async()=>{
  const f=await ficha(async()=>[{versao:2}],{fichaInicial:{pvAuto:false}});f.document.el('j-exaustao').value='6';await clicar(f,'[data-jogo]',{jogo:'exaustao'});assert.equal(f.p.ficha.morte.morto,true);assert.match(f.document.el('estado-jogo').innerHTML,/<p>Morto<\/p>/);const pv=f.p.pv_atual;f.document.el('qtd').value='10';await clicar(f,'#b-cura');assert.equal(f.p.pv_atual,pv);assert.match(f.document.el('erro').innerHTML,/não o revive/);
+});
+
+test('gravação exige a versão carregada e conflito conserva as alterações pendentes sem sobrescrever outra sessão',async()=>{
+ let chamadas=0;const servidor={versao:2,pv_atual:8};const f=await ficha(async(q,d)=>{chamadas++;assert.match(q,/versao=eq\.1/);if(!q.includes('versao=eq.'+servidor.versao))return [];Object.assign(servidor,d);return[{versao:++servidor.versao}];});
+ f.document.el('qtd').value='3';await clicar(f,'#b-dano');await f.salvar();assert.equal(servidor.pv_atual,8);assert.equal(f.p.pv_atual,7);assert.match(f.document.el('estado').innerHTML,/outra sessão/);f.nome('Rascunho preservado');await f.salvar();assert.equal(chamadas,2);assert.equal(servidor.pv_atual,8);
+});
+test('jogador dono usa jogo normal mas não consegue abrir editor de efeitos nem conceder magia por eventos forjados',async()=>{
+ let salvo;const f=await ficha(async(_q,d)=>{salvo=d;return[{versao:2}];},{mestre:false,fichaInicial:{pvAuto:false,classes:[{c:'Wizard',n:3}],magias:[{n:'Luz',en:'Light',l:0}]},registro:{inventario:[pocao(1)]}});
+ assert.doesNotMatch(f.document.el('ficha').innerHTML,/id="ms-abrir"|data-inv-editar=/);await clicar(f,'[data-inv-editar]',{invEditar:'0'});await clicar(f,'#ms-abrir');await clicar(f,'#ms-ok');assert.equal(f.p.ficha.magiasMestre,undefined);assert.equal(f.document.el('ef-box').innerHTML,'');f.document.el('qtd').value='2';await clicar(f,'#b-dano');await f.salvar();assert.equal(salvo.pv_atual,8);
+});
+test('painel revalida o mestre antes de gravar: revogação bloqueia os novos motores',async()=>{
+ let patches=0,cheques=0;const f=await ficha(async()=>{patches++;return[{versao:2}];},{search:'?id=p&modo=painel'});
+ // O harness deixa a função RPC substituível pelo teste, sem conexão remota.
+ f.rpc(()=>++cheques===0);f.document.el('qtd').value='1';await clicar(f,'#b-dano');await f.salvar();assert.equal(patches,0);assert.match(f.document.el('estado').innerHTML,/exclusivo do mestre/);
 });

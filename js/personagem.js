@@ -64,8 +64,8 @@
     const corpo = JSON.parse(JSON.stringify(pend)); pend = null; salvando = true; let falhou = false;
     try {
       if(exclusivoMestre && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true) throw new Error('Este painel é exclusivo do mestre da campanha.');
-      const r = await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}`, corpo);
-      if (!r || !r[0]) throw new Error("O personagem não foi atualizado. Confira se você ainda tem acesso.");
+      const r = await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}&versao=eq.${encodeURIComponent(P.versao)}`, corpo);
+      if (!r || !r[0]) throw new Error("O personagem não foi atualizado: a ficha mudou em outra sessão ou você perdeu o acesso. Reabra a ficha antes de salvar.");
       P.versao = r[0].versao;
       $("#estado").textContent = "Salvo";
       if(!pend) notificar('ficha-salva');
@@ -253,7 +253,7 @@
   const MJ = window.MAGIAS_JOGO;
   const cp = { en: "", fonte: "grimorio", uid: "", arc: "" };
   const cidMag = (m) => m.classeConj || (m.classes && m.classes[0] ? m.classes[0].replace(/^./, (x) => x.toUpperCase()) : "");
-  const catMag = (m) => m.fonte === "mestre" ? "Concedidas pelo mestre" : m.origem === "Raça" || m.fonte === "raca" ? "Raciais e de características" : m.noGrimorio ? "Grimório do Mago" : MJ.tipoClasse(cidMag(m)) === "known" ? "Magias conhecidas" : MJ.tipoClasse(cidMag(m)) === "prepared" ? "Lista da classe (preparar)" : "Outras magias";
+  const catMag = (m) => m.fonte === "mestre" ? "Concedidas pelo mestre" : m.origem === "Raça" || m.fonte === "raca" ? "Raciais e de características" : m.noGrimorio ? "Grimório do Mago" : (m.registroOrigem?.vaga || MJ.tipoClasse(cidMag(m)) === "known" || m.fonte==="classe"&&["Fighter","Rogue"].includes(cidMag(m))) ? "Magias conhecidas" : MJ.tipoClasse(cidMag(m)) === "prepared" ? "Lista da classe (preparar)" : "Outras magias";
   const ORDEM_CAT = ["Magias conhecidas", "Grimório do Mago", "Lista da classe (preparar)", "Raciais e de características", "Concedidas pelo mestre", "Outras magias"];
   const rotuloOrigem = (m) => { const t = m.registroOrigem && m.registroOrigem.tipo; return t && t !== "classe" && MJ.ROTULO_ORIGEM[t] ? MJ.ROTULO_ORIGEM[t] : ""; };
   const linhaMag = (m, i) => {
@@ -459,6 +459,7 @@
   }
   /* ---------- concessão do mestre ---------- */
   async function abrirMestre() {
+    if(!souMestre)return;
     const box = $("#mestre-box"); if (!box) return;
     try { await carregarCat(); } catch (_) { box.hidden = false; box.innerHTML = '<span class="err">Não consegui carregar as magias.</span>'; return; }
     box.hidden = false;
@@ -788,7 +789,7 @@
     const recarregar = () => location.reload(), cancelar = window.ESQ ? window.ESQ.vigiar($("#ficha"), recarregar, 20000, "A conexão está lenta e a ficha ainda não chegou.") : () => {};
     try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); cancelar(); window.ESQ?.pronto($("#ficha")); } catch (e) { cancelar(); document.querySelector(".esq-topo")?.remove?.(); if (window.ESQ) window.ESQ.erro($("#ficha"), e.message, recarregar); else aviso(e.message, true); return; }
     nuvem.observar(async () => {
-      if (pend) return;
+      if (pend || salvando) return;
       if(exclusivoMestre && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true){$('#ficha').innerHTML='';aviso('Este painel é exclusivo do mestre da campanha.',true);return;}
       const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;
       const r = await carregar();

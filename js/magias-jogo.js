@@ -91,9 +91,15 @@
 
   /* Troca de uma magia conhecida ao subir de nível (Bardo, Feiticeiro, Bruxo e Patrulheiro, uma por nível). Só existe como escolha DO NÍVEL. */
   const nivelNaClasse = (st, cid) => (st.niveis || []).filter((x) => x.c === cid).length;
+  function podeTrocar(f,cid){const c=(f.classes||[]).find(c=>c.c===cid);return CLASSES_TROCA.includes(cid)||!!(c&&window.CRIADOR?.perfilMagias(c,f)?.escolas);}
+  function opcoesTroca(f,cid,de,grupoKey){
+    const CR=window.CRIADOR,g=CR?.gruposMagias(f).find(g=>g.key===grupoKey);if(!g)return [];
+    const v=g.vagas?.find(v=>v.magia===de);
+    return g.opts.filter(id=>!g.selecionadas.includes(id)&&(!g.escolas||v?.livre&&v.confirmada||g.escolas.includes(escola(CR.magiaPorId(id)))));
+  }
   function aplicarTroca(p, cid, de, para, { grupoKey }) {
     const f = p.ficha, st = f.criacao;
-    if (!CLASSES_TROCA.includes(cid)) throw new Error("Esta classe não troca magias ao subir de nível.");
+    if (!podeTrocar(f,cid)) throw new Error("Esta classe não troca magias ao subir de nível.");
     if (grupoKey !== "magias|" + cid + "|magias") throw new Error("A troca vale somente para magias conhecidas da classe, sem Arcanum ou truques.");
     const entrada = (st.niveis || [])[st.niveis.length - 1];
     if (!entrada || entrada.c !== cid) throw new Error("A troca vale para o nível que acabou de ser ganho nesta classe.");
@@ -104,14 +110,21 @@
     if (nivelNaClasse(st, cid) < 2) throw new Error("No primeiro nível da classe ainda não há magia anterior para trocar.");
     const CR0 = window.CRIADOR, d0 = CR0 && CR0.derivar(p).ficha;
     if (d0) {
-      const racial = (id) => (d0.magias || []).some((x) => idDe(x) === id && (x.origem === "Raça" || x.autoCriador));
+      const racial = (id) => (d0.magias || []).some((x) => CR0.magiaId(x) === id && (x.origem === "Raça" || x.autoCriador && x.fonte !== "classe"));
       if (racial(de) || racial(para) || CR0.magiasConcedidas(d0).some((m) => m.id === de || m.id === para)) throw new Error("Magias concedidas por raça, talento ou subclasse não entram na troca.");
-      const ent = (d0.magias || []).find((x) => idDe(x) === de);
-      if (ent && (ent.fonte !== "classe" || (ent.classeConj && ent.classeConj !== cid))) throw new Error("Só magias aprendidas por esta classe podem ser trocadas.");
+      const ent = (d0.magias || []).find((x) => CR0.magiaId(x) === de);
+      if (ent && (ent.fonte !== "classe" || (ent.classeConj && ent.classeConj !== cid && !(ent.classes||[]).includes(cid.toLowerCase())))) throw new Error("Só magias aprendidas por esta classe podem ser trocadas.");
     }
     const CR = window.CRIADOR, g = CR && CR.gruposMagias(CR.derivar(p).ficha).find((x) => x.key === grupoKey);
     if (g && !g.opts.includes(para)) throw new Error("A nova magia precisa ser da lista da classe e de um círculo para o qual você tem espaços de magia.");
-    lista[i] = para; st.selecoes[grupoKey] = lista; entrada.troca = { de, para };
+    let vaga;
+    if(g?.escolas){vaga=g.vagas.find(v=>v.magia===de);if(!vaga||vaga.nivel>=nivelNaClasse(st,cid))throw Error('Troque uma magia conhecida antes deste nível.');
+      if(vaga.livre&&!vaga.confirmada)throw Error('Confirme no editor a origem da escolha livre antes de trocá-la.');
+      if(!vaga.livre&&!g.escolas.includes(escola(CR.magiaPorId(para))))throw Error('Esta escolha é restrita a '+g.escolas.join(' ou ')+'. A exceção acompanha apenas a escolha livre original.');
+    }
+    lista[i] = para;
+    if(vaga){CR.registrarVagas(f);const vs=st.vagasMagias[grupoKey],v=vs.find(v=>v.id===vaga.id);v.magia=para;v.nivelEscolha=nivelNaClasse(st,cid);}
+    st.selecoes[grupoKey] = lista; entrada.troca = { de, para,...(vaga?{vaga:JSON.parse(JSON.stringify(vaga))}:{}) };
     return p;
   }
 
@@ -120,6 +133,7 @@
     if (!entrada || !entrada.troca) throw new Error("Não há troca neste nível.");
     const lista = (st.selecoes[grupoKey] || []).slice(), i = lista.indexOf(entrada.troca.para);
     if (i < 0) throw new Error("A magia trocada não está mais entre as escolhidas.");
+    if(entrada.troca.vaga){const vs=st.vagasMagias?.[grupoKey]||[],i=vs.findIndex(v=>v.id===entrada.troca.vaga.id);if(i>=0)vs[i]=JSON.parse(JSON.stringify(entrada.troca.vaga));}
     lista[i] = entrada.troca.de; st.selecoes[grupoKey] = lista; delete entrada.troca;
     return p;
   }
@@ -171,5 +185,5 @@
     return n;
   }
 
-  window.MAGIAS_JOGO = { escola, custoCopia, validarCopia, copiarParaGrimorio, podePreparar, aplicarTroca, desfazerTroca, usarConcedida, recuperarUsos, MODOS_CONCESSAO, concederMestre, listaPergaminhos, entradaGrimorio, tipoClasse, noGrimorio, maiorCirculo, CLASSES_TROCA, ROTULO_ORIGEM, SAVANT };
+  window.MAGIAS_JOGO = { podeTrocar,opcoesTroca, escola, custoCopia, validarCopia, copiarParaGrimorio, podePreparar, aplicarTroca, desfazerTroca, usarConcedida, recuperarUsos, MODOS_CONCESSAO, concederMestre, listaPergaminhos, entradaGrimorio, tipoClasse, noGrimorio, maiorCirculo, CLASSES_TROCA, ROTULO_ORIGEM, SAVANT };
 })();

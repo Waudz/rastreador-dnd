@@ -30,7 +30,7 @@ Fonte única das decisões do William. Não repetir em outros arquivos: apontar 
 - **Não aprender magia livremente pelo catálogo.** Concessão do mestre existe, explícita e separada, com origem "mestre"; o mestre escolhe a forma: conhecida, adicionada ao grimório, sempre preparada, de uso limitado ou outra.
 - Grimório do Mago: cópia de **pergaminho** exige teste de Inteligência (Arcanismo) com **CD 10 + círculo**; o pergaminho é **destruído em qualquer resultado**. Cópia normal (outro grimório): **50 PO e 2 horas por círculo**, com as exceções de características (ex.: escola do Mago paga metade). Copiar não é preparar nem conjurar. Mostrar requisitos, custo, tempo e resultado antes de confirmar.
 - Bardo, Feiticeiro, Bruxo e Patrulheiro trocam uma magia conhecida ao subir de nível (escolha do nível). Clérigo, Druida e Paladino preparam da lista da classe. Pacto do Bruxo e multiclasse (espaços compartilhados) tratados à parte.
-- Troca de magia ao subir de nível respeita a classe e nunca troca magia racial, de talento ou de subclasse.
+- Troca de magia ao subir de nível respeita a classe e nunca troca magia racial, de talento ou de subclasse. Cavaleiro Místico e Trapaceiro Arcano guardam a origem da vaga de escolha: a exceção de escola acompanha a vaga livre de 3/8/14/20, mesmo que originalmente tenha sido preenchida com uma magia das escolas permitidas.
 - Origem e vínculo de cada magia sempre registrados.
 - **O sistema de magias só está concluído com: lista do Paladino, Arcanum Místico do Bruxo e revisão da conjuração multiclasse** (`docs/PENDENCIAS.md`).
 

@@ -59,4 +59,5 @@ jobs:
       - name: Permissões de campanhas, documentos, Storage, convites e administradores
         run: psql -v ON_ERROR_STOP=1 -f tests/supabase-permissoes.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/admin.test.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/fase5-jogo-permissoes.test.sql
       - run: bash tests/acervo-concorrencia.sh

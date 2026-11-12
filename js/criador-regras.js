@@ -117,6 +117,33 @@ window.CRIADOR = (() => {
   }
   /* magias que a raça concede (nome em inglês, nível total mínimo); nunca entram em escolhas nem em trocas de classe */
   function magiasRaciaisLista(f){return f.raca==="Fada"?[["Druidcraft",1],["Faerie Fire",3],["Enlarge/Reduce",5]]:f.raca==="Gnomo (da Floresta)"?[["Minor Illusion",1]]:f.raca==="Tiefling"?[["Thaumaturgy",1],["Hellish Rebuke",3],["Darkness",5]]:f.raca==="Elfo (Drow)"?[["Dancing Lights",1],["Faerie Fire",3],["Darkness",5]]:[];}
+  /* As exceções pertencem à escolha recebida no nível 3/8/14/20, inclusive após substituições (errata PHB 2014). */
+  function vagasMagias(f,cid,selecionadas) {
+    const c=(f.classes||[]).find(c=>c.c===cid),p=c&&perfilMagias(c,f);if(!p?.escolas)return [];
+    const key='magias|'+cid+'|magias',sel=selecionadas||(estado(f).selecoes[key]||[]),ant=estado(f).vagasMagias?.[key]||[],vagas=[];
+    for(let n=3;n<=c.n;n++){const antes=n>3?perfilMagias({...c,n:n-1},f).qtd:0,ate=perfilMagias({...c,n},f).qtd;
+      for(let i=antes;i<ate;i++)vagas.push({id:cid+':'+n+':'+i,nivel:n,livre:n===3?i===2:[8,14,20].includes(n),magia:null,confirmada:false});}
+    const usados=new Set();
+    for(const v of vagas){const a=ant.find(a=>a.id===v.id);if(a&&sel.includes(a.magia)&&!usados.has(a.magia)){v.magia=a.magia;v.confirmada=!!a.confirmada;v.nivelEscolha=a.nivelEscolha||v.nivel;usados.add(a.magia);}}
+    const fora=id=>!p.escolas.includes(String(magiaPorId(id)?.cab||'').split(' · ')[0]);
+    for(const id of sel.filter(id=>!usados.has(id)).sort((a,b)=>Number(fora(b))-Number(fora(a)))){
+      const v=vagas.find(v=>!v.magia&&!v.livre&&!fora(id))||vagas.find(v=>!v.magia&&v.livre);if(!v)continue;
+      v.magia=id;v.confirmada=!v.livre||fora(id);v.nivelEscolha=v.nivel;usados.add(id);
+    }
+    return vagas;
+  }
+  function registrarVagas(f){
+    const st=estado(f);st.vagasMagias ||= {};
+    for(const g of gruposMagias(f).filter(g=>g.escolas)){const ant=st.vagasMagias[g.key]||[],ativas=new Set(g.vagas.map(v=>v.id));st.vagasMagias[g.key]=ant.filter(v=>!ativas.has(v.id)).concat(g.vagas.filter(v=>v.magia));}
+  }
+  function definirVagaLivre(f,cid,id,magia){
+    const g=gruposMagias(f).find(g=>g.key==='magias|'+cid+'|magias'),vs=g?.vagas||[],v=vs.find(v=>v.id===id);
+    if(!v?.livre||!g.selecionadas.includes(magia))throw Error('Escolha livre inválida. Selecione uma magia conhecida da própria classe.');
+    const outra=vs.find(v=>v.magia===magia),anterior=v.magia;
+    if(outra&&outra.id!==v.id){if(anterior&&!outra.livre&&!g.escolas.some(e=>String(magiaPorId(anterior)?.cab||'').startsWith(e)))throw Error('A outra magia também precisa de uma escolha livre.');outra.magia=anterior;}
+    v.magia=magia;v.confirmada=true;registrarVagas(f);const st=estado(f);st.vagasMagias[g.key]=(st.vagasMagias[g.key]||[]).filter(a=>!vs.some(v=>v.id===a.id)).concat(vs.filter(v=>v.magia));
+    return v;
+  }
   const ARCANUM=[[6,11],[7,13],[8,15],[9,17]];   // [círculo, nível de Bruxo]
   function gruposMagias(f){
     const out=[];
@@ -124,9 +151,10 @@ window.CRIADOR = (() => {
       for(const tipo of ["truques","magias"]){const qtd=tipo==="truques"?p.truques:p.qtd;if(!qtd)continue;
         const concedidas=new Set([...magiasConcedidas(f).map(m=>m.id),...magiasRaciaisLista(f).filter(x=>R.nivelTotal(f.classes||[])>=x[1]).map(x=>{const m=MAGIAS.find(m=>m.en===x[0]);return m?magiaId(m):x[0];})]);const key="magias|"+c.c+"|"+tipo,opts=MAGIAS.filter(m=>!concedidas.has(magiaId(m))&&m.c.includes(p.lista||c.c)&&(tipo==="truques"?m.l===0:m.l>0&&m.l<=p.max)).map(magiaId);
         const antigos=(f.magias||[]).filter(m=>tipo==="truques"?m.l===0:m.l>0).map(magiaId);
-        out.push({key,source:idClasse(c.c),titulo:p.nome+" · "+(tipo==="truques"?"truques":p.tipo==="spellbook"?"grimório":p.tipo==="prepared"?"magias preparadas":"magias conhecidas"),grants:"spell",qtd,opts,selecionadas:[...new Set(estado(f).selecoes[key]||antigos)].filter(id=>opts.includes(id)).slice(0,qtd),max:p.max,...(tipo==="magias"&&p.escolas?{escolas:p.escolas,livres:p.livres}:{})});
+        out.push({key,source:idClasse(c.c),titulo:p.nome+" · "+(tipo==="truques"?"truques":p.tipo==="spellbook"?"grimório":p.tipo==="prepared"?"magias preparadas":"magias conhecidas"),grants:"spell",qtd,opts,selecionadas:[...new Set(estado(f).selecoes[key]||antigos)].filter(id=>opts.includes(id)).slice(0,qtd),max:p.max,...(tipo==="magias"&&p.escolas?{escolas:p.escolas,livres:p.livres,vagas:vagasMagias(f,c.c,[...new Set(estado(f).selecoes[key]||antigos)].filter(id=>opts.includes(id)).slice(0,qtd))}:{})});
       }
     }
+    for(const g of out.filter(g=>g.escolas))g.bloqueadas=g.opts.filter(id=>!g.selecionadas.includes(id)&&!g.escolas.some(e=>String(magiaPorId(id)?.cab||'').startsWith(e))&&!g.vagas.some(v=>v.livre&&!v.magia));
     /* Arcanum Místico do Bruxo (2014): uma magia de 6º, 7º, 8º e 9º círculo (níveis 11, 13, 15 e 17). Não é magia conhecida, não usa espaços de Pacto
        e não conta nos limites de conhecidas; cada uma é conjurada uma vez por descanso longo. */
     for(const c of f.classes||[]){if(c.c!=="Warlock")continue;
@@ -144,15 +172,20 @@ window.CRIADOR = (() => {
      DERIVADO (nunca editado à mão, recalculado em derivar): ficha.progressao[i] =
        {total, classe, nivelClasse, pv:{modo,dado,valor,ganho}, automaticas:[ids], escolhas:{grupo:[ids]}, melhoria}.
      PV: o total sempre sai da progressão (um só cálculo para criação, evolução e edição). */
+  function ajustarTrocaHistorica(st,c,t,n,restaurar){
+    if(!t)return;const key='magias|'+c+'|magias',lista=st.selecoes[key]||[],de=restaurar?t.de:t.para,para=restaurar?t.para:t.de,i=lista.indexOf(de);if(i<0)return;lista[i]=para;
+    if(t.vaga){st.vagasMagias ||= {};const vs=st.vagasMagias[key] ||= [],j=vs.findIndex(v=>v.id===t.vaga.id),v={...copiar(t.vaga),...(restaurar?{magia:t.para,nivelEscolha:n}:{})};if(j<0)vs.push(v);else vs[j]=v;}
+  }
   function reconciliarNiveis(f){
     const st=estado(f),classes=(f.classes||[]).filter(x=>x.c&&classe(x.c)),alvo={};classes.forEach(x=>{alvo[x.c]=Math.max(0,Number(x.n)||0);});
-    const cont={},guardados=st.niveisInativos ||= [];let niveis=[];
+    const cont={},guardados=st.niveisInativos ||= [],removidos=[];let niveis=[];
     for(const x of st.niveis||[]){const n=cont[x.c]=(cont[x.c]||0)+1;
       if(n<=(alvo[x.c]||0))niveis.push(copiar(x));
-      else{const registro={...copiar(x),nivelClasse:n,progressao:copiar((f.progressao||[]).find(p=>p.classe===x.c&&p.nivelClasse===n)||null)};
+      else{removidos.push({c:x.c,troca:x.troca,n});const registro={...copiar(x),nivelClasse:n,progressao:copiar((f.progressao||[]).find(p=>p.classe===x.c&&p.nivelClasse===n)||null)};
         const i=guardados.findIndex(g=>g.c===x.c&&g.nivelClasse===n);if(i<0)guardados.push(registro);else guardados[i]=registro;}
     }
-    for(const x of classes){let n=niveis.filter(e=>e.c===x.c).length;while(n<alvo[x.c]){n++;const i=guardados.findIndex(g=>g.c===x.c&&g.nivelClasse===n);if(i>=0){const {nivelClasse,progressao,...g}=guardados.splice(i,1)[0];niveis.push(g);}else niveis.push({c:x.c,pv:{modo:'fixo'}});}}
+    for(const x of removidos.reverse())ajustarTrocaHistorica(st,x.c,x.troca,x.n,false);
+    for(const x of classes){let n=niveis.filter(e=>e.c===x.c).length;while(n<alvo[x.c]){n++;const i=guardados.findIndex(g=>g.c===x.c&&g.nivelClasse===n);if(i>=0){const {nivelClasse,progressao,...g}=guardados.splice(i,1)[0];niveis.push(g);ajustarTrocaHistorica(st,x.c,g.troca,n,true);}else niveis.push({c:x.c,pv:{modo:'fixo'}});}}
     if(niveis.length&&classes.length&&niveis[0].c!==classes[0].c){const ordem=Object.fromEntries(classes.map((x,i)=>[x.c,i]));niveis=niveis.map((x,i)=>({x,i})).sort((a,b)=>ordem[a.x.c]-ordem[b.x.c]||a.i-b.i).map(o=>o.x);}
     if(niveis[0])niveis[0].pv={modo:"maximo"};                                                 // 2014: o primeiro nível do personagem usa o dado no máximo
     for(let i=1;i<niveis.length;i++)if(niveis[i].pv.modo==="maximo")niveis[i].pv={modo:"fixo"};
@@ -183,7 +216,7 @@ window.CRIADOR = (() => {
           const [,cid,tipo]=g.key.split("|");if(cid!==e.c)continue;
           if(tipo.startsWith("arcanum")){const min=(ARCANUM.find(a=>a[0]===+tipo.slice(7))||[])[1];if(nc===min&&g.selecionadas.length)escolhas[g.key]=[...g.selecionadas];continue;}
           const cum=n=>{const p=perfilMagias({...c,n},f);return p?(tipo==="truques"?p.truques:p.qtd):0;};
-          const de=nc>1?cum(nc-1):0,ate=cum(nc),fatia=g.selecionadas.slice(de,ate);if(fatia.length)escolhas[g.key]=fatia;continue;
+          const de=nc>1?cum(nc-1):0,ate=cum(nc),fatia=g.vagas?g.vagas.filter(v=>v.nivel===nc&&v.magia).map(v=>v.magia):g.selecionadas.slice(de,ate);if(fatia.length)escolhas[g.key]=fatia;continue;
         }
         const nv=nivelDoGrupo(g);if(!nv)continue;
         if(nv.construcao){if(i===0&&g.selecionadas.length)escolhas[g.key]=[...g.selecionadas];continue;}
@@ -208,7 +241,7 @@ window.CRIADOR = (() => {
     return {dados:{nome:q.nome,ficha:f,pv_max,pv_atual,inventario:q.inventario,dinheiro:q.dinheiro},pv:{max:pv_max,atual:pv_atual,mudou}};
   }
   function derivar(p) {
-    const q=copiar(p),f=q.ficha,st=estado(f),bg=origem(f);
+    const q=copiar(p),f=q.ficha,st=estado(f),bg=origem(f);reconciliarNiveis(f);
     if(st.metodo==="pointbuy"){f.atributos={...st.base};f.bonusRaca={};f.bonusMelhorias={};R.aplicarRaca(f,{});}R.aplicarMelhorias(f);
     f.background=bg?.nome||"";f.backgroundPericias=[...(bg?.per||[])];
     const gs=grupos(f),gclasse=gs.find(g=>g.source===idClasse(f.classes?.[0]?.c)&&g.opts.some(per));
@@ -228,9 +261,10 @@ window.CRIADOR = (() => {
     for(const c of f.classes){const sub=subclasse(c);if(sub)c.sub=sub.nome||SUBS[sub.id.split("/").pop()]||c.sub;}
     const resumo=R.resumoClasses(f.classes);f.classe=resumo.descricao;f.nivel=resumo.nivel;f.classesEditadas=true;f.deslocamento=R.RACAS.find(r=>r[0]===f.raca)?.[1]||f.deslocamento||9;
     f.backgroundCaracteristica=bg?{nome:bg.caracteristica,desc:bg.id==="personalizado"?st.backgroundDescricao||bg.descricao:bg.descricao}:null;
-    const escolhidas=[...gs,...gruposMagias(f)].filter(g=>g.grants==="spell").flatMap(g=>g.selecionadas.map(id=>({id,classe:g.source.split("/").pop(),arcanum:g.arcanum||0})));
+    registrarVagas(f);
+    const escolhidas=[...gs,...gruposMagias(f)].filter(g=>g.grants==="spell").flatMap(g=>g.selecionadas.map(id=>({id,classe:g.source.split("/").pop(),arcanum:g.arcanum||0,vaga:g.vagas?.find(v=>v.magia===id)})));
     const mapa=new Map();
-    for(const {id,classe:fonteClasse,arcanum} of escolhidas){const m=magiaPorId(id);if(!m)continue;const antigo=mapa.get(id);if(antigo){antigo.classes.push(fonteClasse);continue;}const cj=(f.classes||[]).find(x=>idClasse(x.c)==="srd51:class/"+fonteClasse)?.c||null,tipoC=classe(fonteClasse)?.data?.spellcasting?.preparation?.type;mapa.set(id,{...m,prep:m.l===0||tipoC==="prepared",classes:[fonteClasse],en:m.en,autoCriador:true,fonte:"classe",classeConj:cj,noGrimorio:tipoC==="spellbook"&&m.l>0,registroOrigem:{tipo:"classe"},...(arcanum?{arcanum,prep:true,semprePreparada:true,origem:"Arcanum Místico",registroOrigem:{tipo:"arcanum",circulo:arcanum}}:{})});}
+    for(const {id,classe:fonteClasse,arcanum,vaga} of escolhidas){const m=magiaPorId(id);if(!m)continue;const antigo=mapa.get(id);if(antigo){antigo.classes.push(fonteClasse);continue;}const cj=(f.classes||[]).find(x=>idClasse(x.c)==="srd51:class/"+fonteClasse)?.c||null,tipoC=classe(fonteClasse)?.data?.spellcasting?.preparation?.type;mapa.set(id,{...m,prep:m.l===0||tipoC==="prepared",classes:[fonteClasse],en:m.en,autoCriador:true,fonte:"classe",classeConj:cj,noGrimorio:tipoC==="spellbook"&&m.l>0,registroOrigem:{tipo:"classe",...(vaga?{vaga:vaga.id,nivel:vaga.nivel,escolaLivre:vaga.livre}:{})},...(arcanum?{arcanum,prep:true,semprePreparada:true,origem:"Arcanum Místico",registroOrigem:{tipo:"arcanum",circulo:arcanum}}:{})});}
     for(const x of magiasConcedidas(f)){const m=magiaPorId(x.id);if(m)mapa.set(x.id,{...m,prep:true,semprePreparada:x.semprePreparada,classes:[x.classe],origem:x.origem,autoCriador:true});}
     for(const [nome,nivel] of magiasRaciaisLista(f)){const m=MAGIAS.find(m=>m.en===nome);if(m&&R.nivelTotal(f.classes)>=nivel)mapa.set(magiaId(m),{...m,prep:true,origem:"Raça",autoCriador:true});}
     /* Grimório do Mago: cópias feitas durante a aventura (pergaminho ou outro grimório) vêm de criacao.grimorioExtra; concessões do mestre vêm de f.magiasMestre.
@@ -244,7 +278,8 @@ window.CRIADOR = (() => {
     for(const [k,e] of mapa){const ant=anteriores.get(k);if(ant&&typeof ant.prep==="boolean"&&e.l>0&&!e.semprePreparada&&(e.fonte!=="mestre"||e.noGrimorio))e.prep=ant.prep;
       const propria=(f.classes||[]).find(c=>c.c===e.classeConj),alcance=propria?perfilMagias(propria,f)?.max||0:teto;
       e.ativa=e.arcanum?true:!(e.fonte==="classe"&&e.l>0&&alcance>0&&e.l>alcance)&&!(e.fonte==="classe"&&e.l>0&&alcance===0);if(!e.ativa)e.prep=false;}
-    for(const m of p.ficha.magias||[])if(m.autoCriador&&!mapa.has(magiaId(m)))mapa.set(magiaId(m),{...copiar(m),ativa:false,prep:false,inativaNivel:true});
+    const substituidas=new Set((st.niveis||[]).filter(e=>e.troca).map(e=>e.troca.de));
+    for(const m of p.ficha.magias||[])if(m.autoCriador&&!mapa.has(magiaId(m))&&!substituidas.has(magiaId(m)))mapa.set(magiaId(m),{...copiar(m),ativa:false,prep:false,inativaNivel:true});
     f.magias=[...mapa.values()];f.progressao=construirProgressao(f);return q;
   }
   function itemCategoria(cat){return D.items.filter(i=>{const w=i.data.weapon,g=i.data.gear;return cat==="simple-weapons"?w?.category==="simple":cat==="simple-melee-weapons"?w?.category==="simple"&&w.kind==="melee":cat==="martial-weapons"?w?.category==="martial":cat==="martial-melee-weapons"?w?.category==="martial"&&w.kind==="melee":cat==="musical-instruments"?i.data.tool?.category==="musical-instrument":g?.category===cat;});}
@@ -289,6 +324,8 @@ window.CRIADOR = (() => {
     for(const c of f.classes||[])if(c.n>=nivelSub(c)&&!subclasse(c))erros.push({etapa:0,texto:"Escolha a subclasse de "+(R.classe(c.c)?.n||c.c)+"."});
     for(const c of f.classes||[]){if(c.c!=="Wizard")continue;const g=gruposMagias(f).find(g=>g.key==="magias|Wizard|magias");for(let circulo=2;circulo<=9;circulo++){const max=Math.max(0,(c.n-(circulo*2-1)+1)*2),quantos=(g?.selecionadas||[]).filter(id=>(magiaPorId(id)?.l||0)>=circulo).length;if(quantos>max)erros.push({etapa:5,texto:"Grimório: escolha no máximo "+max+" magias de "+circulo+"º círculo ou superior recebidas pelos níveis da classe."});}}
     for(const c of f.classes||[]){const nome=subclasse(c)?.nome;if(!["Cavaleiro Místico","Trapaceiro Arcano"].includes(nome))continue;const g=gruposMagias(f).find(g=>g.key==="magias|"+c.c+"|magias");if(!g)continue;const livres=1+[8,14,20].filter(n=>c.n>=n).length,escolas=nome==="Cavaleiro Místico"?["Abjuração","Evocação"]:["Encantamento","Ilusão"];if(g.selecionadas.filter(id=>{const m=magiaPorId(id);return !escolas.some(e=>String(m?.cab||"").startsWith(e));}).length>livres)erros.push({etapa:5,texto:nome+": escolha no máximo "+livres+" magia(s) fora de "+escolas.join(" ou ")+". As outras escolhas devem ser dessas escolas."});}
+    for(const g of gruposMagias(f).filter(g=>g.escolas&&g.selecionadas.length===g.qtd))if(g.vagas.some(v=>v.livre&&(!v.magia||!v.confirmada)))erros.push({etapa:5,texto:"Identifique a magia de cada escolha livre de escola e confirme sua origem.",grupo:g.key});
+    for(const g of gruposMagias(f).filter(g=>g.escolas))if(g.selecionadas.some(id=>!g.vagas.some(v=>v.magia===id))||g.vagas.some(v=>v.magia&&!v.livre&&!g.escolas.some(e=>String(magiaPorId(v.magia)?.cab||'').startsWith(e))))erros.push({etapa:5,texto:'Esta magia precisa de uma escolha livre disponível; as outras escolhas são restritas a '+g.escolas.join(' ou ')+'.',grupo:g.key});
     if(!evolucao){
       if(!R.RACAS.some(r=>r[0]===f.raca))erros.push({etapa:1,texto:"Escolha a raça."});
       if(f.raca==="Fada"&&!["int","sab","car"].includes(f.atrMagiaRaca))erros.push({etapa:1,texto:"Escolha o atributo da Magia de Fada."});
@@ -307,6 +344,7 @@ window.CRIADOR = (() => {
     if(R.nivelTotal(f.classes)>=20)throw new Error("O limite é nível 20.");
     const dv=R.classe(cid).dv,valor=rolagem==="media"?Math.floor(dv/2)+1:Number(rolagem);
     if(!Number.isInteger(valor)||valor<1||valor>dv)throw new Error("O dado de vida deve ficar entre 1 e "+dv+".");
+    registrarVagas(f);
     reconciliarNiveis(f);                                   // garante o histórico dos níveis que já existiam antes de somar o novo
     c.n++;const st=estado(f);st.niveis.push({c:cid,pv:rolagem==="media"?{modo:"fixo"}:{modo:"rolagem",valor}});
     const ganho=ganhoPV(f,st.niveis.length-1,st.niveis[st.niveis.length-1]);
@@ -314,6 +352,6 @@ window.CRIADOR = (() => {
     return q;
   }
   function diferenca(antes,depois){const a=caracteristicas(antes.ficha),b=caracteristicas(depois.ficha),ids=new Set(a.map(h=>h.id));return {nivel:[R.nivelTotal(antes.ficha.classes),R.nivelTotal(depois.ficha.classes)],pv:[antes.pv_max,depois.pv_max],prof:[R.prof(R.nivelTotal(antes.ficha.classes)),R.prof(R.nivelTotal(depois.ficha.classes))],novas:b.filter(h=>!ids.has(h.id)),espacos:R.conjuracao(depois.ficha.classes),escolhas:validar(depois,{evolucao:true})};}
-  const api={reconciliarNiveis,pvTotal,ganhoPV,construirProgressao,salvamento,configurar,estado,origem,requisitosMulti,classe,subclasse,nivelSub,caracteristicas,requisitos,grupos,gruposMagias,perfilMagias,rotulo,per,magiasConcedidas,magiaId,magiaPorId,custo,CUSTOS,iniciar,derivar,equipamento,aplicarEquipamento,itemCategoria,validar,subir,diferenca,idiomasRaca,copiar,get dados(){return D;}};
+  const api={vagasMagias,registrarVagas,definirVagaLivre,reconciliarNiveis,pvTotal,ganhoPV,construirProgressao,salvamento,configurar,estado,origem,requisitosMulti,classe,subclasse,nivelSub,caracteristicas,requisitos,grupos,gruposMagias,perfilMagias,rotulo,per,magiasConcedidas,magiaId,magiaPorId,custo,CUSTOS,iniciar,derivar,equipamento,aplicarEquipamento,itemCategoria,validar,subir,diferenca,idiomasRaca,copiar,get dados(){return D;}};
   return api;
 })();
