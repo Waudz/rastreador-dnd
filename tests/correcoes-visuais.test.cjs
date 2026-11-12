@@ -41,3 +41,13 @@ test('Subir de nível fica junto do nível do personagem, some no nível 20 e na
   assert.match(j,/<span class="badge">Nível \$\{nivelTotal\(\)\}<\/span>\$\{nivelTotal\(\)<20\?`<a class="btnlike small ficha-subir-nivel" href="criar-personagem\.html\?id=\$\{encodeURIComponent\(id\)\}&modo=nivel">Subir de nível<\/a>`:""\}/);
   assert.match(ler('css/fichas.css'),/\.ficha-embutida \.ficha-subir-nivel \{ display:none; \}/);
 });
+
+test('subir de nível é um fluxo próprio: sem Raça, Origem e Equipamento, com dado de vida, valor fixo e rolagem que funcionam',()=>{
+  const j=ler('js/criador.js');
+  assert.match(j,/const VISIVEIS=evolucao\?\[0,3,4,5,7\]:\[0,1,2,3,4,5,6,7\]/);assert.match(j,/Classe e PV/);
+  assert.match(j,/function atualizarNivelForm\(\)/);assert.match(j,/Dado de vida de '\+cls\.n\+': d'\+dv/);assert.match(j,/Valor fixo: '\+fixo\+' \(média\)/);
+  assert.match(j,/if\(t\.id==='nivel-classe'\|\|t\.id==='nivel-pv'\|\|t\.id==='nivel-rolagem'\)\{atualizarNivelForm\(\);return;\}/);   // o formulário não é redesenhado (redesenhar apagava a escolha)
+  assert.match(j,/data-classe="\$\{i\}" \$\{evolucao\?'disabled':''\}/);assert.match(j,/id="desfazer-nivel"/);
+  assert.ok(!/Prévia do novo nível/.test(j));assert.match(j,/Aplicar o novo nível e continuar/);
+  assert.match(j,/errosVisiveis=q=>C\.validar\(q,\{evolucao\}\)\.filter\(e=>!evolucao\|\|VISIVEIS\.includes\(e\.etapa\)\)/);
+});
