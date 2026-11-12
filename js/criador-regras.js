@@ -117,6 +117,7 @@ window.CRIADOR = (() => {
   }
   /* magias que a raça concede (nome em inglês, nível total mínimo); nunca entram em escolhas nem em trocas de classe */
   function magiasRaciaisLista(f){return f.raca==="Fada"?[["Druidcraft",1],["Faerie Fire",3],["Enlarge/Reduce",5]]:f.raca==="Gnomo (da Floresta)"?[["Minor Illusion",1]]:f.raca==="Tiefling"?[["Thaumaturgy",1],["Hellish Rebuke",3],["Darkness",5]]:f.raca==="Elfo (Drow)"?[["Dancing Lights",1],["Faerie Fire",3],["Darkness",5]]:[];}
+  const ARCANUM=[[6,11],[7,13],[8,15],[9,17]];   // [círculo, nível de Bruxo]
   function gruposMagias(f){
     const out=[];
     for(const c of f.classes||[]){const p=perfilMagias(c,f);if(!p)continue;
@@ -124,6 +125,14 @@ window.CRIADOR = (() => {
         const concedidas=new Set([...magiasConcedidas(f).map(m=>m.id),...magiasRaciaisLista(f).filter(x=>R.nivelTotal(f.classes||[])>=x[1]).map(x=>{const m=MAGIAS.find(m=>m.en===x[0]);return m?magiaId(m):x[0];})]);const key="magias|"+c.c+"|"+tipo,opts=MAGIAS.filter(m=>!concedidas.has(magiaId(m))&&m.c.includes(p.lista||c.c)&&(tipo==="truques"?m.l===0:m.l>0&&m.l<=p.max)).map(magiaId);
         const antigos=(f.magias||[]).filter(m=>tipo==="truques"?m.l===0:m.l>0).map(magiaId);
         out.push({key,source:idClasse(c.c),titulo:p.nome+" · "+(tipo==="truques"?"truques":p.tipo==="spellbook"?"grimório":p.tipo==="prepared"?"magias preparadas":"magias conhecidas"),grants:"spell",qtd,opts,selecionadas:[...new Set(estado(f).selecoes[key]||antigos)].filter(id=>opts.includes(id)).slice(0,qtd),max:p.max});
+      }
+    }
+    /* Arcanum Místico do Bruxo (2014): uma magia de 6º, 7º, 8º e 9º círculo (níveis 11, 13, 15 e 17). Não é magia conhecida, não usa espaços de Pacto
+       e não conta nos limites de conhecidas; cada uma é conjurada uma vez por descanso longo. */
+    for(const c of f.classes||[]){if(c.c!=="Warlock")continue;
+      for(const [circ,min] of ARCANUM){if(c.n<min)continue;
+        const concedidas=new Set(magiasConcedidas(f).map(m=>m.id)),key="magias|Warlock|arcanum"+circ,opts=MAGIAS.filter(m=>!concedidas.has(magiaId(m))&&m.c.includes("Warlock")&&m.l===circ).map(magiaId);
+        out.push({key,source:idClasse(c.c),titulo:"Bruxo · arcanum místico ("+circ+"º círculo)",grants:"spell",qtd:1,opts,selecionadas:[...new Set(estado(f).selecoes[key]||[])].filter(id=>opts.includes(id)).slice(0,1),max:circ,arcanum:circ});
       }
     }
     return out;
@@ -168,6 +177,7 @@ window.CRIADOR = (() => {
       for(const g of gs){
         if(String(g.key).startsWith("magias|")){
           const [,cid,tipo]=g.key.split("|");if(cid!==e.c)continue;
+          if(tipo.startsWith("arcanum")){const min=(ARCANUM.find(a=>a[0]===+tipo.slice(7))||[])[1];if(nc===min&&g.selecionadas.length)escolhas[g.key]=[...g.selecionadas];continue;}
           const cum=n=>{const p=perfilMagias({...c,n},f);return p?(tipo==="truques"?p.truques:p.qtd):0;};
           const de=nc>1?cum(nc-1):0,ate=cum(nc),fatia=g.selecionadas.slice(de,ate);if(fatia.length)escolhas[g.key]=fatia;continue;
         }
@@ -214,9 +224,9 @@ window.CRIADOR = (() => {
     for(const c of f.classes){const sub=subclasse(c);if(sub)c.sub=sub.nome||SUBS[sub.id.split("/").pop()]||c.sub;}
     const resumo=R.resumoClasses(f.classes);f.classe=resumo.descricao;f.nivel=resumo.nivel;f.classesEditadas=true;f.deslocamento=R.RACAS.find(r=>r[0]===f.raca)?.[1]||f.deslocamento||9;
     f.backgroundCaracteristica=bg?{nome:bg.caracteristica,desc:bg.id==="personalizado"?st.backgroundDescricao||bg.descricao:bg.descricao}:null;
-    const escolhidas=[...gs,...gruposMagias(f)].filter(g=>g.grants==="spell").flatMap(g=>g.selecionadas.map(id=>({id,classe:g.source.split("/").pop()})));
+    const escolhidas=[...gs,...gruposMagias(f)].filter(g=>g.grants==="spell").flatMap(g=>g.selecionadas.map(id=>({id,classe:g.source.split("/").pop(),arcanum:g.arcanum||0})));
     const mapa=new Map();
-    for(const {id,classe:fonteClasse} of escolhidas){const m=magiaPorId(id);if(!m)continue;const antigo=mapa.get(id);if(antigo){antigo.classes.push(fonteClasse);continue;}const cj=(f.classes||[]).find(x=>idClasse(x.c)==="srd51:class/"+fonteClasse)?.c||null,tipoC=classe(fonteClasse)?.data?.spellcasting?.preparation?.type;mapa.set(id,{...m,prep:m.l===0||tipoC==="prepared",classes:[fonteClasse],en:m.en,autoCriador:true,fonte:"classe",classeConj:cj,noGrimorio:tipoC==="spellbook"&&m.l>0,registroOrigem:{tipo:"classe"}});}
+    for(const {id,classe:fonteClasse,arcanum} of escolhidas){const m=magiaPorId(id);if(!m)continue;const antigo=mapa.get(id);if(antigo){antigo.classes.push(fonteClasse);continue;}const cj=(f.classes||[]).find(x=>idClasse(x.c)==="srd51:class/"+fonteClasse)?.c||null,tipoC=classe(fonteClasse)?.data?.spellcasting?.preparation?.type;mapa.set(id,{...m,prep:m.l===0||tipoC==="prepared",classes:[fonteClasse],en:m.en,autoCriador:true,fonte:"classe",classeConj:cj,noGrimorio:tipoC==="spellbook"&&m.l>0,registroOrigem:{tipo:"classe"},...(arcanum?{arcanum,prep:true,semprePreparada:true,origem:"Arcanum Místico",registroOrigem:{tipo:"arcanum",circulo:arcanum}}:{})});}
     for(const x of magiasConcedidas(f)){const m=magiaPorId(x.id);if(m)mapa.set(x.id,{...m,prep:true,semprePreparada:x.semprePreparada,classes:[x.classe],origem:x.origem,autoCriador:true});}
     for(const [nome,nivel] of magiasRaciaisLista(f)){const m=MAGIAS.find(m=>m.en===nome);if(m&&R.nivelTotal(f.classes)>=nivel)mapa.set(magiaId(m),{...m,prep:true,origem:"Raça",autoCriador:true});}
     /* Grimório do Mago: cópias feitas durante a aventura (pergaminho ou outro grimório) vêm de criacao.grimorioExtra; concessões do mestre vêm de f.magiasMestre.
@@ -228,7 +238,7 @@ window.CRIADOR = (() => {
     /* o que o jogador marcou como preparado continua preparado depois de recalcular; magia de círculo acima do que a classe permite fica inativa (guardada, sem benefício) */
     const anteriores=new Map((p.ficha.magias||[]).map(m=>[magiaId(m),m])),maxCirc=R.conjuracao(f.classes||[]);const teto=maxCirc.pact?Math.max(maxCirc.pact.nivel,maxCirc.slots.reduce((n,x,i)=>x?i+1:n,0)):maxCirc.slots.reduce((n,x,i)=>x?i+1:n,0);
     for(const [k,e] of mapa){const ant=anteriores.get(k);if(ant&&typeof ant.prep==="boolean"&&e.l>0&&!e.semprePreparada&&(e.fonte!=="mestre"||e.noGrimorio))e.prep=ant.prep;
-      e.ativa=!(e.fonte==="classe"&&e.l>0&&teto>0&&e.l>teto)&&!(e.fonte==="classe"&&e.l>0&&teto===0);if(!e.ativa)e.prep=false;}
+      e.ativa=e.arcanum?true:!(e.fonte==="classe"&&e.l>0&&teto>0&&e.l>teto)&&!(e.fonte==="classe"&&e.l>0&&teto===0);if(!e.ativa)e.prep=false;}
     f.magias=[...mapa.values()];f.progressao=construirProgressao(f);return q;
   }
   function itemCategoria(cat){return D.items.filter(i=>{const w=i.data.weapon,g=i.data.gear;return cat==="simple-weapons"?w?.category==="simple":cat==="simple-melee-weapons"?w?.category==="simple"&&w.kind==="melee":cat==="martial-weapons"?w?.category==="martial":cat==="martial-melee-weapons"?w?.category==="martial"&&w.kind==="melee":cat==="musical-instruments"?i.data.tool?.category==="musical-instrument":g?.category===cat;});}

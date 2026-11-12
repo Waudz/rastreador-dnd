@@ -38,7 +38,7 @@
   const TIPOS_EFEITO = {
     cura: {
       rotulo: "Cura", dado: true,
-      aplicar(E, ef, ctx) { const antes = E.pv_atual, depois = Math.min(E.pv_max, antes + ctx.total); E.pv_atual = depois; return { texto: `Cura ${ctx.total}: PV ${antes} → ${depois}${depois - antes < ctx.total ? " (limitado ao máximo)" : ""}`, valor: ctx.total, recuperado: depois - antes }; },
+      aplicar(E, ef, ctx) { const antes = E.pv_atual; if (window.JOGO) { const c = window.JOGO.cura(E, ctx.total); return { texto: `Cura ${ctx.total}: PV ${antes} → ${c.depois}${c.recuperado < ctx.total ? " (limitado ao máximo)" : ""}${antes === 0 && c.depois > 0 ? "; voltou à consciência" : ""}`, valor: ctx.total, recuperado: c.recuperado }; } const depois = Math.min(E.pv_max, antes + ctx.total); E.pv_atual = depois; return { texto: `Cura ${ctx.total}: PV ${antes} → ${depois}${depois - antes < ctx.total ? " (limitado ao máximo)" : ""}`, valor: ctx.total, recuperado: depois - antes }; },
     },
     "pv-temp": {
       rotulo: "PV temporários", dado: true,
