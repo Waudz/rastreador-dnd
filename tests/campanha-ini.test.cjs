@@ -159,3 +159,12 @@ test('o jogador ou mestre pode digitar a iniciativa (dado físico); número inv�
  digitar('17');clicar();assert.equal(f.lista.length,1);assert.equal(f.lista[0].initiative,17);assert.match(f.document.el('ci-resultado').innerHTML,/Herói: 17 \(informado por você\)/);
  const g=await fixture({search:'?campanha=atual'});const b2=g.document.el('camp-ini');b2.events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});assert.equal(g.lista[0].initiative,null);assert.match(g.document.el('ci-resultado').innerHTML,/entrou sem iniciativa/);
 });
+test('cartão da iniciativa: identidade em cima e ações embaixo (campo Ini., Rolar d20, Adicionar), resultado no cartão; CSS restrito ao #ci-lista para não afetar outros cartões',async()=>{
+ const f=await fixture({search:'?campanha=atual'});const h=f.document.el('ci-lista').innerHTML;
+ assert.match(h,/class="ci-cartao grupo-cartao ci-cartao-ini"><div class="ci-topo">/);assert.match(h,/<div class="ci-acoes"><label class="ci-ini"><span>Ini\.<\/span><input type="number"[^>]*data-ci-ini="p"/);
+ assert.match(h,/data-ci-rolar="p"[^>]*>Rolar d20<\/button><button type="button" class="small primary" data-ci="p"[^>]*>Adicionar<\/button>/);
+ f.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci-rolar]'?{dataset:{ciRolar:'p'}}:s==='button'?null:null}});
+ assert.match(f.document.el('ci-lista').innerHTML,/<p class="ci-ini-res" role="status">d20 \d+ \+ 3 = \d+<\/p>/,'o resultado aparece no próprio cartão');
+ const css=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','css','fluxos.css'),'utf8'),bloco=css.slice(css.indexOf('/* Iniciativa dos personagens: cartão em duas linhas'));
+ for(const regra of bloco.split('\n').filter(l=>l.includes('{')&&!l.startsWith('/*')&&!l.startsWith('.ci-resultado')))assert.ok(regra.startsWith('#ci-lista .ci-cartao'),'regra restrita: '+regra.slice(0,60));
+});
