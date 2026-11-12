@@ -15,6 +15,8 @@ Atualizado em 11/11/2026. Revisão atual baseada na `main`, commit `161ea27`. O 
 
 ## Migração de enquadramento — aguarda autorização
 
+- **12/11/2026:** o SQL citado abaixo não estava no repositório nem nas pastas locais. Foi reescrito em `supabase/migrations/20261112090000_enquadramento_campanhas.sql` (aditivo, com reversão comentada) e testado em PostgreSQL descartável (PGlite) com `tests/enquadramento-campanhas.test.sql`, junto das regressões de imagens, permissões e administração. **Continua NÃO aplicado em produção.** É essa migração que falta para o ajuste de enquadramento do fundo funcionar.
+
 - A coluna JSONB e a RPC versionada para gravar x/y/zoom desktop/mobile **não foram aplicadas**. Autorizar o envio visual ao GitHub não autoriza a migração.
 - SQL definitivo e rollback foram preparados fora do repositório e validados na rodada anterior com 45/45 casos em PostgreSQL 17.5 e 45/45 em PostgreSQL 18.6 locais. Produção 17.11 foi somente consultada naquela revisão.
 - Sem o novo contrato no servidor, o app continua permitindo a troca normal das imagens com as posições legadas e desabilita o enquadramento avançado. Não declarar sua sincronização entre dispositivos como concluída.

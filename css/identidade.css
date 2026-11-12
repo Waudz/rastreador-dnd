@@ -302,3 +302,14 @@ body:has(> .rodape-licenca) { display:flex; flex-direction:column; min-height:10
 body:has(> .rodape-licenca) > .appheader { flex:0 0 auto; }
 body:has(> .rodape-licenca) > main { flex:1 0 auto; }
 .rodape-licenca { flex:0 0 auto; width:min(1120px,100%); margin:26px auto 16px; }
+
+/* Ficha aberta ao lado em janela média (900 a 1199 px): a página encolhe e o cabeçalho usa o formato compacto, sem invadir o painel. */
+@media(min-width:900px) and (max-width:1199px) {
+ body.com-ficha-lateral .appheader { grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"marca dir" "nav nav"; row-gap:12px; }
+ body.com-ficha-lateral .appheader > nav { width:100%; margin:0 auto; }
+ body.com-ficha-lateral .appmarca span { display:inline; }
+ body.com-ficha-lateral .appnav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:2px; padding:2px 0 6px; }
+ body.com-ficha-lateral .appnav a { flex-direction:column; gap:2px; min-width:0; min-height:48px; padding:4px 2px; font-size:10px; }
+ body.com-ficha-lateral .appnav a .ico { width:20px; height:20px; }
+}
+

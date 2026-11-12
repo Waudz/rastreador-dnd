@@ -1,0 +1,22 @@
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {ler}=require('./helpers.cjs');
+test('ficha aberta ao lado: a página cede o espaço em campanha, conta e demais páginas (não fica escondida atrás do painel)',()=>{
+  const c=ler('css/fichas.css');
+  assert.match(c,/@media\(min-width:900px\) \{[\s\S]*html:not\(\[data-app-view\]\) body:has\(> main #dock-r\) \{ padding-right:calc\(var\(--pad-corpo,24px\) \+ var\(--painel-reserva-direita,0px\)\)/);
+  assert.match(c,/@media\(max-width:899px\) \{\s*#dock-r, \.ci-resumo \{/);
+  assert.match(ler('js/paineis-layout.js'),/largura>=900\?'lateral'/);assert.match(ler('js/paineis-layout.js'),/--ficha-painel/);
+  assert.match(ler('css/identidade.css'),/@media\(min-width:900px\) and \(max-width:1199px\) \{\s*body\.com-ficha-lateral \.appheader/);
+});
+test('menu de três pontos da ficha: o popover fica sob o botão, não no meio da tela',()=>{
+  assert.match(ler('css/mobile.css'),/\.compact-popover\[popover\],\.ficha-menu-opcoes\[popover\]\{position:fixed;inset:auto;margin:0;/);
+});
+test('aparência da campanha: o campo mostra o que está vinculado (salva, escolhida ou removida)',()=>{
+  const v=ler('js/campanha-visual.js');
+  assert.match(v,/Imagem salva e vinculada à campanha/);assert.match(v,/\(prévia, ainda não salva\)/);assert.match(v,/Remoção preparada \(salve para confirmar\)/);
+});
+test('enquadramento do fundo: migração proposta (não aplicada) cobre coluna, RPC versionada e testes',()=>{
+  const m=ler('supabase/migrations/20261112090000_enquadramento_campanhas.sql');
+  assert.match(m,/PROPOSTA PARA APROVAÇÃO\. Não aplicada/);assert.match(m,/salvar_visual_campanha_enquadrada/);assert.match(m,/visual_responsavel\(p_campanha\)/);
+  assert.ok(!/drop (table|policy)|delete from|truncate/i.test(m.replace(/^--.*$/gm,'')),'aditiva: sem apagar nada');
+  assert.match(ler('tests/enquadramento-campanhas.test.sql'),/Jogador gravou o enquadramento/);
+});

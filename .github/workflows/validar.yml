@@ -49,8 +49,12 @@ jobs:
         run: |
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261111194808_imagens_campanhas.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261111194808_imagens_campanhas.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261112090000_enquadramento_campanhas.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261112090000_enquadramento_campanhas.sql
       - name: Permissões de imagens em banco descartável
-        run: psql -v ON_ERROR_STOP=1 -f tests/imagens-campanhas-permissoes.test.sql
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/imagens-campanhas-permissoes.test.sql
+          psql -v ON_ERROR_STOP=1 -f tests/enquadramento-campanhas.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/supabase.test.sql
       - name: Permissões de campanhas, documentos, Storage, convites e administradores
         run: psql -v ON_ERROR_STOP=1 -f tests/supabase-permissoes.test.sql

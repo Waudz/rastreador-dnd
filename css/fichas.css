@@ -169,10 +169,12 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
   .ficha-abas button { font-size:11px; padding:6px 11px; }
   .inspiracao-ficha { flex-wrap:wrap; }
 }
-@media(min-width:1200px) {
+@media(min-width:900px) {
   html[data-app-view] body { padding-right:calc(24px + var(--painel-reserva-direita,0px)); }
+  /* Campanha, conta e demais páginas com painel lateral: o conteúdo cede o lugar do painel em vez de ficar escondido atrás dele. */
+  html:not([data-app-view]) body:has(> main #dock-r) { padding-right:calc(var(--pad-corpo,24px) + var(--painel-reserva-direita,0px)); }
 }
-@media(max-width:1199px) {
+@media(max-width:899px) {
   #dock-r, .ci-resumo {
     position:relative;
     inset:auto;

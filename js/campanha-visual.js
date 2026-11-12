@@ -7,10 +7,14 @@
   const $=s=>document.querySelector(s);
   const enquadramentoDisponivel=()=>!!base&&Object.prototype.hasOwnProperty.call(base,'enquadramento');
   const mensagem=t=>{const el=$('#visual-msg');if(el)el.textContent=t;};
+  /* Mostra o que está vinculado à campanha: imagem salva, arquivo escolhido ainda não salvo, ou nada. */
+  const nomesEscolhidos={};
+  function rotuloArquivo(tipo){if(tipo in mudancas&&mudancas[tipo]===null)return 'Remoção preparada (salve para confirmar)';if(mudancas[tipo])return (nomesEscolhidos[tipo]||'Imagem escolhida')+' (prévia, ainda não salva)';return estado[tipo]?'Imagem salva e vinculada à campanha':'Nenhum arquivo selecionado';}
+  function atualizarRotulos(){for(const tipo of ['simbolo','backdrop']){const el=$('[data-arquivo-nome="'+tipo+'"]');if(el)el.textContent=rotuloArquivo(tipo);}}
   function liberarUrls(){urls.forEach(u=>URL.revokeObjectURL(u));urls=[];}
   function formulario(){
     const area=$('#campanha-aparencia');if(!area)return;
-    area.innerHTML=podeEditar?'<p class="muted">Escolha as imagens e ajuste o enquadramento. As alterações serão compartilhadas ao salvar.</p><div class="campanha-visual-campos"><label>Imagem de capa<span class="visual-upload">Escolher imagem<input type="file" accept="image/png,image/jpeg,image/webp" data-visual-arquivo="simbolo"></span><small data-arquivo-nome="simbolo">Nenhum arquivo selecionado</small></label><button type="button" class="small" data-visual-remover="simbolo">Remover imagem de capa</button><label>Imagem de fundo<span class="visual-upload">Escolher imagem<input type="file" accept="image/png,image/jpeg,image/webp" data-visual-arquivo="backdrop"></span><small data-arquivo-nome="backdrop">Nenhum arquivo selecionado</small></label><button type="button" class="small" data-visual-remover="backdrop">Remover imagem de fundo</button><button type="button" data-visual-ajustar '+(!estado.backdrop?'disabled':'')+'>Ajustar enquadramento PC e celular</button></div><div class="row"><button type="button" class="small" id="visual-descartar">Cancelar</button><button type="button" class="small primary" id="visual-salvar" '+(!base?'disabled':'')+'>Salvar imagens</button><button type="button" class="small" id="visual-recarregar">Recarregar imagens salvas</button></div><p class="muted">Salvar confirma a prévia. Recarregar recupera a última versão salva.</p><p id="visual-msg" class="muted" role="status"></p>':'';
+    area.innerHTML=podeEditar?'<p class="muted">Escolha as imagens e ajuste o enquadramento. As alterações serão compartilhadas ao salvar.</p><div class="campanha-visual-campos"><label>Imagem de capa<span class="visual-upload">Escolher imagem<input type="file" accept="image/png,image/jpeg,image/webp" data-visual-arquivo="simbolo"></span><small data-arquivo-nome="simbolo">'+rotuloArquivo('simbolo')+'</small></label><button type="button" class="small" data-visual-remover="simbolo">Remover imagem de capa</button><label>Imagem de fundo<span class="visual-upload">Escolher imagem<input type="file" accept="image/png,image/jpeg,image/webp" data-visual-arquivo="backdrop"></span><small data-arquivo-nome="backdrop">'+rotuloArquivo('backdrop')+'</small></label><button type="button" class="small" data-visual-remover="backdrop">Remover imagem de fundo</button><button type="button" data-visual-ajustar '+(!estado.backdrop?'disabled':'')+'>Ajustar enquadramento PC e celular</button></div><div class="row"><button type="button" class="small" id="visual-descartar">Cancelar</button><button type="button" class="small primary" id="visual-salvar" '+(!base?'disabled':'')+'>Salvar imagens</button><button type="button" class="small" id="visual-recarregar">Recarregar imagens salvas</button></div><p class="muted">Salvar confirma a prévia. Recarregar recupera a última versão salva.</p><p id="visual-msg" class="muted" role="status"></p>':'';
     if(podeEditar){
       if(base&&!enquadramentoDisponivel())area.insertAdjacentHTML('beforeend','<p class="muted">Enquadramento avançado indisponível nesta campanha. Novas imagens usarão a posição atual.</p>');
       travar(salvando||preparando>0);
@@ -62,6 +66,7 @@
     else if(imagem){imagem.removeAttribute('style');imagem.onload=null;}
     posicionarFundo();
     $('#campanha-simbolo').innerHTML=simbolo(estado.simbolo,$('#titulo').textContent);
+    atualizarRotulos();
     const link=document.querySelector('#camp-lista [aria-current="page"] .campanha-simbolo');if(link)link.outerHTML=simbolo(estado.simbolo,$('#titulo').textContent,true);
   }
   function montar({id,mestre,visual={}}){
@@ -127,7 +132,7 @@ if (atual !== geracao || !podeEditar) {
   mensagem('A seleção da imagem foi interrompida por uma atualização da campanha. Tente novamente.');
   return;
 }
-if(frame)estado.enquadramento=frame;const url=URL.createObjectURL(blob);urls.push(url);estado[tipo]=url;mudancas[tipo]=blob;editando=true;const nome=$('[data-arquivo-nome="'+tipo+'"]');if(nome)nome.textContent=arquivo.name||'Imagem selecionada';aplicar();mensagem('Prévia atualizada. Clique em Salvar imagens para compartilhar.');}
+if(frame)estado.enquadramento=frame;const url=URL.createObjectURL(blob);urls.push(url);estado[tipo]=url;mudancas[tipo]=blob;editando=true;const nome=$('[data-arquivo-nome="'+tipo+'"]');nomesEscolhidos[tipo]=arquivo.name||'Imagem selecionada';aplicar();mensagem('Prévia atualizada. Clique em Salvar imagens para compartilhar.');}
     catch(err){$('#visual-msg').textContent=err.message;}finally{e.target.value='';preparando--;if(!preparando)travar(false);}
   });
   document.addEventListener('input',e=>{const campo=e.target.dataset?.visualPos;if(!podeEditar||salvando||!['posicao','posicaoMobile'].includes(campo))return;editando=true;estado[campo]=Math.max(0,Math.min(100,Number(e.target.value)||0));aplicar();});
