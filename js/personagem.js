@@ -494,7 +494,7 @@
     if ((b = c("[data-per]"))) { const k=b.dataset.per, f=F(), fontes=R.fontesPericias(f); f.especializacoes=fontes.especializadas; const i=f.especializacoes.indexOf(k); if(i>=0)f.especializacoes.splice(i,1); else if(fontes.basicas.includes(k)&&f.especializacoes.length<R.limiteEspecializacao(CLS()))f.especializacoes.push(k); $("#bloco-per").innerHTML = blocoPer(); agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-idi]"))) { IDI().splice(+b.dataset.rmIdi, 1); desenhar(); agendar({ ficha: P.ficha }); return; }
     if (c("#add-idi")) { const v = ($("#idi-txt").value.trim() || $("#idi-sel").value); if (v && !IDI().includes(v)) { IDI().push(v); desenhar(); agendar({ ficha: P.ficha }); } return; }
-    if(c("#editar-ficha")){editandoFicha=!editandoFicha;desenhar();return;}
+    if(c("#editar-ficha")){location.href="criar-personagem.html?id="+encodeURIComponent(id)+"&modo=editar";return;}
     if(c("#excluir-personagem")){if(!confirm("Excluir "+P.nome+" e sua ficha?"))return;try{await nuvem.apagar("personagens?id=eq."+encodeURIComponent(id));location.href="campanha.html?id="+encodeURIComponent(P.campanha_id);}catch(e){aviso(e.message,true);}return;}
     if (c("#add-atq")) { ATQ().push({ nome: "Personalizado", atr: "for", dado: "1d6", tipo: "cortante", magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); agendar({ ficha: P.ficha }); return; }
     if (c("#add-atq-arma")) { const v = $("#atq-arma").value; if (v === "") return; const a = R.ARMAS[+v]; ATQ().push({ nome: a[0], atr: a[3], dado: a[1], tipo: a[2], magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); $("#atq-arma").value = ""; agendar({ ficha: P.ficha }); return; }

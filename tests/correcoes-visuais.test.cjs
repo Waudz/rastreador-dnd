@@ -42,14 +42,21 @@ test('Subir de nível fica junto do nível do personagem, some no nível 20 e na
   assert.match(ler('css/fichas.css'),/\.ficha-embutida \.ficha-subir-nivel \{ display:none; \}/);
 });
 
-test('subir de nível é guiado, tela a tela: classe, PV, novidades da classe, raça, atributos, magias e revisão',()=>{
+test('subir de nível é guiado, nível por nível, com etapas dinâmicas e vários níveis em sequência',()=>{
   const j=ler('js/criador.js');
-  assert.match(j,/const VISIVEIS=evolucao\?\[0,8,9,10,3,5,7\]:\[0,1,2,3,4,5,6,7\]/);
-  for(const nome of ['Classe','Pontos de vida','Novidades da classe','Raça','Atributos e talentos','Magias','Revisão'])assert.ok(j.includes("'"+nome+"'"),nome);
-  assert.match(j,/function pvHTML\(\)/);assert.match(j,/Dado de vida de \$\{esc\(cls\.n\)\}: <b>d\$\{cls\.dv\}<\/b>/);assert.match(j,/Valor fixo: <b>\$\{Math\.floor\(cls\.dv\/2\)\+1\}<\/b> \(média\)/);
+  assert.match(j,/let VISIVEIS=evolucao\?\[0,8\]:\[0,1,2,3,4,5,6,7\]/);assert.match(j,/function atualizarEtapas\(\)/);assert.match(j,/function contextoNivel\(\)/);
+  for(const nome of ['Classe','Pontos de vida','Novidades da classe','Raça','Atributos e talentos','Magias','Resumo do nível','Revisão'])assert.ok(j.includes("'"+nome+"'"),nome);
+  assert.match(j,/id="niveis-alvo"/);assert.match(j,/id="concluir-nivel"/);assert.match(j,/function resumoNivelHTML\(\)/);assert.match(j,/function iniciarNivel\(\)/);
+  assert.match(j,/function pvHTML\(\)/);assert.match(j,/Dado de vida de \$\{esc\(cls\.n\)\}: <b>d\$\{cls\.dv\}<\/b>/);
   assert.match(j,/if\(t\.id==='nivel-classe'\)\{classeNivel=t\.value;desenhar\(\);return;\}/);assert.match(j,/if\(t\.id==='nivel-pv'\)\{pvModo=t\.value;atualizarNivelForm\(\);return;\}/);
-  assert.match(j,/function racaNovidadesHTML\(\)/);assert.match(j,/Nenhuma novidade racial neste nível/);assert.match(j,/Este nível não concede melhoria de atributo nem talento/);
-  assert.match(j,/Aplicar o novo nível e continuar/);assert.ok(!/Prévia do novo nível/.test(j));assert.match(j,/id="desfazer-nivel"/);
+  assert.match(j,/Pré-requisito de multiclasse \(2014\)/);assert.match(j,/Níveis adquiridos/);assert.ok(!/Prévia do novo nível/.test(j));
+});
+test('Editar personagem: criador completo com dados carregados, PV/inventário preservados e impacto confirmado antes de salvar',()=>{
+  const j=ler('js/criador.js');
+  assert.match(j,/editar=params\.get\('modo'\)==='editar'/);assert.match(j,/function pvEdicao\(q\)/);assert.match(j,/function diffEdicao\(q\)/);
+  assert.match(j,/Alterações que serão aplicadas/);assert.match(j,/Salvar alterações/);assert.match(j,/confirm\('Os PV máximos mudam de /);
+  assert.match(j,/if\(!evolucao&&!editar&&!st\(\)\.equipAplicado\)q=C\.aplicarEquipamento\(q\)/);assert.match(j,/if\(!evolucao&&!editar\)\{let primeiro=true,pv=0;/);
+  assert.match(j,/criador2014:\$\{nuvem\.usuario\(\)\.id\}:\$\{id\}:\$\{evolucao\?'nivel':editar\?'editar':'criacao'\}/);
 });
 test('subir de nível só acrescenta: escolhas, subclasse e melhorias anteriores ficam bloqueadas (mudar é em Editar personagem)',()=>{
   const j=ler('js/criador.js');

@@ -13,10 +13,9 @@ test('Ficha completa só aparece na ficha embutida e abre a ficha em página pr�
  assert.match(js,/if \(fc && emPainel\) \{ fc\.href = "personagem\.html\?id=" \+ encodeURIComponent\(id\); fc\.hidden = false; \}/);
  assert.match(ler('personagem.html'),/id="ficha-completa" target="_blank" rel="noopener"/);
 });
-test('Editar alterna o rótulo e continua usando a mesma ação de edição',()=>{
+test('Editar Personagem abre o criador guiado em modo de edição',()=>{
  const js=ler('js/personagem.js');
- assert.match(js,/be\.textContent = editandoFicha \? "Concluir Edição" : "Editar Personagem"/);
- assert.match(js,/if\(c\("#editar-ficha"\)\)\{editandoFicha=!editandoFicha;desenhar\(\);return;\}/);
+ assert.match(js,/if\(c\("#editar-ficha"\)\)\{location\.href="criar-personagem\.html\?id="\+encodeURIComponent\(id\)\+"&modo=editar";return;\}/);
 });
 test('retratos usam um único padrão quadrado e o avatar da conta é a única exceção circular',()=>{
  const base=ler('css/estilo.css'),fichas=ler('css/fichas.css');

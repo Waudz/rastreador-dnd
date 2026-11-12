@@ -44,6 +44,25 @@ Atualizado em 11/11/2026. Revisão atual baseada na `main`, commit `161ea27`. O 
 - Pinça para zoom é opcional e não foi implementada; existem os controles de zoom e arraste já disponíveis.
 - O erro do login do Codex por QR code no Android pertence ao Codex e não foi resolvido por esta atualização do site.
 
+## Evolução e edição de personagens (12/11/2026, base `603be7f`)
+
+**Implementado e testado**
+- **Subir de nível** guiado, nível por nível: escolhe-se quantos níveis (1 a 20 - nível atual); cada nível passa pelas telas Classe, Pontos de vida, Novidades da classe, Raça, Atributos e talentos e Magias, **só as que têm novidade**, e termina num resumo do nível. Ao concluir um nível, o que foi escolhido fica bloqueado. Revisão final lista cada nível e os PV recebidos. Nada é gravado antes de "Confirmar novo nível"; sair da página não altera a ficha.
+- **PV:** valor fixo (2014) ou rolagem informada, com dado de vida, Constituição e mínimo de 1 PV por nível; Anão da Colina soma +1.
+- **Multiclasse:** escolha da classe a cada nível, com pré-requisitos de atributos de 2014; limite do nível total 20.
+- **Raça:** novidades por nível para Fada, Elfo (Drow), Tiefling (magias nos níveis 3 e 5) e Draconato (dano do sopro nos níveis 6, 11 e 16); Anão da Colina (+1 PV por nível).
+- **Editar Personagem** abre o criador completo em modo de edição (`?modo=editar`): dados carregados, todas as etapas liberadas, revisão com "Alterações que serão aplicadas", PV e inventário preservados, confirmação quando os PV mudam.
+- Motor (testes em `tests/progressao-niveis.test.cjs`): as 12 classes do catálogo de 1 a 20, um nível por vez, sem características duplicadas, com as melhorias de atributo certas (Guerreiro 7, Ladino 6, demais 5), PV mínimo, teto 20 e multiclasse.
+
+**Limitações conhecidas (não implementado)**
+- Substituição de magia ao subir de nível (regras 2014 de Bardo, Feiticeiro, Bruxo, Patrulheiro e Mago) ainda não aparece como escolha do nível.
+- Editar personagem não permite revisar PV nível a nível; ele preserva os PV ou recalcula por valor fixo (ou pelos valores gravados em níveis anteriores) e pede confirmação.
+- Personagens importados sem escolhas gravadas (perícias, magias, estilo de luta) mostram essas escolhas como pendentes no modo Editar e na revisão; é preciso resolvê-las para salvar.
+- Rolar o dado dentro do aplicativo para os PV não foi implementado (só valor fixo ou rolagem informada).
+- Subclasses: 20 das 40 do Livro do Jogador 2014; as demais seguem pendentes (ver acima). Raças fora das listadas acima aparecem sem novidades por nível.
+- Espaços de magia de multiclasse e magias preparadas/conhecidas por classe usam o motor existente; não houve revisão completa de todas as combinações.
+- Não verificado em Android real nem com personagens reais.
+
 ## Para retomar
 
 1. Conferir `main`, SHA publicado, Actions/Pages e modificações locais antes de editar; preservar o trabalho existente.
