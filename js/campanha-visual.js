@@ -83,6 +83,7 @@
     const uid=window.nuvem?.usuario()?.id||'';
     if(campanha!==id||uid!==conta){liberarUrls();campanha=id;conta=uid;estado={...vazio(),...visual};original={...estado};geracao++;base=null;editando=false;mudancas={};}
     podeEditar=mestre;aplicar();if(!editando&&!salvando&&!preparando)formulario();
+    if(!observadorFundo)window.addEventListener?.('paineis:layout',()=>requestAnimationFrame(()=>requestAnimationFrame(posicionarFundo)));   // fechar a ficha lateral move a faixa sem mudar o tamanho dela
     if(!observadorFundo&&window.ResizeObserver){observadorFundo=new ResizeObserver(posicionarFundo);observadorFundo.observe(document.documentElement);observadorFundo.observe($('#campanha-faixa'));}
     if(window.CAMPANHA_IMAGENS){atualizar();if(!parar)parar=window.nuvem.observar?.(atualizar,60000);}
   }

@@ -19,6 +19,26 @@
     if (!f || !R || !A || !Array.isArray(f.ataques)) return [];
     return f.ataques.map((a) => { const v = R.valoresAtaque(f, a), partes = A.parseExpressao(a.dado || "1"); if (!partes) return null; partes[0].b = (partes[0].b || 0) + v.dano; partes[0].t = a.tipo || ""; return { nome: a.nome || "Ataque", hit: v.ataque, dmg: partes }; }).filter(Boolean);
   };
+  window.__ini.papel = () => (!conta ? "visitante" : atual ? (jogador ? "jogador" : "mestre") : "sem-campanha");
+  window.__ini.fichaDe = (pid) => (pers.find((x) => x.id === pid) || {}).ficha || null;
+  /* Fora do modo treino (só mestre): conjurar com um personagem da campanha gasta um espaço na ficha dele, com controle de versão (nunca sobrescreve uma edição simultânea). */
+  window.__ini.gastarEspaco = async (pid, circulo) => {
+    if (!sincroniza()) return { ok: false, msg: "Só o mestre gasta espaços na ficha. Use o modo treino." };
+    try {
+      if (await nuvem.rpc("eh_mestre", { c: atual }) !== true) return { ok: false, msg: "Sem permissão de mestre nesta campanha." };
+      const r = await nuvem.get("personagens?select=versao,ficha&id=eq." + encodeURIComponent(pid) + "&campanha_id=eq." + encodeURIComponent(atual)), reg = r[0];
+      if (!reg) return { ok: false, msg: "Ficha não encontrada." };
+      const f = reg.ficha || {}, c = window.REGRAS.conjuracao(f.classes || []), us = Array.isArray(f.slotsUsados) ? f.slotsUsados.slice() : [], total = c.slots[circulo - 1] || 0;
+      let texto;
+      if (total > 0 && (Number(us[circulo - 1]) || 0) < total) { us[circulo - 1] = (Number(us[circulo - 1]) || 0) + 1; f.slotsUsados = us; texto = "Gastou 1 espaço de " + circulo + "º círculo (" + us[circulo - 1] + " de " + total + " usados)."; }
+      else if (c.pact && c.pact.nivel >= circulo && (Number(f.pactoUsado) || 0) < c.pact.qtd) { f.pactoUsado = (Number(f.pactoUsado) || 0) + 1; texto = "Gastou 1 espaço de Pacto (" + f.pactoUsado + " de " + c.pact.qtd + " usados)."; }
+      else return { ok: false, msg: "Sem espaço de " + circulo + "º círculo disponível. Ligue o modo treino para testar sem gastar." };
+      const salvo = await nuvem.patch("personagens?id=eq." + encodeURIComponent(pid) + "&versao=eq." + encodeURIComponent(reg.versao), { ficha: f });
+      if (!salvo || !salvo[0]) throw new Error("a ficha mudou durante o uso; tente de novo");
+      const p = pers.find((x) => x.id === pid); if (p) p.ficha = f;
+      return { ok: true, msg: texto };
+    } catch (e) { return { ok: false, msg: "Não foi possível gastar o espaço: " + e.message }; }
+  };
   const selecionados=new Set();
   const ocupadas = new Set();
   const basesPV = new Map();

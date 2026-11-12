@@ -12,6 +12,7 @@
     document.documentElement.style.setProperty('--painel-reserva-direita',plano.modo==='lateral'&&temDireita?plano.largura+'px':'0px');
     document.body.classList.toggle('com-ficha-lateral',temDireita);
     document.body.dataset.painel=temDireita?plano.modo:'';
+    window.dispatchEvent?.(new Event('paineis:layout'));      // quem mede a posição da página (ex.: fundo da campanha) refaz a conta depois de abrir ou fechar o painel
   }
   window.PAINEIS_LAYOUT={medir,aplicar};
   window.reorganizarPaineis=aplicar;

@@ -48,3 +48,7 @@ test('barra compacta não mostra convite nem administração ao jogador',async()
  await window.CAMPANHAS_UI.entrarPorCodigo(' ABC ');assert.equal(chamadas[0].nome,'entrar_na_campanha');assert.equal(chamadas[0].dados.p_codigo,'ABC');
  await window.CAMPANHAS_UI.montarSeletor({id:'c',nome:'Campanha',podeGerenciar:true,podeEditarVisual:true});assert.doesNotMatch(box.innerHTML,/Compartilhar convite/);assert.doesNotMatch(box.innerHTML,/Gerenciar participantes/);assert.match(box.innerHTML,/Editar aparência/);assert.equal((box.innerHTML.match(/<summary/g)||[]).length,2);
 });
+test('abrir ou fechar a ficha lateral reposiciona o fundo da campanha (a faixa muda de lugar sem mudar de tamanho)',()=>{
+  const {ler}=require('./helpers.cjs'),l=ler('js/paineis-layout.js'),v=ler('js/campanha-visual.js');
+  assert.match(l,/dispatchEvent\?\.\(new Event\('paineis:layout'\)\)/);assert.match(v,/addEventListener\?\.\('paineis:layout',\(\)=>requestAnimationFrame\(\(\)=>requestAnimationFrame\(posicionarFundo\)\)\)/);
+});

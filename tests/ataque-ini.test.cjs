@@ -39,3 +39,29 @@ test('integração: aplicar dano usa as mesmas estatísticas do botão Dano; cri
 test('cada clique em Aplicar aplica o dano uma vez só',()=>{
   const j=ler('js/ataque-ini.js');assert.match(j,/const U = ultimo; ultimo = null;/);assert.match(j,/b\.disabled = true;/);
 });
+function motorMagias(){const c=vm.createContext({window:{},document:undefined});for(const n of ['origens','regras','magias-jogo','ataque-ini'])vm.runInContext(ler('js/'+n+'.js'),c);return {A:c.window.ATAQUE_INI,R:c.window.REGRAS,M:c.window.MAGIAS_JOGO,cat:JSON.parse(ler('dados/magias.json'))};}
+test('magias: o texto do catálogo vira ataque, salvaguarda e dano sugerido (inclusive o "1d1O" com letra O)',()=>{
+  const {A,cat}=motorMagias(),por=en=>cat.find(m=>m.en===en);
+  let a=A.analisarMagia(por('Fireball'));assert.equal(a.tipo,'salvaguarda');assert.equal(a.atributoSalva,'des');assert.equal(a.metadeNaSalva,true);assert.equal(a.tipoDano,'fogo');assert.equal(A.danoSugerido(por('Fireball'),a,{circulo:3}),'8d6');assert.equal(A.danoSugerido(por('Fireball'),a,{circulo:5}),'8d6+2d6','cada círculo acima do 3º soma 1d6');
+  a=A.analisarMagia(por('Fire Bolt'));assert.equal(a.tipo,'ataque');assert.deepEqual(copia(a.dado),{n:1,f:10,b:0});assert.equal(A.danoSugerido(por('Fire Bolt'),a,{nivelTotal:1}),'1d10');assert.equal(A.danoSugerido(por('Fire Bolt'),a,{nivelTotal:5}),'2d10');assert.equal(A.danoSugerido(por('Fire Bolt'),a,{nivelTotal:11}),'3d10');assert.equal(A.danoSugerido(por('Fire Bolt'),a,{nivelTotal:17}),'4d10');
+  a=A.analisarMagia(por('Sacred Flame'));assert.equal(a.tipo,'salvaguarda');assert.equal(a.metadeNaSalva,false);
+  a=A.analisarMagia(por('Guiding Bolt'));assert.equal(a.tipo,'ataque');assert.equal(A.danoSugerido(por('Guiding Bolt'),a,{circulo:1}),'4d6');assert.equal(A.danoSugerido(por('Guiding Bolt'),a,{circulo:2}),'4d6+1d6');
+  a=A.analisarMagia(por('Cure Wounds'));assert.equal(a.dado,null,'cura não é dano');assert.equal(A.danoSugerido(por('Cure Wounds'),a,{circulo:1}),'');
+  assert.equal(A.danoSugerido(por('Magic Missile'),A.analisarMagia(por('Magic Missile')),{circulo:1}),'1d4+1');
+});
+test('magias: CD e ataque de magia por classe (2014: 8 + proficiência + modificador), com bônus temporário; só as magias que se pode conjurar',()=>{
+  const {A,M}=motorMagias(),f={classes:[{c:'Wizard',n:5,sub:''},{c:'Cleric',n:1,sub:''}],atributos:{for:8,des:14,con:12,int:16,sab:14,car:10}};
+  let st=A.estatisticasMagia(f,{classeConj:'Wizard',l:3});assert.equal(st.cd,8+3+3);assert.equal(st.ataque,3+3);assert.equal(st.nivelTotal,6,'nível total 6 -> proficiência +3');
+  st=A.estatisticasMagia(f,{classeConj:'Cleric',l:1});assert.equal(st.cd,8+3+2,'Clérigo usa Sabedoria');
+  f.bonusTemp={cdMagia:1};assert.equal(A.estatisticasMagia(f,{classeConj:'Wizard'}).cd,15);
+  const fm={classes:[{c:'Bard',n:3,sub:''},{c:'Wizard',n:2,sub:''}],magias:[
+   {n:'Truque',en:'T',l:0},{n:'Conhecida de Bardo',en:'B',l:1,classeConj:'Bard',prep:false},{n:'Grimório não preparada',en:'W',l:1,classeConj:'Wizard',prep:false,noGrimorio:true},
+   {n:'Preparada',en:'P',l:1,classeConj:'Wizard',prep:true},{n:'Inativa',en:'I',l:5,classeConj:'Wizard',prep:true,ativa:false},{n:'Do mestre',en:'M',l:2,fonte:'mestre',prep:true}]};
+  assert.deepEqual(copia(A.conjuraveis(fm,M).map(m=>m.en)),['T','B','P','M'],'não conjura do grimório sem preparar nem magia inativa');
+});
+test('modo treino: sempre ligado para quem não é mestre da campanha; só o mestre pode desligar; gastar espaço só fora do treino e só com controle de versão',()=>{
+  const j=ler('js/ataque-ini.js'),c=ler('js/campanha-ini.js');
+  assert.match(j,/const treinoTravado = \(\) => papel\(\) !== "mestre";/);assert.match(j,/const emTreino = \(\) => treinoTravado\(\) \|\| !!estado\(\)\.treino;/);
+  assert.match(j,/if \(emTreino\(\) \|\| a\.tipo !== "magia"/,'em treino nada é gasto');
+  assert.match(c,/window\.__ini\.papel = \(\) =>/);assert.match(c,/if \(!sincroniza\(\)\) return \{ ok: false, msg: "Só o mestre gasta espaços/);assert.match(c,/&versao=eq\./,'gravação com controle de versão');
+});
