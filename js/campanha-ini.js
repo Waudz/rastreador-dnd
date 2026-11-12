@@ -13,6 +13,12 @@
   /* O mestre usa a campanha inteira e sincroniza PV com as fichas; o jogador só vê e adiciona os PRÓPRIOS personagens (leitura) e usa o rastreador no aparelho dele. */
   const podeUsar = () => mesmaConta() && camps.some(c => c.id === atual);
   const sincroniza = () => podeUsar() && !jogador;
+  /* ataques da ficha (nome, bônus de acerto e dano já com atributo e proficiência) para o painel Atacar */
+  window.__ini.ataquesDe = (pid) => {
+    const p = pers.find((x) => x.id === pid), f = p && p.ficha, R = window.REGRAS, A = window.ATAQUE_INI;
+    if (!f || !R || !A || !Array.isArray(f.ataques)) return [];
+    return f.ataques.map((a) => { const v = R.valoresAtaque(f, a), partes = A.parseExpressao(a.dado || "1"); if (!partes) return null; partes[0].b = (partes[0].b || 0) + v.dano; partes[0].t = a.tipo || ""; return { nome: a.nome || "Ataque", hit: v.ataque, dmg: partes }; }).filter(Boolean);
+  };
   const selecionados=new Set();
   const ocupadas = new Set();
   const basesPV = new Map();
@@ -99,7 +105,7 @@
     finally { if(atual===campanhaConsultada&&geracaoConsultada===geracaoContexto)buscando = false; }
   }
   function contextoVisual(ativa){
-    for(const id of ['iniciativa-atual','adicionar-combatente']){const el=$('#'+id);if(el)el.hidden=!ativa;}
+    for(const id of ['iniciativa-atual','adicionar-combatente','painel-ataque']){const el=$('#'+id);if(el)el.hidden=!ativa;}
     box.hidden=!ativa;const vazio=$('#ini-sem-campanha');if(vazio)vazio.hidden=ativa;
   }
   let geracaoContexto=0,pararConsulta=null;

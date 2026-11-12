@@ -51,6 +51,7 @@
   <script src="js/regras.js" defer></script>
   <script src="js/grupo-personagens.js" defer></script>
   <script src="js/campanha-ini.js" defer></script>
+  <script src="js/ataque-ini.js" defer></script>
 
   <script src="js/interface.js" defer></script>
   <link rel="stylesheet" href="css/mobile.css">
@@ -150,6 +151,12 @@
           <button class="primary" type="submit">Adicionar</button>
         </div>
       </form>
+    </details>
+
+    <details class="vista-iniciativa panel" id="painel-ataque">
+      <summary class="panel-title"><i data-i="swords"></i>Atacar e causar dano</summary>
+      <p class="muted">Escolha quem ataca, o ataque e o alvo. O app rola o d20 contra a CA do alvo e o dano (em dobro nos dados se for crítico). Aplique o dano com um clique.</p>
+      <div id="atk-corpo"></div>
     </details>
 
     <section class="vista-monstros panel" id="aviso-visitante">

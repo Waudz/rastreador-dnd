@@ -183,6 +183,10 @@
       $("#hp").value = $("#maxHp").value = m.hit_points; $("#ac").value = m.armor_class;
       window.__ini.pending = m.key; sug.hidden = true;
     }
+    window.__ini.acoesDe = (key) => {
+      const m = ALL.find((x) => x.key === key); if (!m) return [];
+      return (m.actions || []).map((a) => { const r = rollInfo(a); return r ? { nome: nmA(a), hit: r.hit, dmg: r.dmg } : null; }).filter(Boolean);
+    };
     function addMon(m, botao) {
       const nome = uniq(pt(m) || m.name);
       window.__ini.add({ name: nome, kind: CAT[catOf(m)], initiative: rollInit(m), hp: m.hit_points, maxHp: m.hit_points, ac: m.armor_class, key: m.key });

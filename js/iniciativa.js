@@ -153,6 +153,18 @@
           <button class="small primary" type="button" data-fxadd="${c.id}">Adicionar</button><button class="small subtle" type="button" data-fxcancel="1">Cancelar</button></div>`;
       }
 
+      /* dano a um combatente (botão Dano, painel Atacar): reduz PV, conta dano causado/sofrido e abates; quemId opcional atribui o dano a outro atacante */
+      function aplicarDano(id, amount, quemId) {
+        const alvo = combatants.find((c) => c.id === id), n = Math.max(0, Math.floor(Number(amount) || 0));
+        if (!alvo || !n) return false;
+        const antes = Number(alvo.hp), c = quemId && combatants.find((x) => x.id === quemId), quem = c ? { id: c.id, name: c.name } : attacker();
+        alvo.hp = Math.max(0, antes - n);
+        const a = statOf(quem.id, quem.name); a.dealt += n;
+        if (antes > 0 && alvo.hp === 0) a.kills++;
+        statOf(alvo.id, alvo.name).taken += n;
+        render();
+        return true;
+      }
       function statOf(id, name) {
         return (stats[id] = stats[id] || { name, dealt: 0, taken: 0, healed: 0, kills: 0 });
       }
@@ -329,16 +341,11 @@
           const amountInput = document.querySelector(`[data-amount="${id}"]`);
           const amount = Math.max(1, Math.floor(Number(amountInput?.value) || 1));
           if (!person) return;
-          const antes = Number(person.hp), quem = attacker();
-          person.hp = button.dataset.damage
-            ? Math.max(0, antes - amount)
-            : Math.min(Number(person.maxHp), antes + amount);
-          if (button.dataset.damage) {
-            const a = statOf(quem.id, quem.name); a.dealt += amount;
-            if (antes > 0 && person.hp === 0) a.kills++;
-            statOf(person.id, person.name).taken += amount;
-          } else if (person.hp > antes) {
-            statOf(quem.id, quem.name).healed += person.hp - antes;
+          if (button.dataset.damage) aplicarDano(id, amount);
+          else {
+            const antes = Number(person.hp), quem = attacker();
+            person.hp = Math.min(Number(person.maxHp), antes + amount);
+            if (person.hp > antes) statOf(quem.id, quem.name).healed += person.hp - antes;
           }
           render();
           return;
@@ -468,6 +475,8 @@
         aoAlterar:fn=>ouvintes.push(fn),
         render: () => render(),
         list: () => combatants,
+        atual: () => currentId,
+        aplicarDano,
         trocarContexto,
         contexto: () => contexto,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }

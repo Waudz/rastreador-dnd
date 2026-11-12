@@ -60,6 +60,10 @@ Resolvidas nesta integração: auditoria das oito listas padrão contra as pági
 - Interface: aba "Grupo" (só jogadores) com Mestre e Jogadores (foto, nome, raça, classe, nível, jogador, PV, CA); tocar abre a ficha em modo leitura (`soLeitura` em `js/personagem.js`: nada grava; sem abas Inventário e Notas; controles desativados). O leitor lateral (`js/leitor-fichas.js`) repassa `grupo`.
 - Feedback de jogador atendido: CD pronta nas características (Ki, Canalizar Divindade, manobras etc.), com fórmula.
 
+## Iniciativa: painel Atacar (entregue localmente)
+- `js/ataque-ini.js` + painel em `iniciativa.html`: escolher quem ataca, o ataque (criaturas do bestiário via `__ini.acoesDe`, personagens via `__ini.ataquesDe`, ou manual com expressão de dano), o alvo e vantagem/desvantagem; rola d20 contra a CA (20 natural acerta e é crítico, 1 natural erra), dano com dados em dobro no crítico, "metade do dano", e aplica ao alvo (`__ini.aplicarDano`, mesmas estatísticas do botão Dano). Funciona para mestre e jogador.
+- Limites: sem salvaguardas do alvo contra CD (use "Só o dano" + "Metade do dano"), sem resistências/vulnerabilidades automáticas, sem multiataque em sequência, sem PV temporários do alvo, ataques de criaturas sem bônus de acerto só rolam dano.
+
 ## Próxima tarefa
 Aguardar revisão e autorização do plano de publicação/segurança. Não aplicar SQL, acessar o Supabase real, fazer push ou deploy por conta própria.
 
