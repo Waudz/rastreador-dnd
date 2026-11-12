@@ -42,12 +42,18 @@ test('Subir de nível fica junto do nível do personagem, some no nível 20 e na
   assert.match(ler('css/fichas.css'),/\.ficha-embutida \.ficha-subir-nivel \{ display:none; \}/);
 });
 
-test('subir de nível é um fluxo próprio: sem Raça, Origem e Equipamento, com dado de vida, valor fixo e rolagem que funcionam',()=>{
+test('subir de nível é guiado, tela a tela: classe, PV, novidades da classe, raça, atributos, magias e revisão',()=>{
   const j=ler('js/criador.js');
-  assert.match(j,/const VISIVEIS=evolucao\?\[0,3,4,5,7\]:\[0,1,2,3,4,5,6,7\]/);assert.match(j,/Classe e PV/);
-  assert.match(j,/function atualizarNivelForm\(\)/);assert.match(j,/Dado de vida de '\+cls\.n\+': d'\+dv/);assert.match(j,/Valor fixo: '\+fixo\+' \(média\)/);
-  assert.match(j,/if\(t\.id==='nivel-classe'\|\|t\.id==='nivel-pv'\|\|t\.id==='nivel-rolagem'\)\{atualizarNivelForm\(\);return;\}/);   // o formulário não é redesenhado (redesenhar apagava a escolha)
-  assert.match(j,/data-classe="\$\{i\}" \$\{evolucao\?'disabled':''\}/);assert.match(j,/id="desfazer-nivel"/);
-  assert.ok(!/Prévia do novo nível/.test(j));assert.match(j,/Aplicar o novo nível e continuar/);
-  assert.match(j,/errosVisiveis=q=>C\.validar\(q,\{evolucao\}\)\.filter\(e=>!evolucao\|\|VISIVEIS\.includes\(e\.etapa\)\)/);
+  assert.match(j,/const VISIVEIS=evolucao\?\[0,8,9,10,3,5,7\]:\[0,1,2,3,4,5,6,7\]/);
+  for(const nome of ['Classe','Pontos de vida','Novidades da classe','Raça','Atributos e talentos','Magias','Revisão'])assert.ok(j.includes("'"+nome+"'"),nome);
+  assert.match(j,/function pvHTML\(\)/);assert.match(j,/Dado de vida de \$\{esc\(cls\.n\)\}: <b>d\$\{cls\.dv\}<\/b>/);assert.match(j,/Valor fixo: <b>\$\{Math\.floor\(cls\.dv\/2\)\+1\}<\/b> \(média\)/);
+  assert.match(j,/if\(t\.id==='nivel-classe'\)\{classeNivel=t\.value;desenhar\(\);return;\}/);assert.match(j,/if\(t\.id==='nivel-pv'\)\{pvModo=t\.value;atualizarNivelForm\(\);return;\}/);
+  assert.match(j,/function racaNovidadesHTML\(\)/);assert.match(j,/Nenhuma novidade racial neste nível/);assert.match(j,/Este nível não concede melhoria de atributo nem talento/);
+  assert.match(j,/Aplicar o novo nível e continuar/);assert.ok(!/Prévia do novo nível/.test(j));assert.match(j,/id="desfazer-nivel"/);
+});
+test('subir de nível só acrescenta: escolhas, subclasse e melhorias anteriores ficam bloqueadas (mudar é em Editar personagem)',()=>{
+  const j=ler('js/criador.js');
+  assert.match(j,/travada=evolucao&&!!origSel\.get\(g\.key\)\?\.has\(v\)/);assert.match(j,/Escolha anterior \(bloqueada\)\. Para mudar, use Editar personagem/);
+  assert.match(j,/asiAntigos/);assert.match(j,/Subclasse já escolhida \(bloqueada\)/);assert.match(j,/data-classe="\$\{i\}" \$\{evolucao\?'disabled':''\}/);
+  assert.match(j,/const RACA_NIVEIS=/);for(const raca of ['Fada','Drow','Tiefling','Draconato'])assert.ok(j.includes(raca),raca);
 });
