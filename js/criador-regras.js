@@ -242,7 +242,7 @@ window.CRIADOR = (() => {
   }
   function derivar(p) {
     const q=copiar(p),f=q.ficha,st=estado(f),bg=origem(f);reconciliarNiveis(f);
-    if(st.metodo==="pointbuy"){f.atributos={...st.base};f.bonusRaca={};f.bonusMelhorias={};R.aplicarRaca(f,{});}R.aplicarMelhorias(f);
+    if(st.metodo==="pointbuy"||st.baseEditada){const racial={...(f.bonusRaca||{})};f.atributos={...st.base};f.bonusRaca={};f.bonusMelhorias={};if(st.metodo==="pointbuy")R.aplicarRaca(f,{});else{f.bonusRaca=racial;for(const k of ATR)f.atributos[k]=(Number(st.base[k])||0)+(racial[k]||0);}}R.aplicarMelhorias(f);
     f.background=bg?.nome||"";f.backgroundPericias=[...(bg?.per||[])];
     const gs=grupos(f),gclasse=gs.find(g=>g.source===idClasse(f.classes?.[0]?.c)&&g.opts.some(per));
     f.perClasse=(gclasse?.selecionadas||[]).map(per).filter(Boolean);
@@ -334,7 +334,8 @@ window.CRIADOR = (() => {
       if((new Set((f.atrRaca||[]).filter(k=>ATR.includes(k)&&!(k in R.racial(f.raca).bonus)))).size<R.racial(f.raca).atributos)erros.push({etapa:1,texto:"Complete as escolhas de atributos da raça."});
       if(!st.equipAplicado)for(const texto of equipamento(p).pendentes)erros.push({etapa:6,texto});
     }
-    for(const m of R.melhoriasDisponiveis(f.classes)){if(st.talentos?.[m.id]){if(!st.talentos[m.id].nome?.trim())erros.push({etapa:3,texto:"Informe o talento escolhido no nível "+m.n});}else if((f.melhorias?.[m.id]||[]).filter(k=>ATR.includes(k)).length!==2)erros.push({etapa:3,texto:"Escolha a melhoria de atributos de "+m.classe+" no nível "+m.n+"."});}
+    if(!evolucao&&st.baseEditada&&ATR.some(k=>!Number.isInteger(st.base[k])||st.base[k]<1||st.base[k]>20||(Number(f.atributos?.[k])||0)>20))erros.push({etapa:3,texto:"Ajuste os atributos base para valores inteiros de 1 a 20, respeitando o limite 20 após os bônus."});
+    for(const m of R.melhoriasDisponiveis(f.classes)){if(st.talentos?.[m.id]){if((f.melhorias?.[m.id]||[]).some(k=>ATR.includes(k)))erros.push({etapa:3,texto:"Escolha atributos ou talento, nunca ambos na mesma melhoria."});if(st.talentos[m.id].id==="srd51:feat/grappler"&&(Number(f.atributos?.for)||0)<13)erros.push({etapa:3,texto:"Imobilizador (Grappler) exige Força 13."});if(!st.talentos[m.id].nome?.trim())erros.push({etapa:3,texto:"Informe o talento escolhido no nível "+m.n});}else if((f.melhorias?.[m.id]||[]).filter(k=>ATR.includes(k)).length!==2)erros.push({etapa:3,texto:"Escolha a melhoria de atributos de "+m.classe+" no nível "+m.n+"."});}
     for(const g of [...grupos(f),...gruposMagias(f)])if(g.selecionadas.length<g.qtd)erros.push({etapa:g.source==="background"?2:g.source==="raca"?1:g.grants==="spell"?5:4,texto:g.titulo+": faltam "+(g.qtd-g.selecionadas.length)+" escolha(s).",grupo:g.key});
     return erros;
   }

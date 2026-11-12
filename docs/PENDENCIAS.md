@@ -87,3 +87,10 @@ Push autorizado dos commits até 7777e67 realizado; GitHub Actions de validaçã
 
 ## Correção do cabeçalho da ficha — local, v104
 Corrigida a especificidade CSS: a coluna .ficha-foto não cresce mais com flex:1 e o retrato permanece à esquerda. Subir de nível deixa de ser ocultado na ficha embutida; preservados o limite de nível do cabeçalho e as permissões existentes do criador/painel. Prévia com componentes reais e dados sintéticos: painel em 320/375/430/1280 e ficha completa em 320/430/1280, retrato alinhado e sem transbordamento; 46 testes direcionados aprovados. Sem alteração no Supabase. Aguardar autorização para publicar v104.
+
+Ajuste local v105: botão Adicionar classe associado por aria-describedby a uma orientação explícita de que multiclasse é opcional e é possível continuar com uma classe. Sem alteração nas regras. Onze testes direcionados aprovados; publicação pendente de autorização.
+
+No mesmo ajuste local v105, removido o parágrafo duplicado Fontes e licenças do criador/edição/evolução. Preservados rodapé compartilhado, página licencas.html e documentação de atribuição. Testes de licenças, criador e esqueleto aprovados.
+
+## Melhoria de atributos e edição — local v105
+Guerreiro 4: UI diferencia dois pontos (+2 no mesmo atributo ou +1 em dois) de talento opcional; troca de modo remove a alternativa anterior, ASI não aplica bônus de uma vaga com talento e validação rejeita ambas juntas. Edição de fichas preservadas permite valores base manuais separados dos bônus (com validação inteira e limite); compra de 27 pontos continua no método pointbuy e subida de nível bloqueia edição da base. Seletor de talentos inclui somente Imobilizador/Grappler SRD 2014 (Força 13 validada) e outro talento aprovado pelo mestre, registrado manualmente; catálogo completo e automação de efeitos por alvo NÃO implementados. Referência: regras básicas de 2014, customization-options, e SRD 5.1. Preservados dados reais e Supabase. Cinco regressões novas; 398 testes completos e 15 verificações de regras aprovados. Inclui os ajustes anteriores de multiclasse opcional e remoção do parágrafo duplicado de licenças. Publicação v105 pendente de autorização.

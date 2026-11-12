@@ -148,7 +148,7 @@ window.REGRAS = (() => {
   }
   function aplicarMelhorias(f){
     const disponiveis=new Set(melhoriasDisponiveis(f.classes).map(x=>x.id)), antes=f.bonusMelhorias||{}, depois={};
-    Object.entries(f.melhorias||{}).forEach(([id,escolhas])=>{if(disponiveis.has(id))escolhas.slice(0,2).forEach(k=>{if(ATR.includes(k))depois[k]=(depois[k]||0)+1;});});
+    Object.entries(f.melhorias||{}).forEach(([id,escolhas])=>{if(disponiveis.has(id)&&!f.criacao?.talentos?.[id])escolhas.slice(0,2).forEach(k=>{if(ATR.includes(k))depois[k]=(depois[k]||0)+1;});});
     f.atributos ||= {};
     ATR.forEach(k=>{const base=(Number(f.atributos[k])||10)-(antes[k]||0);const b=Math.min(depois[k]||0,Math.max(0,20-base));f.atributos[k]=base+b;depois[k]=b;});f.bonusMelhorias=depois;
   }
