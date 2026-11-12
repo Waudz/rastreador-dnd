@@ -78,7 +78,22 @@
   }
   document.addEventListener('change',async e=>{
     const tipo=e.target.dataset?.visualArquivo;if(!['simbolo','backdrop'].includes(tipo)||!podeEditar||salvando)return;
-    const arquivo=e.target.files?.[0];if(!arquivo)return;const atual=++geracao;preparando++;travar(true);
+    const arquivo = e.target.files?.[0];
+if (!arquivo) return;
+
+const nomeArquivo = document.querySelector(
+  '[data-arquivo-nome="' + tipo + '"]'
+);
+
+if (nomeArquivo) {
+  nomeArquivo.textContent = arquivo.name;
+}
+
+mensagem('Imagem selecionada. Preparando prévia...');
+
+const atual = ++geracao;
+preparando++;
+travar(true);
     try{let entrada=arquivo,frame=null;
       if(tipo==='simbolo'){const data=await window.recortarFoto(arquivo);if(!data)return;entrada=await (await fetch(data)).blob();}
       else if(enquadramentoDisponivel()){frame=await window.ajustarFundo(arquivo);if(!frame)return;}
