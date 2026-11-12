@@ -11,7 +11,7 @@
     return `<details class="panel" open><summary class="panel-title">Estado de jogo</summary>
       <p>Deslocamento efetivo: <b>${J.deslocamentoEfetivo(f,f.deslocamento??9)} m</b> · PV máximo efetivo: <b>${J.pvMaxEf(P)}</b></p>
       ${P.pv_atual===0||m.morto?`<div class="item"><h3>Salvaguardas contra a morte</h3><p>${m.morto?'Morto':m.estavel?'Estável':`${m.sucessos||0} sucessos · ${m.falhas||0} falhas`}</p>${!m.morto&&!m.estavel?`<div class="row"><input class="num" id="j-morte" type="number" min="1" max="20" placeholder="d20" aria-label="Resultado físico do d20 contra a morte">${botao('morte','Registrar d20')}${botao('morte-app','Rolar no app')}${botao('estabilizar','Estabilizar')}</div>`:''}</div>`:''}
-      <div class="grade2"><div><h3>Condições e exaustão</h3>${cond}<div class="row"><label>Condição <select id="j-condicao">${Object.keys(J.CONDICOES).map(n=>`<option>${esc(n)}</option>`).join('')}</select></label>${botao('condicao','Aplicar')}</div>
+      <div class="grade2"><div><h3>Condições e exaustão</h3>${cond}<div class="row"><label>Condição <select id="j-condicao"><option value="" selected>Selecionar…</option>${Object.keys(J.CONDICOES).map(n=>`<option>${esc(n)}</option>`).join('')}</select></label>${botao('condicao','Aplicar')}</div>
       <div class="row"><label>Exaustão <select id="j-exaustao">${J.EXAUSTAO.map((t,i)=>`<option value="${i}" ${Number(f.exaustao||0)===i?'selected':''}>${i}${t?' · '+esc(t):' · Nenhuma'}</option>`).join('')}</select></label>${botao('exaustao','Aplicar nível')}</div><p class="muted">Efeitos de exaustão são cumulativos. Vantagem/desvantagem e imunidades são resolvidas pelo jogador.</p>
       </div><div><h3>Concentração</h3><p>${f.concentracao?esc(f.concentracao.magia):'Nenhuma concentração ativa.'}</p>${f.concentracao?botao('encerrar','Encerrar concentração'):''}
       ${f.concentracao&&pend.length?`<p>Salvaguarda pendente: CD ${pend[0]} (${pend.length} teste(s))</p><div class="row"><input class="num" id="j-concentracao" type="number" aria-label="Total físico da salvaguarda de Constituição" placeholder="Total">${botao('concentracao-teste','Registrar total')}${botao('concentracao-app','Rolar no app')}</div>`:''}
@@ -23,7 +23,7 @@
     const f=P.ficha, a=b.dataset.jogo, v=b.dataset.valor;
     if(a==='recurso'){RC.usar(f,v);J.registrar(P,'recurso','Usou '+RC.achar(f,v).nome);}
     else if(a==='restaurar'){const r=RC.achar(f,v);if(!r)throw Error('Recurso não encontrado.');f.recursosUsados={...f.recursosUsados,[v]:Math.max(0,r.usados-1)};J.registrar(P,'recurso','Correção manual: '+r.nome);}
-    else if(a==='condicao')J.aplicarCondicao(P,campo('j-condicao'));
+    else if(a==='condicao'){const nome=campo('j-condicao');if(!nome)throw Error('Selecione uma condição para aplicar.');J.aplicarCondicao(P,nome);}
     else if(a==='remover-condicao')J.removerCondicao(P,v);
     else if(a==='exaustao'){const n=Number(campo('j-exaustao'));if(n===6&&!confirm('Exaustão 6 causa morte. Continuar?'))return false;J.definirExaustao(P,n);}
     else if(a==='encerrar'){J.encerrarConcentracao(P,'manual');f.testesConcentracao=[];}

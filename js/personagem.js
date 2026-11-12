@@ -423,7 +423,7 @@
       ${campos("modificador", `<label>Categoria<select id="ef-cat">${R.CATEGORIAS_TEMP.map(([k, n]) => opt(k, n, false)).join("")}</select></label>`)}
       ${campos("atributo", `<label>Atributo<select id="ef-atr">${ATR.map(([k]) => opt(k, R.ATR_NOME[k], false)).join("")}</select></label>`)}
       ${campos("modificador atributo", '<label>Valor<input class="num" id="ef-valor" type="number" min="-20" max="20" value="1"></label>')}
-      ${campos("condicao", `<label>Condição<select id="ef-cond">${IE.CONDICOES.map((c) => opt(c, c, false)).join("")}</select></label>`)}
+      ${campos("condicao", `<label>Condição<select id="ef-cond">${opt("", "Selecionar…", true)}${IE.CONDICOES.map((c) => opt(c, c, false)).join("")}</select></label>`)}
       ${campos("resistencia", `<label>Tipo de dano<select id="ef-dano">${opt("escolher", "Escolhido ao usar", true)}${IE.TIPOS_DANO.map((d) => opt(d, d, false)).join("")}</select></label>`)}
       ${campos("manual", '<label>Descrição<textarea id="ef-texto" rows="2" maxlength="300"></textarea></label>')}
       ${campos("modificador atributo condicao resistencia manual", `<label>Duração (texto)<input id="ef-dur" maxlength="60" placeholder="Ex.: 1 hora"></label><label>Termina<select id="ef-ate">${Object.entries(IE.DURACOES).map(([k, n]) => opt(k, n, k === "manual")).join("")}</select></label>`)}

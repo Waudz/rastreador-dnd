@@ -62,3 +62,9 @@ test('integração poção + PV a 0 + concentração: curar por item tira da inc
 test('a 0 PV: dano absorvido por PV temporários ainda conta falha; crítico conta duas',()=>{
  const {J}=motor(),P=pers([{c:'Fighter',n:3}],{pv_atual:0,pv_temp:5});J.dano(P,2);assert.equal(P.pv_temp,3);assert.equal(P.ficha.morte.falhas,1);J.dano(P,1,{critico:true});assert.equal(P.ficha.morte.morto,true);
 });
+test('condições: o seletor começa em "Selecionar…" (nunca em Agarrado) e aplicar sem escolher avisa em vez de aplicar',()=>{
+  const ui=ler('js/jogo-ui.js'),pj=ler('js/personagem.js');
+  assert.match(ui,/<select id="j-condicao"><option value="" selected>Selecionar…<\/option>/);assert.match(ui,/if\(!nome\)throw Error\('Selecione uma condição para aplicar\.'\)/);
+  assert.match(pj,/<select id="ef-cond">\$\{opt\("", "Selecionar…", true\)\}/);
+  const {J}=motor(),P=pers([{c:'Fighter',n:3}]);assert.throws(()=>J.aplicarCondicao(P,''),/desconhecida/);assert.equal((P.ficha.efeitosAtivos||[]).length,0);
+});
