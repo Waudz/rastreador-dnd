@@ -73,3 +73,39 @@ test('subir de nível do Bruxo 10 → 11 oferece o Arcanum de 6º círculo e a t
   const g=C.gruposMagias(C.derivar(p).ficha).find(x=>x.arcanum===6);assert.ok(g,'o grupo do Arcanum aparece no nível 11');
   assert.throws(()=>M.aplicarTroca(p,'Warlock',g.opts[0],g.opts[1],{grupoKey:g.key}),/conhecidas|primeiro|lista/);
 });
+
+// Listas conferidas nas páginas 105–114 do SRD 5.1 oficial (2014):
+// https://media.wizards.com/2016/downloads/DND/SRD-OGL_V5.1.pdf
+test('catálogo: listas padrão das oito classes correspondem ao SRD, sem misturar listas expandidas de subclasse',()=>{
+ const {cat}=motor(),listas=JSON.parse(ler('tests/fixtures/listas-magias-srd2014.json'));
+ for(const [c,nomes] of Object.entries(listas))assert.deepEqual(cat.filter(m=>m.c.includes(c)).map(m=>m.en).sort(),nomes,c);
+ assert.ok(!cat.find(m=>m.en==='Command').c.includes('Warlock'));
+});
+test('Cavaleiro Místico e Trapaceiro Arcano: escolas e exceções de 3º, 8º, 14º e 20º nível são validadas',()=>{
+ const {C,cat}=motor();for(const [cid,sub,escolas] of [['Fighter','Cavaleiro Místico',['Abjuração','Evocação']],['Rogue','Trapaceiro Arcano',['Encantamento','Ilusão']]]){
+  for(const [n,livres] of [[3,1],[7,1],[8,2],[13,2],[14,3],[20,4]]){
+   const p=base(C,[cl(cid,n,sub)]),g=C.gruposMagias(p.ficha).find(g=>g.key==='magias|'+cid+'|magias');
+   assert.deepEqual(copia(g.escolas),escolas);assert.equal(g.livres,livres);
+   const fora=g.opts.filter(id=>!escolas.some(e=>C.magiaPorId(id).cab.startsWith(e))),dentro=g.opts.filter(id=>escolas.some(e=>C.magiaPorId(id).cab.startsWith(e)));
+   C.estado(p.ficha).selecoes[g.key]=[...fora.slice(0,livres+1),...dentro].slice(0,g.qtd);
+   assert.ok(C.validar(C.derivar(p),{evolucao:true}).some(e=>e.texto.includes('fora de')),sub+' '+n+' bloqueia excesso');
+   C.estado(p.ficha).selecoes[g.key]=[...fora.slice(0,livres),...dentro].slice(0,g.qtd);
+   assert.ok(!C.validar(C.derivar(p),{evolucao:true}).some(e=>e.texto.includes('fora de')),sub+' '+n+' aceita exceções');
+  }
+ }
+});
+test('reduzir e restaurar níveis preserva rolagens, escolhas e magias inativas sem devolver recursos gastos',()=>{
+ const {C}=motor();let p=base(C,[cl('Warlock',11)]);C.reconciliarNiveis(p.ficha);p.ficha.criacao.niveis[10].pv={modo:'rolagem',valor:7};
+ for(const g of C.gruposMagias(p.ficha))C.estado(p.ficha).selecoes[g.key]=g.opts.slice(0,g.qtd);
+ p=C.derivar(p);p.ficha.pactoUsado=2;p.ficha.arcanumUsado={6:true};p.ficha.recursosUsados={teste:1};p.ficha.exaustao=2;p.ficha.concentracao={magia:'Hex'};
+ const arc=p.ficha.magias.find(m=>m.arcanum===6),original=copia(p);p.ficha.classes[0].n=10;C.reconciliarNiveis(p.ficha);p=C.derivar(p);
+ assert.equal(p.ficha.magias.find(m=>m.en===arc.en).ativa,false);assert.equal(p.ficha.criacao.niveisInativos[0].pv.valor,7);assert.equal(p.ficha.criacao.niveisInativos[0].nivelClasse,11);
+ const salvo=C.salvamento(p,{modo:'editar',original}).dados;assert.equal(salvo.ficha.pactoUsado,2);assert.equal(salvo.ficha.arcanumUsado[6],true);assert.equal(salvo.ficha.exaustao,2);assert.equal(salvo.ficha.concentracao.magia,'Hex');
+ p.ficha.classes[0].n=11;p=C.derivar(p);assert.equal(p.ficha.criacao.niveis[10].pv.valor,7);assert.equal(p.ficha.criacao.niveisInativos.length,0);assert.equal(p.ficha.magias.find(m=>m.en===arc.en).ativa,true);assert.equal(p.ficha.arcanumUsado[6],true);
+ const mais=C.derivar(C.subir(p,'Warlock','media'));assert.equal(mais.ficha.pactoUsado,2);assert.equal(mais.ficha.arcanumUsado[6],true);assert.equal(mais.ficha.recursosUsados.teste,1);
+});
+
+test('Arcanum já escolhido não pode ser substituído pela troca de magia conhecida',()=>{
+ const {C,M}=motor();let p=base(C,[cl('Warlock',11)]);for(const g of C.gruposMagias(p.ficha))C.estado(p.ficha).selecoes[g.key]=g.opts.slice(0,g.qtd);
+ p=C.derivar(p);p=C.subir(p,'Warlock','media');const g=C.gruposMagias(p.ficha).find(g=>g.arcanum===6);assert.throws(()=>M.aplicarTroca(p,'Warlock',g.selecionadas[0],g.opts.find(id=>!g.selecionadas.includes(id)),{grupoKey:g.key}),/sem Arcanum/);
+});

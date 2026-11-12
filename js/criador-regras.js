@@ -105,7 +105,7 @@ window.CRIADOR = (() => {
   function idiomasRaca(nome){if(!nome)return [];const n=norm(nome);return ["Comum",...(/elfo/.test(n)?["Élfico"]:/anao/.test(n)?["Anão"]:/gnomo/.test(n)?["Gnômico"]:/halfling/.test(n)?["Halfling"]:/orc/.test(n)?["Orc"]:/tiefling/.test(n)?["Infernal"]:/draconato/.test(n)?["Dracônico"]:[])];}
   function rotulo(id){const h=feature(id);if(h)return h.nome||h.en;const m=magiaPorId(id);if(m)return m.n+" · "+(m.l?m.l+"º Círculo":"Truque");if(per(id))return R.PERICIAS.find(p=>p[0]===per(id))[1];if(/^idioma:|^ferramenta:/.test(id))return id.split(":").slice(1).join(":");const i=D.items.find(i=>i.id===(id.startsWith("tool:")?"srd51:item/"+id.slice(5):id));return i?.nome||i?.en||id.replace(/^tool:/,"").replaceAll("-"," ");}
   function perfilMagias(c,f){
-    const nomeSub=subclasse(c)?.nome;if(c.n>=3&&["Cavaleiro Místico","Trapaceiro Arcano"].includes(nomeSub)){const lista=[0,0,0,3,4,4,4,5,6,6,7,8,8,9,10,10,11,11,11,12,13],co={...c,sub:nomeSub},s=R.conjuracao([co]);return{classe:c.c,nome:R.classe(c.c).n,truques:2+(c.n>=10?1:0),qtd:lista[c.n],tipo:"known",max:s.slots.reduce((n,x,i)=>x?i+1:n,0),lista:"Wizard"};}
+    const nomeSub=subclasse(c)?.nome;if(c.n>=3&&["Cavaleiro Místico","Trapaceiro Arcano"].includes(nomeSub)){const lista=[0,0,0,3,4,4,4,5,6,6,7,8,8,9,10,10,11,11,11,12,13],co={...c,sub:nomeSub},s=R.conjuracao([co]);return{classe:c.c,nome:R.classe(c.c).n,truques:2+(c.n>=10?1:0),qtd:lista[c.n],tipo:"known",escolas:nomeSub==="Cavaleiro Místico"?["Abjuração","Evocação"]:["Encantamento","Ilusão"],livres:1+[8,14,20].filter(n=>c.n>=n).length,max:s.slots.reduce((n,x,i)=>x?i+1:n,0),lista:"Wizard"};}
     const d=classe(c.c),l=d?.data.levels.find(l=>l.level===c.n);if(!d||!l||!d.data.spellcasting||c.n<d.data.spellcasting.startsAtLevel)return null;
     const s=R.conjuracao([c]),max=s.pact?.nivel||s.slots.reduce((n,x,i)=>x?i+1:n,0),a={str:"for",dex:"des",con:"con",int:"int",wis:"sab",cha:"car"}[d.data.spellcasting.ability],mod=R.mod(f.atributos?.[a]||10);
     const prep=d.data.spellcasting.preparation,segredos=Object.entries(l.classSpecific||{}).filter(([k])=>k.startsWith("magicalSecretsMax_")).reduce((n,[,v])=>n+v,0);
@@ -124,7 +124,7 @@ window.CRIADOR = (() => {
       for(const tipo of ["truques","magias"]){const qtd=tipo==="truques"?p.truques:p.qtd;if(!qtd)continue;
         const concedidas=new Set([...magiasConcedidas(f).map(m=>m.id),...magiasRaciaisLista(f).filter(x=>R.nivelTotal(f.classes||[])>=x[1]).map(x=>{const m=MAGIAS.find(m=>m.en===x[0]);return m?magiaId(m):x[0];})]);const key="magias|"+c.c+"|"+tipo,opts=MAGIAS.filter(m=>!concedidas.has(magiaId(m))&&m.c.includes(p.lista||c.c)&&(tipo==="truques"?m.l===0:m.l>0&&m.l<=p.max)).map(magiaId);
         const antigos=(f.magias||[]).filter(m=>tipo==="truques"?m.l===0:m.l>0).map(magiaId);
-        out.push({key,source:idClasse(c.c),titulo:p.nome+" · "+(tipo==="truques"?"truques":p.tipo==="spellbook"?"grimório":p.tipo==="prepared"?"magias preparadas":"magias conhecidas"),grants:"spell",qtd,opts,selecionadas:[...new Set(estado(f).selecoes[key]||antigos)].filter(id=>opts.includes(id)).slice(0,qtd),max:p.max});
+        out.push({key,source:idClasse(c.c),titulo:p.nome+" · "+(tipo==="truques"?"truques":p.tipo==="spellbook"?"grimório":p.tipo==="prepared"?"magias preparadas":"magias conhecidas"),grants:"spell",qtd,opts,selecionadas:[...new Set(estado(f).selecoes[key]||antigos)].filter(id=>opts.includes(id)).slice(0,qtd),max:p.max,...(tipo==="magias"&&p.escolas?{escolas:p.escolas,livres:p.livres}:{})});
       }
     }
     /* Arcanum Místico do Bruxo (2014): uma magia de 6º, 7º, 8º e 9º círculo (níveis 11, 13, 15 e 17). Não é magia conhecida, não usa espaços de Pacto
@@ -146,9 +146,13 @@ window.CRIADOR = (() => {
      PV: o total sempre sai da progressão (um só cálculo para criação, evolução e edição). */
   function reconciliarNiveis(f){
     const st=estado(f),classes=(f.classes||[]).filter(x=>x.c&&classe(x.c)),alvo={};classes.forEach(x=>{alvo[x.c]=Math.max(0,Number(x.n)||0);});
-    const cont={};let niveis=(st.niveis||[]).filter(x=>alvo[x.c]!==undefined).map(x=>({c:x.c,pv:{...(x.pv||{modo:"fixo"})},...(x.troca?{troca:{...x.troca}}:{})}));
-    niveis=niveis.filter(x=>{cont[x.c]=(cont[x.c]||0)+1;return cont[x.c]<=alvo[x.c];});   // níveis a menos: sai o mais recente da classe
-    for(const x of classes)while((cont[x.c]||0)<alvo[x.c]){niveis.push({c:x.c,pv:{modo:"fixo"}});cont[x.c]=(cont[x.c]||0)+1;}
+    const cont={},guardados=st.niveisInativos ||= [];let niveis=[];
+    for(const x of st.niveis||[]){const n=cont[x.c]=(cont[x.c]||0)+1;
+      if(n<=(alvo[x.c]||0))niveis.push(copiar(x));
+      else{const registro={...copiar(x),nivelClasse:n,progressao:copiar((f.progressao||[]).find(p=>p.classe===x.c&&p.nivelClasse===n)||null)};
+        const i=guardados.findIndex(g=>g.c===x.c&&g.nivelClasse===n);if(i<0)guardados.push(registro);else guardados[i]=registro;}
+    }
+    for(const x of classes){let n=niveis.filter(e=>e.c===x.c).length;while(n<alvo[x.c]){n++;const i=guardados.findIndex(g=>g.c===x.c&&g.nivelClasse===n);if(i>=0){const {nivelClasse,progressao,...g}=guardados.splice(i,1)[0];niveis.push(g);}else niveis.push({c:x.c,pv:{modo:'fixo'}});}}
     if(niveis.length&&classes.length&&niveis[0].c!==classes[0].c){const ordem=Object.fromEntries(classes.map((x,i)=>[x.c,i]));niveis=niveis.map((x,i)=>({x,i})).sort((a,b)=>ordem[a.x.c]-ordem[b.x.c]||a.i-b.i).map(o=>o.x);}
     if(niveis[0])niveis[0].pv={modo:"maximo"};                                                 // 2014: o primeiro nível do personagem usa o dado no máximo
     for(let i=1;i<niveis.length;i++)if(niveis[i].pv.modo==="maximo")niveis[i].pv={modo:"fixo"};
@@ -238,7 +242,9 @@ window.CRIADOR = (() => {
     /* o que o jogador marcou como preparado continua preparado depois de recalcular; magia de círculo acima do que a classe permite fica inativa (guardada, sem benefício) */
     const anteriores=new Map((p.ficha.magias||[]).map(m=>[magiaId(m),m])),maxCirc=R.conjuracao(f.classes||[]);const teto=maxCirc.pact?Math.max(maxCirc.pact.nivel,maxCirc.slots.reduce((n,x,i)=>x?i+1:n,0)):maxCirc.slots.reduce((n,x,i)=>x?i+1:n,0);
     for(const [k,e] of mapa){const ant=anteriores.get(k);if(ant&&typeof ant.prep==="boolean"&&e.l>0&&!e.semprePreparada&&(e.fonte!=="mestre"||e.noGrimorio))e.prep=ant.prep;
-      e.ativa=e.arcanum?true:!(e.fonte==="classe"&&e.l>0&&teto>0&&e.l>teto)&&!(e.fonte==="classe"&&e.l>0&&teto===0);if(!e.ativa)e.prep=false;}
+      const propria=(f.classes||[]).find(c=>c.c===e.classeConj),alcance=propria?perfilMagias(propria,f)?.max||0:teto;
+      e.ativa=e.arcanum?true:!(e.fonte==="classe"&&e.l>0&&alcance>0&&e.l>alcance)&&!(e.fonte==="classe"&&e.l>0&&alcance===0);if(!e.ativa)e.prep=false;}
+    for(const m of p.ficha.magias||[])if(m.autoCriador&&!mapa.has(magiaId(m)))mapa.set(magiaId(m),{...copiar(m),ativa:false,prep:false,inativaNivel:true});
     f.magias=[...mapa.values()];f.progressao=construirProgressao(f);return q;
   }
   function itemCategoria(cat){return D.items.filter(i=>{const w=i.data.weapon,g=i.data.gear;return cat==="simple-weapons"?w?.category==="simple":cat==="simple-melee-weapons"?w?.category==="simple"&&w.kind==="melee":cat==="martial-weapons"?w?.category==="martial":cat==="martial-melee-weapons"?w?.category==="martial"&&w.kind==="melee":cat==="musical-instruments"?i.data.tool?.category==="musical-instrument":g?.category===cat;});}

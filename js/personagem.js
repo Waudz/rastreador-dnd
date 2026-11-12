@@ -4,6 +4,7 @@
 (() => {
   "use strict";
   const $ = (s) => document.querySelector(s), esc = nuvem.esc, R = window.REGRAS, C = window.FICHA_COMPONENTES;
+  const J = window.JOGO, JU = window.JOGO_UI;
   const id = new URLSearchParams(location.search).get("id");
   const modoLeitura=new URLSearchParams(location.search).get("modo"),exclusivoMestre=modoLeitura==="painel";
   const emPainel = ["painel","leitura"].includes(modoLeitura);
@@ -162,16 +163,16 @@
   }
 
   /* ---------- desenho ---------- */
-  const pctPV = () => (P.pv_max > 0 ? Math.max(0, Math.min(100, (P.pv_atual / P.pv_max) * 100)) : 0);
+  const pctPV = () => (J.pvMaxEf(P) > 0 ? Math.max(0, Math.min(100, (P.pv_atual / J.pvMaxEf(P)) * 100)) : 0);
   const pesoTotal = () => INV().reduce((s, i) => s + num(i.qtd, 0) * num(i.peso, 0), 0);
   const capacidade = () => num(A()["for"], 10) * 7;
   const totalPO = () => { const d = DIN(); return num(d.pc, 0) / 100 + num(d.pp, 0) / 10 + num(d.po, 0); };
   const opt = (v, t, sel) => `<option value="${esc(v)}"${sel ? " selected" : ""}>${esc(t)}</option>`;
 
-  const blocoPV = () => `<div class="vida-cabecalho"><h2 class="panel-title">Pontos de vida</h2><div class="big" id="pv-num">${P.pv_atual}<span class="muted"> / ${P.pv_max} PV</span></div></div>
-    <div class="hp-track" role="progressbar" aria-label="Pontos de vida" aria-valuemin="0" aria-valuemax="${P.pv_max}" aria-valuenow="${P.pv_atual}"><div class="hp-fill ${pctPV()<=25?'low':pctPV()<=50?'mid':''}" id="pv-barra" style="width:${pctPV()}%"></div></div>
+  const blocoPV = () => `<div class="vida-cabecalho"><h2 class="panel-title">Pontos de vida</h2><div class="big" id="pv-num">${P.pv_atual}<span class="muted"> / ${J.pvMaxEf(P)} PV</span></div></div>
+    <div class="hp-track" role="progressbar" aria-label="Pontos de vida" aria-valuemin="0" aria-valuemax="${J.pvMaxEf(P)}" aria-valuenow="${P.pv_atual}"><div class="hp-fill ${pctPV()<=25?'low':pctPV()<=50?'mid':''}" id="pv-barra" style="width:${pctPV()}%"></div></div>
     <div class="vida-controles"><div class="inline"><button type="button" class="danger" id="b-dano">− Dano</button><input class="num" id="qtd" type="number" min="1" value="1" aria-label="Quantidade de dano ou cura"><button type="button" id="b-cura">+ Cura</button></div><span class="muted" id="pv-temp-txt">${P.pv_temp ? '+'+P.pv_temp+' PV temporários' : 'PV temporários: 0'}</span></div>
-    <details class="vida-config"><summary>Ajustes de vida</summary><div class="row" style="margin:0"><div><label>PV máximo (ajuste manual)</label><input class="num" type="number" min="0" data-col="pv_max" value="${P.pv_max}"></div><div><label>PV temporário</label><input class="num" type="number" min="0" data-col="pv_temp" value="${P.pv_temp}"></div></div>
+    <details class="vida-config"><summary>Tipo de dano e ajustes de vida</summary><label class="inline"><input type="checkbox" id="critico-jogo"> Acerto crítico (duas falhas a 0 PV)</label><label>Tipo de dano (opcional) <select id="tipo-dano-jogo"><option value="">Não informado</option>${R.TIPOS_DANO.map(t=>opt(t,t,false)).join("")}</select></label><div class="row" style="margin:0"><div><label>PV máximo (ajuste manual)</label><input class="num" type="number" min="0" data-col="pv_max" value="${P.pv_max}"></div><div><label>PV temporário</label><input class="num" type="number" min="0" data-col="pv_temp" value="${P.pv_temp}"></div></div>
     <div class="row" style="margin:8px 0 0"><label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-auto="pvAuto" ${autoOn("pvAuto") ? "checked" : ""}> PV máximo automático (dado de vida médio + Constituição)</label><div class="inline"><label style="margin:0">PV extra por nível</label><input class="num" type="number" step="1" data-f="pvExtra" value="${num(F().pvExtra, 0)}" title="Ex.: anão da colina +1, talento Robusto +2"></div></div></details>`;
 
   const cabInv = '<div class="row inv-h" style="margin:0 0 4px"><span style="flex:1 1 160px">Item</span><span class="num-h">Qtd.</span><span class="num-h">Peso cada (kg)</span><span style="width:34px"></span></div>';
@@ -259,7 +260,7 @@
     const inativa = m.ativa === false, org = rotuloOrigem(m);
     const pp = !inativa && m.l > 0 && !m.semprePreparada && m.origem !== "Raça" && R.preparacao(F()).some((x) => x.pertence(m)) && MJ.podePreparar(F(), m).ok;
     const etiqueta = inativa ? ' <span class="badge">Inativa</span>' : m.l === 0 ? ' <span class="badge">Truque</span>' : m.semprePreparada ? ' <span class="badge">Sempre Preparada</span>' : m.origem === "Raça" ? ' <span class="badge">Magia Racial</span>' : R.preparacao(F()).some((x) => x.pertence(m)) ? (m.prep ? ' <span class="badge">Preparada</span>' : ' <span class="muted">Não Preparada</span>') : ' <span class="badge">Conhecida</span>';
-    return `<article class="item magia-conhecida${inativa ? " magia-inativa" : ""}" data-mag-i="${i}"><button type="button" class="magia-consultar" data-consultar-magia="${i}">${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${etiqueta}${org ? ` <span class="muted">· ${esc(org)}</span>` : ""}</button>${m.concessao && m.concessao.modo ? `<p class="muted" style="margin:6px 0 0">Concessão: ${esc(MJ.MODOS_CONCESSAO[m.concessao.modo] || "")}${m.concessao.forma ? " · " + esc(m.concessao.forma) : ""}${m.concessao.usos ? ` · usos ${m.concessao.usos.max - m.concessao.usos.usados} de ${m.concessao.usos.max} (recarga: ${{ curto: "descanso curto ou longo", longo: "descanso longo", nenhum: "não recarrega" }[m.concessao.usos.recarga]})` : ""}</p>` : ""}${inativa ? '<p class="muted" style="margin:6px 0 0">Guardada: o círculo desta magia ainda não é alcançado. Volta a valer se o nível voltar.</p>' : ""}<div class="row" style="margin:8px 0 0">${pp ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}${m.concessao && m.concessao.usos ? `<button type="button" class="small" data-usar-concedida="${i}" ${m.concessao.usos.usados >= m.concessao.usos.max ? "disabled" : ""}>Usar (gasta 1)</button>` : ""}<span class="grow"></span>${m.fonte === "mestre" && souMestre ? `<button type="button" class="small danger" data-rm-mag="${i}">Retirar concessão</button>` : ""}</div></article>`;
+    return `<article class="item magia-conhecida${inativa ? " magia-inativa" : ""}" data-mag-i="${i}"><button type="button" class="magia-consultar" data-consultar-magia="${i}">${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${etiqueta}${org ? ` <span class="muted">· ${esc(org)}</span>` : ""}</button>${m.concessao && m.concessao.modo ? `<p class="muted" style="margin:6px 0 0">Concessão: ${esc(MJ.MODOS_CONCESSAO[m.concessao.modo] || "")}${m.concessao.forma ? " · " + esc(m.concessao.forma) : ""}${m.concessao.usos ? ` · usos ${m.concessao.usos.max - m.concessao.usos.usados} de ${m.concessao.usos.max} (recarga: ${{ curto: "descanso curto ou longo", longo: "descanso longo", nenhum: "não recarrega" }[m.concessao.usos.recarga]})` : ""}</p>` : ""}${inativa ? '<p class="muted" style="margin:6px 0 0">Guardada: o círculo desta magia ainda não é alcançado. Volta a valer se o nível voltar.</p>' : ""}<div class="row" style="margin:8px 0 0">${pp ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}${m.concessao && m.concessao.usos ? `<button type="button" class="small" data-usar-concedida="${i}" ${m.concessao.usos.usados >= m.concessao.usos.max ? "disabled" : ""}>Usar (gasta 1)</button>` : ""}${!inativa&&m.conc?`<button type="button" class="small" data-jogo="concentrar" data-valor="${i}">Concentrar</button>`:""}${!inativa&&m.arcanum?`<button type="button" class="small" data-jogo="arcanum" data-valor="${m.arcanum}" ${F().arcanumUsado?.[m.arcanum]?"disabled":""}>Conjurar Arcanum</button>`:""}<span class="grow"></span>${m.fonte === "mestre" && souMestre ? `<button type="button" class="small danger" data-rm-mag="${i}">Retirar concessão</button>` : ""}</div></article>`;
   };
   function listaMagias() {
     const l = MAG().map((m, i) => ({ m, i })).sort((a, b) => a.m.l - b.m.l || a.m.n.localeCompare(b.m.n));
@@ -486,7 +487,7 @@
     const f = F(), outro = souMestre && P.dono_id !== nuvem.usuario().id, rs = racaSel(), c = conj();
     const mostraMag = c.habilidades.length || MAG().length || magiaRacial();
     $("#ficha").innerHTML = `
-      <header class="panel ficha-resumo"><div class="ficha-identidade"><div class="ficha-foto">${fotoHTML()}<button type="button" class="small subtle ficha-trocar-foto" id="b-foto">Trocar foto</button><input type="file" id="in-foto" accept="image/*" hidden></div><div><p class="eyebrow">Ficha de personagem · D&D 2014</p><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p class="ficha-meta"><span class="badge">Nível ${nivelTotal()}</span>${nivelTotal()<20?`<a class="btnlike small ficha-subir-nivel" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a>`:""} Proficiência ${fm(bonusProf())} · ${esc(f.background||"Origem não definida")}</p></div></div><div class="ficha-destaques">${C.estatistica({rotulo:"CA",valor:P.ca,id:"resumo-ca"})}${C.estatistica({rotulo:"Iniciativa",valor:fm(modA("des")+R.bonusSemProf(F())),id:"resumo-iniciativa",tipo:"iniciativa"})}${C.estatistica({rotulo:"Desloc.",valor:String(f.deslocamento ?? 9).replace(".",",")+" m",id:"resumo-deslocamento",tipo:"deslocamento"})}</div></header>
+      <header class="panel ficha-resumo"><div class="ficha-identidade"><div class="ficha-foto">${fotoHTML()}<button type="button" class="small subtle ficha-trocar-foto" id="b-foto">Trocar foto</button><input type="file" id="in-foto" accept="image/*" hidden></div><div><p class="eyebrow">Ficha de personagem · D&D 2014</p><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p class="ficha-meta"><span class="badge">Nível ${nivelTotal()}</span>${nivelTotal()<20?`<a class="btnlike small ficha-subir-nivel" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a>`:""} Proficiência ${fm(bonusProf())} · ${esc(f.background||"Origem não definida")}</p></div></div><div class="ficha-destaques">${C.estatistica({rotulo:"CA",valor:P.ca,id:"resumo-ca"})}${C.estatistica({rotulo:"Iniciativa",valor:fm(modA("des")+R.bonusSemProf(F())),id:"resumo-iniciativa",tipo:"iniciativa"})}${C.estatistica({rotulo:"Desloc.",valor:String(J.deslocamentoEfetivo(f,f.deslocamento ?? 9)).replace(".",",")+" m",id:"resumo-deslocamento",tipo:"deslocamento"})}</div></header>
       <div class="panel vida-ficha"><div id="bloco-pv">${blocoPV()}</div><details class="vida-descanso"><summary>Dados de vida e descanso</summary><div id="bloco-dv">${blocoDV()}</div>
         <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-curto">Registrar Descanso Curto</button><button type="button" class="small" id="b-longo">Descanso Longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></details><div id="bloco-efeitos">${blocoEfeitos()}</div></div>
 <nav class="ficha-abas" aria-label="Seções da ficha" role="tablist"><button type="button" role="tab" id="aba-principal" aria-controls="secao-principal" data-ficha-aba="principal">Principal</button><button type="button" role="tab" id="aba-combate" aria-controls="secao-combate" data-ficha-aba="combate">Combate</button><button type="button" role="tab" id="aba-magias" aria-controls="secao-magias" data-ficha-aba="magias">Magias</button><button type="button" role="tab" id="aba-inventario" aria-controls="secao-inventario" data-ficha-aba="inventario">Inventário</button><button type="button" role="tab" id="aba-personagem" aria-controls="secao-personagem" data-ficha-aba="personagem">Personagem</button><button type="button" role="tab" id="aba-notas" aria-controls="secao-notas" data-ficha-aba="notas">Notas</button></nav><section id="secao-principal" role="tabpanel" aria-labelledby="aba-principal" data-ficha-secao="principal" class="ficha-conteudo" tabindex="0">      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2>${blocoAtr()}<details class="mod-temp-ficha"><summary>Modificadores temporários</summary><p class="muted">Poções, magias e itens que alteram um atributo por um tempo. São ajustes de jogo: <b>não mudam o atributo permanente</b> (isso é no Editar personagem ou ao subir de nível).</p><div class="grade2">${ATR.map(([k,r])=>`<label class="mod-temp-campo">${esc(R.ATR_NOME[k])}<input class="num" type="number" min="-20" max="20" step="1" data-modtemp="${k}" value="${num(F().modTemp?.[k],0)}" aria-label="Modificador temporário de ${esc(R.ATR_NOME[k])}"></label>`).join("")}</div><p class="muted">Bônus temporários por categoria (valem só para o que descrevem; o valor do atributo é o único que muda a capacidade de preparar magias):</p><div class="grade2">${R.CATEGORIAS_TEMP.map(([k,n])=>`<label class="mod-temp-campo">${esc(n)}<input class="num" type="number" min="-20" max="20" step="1" data-bonustemp="${k}" value="${R.bonusTemp(F(),k)}" aria-label="Bônus temporário: ${esc(n)}"></label>`).join("")}</div><div class="row" style="margin:8px 0 0"><button type="button" class="small" id="zerar-modtemp">Zerar modificadores temporários</button></div></details></div>
@@ -504,7 +505,7 @@
         <div class="muted" id="aviso-arm"></div></div>
 <div class="panel"><h2 class="panel-title">Ataques</h2><div id="lista-atq">${ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'}</div>
         <div class="row" style="margin:8px 0 0"><select id="atq-arma" style="flex:1 1 180px">${opt("", "Adicionar arma comum…", true)}${R.ARMAS.map((a, i) => opt(i, `${a[0]} (${a[1]} ${a[2]})`)).join("")}</select><button type="button" class="small" id="add-atq-arma">Adicionar arma</button><button type="button" class="small" id="add-atq">Personalizado</button></div></div>
-      <details class="panel recursos-combate"><summary class="panel-title">Recursos e habilidades</summary><div id="recursos-combate">${recursosCombate()}</div><p class="muted">Condições e duração dos efeitos são controladas por combatente no rastreador de iniciativa.</p></details>
+      <div id="estado-jogo">${JU.html(P,esc)}</div><details class="panel recursos-combate"><summary class="panel-title">Recursos e habilidades</summary><div id="recursos-combate">${recursosCombate()}</div><p class="muted">Condições da ficha ficam no Estado de jogo; combatentes da iniciativa mantêm seu próprio estado.</p></details>
       </section><section id="secao-magias" role="tabpanel" aria-labelledby="aba-magias" data-ficha-secao="magias" class="ficha-conteudo" tabindex="0">${mostraMag ? `<div class="panel" id="painel-mag"><h2 class="panel-title">Magias</h2><div id="bloco-slots">${blocoSlots()}</div>
 <h3 class="sub">Repertório</h3><div id="lista-mag">${listaMagias()}</div>
         ${wizard() ? '<div class="sub">Grimório</div><button type="button" class="small" id="cp-abrir">Copiar magia para o grimório</button><div id="copia-box" class="panel" hidden></div>' : ""}
@@ -555,15 +556,17 @@
     e.textContent = t.join(" ");
   }
   function atualizarPV() {
-    $("#bloco-pv .big").innerHTML = `${P.pv_atual}<span class="muted" style="font-size:18px"> / ${P.pv_max}</span>`;
+    $("#bloco-pv .big").innerHTML = `${P.pv_atual}<span class="muted" style="font-size:18px"> / ${J.pvMaxEf(P)}</span>`;
     $("#pv-temp-txt").innerHTML = P.pv_temp ? `+${P.pv_temp} PV temporários` : "PV temporários: 0";
-    const trilho = $("#bloco-pv .hp-track"); trilho?.setAttribute("aria-valuemax", P.pv_max); trilho?.setAttribute("aria-valuenow", P.pv_atual);
+    const trilho = $("#bloco-pv .hp-track"); trilho?.setAttribute("aria-valuemax", J.pvMaxEf(P)); trilho?.setAttribute("aria-valuenow", P.pv_atual);
     const b = $("#pv-barra"); b.style.width = pctPV() + "%"; b.className = "hp-fill " + (pctPV() <= 25 ? "low" : pctPV() <= 50 ? "mid" : "");
     const m = $('#bloco-pv [data-col="pv_max"]'); if (m && document.activeElement !== m) m.value = P.pv_max;
   }
   const atualizarCarga = () => { $("#bloco-carga").innerHTML = blocoCarga(); };
   /* recalcula tudo o que depende de atributos, classes, armadura */
   function refrescar() {
+    if(P&&$("#estado-jogo"))$("#estado-jogo").innerHTML=JU.html(P,esc);
+    if(P&&$("#resumo-deslocamento"))$("#resumo-deslocamento").textContent=J.deslocamentoEfetivo(F(),F().deslocamento??9)+" m";
     aplicarAuto(true); atualizarPV();
     ATR.forEach(([k])=>{const v=$("#atributo-"+k);if(v)v.innerHTML=R.atributoEf(F(),k)+(num(F().modTemp?.[k],0)?`<small class="atr-temp" title="Modificador temporário de jogo">${fm(num(F().modTemp[k],0))} temp.</small>`:"");const m=$("#mod-"+k);if(m)m.textContent=fm(modA(k));});
     $("#bloco-ca").innerHTML = blocoCA(); $("#bloco-sal").innerHTML = blocoSal(); $("#bloco-per").innerHTML = blocoPer(); $("#bloco-dv").innerHTML = blocoDV(); $("#bloco-prof").innerHTML = blocoProf();
@@ -578,29 +581,28 @@
   }
 
   /* ---------- edições ---------- */
-  function mudarPV(dano) {
-    const n = Math.max(1, Math.floor(num($("#qtd").value, 1)));
-    if (dano) { const abs = Math.min(P.pv_temp || 0, n); P.pv_temp = (P.pv_temp || 0) - abs; P.pv_atual = Math.max(0, P.pv_atual - (n - abs)); }
-    else P.pv_atual = Math.min(P.pv_max, P.pv_atual + n);
-    atualizarPV(); const pv = $("#bloco-pv").querySelector('[data-col="pv_temp"]'); if (pv) pv.value = P.pv_temp;
-    agendar({ pv_atual: P.pv_atual, pv_temp: P.pv_temp });
+  function salvarJogo() {
+    agendar({ficha:P.ficha,pv_atual:P.pv_atual,pv_temp:P.pv_temp});
+    refrescar(); $('#estado-jogo').innerHTML=JU.html(P,esc);
+    $('#bloco-dv').innerHTML=blocoDV(); const lm=$('#lista-mag');if(lm)lm.innerHTML=listaMagias();
+    $('#resumo-deslocamento').textContent=J.deslocamentoEfetivo(F(),F().deslocamento??9)+' m';
   }
-  function usarDado(d, modo="app") {
-    const dv = dadosVida(), us = F().dvUsados = F().dvUsados || {};
-    if (num(us[d], 0) >= (dv[d] || 0)) return;
-    const fisico=modo==="fisico"?Number($('[data-rolagem-fisica="'+d+'"]').value):null;
-    if(modo==="fisico"&&(!Number.isInteger(fisico)||fisico<1||fisico>d)){aviso("Informe o resultado do d"+d+", entre 1 e "+d+", sem Constituição.",true);return;}
-    const rolou = modo==="marcar"?null:modo==="fisico"?fisico:1+Math.floor(Math.random()*d), ganho=rolou===null?0:Math.max(0,rolou+modA("con"));
-    us[d] = num(us[d], 0) + 1; P.pv_atual = Math.min(P.pv_max, P.pv_atual + ganho);
-    atualizarPV(); $("#bloco-dv").innerHTML = blocoDV(); agendar({ ficha: P.ficha, pv_atual: P.pv_atual });
-    aviso(modo==="marcar"?`Uso de d${d} registrado. Ajuste a cura física nos PV.`:`d${d}: ${rolou}${modA("con")?" "+fm(modA("con")):""} = ${ganho} PV de cura, limitado ao PV máximo.`);
+  function mudarPV(dano) {
+    const n=Math.max(1,Math.floor(num($('#qtd').value,1)));
+    if(dano){const r=J.dano(P,n,{tipo:$('#tipo-dano-jogo')?.value||undefined,critico:!!$('#critico-jogo')?.checked});
+      if(r.concentracao)(F().testesConcentracao??=[]).push(r.concentracao.cd);
+      if(!F().concentracao)F().testesConcentracao=[];
+      aviso(r.mensagens.concat(r.concentracao?'Concentração: salvaguarda CD '+r.concentracao.cd:[]).join('. ')||'Dano aplicado.');
+    }else{const r=J.cura(P,n);if(r.morto)aviso('O personagem está morto; cura não o revive.',true);}
+    salvarJogo();
+  }
+  function usarDado(d,modo='app') {
+    const rolou=modo==='marcar'?null:modo==='fisico'?Number($('[data-rolagem-fisica="'+d+'"]').value):1+Math.floor(Math.random()*d);
+    try{const r=J.gastarDadoVida(P,d,rolou);salvarJogo();aviso(rolou===null?'Uso registrado, sem cura.':'Dado d'+d+': '+rolou+'; recuperou '+r.recuperado+' PV.');}catch(e){aviso(e.message,true);}
   }
   function descansoLongo() {
-    if (!confirm("Descanso longo: recupera todos os PV, os espaços de magia e metade dos dados de vida. Continuar?")) return;
-    const f = F(), dv = dadosVida(), us = f.dvUsados = f.dvUsados || {};
-    Object.keys(dv).forEach((d) => { us[d] = Math.max(0, num(us[d], 0) - Math.max(1, Math.floor(dv[d] / 2))); });
-    f.slotsUsados = []; f.pactoUsado = 0; MJ.recuperarUsos(f, "longo"); IE.recuperarNoDescanso(f, "longo"); P.pv_atual = P.pv_max; P.pv_temp = 0;
-    agendar({ ficha: P.ficha, pv_atual: P.pv_atual, pv_temp: 0 }); desenhar(); aviso("Descanso longo concluído.");
+    if(!confirm('Concluir descanso longo (com comida e bebida)? Recupera PV, espaços e recursos, metade dos dados de vida e reduz exaustão em 1.'))return;
+    const r=J.descansoLongo(P);if(!r.ok){aviso(r.motivo,true);return;}salvarJogo();aviso('Descanso longo concluído.');
   }
 
   document.addEventListener("input", (e) => {
@@ -670,6 +672,7 @@
   document.addEventListener("click", async (e) => {
     const t = e.target, c = (s) => t.closest(s); if (!P) return;
     let b;
+    if((b=c('[data-jogo]'))){try{if(JU.agir(P,b))salvarJogo();}catch(e){aviso(e.message,true);}return;}
     if((b=c('[data-rolar-atr],[data-rolar-sal],[data-rolar-per],[data-rolar-atq],[data-rolar-dano]'))){
       try {
         let expressao='1d20', bonus=0, nome='Teste';
@@ -691,13 +694,14 @@
     if (c("#b-cura")) return mudarPV(false);
     if (c("#b-foto")) return $("#in-foto").click();
     if (c("#b-longo")) return descansoLongo();
-    if(c("#b-curto")){F().descansosCurtos=num(F().descansosCurtos,0)+1;F().pactoUsado=0;MJ.recuperarUsos(F(),"curto");IE.recuperarNoDescanso(F(),"curto");agendar({ficha:P.ficha});desenhar();aviso("Descanso curto registrado. Os dados de vida são gastos separadamente; os espaços de pacto foram recuperados.");return;}
+    if(c("#b-curto")){const r=J.descansoCurto(P);if(!r.ok){aviso(r.motivo,true);return;}salvarJogo();aviso("Descanso curto registrado; gaste dados de vida separadamente.");return;}
     if((b=c("[data-dv-manual]")))return usarDado(+b.dataset.dvManual,"fisico");
     if((b=c("[data-dv-marcar]")))return usarDado(+b.dataset.dvMarcar,"marcar");
     if ((b = c("[data-dv]"))) return usarDado(+b.dataset.dv);
     if ((b = c("[data-slot]"))) {
       const f = F(), d = +b.dataset.d;
-      if (b.dataset.slot === "p") f.pactoUsado = Math.max(0, num(f.pactoUsado, 0) + d);
+      if(d>0){try{J.gastarEspaco(P,b.dataset.slot==="p"?"p":Number(b.dataset.slot)+1);}catch(e){aviso(e.message,true);return;}}
+      else if (b.dataset.slot === "p") f.pactoUsado = Math.max(0, num(f.pactoUsado, 0) + d);
       else { f.slotsUsados = f.slotsUsados || []; const i = +b.dataset.slot; f.slotsUsados[i] = Math.max(0, num(f.slotsUsados[i], 0) + d); }
       $("#bloco-slots").innerHTML = blocoSlots(); agendar({ ficha: P.ficha }); return;
     }

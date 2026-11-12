@@ -114,6 +114,11 @@
         const ef = efeitosDe(item).filter((e) => !e.passivo)[l.i], t = TIPOS_EFEITO[ef.tipo];
         if (!alvoProprio) { resultado.push({ tipo: ef.tipo, texto: t.aplicar ? `${t.rotulo}: ${l.ctx.total} em ${v.alvo.nome} (aplicar na ficha do alvo)` : `${t.rotulo}: ${t.descrever(ef, l.ctx)} em ${v.alvo.nome} (aplicar na ficha do alvo)`, valor: l.ctx.total ?? null, alvo: v.alvo.nome }); continue; }
         if (t.aplicar) resultado.push({ tipo: ef.tipo, ...t.aplicar(E, ef, l.ctx) });
+        else if (ef.tipo === "condicao" && window.JOGO?.CONDICOES[ef.condicao]) {
+          const ativo = window.JOGO.aplicarCondicao(E, ef.condicao, { duracao: ef.duracao, origem: item.nome });
+          if (ativo) ativo.origem.uid = item.uid;
+          resultado.push({ tipo: ef.tipo, texto: "Condição: " + ef.condicao });
+        }
         else {
           const ativo = { id: "ef_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), tipo: ef.tipo, texto: t.descrever(ef, l.ctx), duracao: { ...(ef.duracao || { texto: "", ate: "manual" }) }, origem: { item: item.nome, uid: item.uid }, quando: new Date().toISOString() };
           for (const k of ["categoria", "atributo", "valor", "condicao", "dano", "texto"]) if (ef[k] !== undefined) ativo[k] = ef[k];

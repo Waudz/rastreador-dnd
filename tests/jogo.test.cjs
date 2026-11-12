@@ -58,3 +58,7 @@ test('integração poção + PV a 0 + concentração: curar por item tira da inc
   const r=E.usar(P,P.inventario[0].uid,{rolagens:{0:7}});assert.equal(r.ok,true);assert.equal(P.pv_atual,7);
   assert.ok(!J.temCondicao(P.ficha,'Inconsciente'),'a poção deve passar pelo mesmo caminho de cura');
 });
+
+test('a 0 PV: dano absorvido por PV temporários ainda conta falha; crítico conta duas',()=>{
+ const {J}=motor(),P=pers([{c:'Fighter',n:3}],{pv_atual:0,pv_temp:5});J.dano(P,2);assert.equal(P.pv_temp,3);assert.equal(P.ficha.morte.falhas,1);J.dano(P,1,{critico:true});assert.equal(P.ficha.morte.morto,true);
+});

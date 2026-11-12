@@ -6,8 +6,8 @@ async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={},registro=
   const p={id:"p",nome:"Inicial",campanha_id:"c",dono_id:"u",pv_atual:10,pv_max:10,pv_temp:0,ca:10,versao:1,ficha:{classes:[{c:"Fighter",n:1}]}};
   Object.assign(p.ficha,fichaInicial);Object.assign(p,registro);
   const nuvem={usuario:()=>({id:"u"}),esc:s=>String(s??""),retornoDoLink:async()=>{},observar(){},rpc:async()=>mestre,patch,get:async q=>q.startsWith("personagens")?[p]:q.startsWith("campanhas")?[{id:"c",nome:"Campanha"}]:q.startsWith("membros")?[{papel:"mestre"}]:[{id:"u",nome:"Pessoa"}]};
-  const c=vm.createContext({window:{addEventListener(){}},document,nuvem,location:{search},URLSearchParams,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
-  executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/magias-jogo.js",c);executar("js/inventario.js",c);executar("js/itens-efeitos.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
+  const c=vm.createContext({window:{addEventListener(){}},document,nuvem,location:{search},URLSearchParams,confirm:()=>true,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
+  executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/magias-jogo.js",c);executar("js/inventario.js",c);executar("js/itens-efeitos.js",c);executar("js/recursos.js",c);executar("js/jogo.js",c);executar("js/jogo-ui.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
   const nome=v=>eventos.input.forEach(fn=>fn({target:{dataset:{col:"nome"},value:v}}));
   const salvar=async()=>{const a=[...timers.values()];timers.clear();for(const fn of a)await fn();};
   return {document,nome,salvar,timers,p,eventos};
@@ -90,4 +90,56 @@ test('falha ao gravar o uso: o estado completo fica pendente e é reenviado, sem
  f.nome('Outro nome');await f.salvar();   // a próxima gravação leva junto o que ficou pendente
  assert.equal(tentativas,2);assert.equal(f.p.pv_atual,11);assert.equal(f.p.inventario.length,0);
  assert.deepEqual(JSON.parse(JSON.stringify(envios[1].inventario)),[],'o reenvio leva o mesmo estado final, sem segunda baixa');assert.equal(envios[1].pv_atual,11);
+});
+
+test('jogo na ficha: dano com resistência e PV temporários exige concentração; falha e poção a 0 PV persistem sem perder inventário',async()=>{
+ let salvo;const f=await ficha(async(_q,d)=>{salvo=d;return[{versao:2}];},{registro:{pv_atual:10,pv_max:20,pv_temp:5,inventario:[pocao(1)]},fichaInicial:{pvAuto:false,concentracao:{magia:'Bênção'},efeitosAtivos:[{id:'r',tipo:'resistencia',dano:'fogo'}]}});
+ f.document.el('qtd').value='10';f.document.el('tipo-dano-jogo').value='fogo';await clicar(f,'#b-dano');
+ assert.equal(f.p.pv_temp,0);assert.equal(f.p.pv_atual,10);assert.deepEqual(Array.from(f.p.ficha.testesConcentracao),[10]);
+ f.document.el('j-concentracao').value='9';await clicar(f,'[data-jogo]',{jogo:'concentracao-teste'});assert.equal(f.p.ficha.concentracao,null);
+ f.document.el('tipo-dano-jogo').value='';f.document.el('qtd').value='10';await clicar(f,'#b-dano');assert.equal(f.p.pv_atual,0);assert.ok(f.p.ficha.efeitosAtivos.some(e=>e.auto==='pv0'));
+ assert.match(f.document.el('estado-jogo').innerHTML,/Salvaguardas contra a morte/);
+ await clicar(f,'[data-inv-usar]',{invUsar:'0'});digitar(f,{usoRol:'0'},'7');await clicar(f,'#uso-ok');await f.salvar();
+ assert.equal(f.p.pv_atual,7);assert.ok(!f.p.ficha.efeitosAtivos.some(e=>e.auto==='pv0'));assert.equal(salvo.pv_atual,7);assert.equal(salvo.inventario.length,0);assert.ok(salvo.ficha.diario.length>=2);
+});
+test('jogo na ficha: condições, morte, recursos e recuperação arcana usam o motor e salvam o estado',async()=>{
+ let salvo;const f=await ficha(async(_q,d)=>{salvo=d;return[{versao:2}];},{fichaInicial:{pvAuto:false,classes:[{c:'Wizard',n:3},{c:'Fighter',n:2}],slotsUsados:[2],concentracao:{magia:'Teia'}}});
+ f.document.el('j-condicao').value='Agarrado';await clicar(f,'[data-jogo]',{jogo:'condicao'});assert.equal(f.document.el('resumo-deslocamento').textContent,'0 m');
+ await clicar(f,'[data-jogo]',{jogo:'recurso',valor:'surto-acao'});assert.equal(f.p.ficha.recursosUsados['surto-acao'],1);
+ f.document.el('j-arcana').value='1,1';await clicar(f,'[data-jogo]',{jogo:'arcana'});assert.equal(f.p.ficha.slotsUsados[0],0);assert.equal(f.p.ficha.recursosUsados['recuperacao-arcana'],1);
+ await clicar(f,'#b-curto');assert.equal(f.p.ficha.recursosUsados['surto-acao'],undefined);assert.equal(f.p.ficha.recursosUsados['recuperacao-arcana'],1);
+ f.document.el('qtd').value='10';await clicar(f,'#b-dano');f.document.el('j-morte').value='1';await clicar(f,'[data-jogo]',{jogo:'morte'});assert.equal(f.p.ficha.morte.falhas,2);
+ f.document.el('j-morte').value='20';await clicar(f,'[data-jogo]',{jogo:'morte'});assert.equal(f.p.pv_atual,1);assert.equal(f.p.ficha.morte.falhas,0);await f.salvar();assert.equal(salvo.pv_atual,1);
+});
+test('jogo na ficha: Arcanum independente e dano não restaura os usos gastos',async()=>{
+ const f=await ficha(async()=>[{versao:2}],{fichaInicial:{pvAuto:false,classes:[{c:'Warlock',n:11}],pactoUsado:2,magias:[{n:'Círculo da Morte',en:'Circle of Death',l:6,arcanum:6,ativa:true}]}});
+ assert.match(f.document.el('ficha').innerHTML,/Conjurar Arcanum/);await clicar(f,'[data-jogo]',{jogo:'arcanum',valor:'6'});assert.equal(f.p.ficha.arcanumUsado[6],true);assert.equal(f.p.ficha.pactoUsado,2);
+ f.document.el('qtd').value='1';await clicar(f,'#b-dano');assert.equal(f.p.ficha.arcanumUsado[6],true);assert.equal(f.p.ficha.pactoUsado,2);
+});
+
+test('descanso longo na ficha: exige 1 PV, reduz exaustão e recupera recursos sem perder o diário',async()=>{
+ const f=await ficha(async()=>[{versao:2}],{fichaInicial:{pvAuto:false,exaustao:4,recursosUsados:{'retomar-folego':1},dvUsados:{10:1}},registro:{pv_atual:0,pv_max:20}});
+ await clicar(f,'#b-longo');assert.equal(f.p.pv_atual,0);assert.equal(f.p.ficha.exaustao,4);assert.equal(f.p.ficha.dvUsados[10],1);
+ f.document.el('qtd').value='1';await clicar(f,'#b-cura');await clicar(f,'#b-longo');assert.equal(f.p.pv_atual,20);assert.equal(f.p.ficha.exaustao,3);assert.equal(f.p.ficha.dvUsados[10],0);assert.equal(f.p.ficha.recursosUsados['retomar-folego'],undefined);assert.ok(f.p.ficha.diario.some(e=>e.tipo==='descanso'));
+});
+
+test('classe sem magias: atualizar recurso não exige um repertório no DOM',async()=>{
+ const f=await ficha(async()=>[{versao:2}]);const consulta=f.document.querySelector;f.document.querySelector=s=>s==='#lista-mag'?null:consulta(s);
+ await clicar(f,'[data-jogo]',{jogo:'recurso',valor:'retomar-folego'});assert.equal(f.p.ficha.recursosUsados['retomar-folego'],1);assert.match(f.document.el('estado-jogo').innerHTML,/0 \/ 1/);await f.salvar();assert.equal(f.document.el('erro').innerHTML,'');assert.match(f.document.el('estado').textContent,/Salvo/);
+});
+
+test('multiclasse na ficha: gastos comuns e de Pacto são independentes e respeitam seus limites',async()=>{
+ const f=await ficha(async()=>[{versao:2}],{fichaInicial:{pvAuto:false,classes:[{c:'Wizard',n:3},{c:'Warlock',n:3}],slotsUsados:[0,0],pactoUsado:0}});
+ for(let i=0;i<3;i++)await clicar(f,'[data-slot]',{slot:'p',d:'1'});assert.equal(f.p.ficha.pactoUsado,2);assert.equal(f.p.ficha.slotsUsados[1],0);
+ await clicar(f,'[data-slot]',{slot:'1',d:'1'});assert.equal(f.p.ficha.slotsUsados[1],1);assert.equal(f.p.ficha.pactoUsado,2);await clicar(f,'#b-curto');assert.equal(f.p.ficha.pactoUsado,0);assert.equal(f.p.ficha.slotsUsados[1],1);
+});
+
+test('condição de item passa pelo motor: incapacitação encerra concentração na mesma gravação atômica',async()=>{
+ let salvo;const item={...pocao(1),uid:'it_condicao',nome:'Efeito de teste',propriedades:{efeitos:[{tipo:'condicao',condicao:'Atordoado'}]}};
+ const f=await ficha(async(_q,d)=>{salvo=d;return[{versao:2}];},{fichaInicial:{pvAuto:false,concentracao:{magia:'Teia'}},registro:{inventario:[item]}});
+ await clicar(f,'[data-inv-usar]',{invUsar:'0'});await clicar(f,'#uso-ok');await f.salvar();assert.equal(salvo.ficha.concentracao,null);assert.ok(salvo.ficha.efeitosAtivos.some(e=>e.condicao==='Atordoado'));assert.equal(salvo.inventario.length,0);
+});
+
+test('exaustão 6 mostra morte mesmo com PV positivos e cura não revive o personagem',async()=>{
+ const f=await ficha(async()=>[{versao:2}],{fichaInicial:{pvAuto:false}});f.document.el('j-exaustao').value='6';await clicar(f,'[data-jogo]',{jogo:'exaustao'});assert.equal(f.p.ficha.morte.morto,true);assert.match(f.document.el('estado-jogo').innerHTML,/<p>Morto<\/p>/);const pv=f.p.pv_atual;f.document.el('qtd').value='10';await clicar(f,'#b-cura');assert.equal(f.p.pv_atual,pv);assert.match(f.document.el('erro').innerHTML,/não o revive/);
 });

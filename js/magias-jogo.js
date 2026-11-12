@@ -94,6 +94,7 @@
   function aplicarTroca(p, cid, de, para, { grupoKey }) {
     const f = p.ficha, st = f.criacao;
     if (!CLASSES_TROCA.includes(cid)) throw new Error("Esta classe não troca magias ao subir de nível.");
+    if (grupoKey !== "magias|" + cid + "|magias") throw new Error("A troca vale somente para magias conhecidas da classe, sem Arcanum ou truques.");
     const entrada = (st.niveis || [])[st.niveis.length - 1];
     if (!entrada || entrada.c !== cid) throw new Error("A troca vale para o nível que acabou de ser ganho nesta classe.");
     if (entrada.troca) throw new Error("Já houve uma troca neste nível.");

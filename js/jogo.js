@@ -101,9 +101,9 @@
     out.aplicado = n;
     const temp = num(P.pv_temp), abs = Math.min(temp, n), resto = n - abs; P.pv_temp = temp - abs; out.temp = abs;
     const antes = num(P.pv_atual);
-    if (resto > 0 && antes === 0) {                       // já a 0 PV: cada dano é uma falha na salvaguarda (2 se crítico); dano igual ou maior que o PV máximo mata
+    if (n > 0 && antes === 0) {                       // já a 0 PV: cada dano é uma falha na salvaguarda (2 se crítico); dano igual ou maior que o PV máximo mata
       const m = morte(f);
-      if (resto >= pvMaxEf(P)) { m.morto = true; out.morto = true; out.mensagens.push("Morte instantânea: dano igual ou maior que o PV máximo"); }
+      if (n >= pvMaxEf(P)) { m.morto = true; out.morto = true; out.mensagens.push("Morte instantânea: dano igual ou maior que o PV máximo"); }
       else { const nf = opts.critico ? 2 : 1; m.falhas = Math.min(3, m.falhas + nf); m.estavel = false; out.falhaMorte = nf; out.mensagens.push(nf + " falha(s) na salvaguarda contra a morte"); if (m.falhas >= 3) { m.morto = true; out.morto = true; out.mensagens.push("Três falhas: o personagem morreu"); } }
     } else if (resto > 0) {
       const depois = Math.max(0, antes - resto); P.pv_atual = depois;
@@ -116,7 +116,7 @@
     }
     if (out.morto) encerrarConcentracao(P, "morte");
     else if (out.zerou) encerrarConcentracao(P, "0 PV");
-    else if (f.concentracao && resto > 0) out.concentracao = { cd: cdConcentracao(resto), magia: f.concentracao.magia, bonus: bonusSalvaguarda(f, "con") };
+    else if (f.concentracao && n > 0) out.concentracao = { cd: cdConcentracao(n), magia: f.concentracao.magia, bonus: bonusSalvaguarda(f, "con") };
     registrar(P, "dano", n + " de dano" + (opts.tipo ? " (" + opts.tipo + ")" : "") + (out.temp ? "; " + out.temp + " absorvidos pelos PV temporários" : "") + (out.mensagens.length ? ". " + out.mensagens.join(". ") : ""));
     return out;
   }
@@ -132,6 +132,7 @@
   function salvaguardaMorte(P, d20) {
     const f = ficha(P), m = morte(f);
     if (estaMorto(P) || num(P.pv_atual) > 0) throw new Error("Só se faz salvaguarda contra a morte a 0 PV.");
+    if (m.estavel) throw new Error("O personagem está estável e não precisa de salvaguarda contra a morte.");
     d20 = Math.floor(num(d20, NaN)); if (!(d20 >= 1 && d20 <= 20)) throw new Error("Informe o resultado do d20 (1 a 20).");
     let texto;
     if (d20 === 20) { cura(P, 1); texto = "20: voltou a 1 PV"; }
@@ -188,7 +189,7 @@
   /* ---------- magias: arcanum místico, recuperação arcana, espaços ---------- */
   function usarArcanum(P, circulo) {
     const f = ficha(P), m = (f.magias || []).find((x) => x.arcanum === circulo);
-    if (!m) throw new Error("Você não tem Arcanum Místico de " + circulo + "º círculo."); f.arcanumUsado = f.arcanumUsado || {};
+    if (!m || m.ativa === false) throw new Error("Você não tem Arcanum Místico de " + circulo + "º círculo."); f.arcanumUsado = f.arcanumUsado || {};
     if (f.arcanumUsado[circulo]) throw new Error("O Arcanum de " + circulo + "º círculo já foi usado neste dia."); f.arcanumUsado[circulo] = true;
     registrar(P, "magia", "Arcanum Místico: " + m.n + " conjurada sem espaço"); return m;
   }
