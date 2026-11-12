@@ -48,6 +48,13 @@
   function simbolo(src,nome='',pequeno=false){
     return '<span class="campanha-simbolo'+(pequeno?' pequeno':'')+'">'+(src?'<img src="'+esc(src)+'" alt="Imagem de capa de '+esc(nome)+'">':(window.ico?window.ico('book'):''))+'</span>';
   }
+  /* Tamanho real da faixa da campanha no computador e no celular: o preview do editor usa a mesma proporção da página. */
+  function referenciaFundo(){
+    const faixa=$('#campanha-faixa'),cab=$('.campanha-compacta');if(!faixa||!cab)return null;
+    const h=faixa.offsetHeight,conteudo=cab.offsetHeight,extra=Math.max(0,h-conteudo),cw=document.documentElement.clientWidth;
+    if(!h||!cw)return null;
+    return {desktop:{w:innerWidth>=840?cw:1280,h:Math.max(conteudo,340)+extra},mobile:{w:innerWidth<840?cw:390,h:Math.max(conteudo,220)+extra}};
+  }
   function posicionarFundo(){
     const faixa=$('#campanha-faixa'),fundo=$('#campanha-fundo'),imagem=$('#campanha-backdrop');
     if(!faixa||!fundo||fundo.hidden)return;
@@ -128,7 +135,7 @@ travar(true);
 
   entrada = new Blob([bytes], { type: mime });
 }
-      else if(enquadramentoDisponivel()){frame=await window.ajustarFundo(arquivo);if(!frame)return;}
+      else if(enquadramentoDisponivel()){arquivo.referencia=referenciaFundo();frame=await window.ajustarFundo(arquivo);if(!frame)return;}
       const blob = await otimizar(entrada, tipo);
 
 if (atual !== geracao || !podeEditar) {
@@ -141,7 +148,7 @@ if(frame)estado.enquadramento=frame;const url=URL.createObjectURL(blob);urls.pus
   document.addEventListener('input',e=>{const campo=e.target.dataset?.visualPos;if(!podeEditar||salvando||!['posicao','posicaoMobile'].includes(campo))return;editando=true;estado[campo]=Math.max(0,Math.min(100,Number(e.target.value)||0));aplicar();});
   document.addEventListener('click',e=>{
     if(!podeEditar||salvando||preparando)return;
-    if(e.target.closest('[data-visual-ajustar]')){if(!enquadramentoDisponivel())return;(async()=>{preparando++;travar(true);try{const r=await fetch(estado.backdrop);if(!r.ok)throw Error('Não foi possível abrir a imagem original.');const arquivo=await r.blob();arquivo.enquadramento=estado.enquadramento;const frame=await window.ajustarFundo(arquivo);if(frame){estado.enquadramento=frame;editando=true;quadroMudou=true;aplicar();mensagem('Enquadramento preparado. Salve para compartilhar.');}}catch(err){mensagem(err.message);}finally{preparando--;travar(false);}})();return;}
+    if(e.target.closest('[data-visual-ajustar]')){if(!enquadramentoDisponivel())return;(async()=>{preparando++;travar(true);try{const r=await fetch(estado.backdrop);if(!r.ok)throw Error('Não foi possível abrir a imagem original.');const arquivo=await r.blob();arquivo.enquadramento=estado.enquadramento;arquivo.referencia=referenciaFundo();const frame=await window.ajustarFundo(arquivo);if(frame){estado.enquadramento=frame;editando=true;quadroMudou=true;aplicar();mensagem('Enquadramento preparado. Salve para compartilhar.');}}catch(err){mensagem(err.message);}finally{preparando--;travar(false);}})();return;}
     if(e.target.closest('#visual-salvar')){salvar();return;}if(e.target.closest('#visual-recarregar')){if(editando&&!confirm('Descartar alterações locais e carregar as imagens salvas?'))return;editando=false;mudancas={};geracao++;atualizar();return;}const b=e.target.closest('[data-visual-remover]');if(b){estado[b.dataset.visualRemover]='';if(b.dataset.visualRemover==='backdrop')estado.enquadramento=null;mudancas[b.dataset.visualRemover]=null;editando=true;aplicar();mensagem('Remoção preparada. Clique em Salvar imagens para confirmar.');}
     if(e.target.closest('#visual-descartar')&&sair())document.dispatchEvent(new CustomEvent('campanha-visual:fechar'));
   });

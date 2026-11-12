@@ -28,3 +28,10 @@ test('ajustar só o enquadramento (sem trocar arquivo) pode ser salvo, fecha a a
   assert.match(v,/base=r\.visual;mudancas=\{\};editando=false;quadroMudou=false;/);
   assert.match(v,/campanha-visual:fechar/);
 });
+
+test('editor de enquadramento: o preview usa a proporção real da faixa (computador e celular) e a mesma película escura',()=>{
+  const e=ler('js/enquadramento.js'),v=ler('js/campanha-visual.js');
+  assert.match(e,/arquivo\.referencia/);assert.match(e,/cv\.height=Math\.max\(60,Math\.min\(520,Math\.round\(cv\.width\*r\.h\/r\.w\)\)\)/);assert.match(e,/createLinearGradient/);
+  assert.match(v,/function referenciaFundo\(\)/);assert.equal((v.match(/arquivo\.referencia=referenciaFundo\(\)/g)||[]).length,2);
+  assert.match(ler('css/mobile.css'),/\.crop-fundo \.crop-stage\{[^}]*aspect-ratio:auto/);
+});
