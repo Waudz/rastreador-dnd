@@ -116,3 +116,14 @@ body.ficha-embutida { padding-top:0!important; padding-bottom:0!important; }
 #ci-lista .ci-cartao-ini .ci-ini-res:empty { display:none; }
 .ci-resultado { margin:6px 0; }
 .ci-resultado ul { margin:4px 0 8px 18px; padding:0; }
+
+/* Celular e telas de toque: alvos de toque de pelo menos 44 px na faixa "Vez de ...", no painel Atacar e no cartão da iniciativa */
+@media (max-width:760px), (pointer:coarse) {
+  .acoes-vez-botoes .small, #painel-ataque .row button, #painel-ataque .row .small { min-height:44px; }
+  .acoes-vez-botoes .small { flex:1 1 auto; }
+  .acoes-vez select, #painel-ataque select, #painel-ataque input:not([type=checkbox]) { min-height:44px; }
+  .acoes-vez-cab label.inline, #painel-ataque label.inline { min-height:44px; align-items:center; }
+  #painel-ataque input[type=checkbox] { width:22px!important; height:22px!important; min-width:22px; }
+  #ci-lista .ci-cartao-ini .ci-acoes .small { min-height:44px; }
+  #ci-lista .ci-cartao-ini .ci-ini input { height:44px; }
+}

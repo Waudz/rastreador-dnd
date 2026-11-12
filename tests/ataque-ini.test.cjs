@@ -87,3 +87,9 @@ test('faixa da vez roda de verdade: lista ataques de quem está na vez, rola no 
   clique({dataset:{},id:'atk-aplicar',disabled:false});assert.equal(aplicados.length,1);assert.equal(aplicados[0][0],'b');assert.equal(aplicados[0][2],'a');
   clique({dataset:{},id:'atk-aplicar',disabled:false});assert.equal(aplicados.length,1,'o segundo clique não aplica de novo');assert.ok(!/id="atk-aplicar"/.test(res.innerHTML),'o botão some depois de aplicar');
 });
+test('celular: a faixa da vez, o painel Atacar e o cartão da iniciativa têm alvos de toque de 44 px e ficam só no bloco de telas pequenas/toque',()=>{
+  const css=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','css','fluxos.css'),'utf8'),i=css.indexOf('/* Celular e telas de toque');
+  assert.ok(i>0);const bloco=css.slice(i);assert.match(bloco,/@media \(max-width:760px\), \(pointer:coarse\)/);
+  for(const parte of ['.acoes-vez-botoes .small','#painel-ataque select','#ci-lista .ci-cartao-ini .ci-acoes .small','#ci-lista .ci-cartao-ini .ci-ini input','input[type=checkbox]'])assert.ok(bloco.includes(parte),parte);
+  assert.equal((bloco.match(/min-height:44px/g)||[]).length>=4,true);assert.ok(!/^\.grupo-cartao|^\.personagem-card/m.test(bloco),'não mexe nos outros cartões');
+});
