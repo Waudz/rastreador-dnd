@@ -104,7 +104,7 @@
       camps=ms.filter(m=>m.campanha).map(m=>({...m.campanha,papel:m.papel}));
       const preferida=novoPedido||pedido||(window.CAMPANHAS_UI?.ativaId()||localStorage.getItem('ini_campanha'));
       const c=window.CAMPANHAS_UI?.validar?window.CAMPANHAS_UI.validar(ms,preferida):camps.find(c=>c.id===preferida);
-      if(!c){if(preferida)window.CAMPANHAS_UI?.esquecer(preferida);atual='';jogador=false;contextoVisual(false);await window.CAMPANHAS_UI?.montarSeletor({});return;}
+      if(!c){if(preferida)window.CAMPANHAS_UI?.esquecer(preferida);atual='';jogador=false;window.__ini.trocarContexto?.('');contextoVisual(true);box.hidden=true;await window.CAMPANHAS_UI?.montarSeletor({});return;}   // sem campanha ativa: rastreador próprio, independente do mestre
       jogador=c.papel==='jogador';const titulo=box.querySelector('summary');if(titulo)titulo.textContent=jogador?'Meus personagens':'Personagens';
       atual=c.id;window.CAMPANHAS_UI?.lembrar(atual);window.__ini.trocarContexto?.(atual);contextoVisual(true);box.open=true;
       await carregar();if(g!==geracaoContexto)return;

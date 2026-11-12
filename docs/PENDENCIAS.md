@@ -43,7 +43,7 @@ Resolvidas nesta integração: auditoria das oito listas padrão contra as pági
 ## Funcionalidades futuras (registradas; NÃO implementar agora)
 - Concessões extras do mestre (características, estilos, talentos e proficiências), independentes das escolhas normais de classe. Caso de aceitação: Lydia Farwind, Guerreira 4 / Mestre de Batalha, Duelista normal + Luta às Cegas adicional (Tasha, 2014), ambos preservados com seus efeitos e cegueira permanente. Resolver percepção às cegas de 3 m por alvo, distância, cobertura (inclusive total), ocultação e fontes de vantagem/desvantagem; nunca apagar a condição Cega. Depende de um contexto de alvo nas rolagens, composição de efeitos de características e permissões de concessão, hoje ausentes: etapa arquitetural seguinte, conforme ressalva do William; não implementada nesta fase nem alterada no Supabase.
 - Privacidade dos grimórios (quem pode ver ou copiar o grimório de quem).
-- Visibilidade de monstros por permissão (o que o jogador pode ver de cada criatura).
+- Visibilidade de monstros por permissão (o que o jogador pode ver de cada criatura). Regra do William: quem joga sem mestre (rastreador próprio, testando personagens) sempre vê todos os dados dos monstros; a restrição só valeria dentro da campanha de um mestre.
 - Encontros preparados pelo mestre.
 - Instâncias individuais de criaturas (PV, condições e inventário de cada criatura de um encontro).
 - Saques próprios (cada criatura/baú com seu inventário e distribuição). A estrutura de contêiner de `js/inventario.js` já foi pensada para isso.

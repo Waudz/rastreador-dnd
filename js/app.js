@@ -197,7 +197,7 @@
     function rowFull(m) {
       const p = pt(m), k = esc(m.key);
       return `<div class="res"><span class="lft">${av(m, 40)}<span><b>${esc(p || m.name)}</b>${p ? ` <span class="muted">(${esc(m.name)})</span>` : ""}${m.subtitle ? ` <span class="muted">— ${esc(m.subtitle)}</span>` : ""}<br><span class="muted">${CAT[catOf(m)]} · ${esc(tsz(m))} · ${lvl(m)} · CA ${m.armor_class} · PV ${m.hit_points} · ${esc(srcOf(m))}</span></span></span>
-        <span class="acts"><button class="small" data-view="${k}">Ver</button><button class="small" data-ph="${k}" title="Adicionar ou trocar a foto">${ico("camera")}</button><button class="small primary" data-add="${k}">Adicionar</button>${m.custom ? `<button class="small" data-edit="${k}">Editar</button>` : `<button class="small" data-tr="${k}">Traduzir</button>`}<button class="small danger" data-del="${k}">Excluir</button></span></div>`;
+        <span class="acts"><button class="small" data-view="${k}">Ver</button><button class="small" data-ph="${k}" title="Adicionar ou trocar a foto">${ico("camera")}</button><button class="small primary" data-add="${k}">Adicionar</button>${m.custom ? `<button class="small" data-edit="${k}">Editar</button><button class="small danger" data-del="${k}">Excluir</button>` : ""}</span></div>`;
     }
     function renderBestiary() {
       const q = nz($("#bq").value.trim()), f = $("#bf").value;
@@ -476,7 +476,7 @@
       if (d.add) { const m = ALL.find((x) => x.key === d.add); if (m) addMon(m); return; }
       if (d.tr) { const m = ALL.find((x) => x.key === d.tr), v = prompt("Nome em português para “" + m.name + "” (vazio remove):", pt(m) || m.name); if (v === null) return; v.trim() ? (TR[m.name.toLowerCase()] = v.trim()) : delete TR[m.name.toLowerCase()]; saveTR();if(!m.custom)try{await CATALOGO.atualizar({registros:ALL,magias:SP,nomes:{[m.name.toLowerCase()]:v.trim()}});}catch(e){status(esc(e.message));}return renderBestiary(); }
       if (d.del) {
-        const m = ALL.find((x) => x.key === d.del); if (!m) return;
+        const m = ALL.find((x) => x.key === d.del); if (!m || !m.custom) return;   // monstros padrão do SRD não se excluem
         if (!confirm(m.custom ? `Excluir “${m.name}” definitivamente?` : `Remover “${m.name}” do seu bestiário local? Você pode baixar de novo depois.`)) return;
         await del("mon", d.del); if (m.custom) { await del("img", d.del); TOMB[d.del] = Date.now(); saveTomb(); } if (editKey === d.del) resetForm(); await reload(); return queueSync();
       }
