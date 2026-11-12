@@ -183,8 +183,13 @@
       $("#hp").value = $("#maxHp").value = m.hit_points; $("#ac").value = m.armor_class;
       window.__ini.pending = m.key; sug.hidden = true;
     }
-    function addMon(m) {
-      window.__ini.add({ name: uniq(pt(m) || m.name), kind: CAT[catOf(m)], initiative: rollInit(m), hp: m.hit_points, maxHp: m.hit_points, ac: m.armor_class, key: m.key });
+    function addMon(m, botao) {
+      const nome = uniq(pt(m) || m.name);
+      window.__ini.add({ name: nome, kind: CAT[catOf(m)], initiative: rollInit(m), hp: m.hit_points, maxHp: m.hit_points, ac: m.armor_class, key: m.key });
+      /* resposta clara de que entrou: aviso, contagem desta criatura no combate e botão que confirma por um instante */
+      const qtd = window.__ini.list().filter((c) => c.key === m.key).length;
+      window.FEEDBACK?.mostrar(`“${nome}” adicionado à iniciativa.` + (qtd > 1 ? ` Já são ${qtd} desta criatura no combate.` : ""));
+      if (botao) { const antes = botao.dataset.rotulo || botao.textContent; botao.dataset.rotulo = antes; botao.textContent = qtd > 1 ? "Adicionado (" + qtd + ")" : "Adicionado"; clearTimeout(botao._t); botao._t = setTimeout(() => { botao.textContent = antes; }, 1500); }
     }
     /* Meu bestiário: só aparece quando você pesquisa, filtra ou pede */
     const hay = (m) => nz([m.name, pt(m), m.subtitle, CAT[catOf(m)], m.size?.name, SZ[m.size?.name], m.type?.name, TP[m.type?.name], srcOf(m)].filter(Boolean).join(" "));
@@ -473,7 +478,7 @@
       if (d.more) { shown += 40; return renderBestiary(); }
       if (d.view && t.closest("#blist,#spd-body")) return openSheet(d.view);
       if (d.edit) { if (innerWidth < 700) closeSheet(); return editCustom(d.edit); }
-      if (d.add) { const m = ALL.find((x) => x.key === d.add); if (m) addMon(m); return; }
+      if (d.add) { const m = ALL.find((x) => x.key === d.add); if (m) addMon(m, t.closest("[data-add]")); return; }
       if (d.tr) { const m = ALL.find((x) => x.key === d.tr), v = prompt("Nome em português para “" + m.name + "” (vazio remove):", pt(m) || m.name); if (v === null) return; v.trim() ? (TR[m.name.toLowerCase()] = v.trim()) : delete TR[m.name.toLowerCase()]; saveTR();if(!m.custom)try{await CATALOGO.atualizar({registros:ALL,magias:SP,nomes:{[m.name.toLowerCase()]:v.trim()}});}catch(e){status(esc(e.message));}return renderBestiary(); }
       if (d.del) {
         const m = ALL.find((x) => x.key === d.del); if (!m || !m.custom) return;   // monstros padrão do SRD não se excluem

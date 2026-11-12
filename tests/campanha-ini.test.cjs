@@ -131,3 +131,9 @@ test('monstros padrão do SRD não têm Excluir nem Traduzir; só as criações 
  const pt=JSON.parse(require('node:fs').readFileSync(require('node:path').join(__dirname,'..','dados','srd-pt.json'),'utf8')).M,b=JSON.parse(require('node:fs').readFileSync(require('node:path').join(__dirname,'..','dados','bestiario','srd-2014.json'),'utf8'));
  assert.deepEqual(b.monsters.filter(m=>!pt[m.name.toLowerCase()]).map(m=>m.name),[],'todo monstro do SRD tem nome em português');
 });
+test('adicionar monstro pelo bestiário responde na hora: aviso, contagem da criatura e botão confirmando',()=>{
+ const fonte=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','js','app.js'),'utf8'),html=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','iniciativa.html'),'utf8');
+ assert.match(fonte,/window\.FEEDBACK\?\.mostrar\(`“\$\{nome\}” adicionado à iniciativa\./);assert.match(fonte,/Já são \$\{qtd\} desta criatura no combate/);
+ assert.match(fonte,/botao\.textContent = qtd > 1 \? "Adicionado \(" \+ qtd \+ "\)" : "Adicionado"/);assert.match(fonte,/addMon\(m, t\.closest\("\[data-add\]"\)\)/);
+ assert.match(html,/js\/feedback\.js/,'a página da iniciativa carrega o aviso');
+});
