@@ -1,16 +1,16 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
 const {vm,executar,documentoFalso,armazenamento,tick}=require("./helpers.cjs");
 async function fixture({search="?campanha=antiga",erro=false,user={id:"mestre"},ficha={},papel='mestre',autorizado=true}={}){
-  const document=documentoFalso(),localStorage=armazenamento(),lista=[],consultas=[],eventos={};let atualizar;
+  const document=documentoFalso(),localStorage=armazenamento(),lista=[],consultas=[],rpcs=[],eventos={};let atualizar;
   localStorage.setItem("ini_campanha","antiga");
-  const nuvem={usuario:()=>user,esc:s=>String(s??""),rpc:async()=>autorizado,observar(fn){atualizar=fn;},get:async q=>{
+  const nuvem={usuario:()=>user,esc:s=>String(s??""),rpc:async n=>{rpcs.push(n);return autorizado;},observar(fn){atualizar=fn;},get:async q=>{
     consultas.push(q);if(erro)throw Error("Permissão recusada");
     return q.startsWith("membros")?[{papel,campanha:{id:"antiga",nome:"Antiga"}},{papel,campanha:{id:"atual",nome:"Atual"}}]:[{id:"p",nome:"Herói",pv_atual:12,pv_max:15,ca:13,ficha:{foto:"data:image/png;base64,FOTO",classes:[{c:"Bard",n:2}],atributos:{des:14},...ficha}}];
   }};
   const window={nuvem,addEventListener:(n,fn)=>eventos[n]=fn,__ini:{list:()=>lista,add:c=>lista.push(c),render(){}}};
   const c=vm.createContext({window,nuvem,document,location:{search,origin:'http://localhost'},localStorage,URLSearchParams,setInterval(){}});
   executar("js/origens.js",c);executar("js/regras.js",c);c.REGRAS=window.REGRAS;executar('js/ficha-componentes.js',c);executar('js/rolagens.js',c);executar('js/grupo-personagens.js',c);executar("js/campanha-ini.js",c);await tick();
-  return {document,lista,consultas,atualizar,nuvem,eventos,window};
+  return {document,lista,consultas,rpcs,atualizar,nuvem,eventos,window};
 }
 test("link da campanha escolhe a campanha atual em vez da preferência antiga",async()=>{
   const f=await fixture({search:"?campanha=atual&personagem=p"});
@@ -44,12 +44,16 @@ test("consulta automática sem alterações não refaz a grade nem exibe carrega
 });
 test("normalização de HTML pelo navegador não provoca redesenho em cada consulta",async()=>{const f=await fixture();let escritas=0;Object.defineProperty(f.document.el('ci-lista'),'innerHTML',{get:()=>'<article>HTML normalizado pelo navegador</article>',set(){escritas++;}});await f.atualizar();assert.equal(escritas,0);});
 
-test('jogador não consulta personagens nem abre painel com cliques forjados',async()=>{
- const f=await fixture({papel:'jogador'});
- f.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci-resumo]'?{dataset:{ciResumo:'p'}}:null}});
- assert.equal(f.document.el('camp-ini').hidden,true);
- assert.equal(f.document.el('ci-resumo').hidden,true);
- assert(!f.consultas.some(q=>q.startsWith('personagens')));
+test('jogador usa a iniciativa: vê só os próprios personagens, pode adicioná-los e nunca sincroniza PV com a ficha nem depende de ser mestre',async()=>{
+ const f=await fixture({papel:'jogador',user:{id:'jog'},search:'?campanha=atual'});
+ assert.equal(f.document.el('camp-ini').hidden,false);assert.equal(f.document.el('iniciativa-atual').hidden,false);assert.equal(f.document.el('adicionar-combatente').hidden,false);
+ assert.equal(f.document.el('ini-sem-campanha').hidden,true,'não pede para selecionar campanha quando já está em uma');
+ const q=f.consultas.find(q=>q.startsWith('personagens'));assert.ok(q&&q.includes('dono_id=eq.jog'),'só os próprios personagens');
+ assert.ok(!f.rpcs.includes('eh_mestre'),'o jogador não passa pela verificação de mestre');
+ f.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});assert.equal(f.lista.length,1);assert.equal(f.lista[0].pid,'p');
+ const fonte=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','js','campanha-ini.js'),'utf8');
+ assert.match(fonte,/setInterval\(async\(\)=>\{\s*if\(!sincroniza\(\)/,'a gravação de PV na ficha é só do mestre');
+ assert.match(fonte,/e\.origin!==location\.origin/);assert.ok(!/sincroniza\(\)[^;]*jogador\s*=\s*true/.test(fonte));
 });
 test('revogação do papel no servidor impede consulta mesmo com campanha na interface',async()=>{
  const f=await fixture({autorizado:false});

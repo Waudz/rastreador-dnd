@@ -6,11 +6,13 @@
   const esc = nuvem.esc;
   const params = new URLSearchParams(location.search), pedido = params.get("campanha"), personagemPedido = params.get("personagem");
   const conta = nuvem.usuario()?.id;
-  let camps = [], pers = [], atual = "", enviado = {}, falhas = 0, adicionouPedido = false, buscando = false, carregou = false, resumoId = null, focoAnterior = null, ultimaGrade = null;
+  let jogador = false, camps = [], pers = [], atual = "", enviado = {}, falhas = 0, adicionouPedido = false, buscando = false, carregou = false, resumoId = null, focoAnterior = null, ultimaGrade = null;
   const msg = (t, erro) => { $("#ci-msg").innerHTML = erro ? '<span class="err">'+esc(t)+'</span>' : esc(t || ""); };
   const mesmaConta = () => nuvem.usuario()?.id === conta;
   const emCombate = p => window.__ini.list().some(c => c.pid === p.id);
-  const podeUsar = () => mesmaConta() && camps.some(c => c.id === atual && c.papel!=="jogador");
+  /* O mestre usa a campanha inteira e sincroniza PV com as fichas; o jogador só vê e adiciona os PRÓPRIOS personagens (leitura) e usa o rastreador no aparelho dele. */
+  const podeUsar = () => mesmaConta() && camps.some(c => c.id === atual);
+  const sincroniza = () => podeUsar() && !jogador;
   const selecionados=new Set();
   const ocupadas = new Set();
   const basesPV = new Map();
@@ -46,7 +48,7 @@
   async function adicionarSelecionados(ids){
     if(!podeUsar())return;
     const campanha=atual;
-    if(await nuvem.rpc('eh_mestre',{c:campanha})!==true){if(campanha===atual){bloquear();contextoVisual(false);}return false;}
+    if(!jogador&&await nuvem.rpc('eh_mestre',{c:campanha})!==true){if(campanha===atual){bloquear();contextoVisual(false);}return false;}
     if(!podeUsar()||campanha!==atual)return;
     const escolhidos=pers.filter(p=>ids.includes(p.id)&&!emCombate(p));
     escolhidos.forEach(p=>adicionar(p,true));selecionados.clear();desenhar();
@@ -57,10 +59,12 @@
     buscando = true; if(!carregou&&window.ESQ){window.ESQ.mostrar($("#ci-lista"),"lista","Carregando personagens…",3);msg("");}
     const campanhaConsultada=atual,geracaoConsultada=geracaoContexto;
     try {
-      const mestre = await nuvem.rpc('eh_mestre', {c:atual});
-      if(atual!==campanhaConsultada||geracaoConsultada!==geracaoContexto)return;
-      if(mestre !== true){window.CAMPANHAS_UI?.esquecer(atual);bloquear();contextoVisual(false);return;}
-      const lista = await nuvem.get("personagens?select=id,nome,pv_atual,pv_max,ca,ficha&campanha_id=eq."+encodeURIComponent(campanhaConsultada)+"&order=nome");
+      if(!jogador){
+        const mestre = await nuvem.rpc('eh_mestre', {c:atual});
+        if(atual!==campanhaConsultada||geracaoConsultada!==geracaoContexto)return;
+        if(mestre !== true){window.CAMPANHAS_UI?.esquecer(atual);bloquear();contextoVisual(false);return;}
+      }
+      const lista = await nuvem.get("personagens?select=id,nome,pv_atual,pv_max,ca,ficha&campanha_id=eq."+encodeURIComponent(campanhaConsultada)+(jogador?"&dono_id=eq."+encodeURIComponent(conta):"")+"&order=nome");
       if (!mesmaConta() || atual !== campanhaConsultada||geracaoConsultada!==geracaoContexto) return;
       pers = lista;
       if(resumoId && !pers.some(p=>p.id===resumoId)){fecharResumo();$('#ci-resumo-corpo').innerHTML='';resumoId=null;}
@@ -100,7 +104,8 @@
       camps=ms.filter(m=>m.campanha).map(m=>({...m.campanha,papel:m.papel}));
       const preferida=novoPedido||pedido||(window.CAMPANHAS_UI?.ativaId()||localStorage.getItem('ini_campanha'));
       const c=window.CAMPANHAS_UI?.validar?window.CAMPANHAS_UI.validar(ms,preferida):camps.find(c=>c.id===preferida);
-      if(!c||c.papel==='jogador'){if(!c&&preferida)window.CAMPANHAS_UI?.esquecer(preferida);atual='';contextoVisual(false);await window.CAMPANHAS_UI?.montarSeletor({});return;}
+      if(!c){if(preferida)window.CAMPANHAS_UI?.esquecer(preferida);atual='';jogador=false;contextoVisual(false);await window.CAMPANHAS_UI?.montarSeletor({});return;}
+      jogador=c.papel==='jogador';const titulo=box.querySelector('summary');if(titulo)titulo.textContent=jogador?'Meus personagens':'Personagens';
       atual=c.id;window.CAMPANHAS_UI?.lembrar(atual);window.__ini.trocarContexto?.(atual);contextoVisual(true);box.open=true;
       await carregar();if(g!==geracaoContexto)return;
       await window.CAMPANHAS_UI?.montarSeletor({...c,podeEditarVisual:false});
@@ -126,7 +131,7 @@
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&resumoId&&!window.PAINEL)fecharResumo();});
   $("#combatants").addEventListener("click",e=>{if(e.target.closest("button,input,select"))return;const artigo=e.target.closest("[data-pid]");const p=artigo&&pers.find(p=>p.id===artigo.dataset.pid);if(p)abrirResumo(p);});
   setInterval(async()=>{
-    if(!podeUsar() || falhas>5)return;
+    if(!sincroniza() || falhas>5)return;
     for(const c of window.__ini.list()){
       if(!c.pid || ocupadas.has(c.pid) || !pers.some(p=>p.id===c.pid))continue;
       const v=Math.max(0,Math.min(c.maxHp,Math.round(c.hp)));
@@ -138,7 +143,7 @@
   },2500);
   window.addEventListener('message',async e=>{
     const frame=$('#ci-ficha-frame');
-    if(!podeUsar() || e.origin!==location.origin || !frame?.contentWindow || e.source!==frame.contentWindow || e.data?.id!==frame.dataset.personagem)return;
+    if(!sincroniza() || e.origin!==location.origin || !frame?.contentWindow || e.source!==frame.contentWindow || e.data?.id!==frame.dataset.personagem)return;
     if(e.data.tipo==='ficha-fechar'||e.data.tipo==='ficha-magia')return;
     if(e.data.tipo==='ficha-salvando'){
       if(!ocupadas.has(e.data.id))basesPV.set(e.data.id,window.__ini.list().find(c=>c.pid===e.data.id)?.hp);
