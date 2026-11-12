@@ -27,9 +27,17 @@ test('Guerreiro 4 permite +2 no mesmo atributo ou dois +1, mas não talento junt
  p.ficha.melhorias['Fighter:4']=['for','des'];assert.equal(C.derivar(p).ficha.atributos.for,17);assert.equal(C.derivar(p).ficha.atributos.des,16);
  p.ficha.criacao.talentos={'Fighter:4':{nome:'Teste manual'}};const q=C.derivar(p);assert.equal(q.ficha.atributos.for,16);assert.ok(C.validar(q).some(e=>/nunca ambos/.test(e.texto)));
 });
-test('edição de atributos preservados reaplica bônus uma vez sem impor compra de pontos',()=>{
- const {C}=fixture();let p=C.iniciar({nome:'Manual',ficha:{classes:[{c:'Fighter',n:4}],atributos:{for:18,des:13,con:14,int:10,sab:12,car:8},bonusRaca:{for:1},bonusMelhorias:{for:2},melhorias:{'Fighter:4':['for','for']}}},'editar');assert.equal(p.ficha.criacao.metodo,'preservado');p.ficha.criacao.base.for=14;p.ficha.criacao.baseEditada=true;const a=C.derivar(p),b=C.derivar(a);assert.equal(a.ficha.atributos.for,17);assert.deepEqual(a.ficha.atributos,b.ficha.atributos);assert.ok(!C.validar(a).some(e=>/27 pontos/.test(e.texto)));p.ficha.criacao.base.for=3.5;assert.ok(C.validar(C.derivar(p)).some(e=>/inteiros/.test(e.texto)));
+test('edição de atributos preservados reaplica bônus uma vez e respeita a compra de pontos',()=>{
+ const {C}=fixture();let p=C.iniciar({nome:'Manual',ficha:{classes:[{c:'Fighter',n:4}],atributos:{for:18,des:13,con:14,int:10,sab:12,car:8},bonusRaca:{for:1},bonusMelhorias:{for:2},melhorias:{'Fighter:4':['for','for']}}},'editar');assert.equal(p.ficha.criacao.metodo,'preservado');p.ficha.criacao.base.for=14;p.ficha.criacao.base.des=14;p.ficha.criacao.baseEditada=true;const a=C.derivar(p),b=C.derivar(a);assert.equal(a.ficha.atributos.for,17);assert.deepEqual(a.ficha.atributos,b.ficha.atributos);assert.ok(!C.validar(a).some(e=>/27 pontos/.test(e.texto)));p.ficha.criacao.base.for=3.5;assert.ok(C.validar(C.derivar(p)).some(e=>/inteiros/.test(e.texto)));
 });
 test('talento Imobilizador de 2014 exige Força 13 sem aproveitar ASI substituída',()=>{
  const {C,p}=fixture();p.ficha.classes[0].n=4;p.ficha.criacao.base.for=10;p.ficha.criacao.talentos={'Fighter:4':{id:'srd51:feat/grappler',nome:'Imobilizador (Grappler)'}};assert.ok(C.validar(C.derivar(p)).some(e=>/exige Força 13/.test(e.texto)));p.ficha.criacao.base.for=12;assert.ok(!C.validar(C.derivar(p)).some(e=>/exige Força 13/.test(e.texto)));
+});
+
+test('redistribuição de ficha preservada bloqueia seis atributos 15 sem reescrever ficha antiga',()=>{
+ const {C}=fixture();const p=C.iniciar({nome:'Legado',ficha:{classes:[{c:'Fighter',n:1}],atributos:{for:15,des:15,con:15,int:15,sab:15,car:15}}},'editar');const antigo=JSON.stringify(p);assert.ok(!C.validar(C.derivar(p)).some(e=>/27 pontos/.test(e.texto)));p.ficha.criacao.baseEditada=true;assert.equal(C.custo(p.ficha.criacao.base),54);assert.ok(C.validar(C.derivar(p)).some(e=>/27 pontos/.test(e.texto)));assert.notEqual(JSON.stringify(p),antigo);p.ficha.criacao.base={for:15,des:14,con:13,int:12,sab:10,car:8};assert.ok(!C.validar(C.derivar(p)).some(e=>/27 pontos/.test(e.texto)));
+});
+
+test('raça e melhoria de nível entram nos atributos finais sem consumir compra extra',()=>{
+ const {C,p}=fixture();p.ficha.criacao.base={for:15,des:14,con:13,int:12,sab:10,car:8};p.ficha.classes[0].n=4;p.ficha.melhorias={'Fighter:4':['for','for']};const q=C.derivar(p);assert.equal(C.custo(q.ficha.criacao.base),27);assert.equal(q.ficha.atributos.for,18);assert.equal(Object.values(q.ficha.atributos).reduce((a,b)=>a+b,0),80);p.ficha.classes[0].n=3;assert.equal(C.derivar(p).ficha.atributos.for,16);
 });

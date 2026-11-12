@@ -330,7 +330,7 @@ window.CRIADOR = (() => {
       if(!R.RACAS.some(r=>r[0]===f.raca))erros.push({etapa:1,texto:"Escolha a raça."});
       if(f.raca==="Fada"&&!["int","sab","car"].includes(f.atrMagiaRaca))erros.push({etapa:1,texto:"Escolha o atributo da Magia de Fada."});
       if(!origem(f))erros.push({etapa:2,texto:"Escolha a Origem."});
-      if(st.metodo==="pointbuy"&&custo(st.base)!==27)erros.push({etapa:3,texto:"Distribua os 27 pontos de atributos (valores base entre 8 e 15)."});
+      if((st.metodo==="pointbuy"||st.baseEditada)&&custo(st.base)!==27)erros.push({etapa:3,texto:"Distribua os 27 pontos de atributos (valores base entre 8 e 15)."});
       if((new Set((f.atrRaca||[]).filter(k=>ATR.includes(k)&&!(k in R.racial(f.raca).bonus)))).size<R.racial(f.raca).atributos)erros.push({etapa:1,texto:"Complete as escolhas de atributos da raça."});
       if(!st.equipAplicado)for(const texto of equipamento(p).pendentes)erros.push({etapa:6,texto});
     }

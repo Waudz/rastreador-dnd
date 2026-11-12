@@ -14,3 +14,11 @@ test('edição expõe e salva atributos base preservados; evolução continua bl
 test('trocar entre talento e atributos elimina a escolha incompatível e oferece seletor',async()=>{
  const f=await tela('?id=sintetico-ui&modo=editar',{nivel:4});await mudar(f,{asi:'Fighter:4',i:'0'},'for');await mudar(f,{asi:'Fighter:4',i:'1'},'for');await mudar(f,{melhoriaModo:'Fighter:4'},'talento');assert.equal(rascunho(f).ficha.melhorias['Fighter:4'],undefined);await atributos(f);assert.match(f.document.el('criador-conteudo').innerHTML,/data-talento-escolha/);await mudar(f,{talentoEscolha:'Fighter:4'},'srd51:feat/grappler');assert.equal(rascunho(f).ficha.criacao.talentos['Fighter:4'].id,'srd51:feat/grappler');await mudar(f,{melhoriaModo:'Fighter:4'},'atributos');assert.equal(rascunho(f).ficha.criacao.talentos['Fighter:4'],undefined);
 });
+
+test('edição mostra orçamento e rejeita aumentar atributo sem pontos disponíveis',async()=>{
+ const f=await tela('?id=sintetico-ui&modo=editar',{preservado:true});await atributos(f);assert.match(f.document.el('criador-conteudo').innerHTML,/0 pontos restantes/);await mudar(f,{base:'car'},'15');assert.match(f.document.el('aviso').textContent,/Não há pontos suficientes/);await mudar(f,{base:'for'},'14');assert.equal(rascunho(f).ficha.criacao.base.car,8);assert.match(f.document.el('criador-conteudo').innerHTML,/2 pontos restantes/);
+});
+
+test('resumo de atributos inclui bônus racial e somente a melhoria do nível permitido',async()=>{
+ const f=await tela('?id=sintetico-ui&modo=editar',{nivel:4});await mudar(f,{asi:'Fighter:4',i:'0'},'for');await mudar(f,{asi:'Fighter:4',i:'1'},'for');await atributos(f);const html=f.document.el('criador-conteudo').innerHTML;assert.ok(html.includes('Base 15 · Raça +1 · Nível +2'));assert.ok(html.includes('Soma dos valores finais: <strong>80</strong>'));assert.match(html,/0 pontos restantes/);
+});
