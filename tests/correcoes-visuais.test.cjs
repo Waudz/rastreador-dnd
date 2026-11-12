@@ -35,3 +35,9 @@ test('editor de enquadramento: o preview usa a proporção real da faixa (comput
   assert.match(v,/function referenciaFundo\(\)/);assert.equal((v.match(/arquivo\.referencia=referenciaFundo\(\)/g)||[]).length,2);
   assert.match(ler('css/mobile.css'),/\.crop-fundo \.crop-stage\{[^}]*aspect-ratio:auto/);
 });
+
+test('Subir de nível fica junto do nível do personagem, some no nível 20 e na ficha embutida',()=>{
+  const j=ler('js/personagem.js');
+  assert.match(j,/<span class="badge">Nível \$\{nivelTotal\(\)\}<\/span>\$\{nivelTotal\(\)<20\?`<a class="btnlike small ficha-subir-nivel" href="criar-personagem\.html\?id=\$\{encodeURIComponent\(id\)\}&modo=nivel">Subir de nível<\/a>`:""\}/);
+  assert.match(ler('css/fichas.css'),/\.ficha-embutida \.ficha-subir-nivel \{ display:none; \}/);
+});

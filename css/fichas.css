@@ -271,3 +271,9 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
  .ficha-menu > summary::before { content:''; position:absolute; inset:-4px; }
  .ficha-menu-opcoes button { min-height:44px; }
 }
+
+/* Subir de nível fica junto do nível do personagem; na ficha embutida (somente leitura) não aparece. */
+.ficha-meta .ficha-subir-nivel { display:inline-flex; align-items:center; min-height:26px; padding:2px 10px; margin:0 4px; font-size:11px; border-color:var(--gold-dark); color:var(--gold); text-decoration:none; white-space:nowrap; }
+.ficha-meta .ficha-subir-nivel:hover { border-color:var(--gold); background:#D4AE7218; }
+.ficha-embutida .ficha-subir-nivel { display:none; }
+
