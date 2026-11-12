@@ -10,7 +10,8 @@
   const checkbox=(p,selecionado,atributo='grupo-sel',disabled=false)=>'<label class="grupo-marcar"><input type="checkbox" data-'+atributo+'="'+esc(p.id)+'" aria-label="Selecionar '+esc(p.nome)+'" '+(selecionado?'checked ':'')+(disabled?'disabled':'')+'></label>';
   const barra=(prefixo,n)=>n>0?'<div class="grupo-selecao"><button type="button" class="small subtle" id="'+prefixo+'-todos">Selecionar todos</button><button type="button" class="small subtle" id="'+prefixo+'-nenhum">Desmarcar todos</button><span class="grow"></span><button type="button" class="small primary" id="'+prefixo+'-rolar" '+(n?'':'hidden')+'>Rolar iniciativa ('+n+')</button><span class="sr-only" role="status">'+n+' selecionados</span></div>':'';
   function bonus(f={}){const des=Number(f.atributos?.des);return window.REGRAS.mod(Number.isFinite(des)?des:10)+window.REGRAS.bonusSemProf(f);}
-  const rolar=p=>window.ROLAGENS.rolar('1d20',bonus(p.ficha||{})).total;
+  const rolarDetalhe=p=>{const r=window.ROLAGENS.rolar('1d20',bonus(p.ficha||{}));return {d20:(r.dados&&r.dados[0])??null,bonus:r.modificador??0,total:r.total};};
+  const rolar=p=>rolarDetalhe(p).total;
   function destino(campanha,ids){const q=new URLSearchParams({aba:'iniciativa',campanha,personagens:[...new Set(ids)].join(','),rolar:'1'});return 'iniciativa.html?'+q;}
-  window.GRUPO_PERSONAGENS={identidade,checkbox,barra,bonus,rolar,destino,icone};
+  window.GRUPO_PERSONAGENS={identidade,checkbox,barra,bonus,rolar,rolarDetalhe,destino,icone};
 })();

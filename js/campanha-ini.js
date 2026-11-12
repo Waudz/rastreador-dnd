@@ -39,7 +39,7 @@
       return { ok: true, msg: texto };
     } catch (e) { return { ok: false, msg: "Não foi possível gastar o espaço: " + e.message }; }
   };
-  const selecionados=new Set();
+  const selecionados=new Set(), digitadas = {};   // digitadas: iniciativa informada à mão (dado físico) por personagem
   const ocupadas = new Set();
   const basesPV = new Map();
   function bloquear(){
@@ -51,8 +51,9 @@
     for(const pid of selecionados)if(!pers.some(p=>p.id===pid&&!emCombate(p)))selecionados.delete(pid);
     window.__ini.selecaoPendente?.(selecionados.size,()=>adicionarSelecionados([...selecionados]));
     const barra=G.barra('ci',selecionados.size);if($('#ci-selecao').innerHTML!==barra)$('#ci-selecao').innerHTML=barra;
-    const html=pers.length?pers.map(p=>'<article class="ci-cartao grupo-cartao">'+G.checkbox(p,selecionados.has(p.id),'ci-sel',emCombate(p))+G.identidade(p,{resumo:true,vida:true})+(emCombate(p)?'<span class="muted ci-no-combate">No combate</span>':'<button type="button" class="grupo-icone" data-ci="'+esc(p.id)+'" title="Adicionar à iniciativa" aria-label="Adicionar '+esc(p.nome)+' à iniciativa">'+G.icone('swords')+'</button>')+'</article>').join(''):'<span class="muted">Esta campanha ainda não tem personagens. Importe ou crie as fichas dentro da campanha.</span>';
+    const html=pers.length?pers.map(p=>'<article class="ci-cartao grupo-cartao">'+G.checkbox(p,selecionados.has(p.id),'ci-sel',emCombate(p))+G.identidade(p,{resumo:true,vida:true})+(emCombate(p)?'<span class="muted ci-no-combate">No combate</span>':'<label class="ci-ini"><span class="sr-only">Iniciativa de '+esc(p.nome)+'</span><input type="number" step="1" class="num" data-ci-ini="'+esc(p.id)+'" placeholder="Ini." title="Se você já rolou o dado, digite o resultado final aqui; vazio = o app rola" aria-label="Iniciativa de '+esc(p.nome)+' (vazio: o app rola)"></label><button type="button" class="grupo-icone" data-ci="'+esc(p.id)+'" title="Adicionar à iniciativa" aria-label="Adicionar '+esc(p.nome)+' à iniciativa">'+G.icone('swords')+'</button>')+'</article>').join(''):'<span class="muted">Esta campanha ainda não tem personagens. Importe ou crie as fichas dentro da campanha.</span>';
     if(ultimaGrade!==html){$("#ci-lista").innerHTML=html;ultimaGrade=html;}
+    document.querySelectorAll?.('[data-ci-ini]').forEach(i=>{if(digitadas[i.dataset.ciIni]!==undefined&&i.value!==String(digitadas[i.dataset.ciIni]))i.value=digitadas[i.dataset.ciIni];});
   }
   function abrirResumo(p){
     if (!podeUsar()) return;
@@ -63,13 +64,20 @@
   }
   function fecharResumo(){if(window.PAINEL)window.PAINEL.fechar();$("#ci-resumo").hidden=true;document.body.classList.remove('com-ficha-lateral');window.reorganizarPaineis?.();focoAnterior?.focus?.();}
 
-  function adicionar(p,rolar=false) {
+  function adicionar(p,rolar=false,numero) {
     if (!podeUsar() || emCombate(p)) return;
     const f = p.ficha || {};
     const usados = new Set(window.__ini.list().map(c => c.name));
     let nome = p.nome, n = 2; while (usados.has(nome)) nome = p.nome+" "+n++;
-    window.__ini.add({name:nome,kind:f.npc?"NPC":"Personagem",initiative:rolar?window.GRUPO_PERSONAGENS.rolar(p):null,hp:p.pv_atual,maxHp:Math.max(1,p.pv_max),ac:p.ca||0,key:"",pid:p.id,campanhaId:atual,foto:f.foto||""});
+    window.__ini.add({name:nome,kind:f.npc?"NPC":"Personagem",initiative:Number.isFinite(numero)?numero:rolar?window.GRUPO_PERSONAGENS.rolar(p):null,hp:p.pv_atual,maxHp:Math.max(1,p.pv_max),ac:p.ca||0,key:"",pid:p.id,campanhaId:atual,foto:f.foto||""});
     enviado[p.id] = p.pv_atual;
+  }
+  /* iniciativa informada à mão (vazio = não informada); aceita inteiros razoáveis */
+  const numeroDe=pid=>{const t=String(digitadas[pid]??'').trim();if(t==='')return undefined;const n=Number(t);return Number.isInteger(n)&&n>=-20&&n<=60?n:NaN;};
+  function mostrarResultados(linhas){
+    const el=$('#ci-resultado');if(!el)return;
+    el.innerHTML=linhas.length?'<strong>Iniciativa</strong><ul>'+linhas.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>':'';
+    if(linhas.length)window.FEEDBACK?.mostrar(linhas.length===1?linhas[0]:linhas.length+' iniciativas definidas. Veja o resultado dos dados no painel Personagens.');
   }
   async function adicionarSelecionados(ids){
     if(!podeUsar())return;
@@ -77,8 +85,17 @@
     if(!jogador&&await nuvem.rpc('eh_mestre',{c:campanha})!==true){if(campanha===atual){bloquear();contextoVisual(false);}return false;}
     if(!podeUsar()||campanha!==atual)return;
     const escolhidos=pers.filter(p=>ids.includes(p.id)&&!emCombate(p));
-    escolhidos.forEach(p=>adicionar(p,true));selecionados.clear();desenhar();
-    msg(escolhidos.length+' personagem(ns) adicionado(s). Os participantes atuais foram preservados.');return true;
+    const linhas=[],invalidos=[];
+    for(const p of escolhidos){
+      const n=numeroDe(p.id);
+      if(Number.isNaN(n)){invalidos.push(p.nome);continue;}
+      if(n!==undefined){adicionar(p,false,n);linhas.push(p.nome+': '+n+' (informado por você)');}
+      else{const r=window.GRUPO_PERSONAGENS.rolarDetalhe(p);adicionar(p,false,r.total);linhas.push(p.nome+': '+(r.d20===null?'':'d20 '+r.d20+(r.bonus?(r.bonus>0?' + ':' - ')+Math.abs(r.bonus):'')+' = ')+r.total+' (rolado)');}
+      delete digitadas[p.id];
+    }
+    selecionados.clear();desenhar();mostrarResultados(linhas);
+    if(invalidos.length)msg('Iniciativa inválida para: '+invalidos.join(', ')+'. Use um número inteiro ou deixe vazio para o app rolar.',true);
+    else msg((escolhidos.length-invalidos.length)+' personagem(ns) adicionado(s). Os participantes atuais foram preservados.');return true;
   }
   async function carregar() {
     if (buscando || !podeUsar()) return;
@@ -151,12 +168,13 @@
   box.addEventListener("click",e=>{
     const resumo=e.target.closest("[data-ci-resumo]");if(resumo){const p=pers.find(p=>p.id===resumo.dataset.ciResumo);if(p)abrirResumo(p);return;}
     const b=e.target.closest("[data-ci]");
-    if(b){const p=pers.find(p=>p.id===b.dataset.ci);if(p){adicionar(p);desenhar();}return;}
+    if(b){const p=pers.find(p=>p.id===b.dataset.ci);if(p){const n=numeroDe(p.id);if(Number.isNaN(n)){msg('Iniciativa inválida para '+p.nome+'. Use um número inteiro ou deixe vazio.',true);return;}adicionar(p,false,n);delete digitadas[p.id];desenhar();mostrarResultados([n===undefined?p.nome+' entrou sem iniciativa: preencha o número na ordem do combate ou use Rolar iniciativa.':p.nome+': '+n+' (informado por você)']);}return;}
     if(e.target.closest('#ci-todos')){if(!podeUsar())return;pers.filter(p=>!emCombate(p)).forEach(p=>selecionados.add(p.id));desenhar();return;}
     if(e.target.closest('#ci-nenhum')){selecionados.clear();desenhar();return;}
     if(e.target.closest('#ci-rolar')){adicionarSelecionados([...selecionados]).catch(e=>msg(e.message,true));return;}
     if(e.target.closest("#ci-recarregar")){falhas=0;carregou=false;forcarSync=true;carregar();}
   });
+  box.addEventListener("input",e=>{if(e.target.dataset?.ciIni!==undefined)digitadas[e.target.dataset.ciIni]=e.target.value;});
   box.addEventListener("change",e=>{
     if(e.target.dataset?.ciSel){if(!podeUsar())return;const pid=e.target.dataset.ciSel;if(!pers.some(p=>p.id===pid&&!emCombate(p)))return;e.target.checked?selecionados.add(pid):selecionados.delete(pid);desenhar();document.querySelector('[data-ci-sel="'+pid+'"]')?.focus();return;}
 

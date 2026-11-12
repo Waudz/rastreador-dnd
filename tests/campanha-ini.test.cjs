@@ -147,3 +147,15 @@ test('PV alterados na ficha aparecem no combate (jogador), inclusive depois de r
  f.document.el('camp-ini').events.click({target:{closest:s=>s==='#ci-recarregar'?{}:null}});await new Promise(r=>setTimeout(r,20));
  assert.equal(f.lista[0].hp,9,'o botão Atualizar personagens traz os PV da ficha');
 });
+test('Rolar iniciativa mostra o resultado dos dados na tela (d20, bônus e total) e adiciona com o total',async()=>{
+ const f=await fixture({search:'?campanha=atual&personagens=p'});
+ const r=f.document.el('ci-resultado').innerHTML;assert.match(r,/Herói: d20 \d+ \+ 3 = \d+ \(rolado\)/,'Destreza 14 (+2) mais o bônus de Bardo (+1)');
+ assert.equal(f.lista.length,1);assert.ok(Number.isInteger(f.lista[0].initiative));
+ assert.match(f.document.el('ci-resultado').innerHTML,/<strong>Iniciativa<\/strong>/);
+});
+test('o jogador ou mestre pode digitar a iniciativa (dado físico); número inválido é recusado; vazio deixa sem iniciativa',async()=>{
+ const f=await fixture({search:'?campanha=atual'});const box=f.document.el('camp-ini'),digitar=v=>box.events.input({target:{dataset:{ciIni:'p'},value:v}}),clicar=()=>box.events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});
+ digitar('abc');clicar();assert.equal(f.lista.length,0,'inválido não adiciona');assert.match(f.document.el('ci-msg').innerHTML,/Iniciativa inválida/);
+ digitar('17');clicar();assert.equal(f.lista.length,1);assert.equal(f.lista[0].initiative,17);assert.match(f.document.el('ci-resultado').innerHTML,/Herói: 17 \(informado por você\)/);
+ const g=await fixture({search:'?campanha=atual'});const b2=g.document.el('camp-ini');b2.events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});assert.equal(g.lista[0].initiative,null);assert.match(g.document.el('ci-resultado').innerHTML,/entrou sem iniciativa/);
+});

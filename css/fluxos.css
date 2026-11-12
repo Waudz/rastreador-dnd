@@ -101,3 +101,9 @@ body.ficha-embutida { padding-top:0!important; padding-bottom:0!important; }
 #vez-res p { margin:4px 0; }
 .painel-ataque-inline { margin:0 0 12px; padding:8px 12px; border:1px solid var(--line); border-radius:12px; }
 .painel-ataque-inline > summary { cursor:pointer; font-weight:700; }
+
+/* Iniciativa dos personagens: campo para digitar o resultado do dado e resultado das rolagens na tela */
+.ci-ini { display:block; margin:0; }
+.ci-ini input { width:100%; text-align:center; }
+.ci-resultado { margin:6px 0; }
+.ci-resultado ul { margin:4px 0 8px 18px; padding:0; }
