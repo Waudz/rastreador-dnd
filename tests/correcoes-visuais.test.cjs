@@ -51,12 +51,12 @@ test('subir de nível é guiado, nível por nível, com etapas dinâmicas e vár
   assert.match(j,/if\(t\.id==='nivel-classe'\)\{classeNivel=t\.value;desenhar\(\);return;\}/);assert.match(j,/if\(t\.id==='nivel-pv'\)\{pvModo=t\.value;atualizarNivelForm\(\);return;\}/);
   assert.match(j,/Pré-requisito de multiclasse \(2014\)/);assert.match(j,/Níveis adquiridos/);assert.ok(!/Prévia do novo nível/.test(j));
 });
-test('Editar personagem: criador completo com dados carregados, PV/inventário preservados e impacto confirmado antes de salvar',()=>{
-  const j=ler('js/criador.js');
-  assert.match(j,/editar=params\.get\('modo'\)==='editar'/);assert.match(j,/function pvEdicao\(q\)/);assert.match(j,/function diffEdicao\(q\)/);
+test('Editar personagem: criador completo, PV por delta do histórico e impacto confirmado antes de salvar',()=>{
+  const j=ler('js/criador.js'),r=ler('js/criador-regras.js');
+  assert.match(j,/editar=params\.get\('modo'\)==='editar'/);assert.match(j,/const pvEdicao=q=>C\.salvamento\(q,\{modo:'editar',original\}\)\.pv/);assert.match(j,/function diffEdicao\(q\)/);
   assert.match(j,/Alterações que serão aplicadas/);assert.match(j,/Salvar alterações/);assert.match(j,/confirm\('Os PV máximos mudam de /);
-  assert.match(j,/if\(!evolucao&&!editar&&!st\(\)\.equipAplicado\)q=C\.aplicarEquipamento\(q\)/);assert.match(j,/if\(!evolucao&&!editar\)\{let primeiro=true,pv=0;/);
-  assert.match(j,/criador2014:\$\{nuvem\.usuario\(\)\.id\}:\$\{id\}:\$\{evolucao\?'nivel':editar\?'editar':'criacao'\}/);
+  assert.match(j,/const s=C\.salvamento\(q,\{modo:evolucao\?'nivel':editar\?'editar':'criacao',original\}\)/);
+  assert.match(r,/function salvamento\(qDerivado,\{modo,original\}/);assert.match(r,/function construirProgressao\(f\)/);assert.match(r,/f\.progressao=construirProgressao\(f\)/);
 });
 test('subir de nível só acrescenta: escolhas, subclasse e melhorias anteriores ficam bloqueadas (mudar é em Editar personagem)',()=>{
   const j=ler('js/criador.js');

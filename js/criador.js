@@ -106,13 +106,7 @@ let cancelar=()=>{};   // vigia de lentidão do esqueleto (js/esqueleto.js)
  function resumoMagia(){const q=C.derivar(p),conj=R.conjuracao(q.ficha.classes);return '<div class="panel">'+(q.ficha.classes||[]).map(c=>{const perfil=C.perfilMagias(c,q.ficha);return perfil?'<p><b>'+esc(R.classe(c.c).n)+' · Nível '+c.n+'</b>: '+perfil.truques+' Truque(s) e '+perfil.qtd+' '+(perfil.tipo==='prepared'?'Magias Preparadas':perfil.tipo==='spellbook'?'Magias no Grimório':'Magias Conhecidas')+'.</p>':'';}).join('')+'<p>Espaços de Magia: '+conj.slots.map((n,i)=>n?n+' de '+(i+1)+'º Círculo':'').filter(Boolean).join(', ')+(conj.pact?' · Pacto: '+conj.pact.slots+' espaço(s) de '+conj.pact.nivel+'º Círculo':'')+'</p><p class="muted">Magias recebidas pela subclasse ou por traços podem ter regras próprias e aparecer separadamente na ficha.</p></div>';}
  function equipamentoHTML(){const d=C.classe(f().classes[0]?.c);if(!d)return 'Escolha uma classe.';if(st().equipAplicado||evolucao)return '<p>O inventário atual será preservado. Equipamento inicial não será concedido novamente.</p>';return `<h2>Equipamento Inicial</h2><p>Cada grupo é uma escolha independente: selecione só uma alternativa dentro dele. Você recebe as alternativas escolhidas, os itens fixos da classe e o equipamento da Origem.</p>${(d.data.startingChoices||[]).map((g,i)=>`<section class="panel"><label>Grupo ${i+1} · Escolha uma Alternativa${seletor(`data-equip="op:${i}"`,g.options.map((o,j)=>[j,o.items.map(x=>x.item?C.rotulo(x.item)+' × '+(x.quantity||1):'Escolher '+(x.count||1)+' '+(CATEGORIAS_EQUIP[x.category]||'Equipamento')).join(' + ')]),st().equipamento['op:'+i]===undefined?'':Number(st().equipamento['op:'+i]))}</label>${g.options[Number(st().equipamento['op:'+i])]?.items.map((x,j)=>x.category?Array.from({length:x.count||1},(_,k)=>seletor(`data-equip="item:${i}:${j}:${k}"`,C.itemCategoria(x.category).map(x=>[x.id,x.nome||x.en]),st().equipamento[`item:${i}:${j}:${k}`])).join(''):'').join('')||''}</section>`).join('')}<h3>Conjunto Final de Equipamento</h3><ul>${C.equipamento(p).itens.map(i=>`<li>${i.qtd} × ${esc(i.nome)}</li>`).join('')}</ul><p>${C.equipamento(p).ouro} PO da Origem.</p>`;}
  /* Editar personagem: PV e o que muda. Valores de jogo (PV atuais, inventário, recursos) só mudam quando a edição realmente os afeta. */
- const assinaturaPV=fi=>JSON.stringify([(fi.classes||[]).map(c=>[c.c,c.n]),R.mod(fi.atributos?.con||10),fi.raca==='Anão (da Colina)']);
- function pvEdicao(q){
-  if(assinaturaPV(original.ficha)===assinaturaPV(q.ficha))return {max:original.pv_max,atual:original.pv_atual,mudou:false};
-  let primeiro=true,pv=0;const con=R.mod(q.ficha.atributos?.con||10),bonus=(q.ficha.raca==='Anão (da Colina)'?1:0);
-  for(const c of q.ficha.classes||[]){const dv=R.classe(c.c)?.dv||8;for(let n=1;n<=c.n;n++){const base=q.ficha.pvPorNivel?.[c.c+':'+n]??(primeiro&&n===1?dv:Math.floor(dv/2)+1);pv+=Math.max(1,base+con+bonus);}primeiro=false;}
-  return {max:pv,atual:Math.min(original.pv_atual,pv),mudou:pv!==original.pv_max||Math.min(original.pv_atual,pv)!==original.pv_atual};
- }
+ const pvEdicao=q=>C.salvamento(q,{modo:'editar',original}).pv;
  function diffEdicao(q){
   const a=original.ficha,b=q.ficha,out=[],cl=fi=>(fi.classes||[]).map(c=>(R.classe(c.c)?.n||c.c||'?')+' '+c.n+(c.sub?' ('+(C.subclasse(c)?.nome||c.sub)+')':'')).join(' / ')||'sem classe';
   if(original.nome!==q.nome)out.push('Nome: '+original.nome+' → '+q.nome);
@@ -135,11 +129,9 @@ let cancelar=()=>{};   // vigia de lentidão do esqueleto (js/esqueleto.js)
   if(salvando)return;let q=C.derivar(p);const erros=errosVisiveis(q);if(erros.length||evolucao&&!subiu)return;
   salvando=true;$('#salvar').disabled=true;$('#aviso').textContent='Salvando…';
   try{
-   if(!evolucao&&!editar&&!st().equipAplicado)q=C.aplicarEquipamento(q);
-   if(editar){const pv=pvEdicao(q);if(pv.mudou&&!confirm('Os PV máximos mudam de '+original.pv_max+' para '+pv.max+' e os PV atuais de '+original.pv_atual+' para '+pv.atual+'. Confirmar a alteração?')){salvando=false;$('#salvar').disabled=false;$('#aviso').textContent='';return;}q.pv_max=pv.max;q.pv_atual=pv.atual;}
-   if(!evolucao&&!editar){let primeiro=true,pv=0;for(const c of q.ficha.classes){for(let n=1;n<=c.n;n++)pv+=Math.max(1,(primeiro&&n===1?R.classe(c.c).dv:Math.floor(R.classe(c.c).dv/2)+1)+R.mod(q.ficha.atributos.con)+(q.ficha.raca==='Anão (da Colina)'?1:0));primeiro=false;}q.pv_max=pv;q.pv_atual=pv;}
-   q.ficha.tracosRaciais=R.tracosRaciais(q.ficha.raca);q.ficha.criacao.concluido=true;
-   const dados={nome:q.nome,ficha:q.ficha,pv_max:q.pv_max,pv_atual:q.pv_atual,inventario:q.inventario,dinheiro:q.dinheiro};
+   const s=C.salvamento(q,{modo:evolucao?'nivel':editar?'editar':'criacao',original});
+   if(editar&&s.pv.mudou&&!confirm('Os PV máximos mudam de '+original.pv_max+' para '+s.pv.max+' e os PV atuais de '+original.pv_atual+' para '+s.pv.atual+'. Confirmar a alteração?')){salvando=false;$('#salvar').disabled=false;$('#aviso').textContent='';return;}
+   const dados=s.dados;
    const rows=await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}&versao=eq.${original.versao}`,dados);
    if(!rows?.length)throw Error('Esta ficha mudou em outro aparelho. Abra a ficha atual antes de aplicar o rascunho.');
    localStorage.removeItem(chave());location.href='personagem.html?id='+encodeURIComponent(id);

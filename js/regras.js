@@ -102,6 +102,9 @@ window.REGRAS = (() => {
   const PACTO = [null, [1, 1], [2, 1], [2, 2], [2, 2], [2, 3], [2, 3], [2, 4], [2, 4], [2, 5], [2, 5], [3, 5], [3, 5], [3, 5], [3, 5], [3, 5], [3, 5], [4, 5], [4, 5], [4, 5], [4, 5]];
 
   const mod = (v) => Math.floor((Number(v) - 10) / 2);
+  /* Valor EFETIVO de um atributo: o permanente (f.atributos) mais o modificador temporário do jogo (f.modTemp: poção, magia, item).
+     Nunca grava em f.atributos: o permanente só muda no criador, na evolução e no Editar personagem. */
+  const atributoEf = (f, k) => { const v = Number(f?.atributos?.[k]); return (Number.isFinite(v) && v > 0 ? v : 10) + (Number(f?.modTemp?.[k]) || 0); };
   const prof = (nivel) => 2 + Math.floor((Math.max(1, nivel) - 1) / 4);
   const nivelTotal = (cls) => (cls || []).filter(c=>classe(c.c)).reduce((s,c)=>s+Math.max(0,Math.floor(Number(c.n)||0)),0);
 
@@ -173,7 +176,7 @@ window.REGRAS = (() => {
   const RACAS_BASE=['Anão (da Colina)','Anão (da Montanha)','Draconato','Elfo (Alto)','Elfo (da Floresta)','Elfo (Drow)','Gnomo (da Floresta)','Gnomo (da Rocha)','Halfling (Pés Leves)','Halfling (Robusto)','Humano','Humano (Variante)','Meio-elfo','Meio-orc','Tiefling','Fada'];
   function preparacao(f){
     const mapa={Cleric:'sab',Druid:'sab',Wizard:'int',Paladin:'car',Artificer:'int'},out=[];
-    for(const c of f.classes||[]){if(!mapa[c.c]||!conjuracao([c]).habilidades.length)continue;const limite=Math.max(1,Math.floor(c.n/(['Paladin','Artificer'].includes(c.c)?2:1))+mod(f.atributos?.[mapa[c.c]]||10));
+    for(const c of f.classes||[]){if(!mapa[c.c]||!conjuracao([c]).habilidades.length)continue;const limite=Math.max(1,Math.floor(c.n/(['Paladin','Artificer'].includes(c.c)?2:1))+mod(atributoEf(f,mapa[c.c])));
       const pertence=m=>(m.classePreparacao||'').toLowerCase()===c.c.toLowerCase()||!m.classePreparacao&&((m.classes||m.c||[]).some(id=>id.toLowerCase()===c.c.toLowerCase())||!(m.classes||m.c||[]).length&&(f.classes||[]).filter(x=>mapa[x.c]).length===1);
       const usadas=(f.magias||[]).filter(m=>m.l>0&&m.prep&&!m.semprePreparada&&m.origem!=='Raça'&&pertence(m)).length;out.push({id:c.c,nome:classe(c.c).n,limite,usadas,pertence});
     }return out;
@@ -222,9 +225,9 @@ window.REGRAS = (() => {
   const chaveTexto=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   const tituloTexto=v=>String(v||'').replace(/(^|\s)(\p{L})/gu,(m,a,b)=>a+b.toLocaleUpperCase('pt-BR'));
   function tracosDaFicha(f){const atuais=tracosRaciais(f.raca),mapa=new Map(atuais.map(t=>[chaveTexto(t.nome),{...t,nome:tituloTexto(t.nome)}]));for(const t of f.tracosRaciais||[]){const k=chaveTexto(t.nome);if(!mapa.has(k))mapa.set(k,{...t,nome:tituloTexto(t.nome)});}return [...mapa.values()];}
-  function valorPericia(f,k){const p=PERICIAS.find(p=>p[0]===k);return mod(f.atributos?.[p?.[2]]??10)+bonusPericia(f,k);}
+  function valorPericia(f,k){const p=PERICIAS.find(p=>p[0]===k);return mod(atributoEf(f,p?.[2]))+bonusPericia(f,k);}
   function percepcaoPassiva(f){return 10+valorPericia(f,'percepcao');}
-  function valoresAtaque(f,a){const attrs=f.atributos||{},at=a.atr==='acuidade'?Math.max(mod(attrs.for??10),mod(attrs.des??10)):mod(attrs[a.atr||'for']??10),mg=Number(a.magico)||0;return {ataque:at+(a.prof===false?0:prof(nivelTotal(f.classes||[])||f.nivel||1))+mg,dano:at+mg+(Number(a.extra)||0)};}
+  function valoresAtaque(f,a){const at=a.atr==='acuidade'?Math.max(mod(atributoEf(f,'for')),mod(atributoEf(f,'des'))):mod(atributoEf(f,a.atr||'for')),mg=Number(a.magico)||0;return {ataque:at+(a.prof===false?0:prof(nivelTotal(f.classes||[])||f.nivel||1))+mg,dano:at+mg+(Number(a.extra)||0)};}
   function resumoMestre(f){const fontes=fontesPericias(f),tracos=tracosDaFicha(f);return {passiva:percepcaoPassiva(f),pericias:PERICIAS.filter(([k])=>fontes.basicas.includes(k)).map(([k,n])=>({id:k,nome:n,valor:valorPericia(f,k),especializada:fontes.especializadas.includes(k)})),tracos,resistencias:[...(Array.isArray(f.resistencias)?f.resistencias:f.resistencias?[f.resistencias]:[]),...tracos.filter(t=>/resistência|imunidade/i.test(t.desc)).map(t=>t.desc)],ataques:(f.ataques||[]).map(a=>({...a,...valoresAtaque(f,a)})),magias:f.magias||[],caracteristicas:f.caracteristicas||[]};}
-  return { chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, resumoMestre, RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+  return { atributoEf, chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, resumoMestre, RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();

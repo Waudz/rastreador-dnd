@@ -63,7 +63,12 @@ Atualizado em 11/11/2026. Revisão atual baseada na `main`, commit `161ea27`. O 
 - Espaços de magia de multiclasse e magias preparadas/conhecidas por classe usam o motor existente; não houve revisão completa de todas as combinações.
 - Não verificado em Android real nem com personagens reais.
 
-## Para retomar
+## Modelo de personagem v2 e ordem das próximas fases (12/11/2026)
+- **Feito:** histórico estruturado nível a nível (`criacao.niveis` como fonte, `progressao` derivada), PV por um só cálculo, `salvamento` único para criar, subir e editar, modificadores temporários (`atributoEf`). Ver `docs/MODELO-PERSONAGEM.md`. Testado: personagem criado do zero (motor e interface), salvo, reaberto, editado e evoluído.
+- **Decisão:** não há personagens completos; fichas antigas de teste não precisam de compatibilidade. Nenhum dado do Supabase foi apagado ou migrado.
+- **Próximas fases (ordem do William):** 1) organização da ficha (construção x evolução x jogo); 2) sistema de magias (grimório, preparadas, origem, substituição, cópia de pergaminho: teste de Arcanismo CD 10 + círculo, pergaminho destruído em qualquer resultado; cópia comum 50 po e 2 h por círculo); 3) inventário (pergaminhos e itens mágicos, consumo); 4) recursos de classe, descansos, condições, concentração e efeitos; 5) auditoria e testes de integração.
+- **Ficha (fase 1) ainda NÃO reorganizada:** hoje a ficha ainda traz seletores de construção (melhorias de atributo, escolhas de perícia, catálogo de características) e o "Adicionar do catálogo" de magias sem regras por classe; o botão Trocar foto ficou inacessível ao Editar abrir o criador. Corrigir antes de publicar a ficha.
+
 
 1. Conferir `main`, SHA publicado, Actions/Pages e modificações locais antes de editar; preservar o trabalho existente.
 2. Reproduzir o problema na conta, rota e versão exatas. Distinguir uma aba antiga da versão publicada.
