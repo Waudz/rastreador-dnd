@@ -5,10 +5,10 @@
  let dock=$('#dock-r');if(!dock){dock=document.createElement('div');dock.id='dock-r';dock.className='dock';dock.hidden=true;document.querySelector('main').append(dock);}
  if(!$('#ci-resumo'))dock.insertAdjacentHTML('beforeend','<aside id="ci-resumo" class="ci-resumo" aria-label="Ficha do personagem" hidden><div class="ci-resumo-topo"><span>Personagem</span><button type="button" id="ci-resumo-fechar">Voltar</button></div><div id="ci-resumo-corpo"></div></aside>');
  if(!$('#spd'))dock.insertAdjacentHTML('beforeend','<aside id="spd" class="drawer" aria-label="Magia" hidden><div class="sh-top"><button type="button" id="spd-voltar">Voltar</button><span>Magia</span><button type="button" id="spd-close">Fechar</button></div><div id="spd-body"></div></aside>');
- function personagem(id,nome='Personagem'){
-  if(salvando&&idAtual!==id){window.FEEDBACK?.mostrar('Aguarde a ficha terminar de salvar.');return false;}
+ function personagem(id,nome='Personagem',grupo=''){
+  if(salvando&&idAtual.split('|')[0]!==id){window.FEEDBACK?.mostrar('Aguarde a ficha terminar de salvar.');return false;}
   foco=document.activeElement;
-  if(idAtual!==id||!$('#ci-ficha-frame')){$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(id)+'" title="Ficha de '+esc(nome)+'" src="personagem.html?id='+encodeURIComponent(id)+'&modo=leitura"></iframe>';idAtual=id;}
+  if(idAtual!==id+'|'+grupo||!$('#ci-ficha-frame')){$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(id)+'" title="Ficha de '+esc(nome)+'" src="personagem.html?id='+encodeURIComponent(id)+'&modo=leitura'+(grupo?'&grupo='+encodeURIComponent(grupo):'')+'"></iframe>';idAtual=id+'|'+grupo;}
   window.PAINEL.mostrar('ci-resumo');$('#ci-resumo-fechar')?.focus();return true;
  }
  async function magia(dados){
@@ -20,7 +20,7 @@
   }catch(e){window.FEEDBACK?.mostrar(e.message,{erro:true});}
  }
  document.addEventListener('click',e=>{
-  const a=e.target.closest('a[href]');if(a&&!a.target&&/^(?:\.\/)?personagem\.html\?/.test(a.getAttribute('href')||'')){e.preventDefault();const url=new URL(a.href,location.href),id=url.searchParams.get('id');if(id)personagem(id,a.textContent.trim());return;}
+  const a=e.target.closest('a[href]');if(a&&!a.target&&/^(?:\.\/)?personagem\.html\?/.test(a.getAttribute('href')||'')){e.preventDefault();const url=new URL(a.href,location.href),id=url.searchParams.get('id');if(id)personagem(id,a.textContent.trim(),url.searchParams.get('grupo')||'');return;}
   if(e.target.closest('#ci-resumo-fechar')){e.preventDefault();e.stopImmediatePropagation();window.PAINEL.voltar();foco?.focus();}
   if(e.target.closest('#spd-voltar')){e.preventDefault();e.stopImmediatePropagation();window.PAINEL.voltar();}
   if(e.target.closest('#spd-close')){e.preventDefault();e.stopImmediatePropagation();window.PAINEL.fechar();}

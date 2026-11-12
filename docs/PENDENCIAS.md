@@ -55,9 +55,10 @@ Resolvidas nesta integração: auditoria das oito listas padrão contra as pági
 - Bloqueios para publicar: autorização para confirmar projeto/migrações/backup e executar o preflight real; revisão de concessões legadas pelo mestre; autorização e aplicação da migração; advisors e testes reais de papéis/Auth; autorização separada para push/deploy. PWA Android continua pendente. Não presumir dados legados aprovados nem configurações de produção verificadas.
 
 ## Aguardando o William (banco): aba Grupo dos jogadores
-- Migração proposta, NÃO aplicada: `supabase/migrations/20261112210000_grupo_basico.sql` (funções `private.grupo_basico` e `public.grupo_basico`; só devolve foto, nome, jogador, PV e CA dos personagens com jogador vinculado, só para membros; fora NPCs e criaturas; nenhuma política muda). Sem ela a aba mostra "Não foi possível carregar o grupo agora".
-- Interface pronta: aba "Grupo" (só jogadores) em `js/campanha.js`; `personagem.html?id=..&grupo=<campanha>` abre a visão restrita (`visaoGrupo` em `js/personagem.js`) para quem não é dono nem mestre.
-- Feedback de jogador atendido: CD pronta nas características (Ki do Monge, Canalizar Divindade, Santuário Natural, Lançar no Inferno, manobras do Mestre de Batalha), com fórmula, e resumo "CDs das suas características" em Recursos e habilidades.
+- A migração `supabase/migrations/20261112210000_grupo_basico.sql` (dados básicos) foi aplicada pelo William.
+- Nova, NÃO aplicada: `supabase/migrations/20261112230000_grupo_fichas.sql` (`private.grupo_fichas` e `public.grupo_fichas`): devolve a ficha dos outros personagens do grupo SEM `notas`, `movimentos` e `diario`; inventário e dinheiro (colunas próprias) nunca são lidos; só membros; fora NPCs, criaturas e personagens sem jogador. Nenhuma política muda. Sem ela, a aba mostra o cartão básico e a visão restrita.
+- Interface: aba "Grupo" (só jogadores) com Mestre e Jogadores (foto, nome, raça, classe, nível, jogador, PV, CA); tocar abre a ficha em modo leitura (`soLeitura` em `js/personagem.js`: nada grava; sem abas Inventário e Notas; controles desativados). O leitor lateral (`js/leitor-fichas.js`) repassa `grupo`.
+- Feedback de jogador atendido: CD pronta nas características (Ki, Canalizar Divindade, manobras etc.), com fórmula.
 
 ## Próxima tarefa
 Aguardar revisão e autorização do plano de publicação/segurança. Não aplicar SQL, acessar o Supabase real, fazer push ou deploy por conta própria.

@@ -7,10 +7,16 @@ test('grupo: a função do banco devolve só foto, nome, jogador, PV e CA, só p
   assert.ok(!/(create|drop|alter)\s+policy/i.test(sql),'nenhuma política é alterada');assert.ok(!/inventario|dinheiro|ficha\s*,|p\.ficha\s*[,;]/.test(sql.replace(/p\.ficha->>'[a-z]+'/g,'')),'não devolve ficha, inventário nem dinheiro');
   assert.match(sql,/revoke all on function public\.grupo_basico\(uuid\) from public,anon/);
 });
-test('grupo: a aba é só de jogadores, abre a ficha em visão restrita e a visão do grupo não desenha a ficha completa',()=>{
-  const c=ler('js/campanha.js'),p=ler('js/personagem.js');
-  assert.match(c,/\[\["grupo", "Grupo"\]\]/);assert.match(c,/rpc\("grupo_basico"/);assert.match(c,/personagem\.html\?id=\$\{encodeURIComponent\(p\.id\)\}&grupo=/);
-  const v=p.slice(p.indexOf('async function visaoGrupo'),p.indexOf('/* ---------- carregar ---------- */'));
-  assert.ok(v.length>200&&!/desenhar\(\)|P = |personagens\?select=\*/.test(v),'a visão restrita não carrega nem desenha a ficha');
-  assert.match(p,/if \(!visivel\) \{ await visaoGrupo/);
+test('grupo completo: a função devolve a ficha sem notas, movimentos nem diário; inventário e dinheiro nunca são lidos; só membros; sem mudar políticas',()=>{
+  const sql=ler('supabase/migrations/20261112230000_grupo_fichas.sql');
+  assert.match(sql,/\(p\.ficha - 'notas' - 'movimentos' - 'diario'\)/);assert.match(sql,/public\.eh_membro\(p_campanha\)/);assert.match(sql,/'npc'/);assert.match(sql,/'origem'/);
+  assert.ok(!/p\.inventario|p\.dinheiro/.test(sql),'inventário e dinheiro não são lidos');assert.ok(!/(create|drop|alter)\s+policy/i.test(sql));
+  assert.match(sql,/revoke all on function public\.grupo_fichas\(uuid\) from public,anon/);
+});
+test('grupo: a aba é só de jogadores, mostra o mestre, abre a ficha em leitura (também pelo leitor lateral) e a visão não grava',()=>{
+  const c=ler('js/campanha.js'),p=ler('js/personagem.js'),l=ler('js/leitor-fichas.js');
+  assert.match(c,/\[\["grupo", "Grupo"\]\]/);assert.match(c,/rpc\("grupo_fichas"/);assert.match(c,/rpc\("grupo_basico"/);assert.match(c,/Mestre da campanha/);assert.match(c,/&grupo=\$\{encodeURIComponent\(id\)\}/);
+  assert.match(l,/url\.searchParams\.get\('grupo'\)/,'o leitor lateral repassa o grupo');assert.match(l,/&grupo='\+encodeURIComponent\(grupo\)/);
+  assert.match(p,/function agendar\(campos\) \{ if \(soLeitura\) return;/);assert.match(p,/if \(soLeitura \|\| !pend \|\| salvando\) return;/);
+  assert.match(p,/for \(const k of \["inventario", "notas"\]\)/);assert.match(p,/if \(!visivel\) \{ await visaoGrupo/);
 });

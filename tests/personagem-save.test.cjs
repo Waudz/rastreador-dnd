@@ -1,11 +1,11 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
 const {vm,executar,documentoFalso,tick}=require("./helpers.cjs");
-async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={},registro={}}={}){
+async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={},registro={},grupoRpc=null,semAcesso=false}={}){
   const document=documentoFalso(),eventos={},timers=new Map();let proximo=0;
   document.addEventListener=(n,fn)=>(eventos[n]??=[]).push(fn);
   const p={id:"p",nome:"Inicial",campanha_id:"c",dono_id:"u",pv_atual:10,pv_max:10,pv_temp:0,ca:10,versao:1,ficha:{classes:[{c:"Fighter",n:1}]}};
   Object.assign(p.ficha,fichaInicial);Object.assign(p,registro);
-  const nuvem={usuario:()=>({id:"u"}),esc:s=>String(s??""),retornoDoLink:async()=>{},observar(){},rpc:async()=>mestre,patch,get:async q=>q.startsWith("personagens")?[p]:q.startsWith("campanhas")?[{id:"c",nome:"Campanha"}]:q.startsWith("membros")?[{papel:mestre?"mestre":"jogador"}]:[{id:"u",nome:"Pessoa"}]};
+  const nuvem={usuario:()=>({id:"u"}),esc:s=>String(s??""),retornoDoLink:async()=>{},observar(){},rpc:async n=>{if(n==='grupo_fichas'){if(!grupoRpc)throw new Error('função inexistente');return grupoRpc;}return mestre;},patch,get:async q=>q.startsWith("personagens")?(semAcesso?[]:[p]):q.startsWith("campanhas")?[{id:"c",nome:"Campanha"}]:q.startsWith("membros")?[{papel:mestre?"mestre":"jogador"}]:[{id:"u",nome:"Pessoa"}]};
   const c=vm.createContext({window:{addEventListener(){},parent:{postMessage(){}}},TEXTO_REGRAS:{html:t=>String(t??"")},document,nuvem,location:{search},URLSearchParams,confirm:()=>true,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
   executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/magias-jogo.js",c);executar("js/inventario.js",c);executar("js/itens-efeitos.js",c);executar("js/recursos.js",c);executar("js/jogo.js",c);executar("js/jogo-ui.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
   const nome=v=>eventos.input.forEach(fn=>fn({target:{dataset:{col:"nome"},value:v}}));
@@ -165,4 +165,17 @@ test('CD pronta nas características: Ki (Monge), magia de Clérigo/Paladino e m
  assert.match(h,/Ataque Atordoante <span class="badge"[^>]*>CD 14<\/span>/,'Ki: 8 + 3 (prof. nível 8) + 3 (Sab 16)');assert.match(h,/Técnica da Mão Aberta <span class="badge"[^>]*>CD 14/);
  assert.match(h,/CD de Ki: 14/);assert.match(h,/Canalizar Divindade <span class="badge"[^>]*>CD 13/,'Paladino: 8 + 3 + 2 (Car 14)');
  assert.ok(!/Rajada de Golpes <span class="badge"/.test(h),'sem salvaguarda do alvo, sem CD');assert.match(h,/8 \+ proficiência \(\+3\) \+ Sabedoria \(\+3\)/);
+});
+
+test('visão do grupo: ficha em leitura com atributos e perícias, sem inventário, notas nem edição, e nada é gravado',async()=>{
+ let patches=0;const rpcLinha={id:'p',nome:'Alheio',dono_id:'outro',pv_atual:7,pv_max:20,pv_temp:0,ca:15,ficha:{classes:[{c:'Monk',n:3}],raca:'Humano',atributos:{for:10,des:16,con:12,int:10,sab:14,car:8},pvAuto:false,caAuto:false}};
+ const f=await ficha(async()=>{patches++;return[{versao:9}];},{search:'?id=p&grupo=c',semAcesso:true,grupoRpc:[rpcLinha]});
+ const h=f.document.el('ficha').innerHTML;
+ assert.match(h,/Alheio/);assert.match(h,/Atributos/);assert.match(h,/Perícias/);
+ assert.match(f.document.el('estado').textContent,/Somente leitura/);
+ f.nome('Hackeado');await f.salvar();assert.equal(patches,0,'a visão do grupo nunca grava');
+});
+test('visão do grupo sem a função completa no banco cai para os dados básicos',async()=>{
+ const f=await ficha(async()=>[{versao:1}],{search:'?id=p&grupo=c',semAcesso:true,grupoRpc:null});
+ assert.match(f.document.el('ficha').innerHTML+f.document.el('erro').innerHTML,/Personagem não encontrado neste grupo|Alheio|grupo/);
 });

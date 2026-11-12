@@ -80,3 +80,19 @@
  .grupo-selecao .small { min-width:0; min-height:40px; padding:5px 6px; font-size:10.5px; line-height:1.25; white-space:normal; }
  .grupo-selecao .primary { white-space:nowrap; }
 }
+
+/* Aba Grupo da campanha (jogadores): cartões com foto, nome, raça, classe, nível, jogador, PV e CA */
+.grupo-ficha { display:grid; grid-template-columns:64px minmax(0,1fr); gap:6px 12px; align-items:center; padding:12px; margin:0 0 10px; border:1px solid var(--line); border-radius:12px; text-decoration:none; color:inherit; }
+a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, currentColor); }
+.grupo-ficha .av { width:64px; height:64px; margin:0; font-size:26px; object-fit:cover; border-radius:50%; }
+.grupo-ficha-texto { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.grupo-nome { font-size:16px; overflow-wrap:anywhere; }
+.grupo-sub, .grupo-jogador { font-size:13px; color:var(--muted, inherit); overflow-wrap:anywhere; }
+.grupo-vida { grid-column:1 / -1; display:grid; gap:6px; }
+.grupo-barra { display:block; height:8px; border-radius:6px; background:rgba(127,127,127,.25); overflow:hidden; }
+.grupo-barra-cheia { display:block; height:100%; border-radius:6px; background:#4caf50; }
+.grupo-barra-cheia.medio { background:#e0a030; }
+.grupo-barra-cheia.baixo { background:#d9534f; }
+.grupo-nums { display:flex; gap:16px; font-size:14px; }
+.grupo-mestre { grid-template-columns:64px minmax(0,1fr); }
+.ficha-so-leitura input:disabled, .ficha-so-leitura select:disabled, .ficha-so-leitura textarea:disabled { opacity:.85; cursor:default; }

@@ -58,9 +58,9 @@
   document.addEventListener("focusin",e=>{if(!P)return;if(e.target.id==="pg-mag"&&e.target.options.length<3)catalogoMagiasInv().then(l=>{const sel=document.getElementById("pg-mag");if(sel&&sel.options.length<3)sel.insertAdjacentHTML("beforeend",l.slice().sort((a,b)=>a.l-b.l||a.n.localeCompare(b.n,"pt-BR")).map(m=>opt(m.en,`${m.n} (${m.l?m.l+"º círculo":"truque"})`,false)).join(""));}).catch(()=>{});if(e.target.id==="cat-q")buscarCatalogo(e.target.value);});
 
   /* ---------- salvar (agrupa as alterações por 0,6 s) ---------- */
-  function agendar(campos) { pend = { ...(pend || {}), ...campos }; notificar('ficha-salvando'); $("#estado").textContent = "Salvando…"; clearTimeout(timer); timer = setTimeout(enviar, 600); }
+  function agendar(campos) { if (soLeitura) return; pend = { ...(pend || {}), ...campos }; notificar('ficha-salvando'); $("#estado").textContent = "Salvando…"; clearTimeout(timer); timer = setTimeout(enviar, 600); }
   async function enviar() {
-    if (!pend || salvando) return;
+    if (soLeitura || !pend || salvando) return;
     const corpo = JSON.parse(JSON.stringify(pend)); pend = null; salvando = true; let falhou = false;
     try {
       if(exclusivoMestre && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true) throw new Error('Este painel é exclusivo do mestre da campanha.');
@@ -75,7 +75,29 @@
   window.addEventListener("beforeunload", () => { if (pend) enviar(); });
 
   /* ---------- visão restrita do grupo ---------- */
+  let soLeitura = false;
   async function visaoGrupo(campId, recarregar) {
+    let r, perfis;
+    try { [r, perfis] = await Promise.all([nuvem.rpc("grupo_fichas", { p_campanha: campId }), nuvem.get("perfis?select=id,nome")]); }
+    catch (_) { return visaoGrupoBasica(campId, recarregar); }                       // banco sem a função completa: mostra só os dados básicos
+    const voltar = $("#voltar"); if (voltar) { voltar.href = "campanha.html?id=" + encodeURIComponent(campId); voltar.textContent = "Voltar ao grupo"; }
+    try {
+      const reg = (Array.isArray(r) ? r : []).find((x) => x.id === id); if (!reg) throw new Error("Personagem não encontrado neste grupo.");
+      soLeitura = true;                                                              // nada abaixo grava: agendar() e enviar() ficam inertes
+      P = { ...reg, campanha_id: campId, inventario: [], dinheiro: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 }, versao: 0 };
+      camp = { id: campId, nome: "Campanha" }; souMestre = false; donoNome = (perfis.find((x) => x.id === P.dono_id) || {}).nome || "";
+      migrar(); try { await carregarCatalogo(); } catch (_) {} aplicarAuto(true); desenhar();
+      document.title = P.nome + " — Compêndio 5e";
+      const tirar = (e) => { if (e && e.remove) e.remove(); };
+      for (const k of ["inventario", "notas"]) { tirar(document.querySelector('[data-ficha-aba="' + k + '"]')); tirar(document.querySelector("#secao-" + k)); }
+      document.querySelectorAll("#b-foto,.ficha-subir-nivel,.ficha-construcao,#editar-ficha").forEach((e) => e.remove());
+      $("#ficha").classList?.add?.("ficha-so-leitura");
+      document.querySelectorAll('#ficha input,#ficha select,#ficha textarea,#ficha button:not([data-ficha-aba]):not([data-consultar-magia])').forEach((e) => { e.disabled = true; });
+      const est = $("#estado"); if (est) est.textContent = "Somente leitura: ficha de " + donoNome;
+      window.atualizarAbasFicha?.();
+    } catch (e) { if (window.ESQ) window.ESQ.erro($("#ficha"), e.message, recarregar); else $("#ficha").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+  }
+  async function visaoGrupoBasica(campId, recarregar) {
     const box = $("#ficha"), voltar = $("#voltar"); if (voltar) { voltar.href = "campanha.html?id=" + encodeURIComponent(campId); voltar.textContent = "Voltar ao grupo"; }
     const est = $("#estado"); if (est) est.textContent = "";
     try {

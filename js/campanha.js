@@ -212,20 +212,25 @@
   const ordemAba = ["pers", "diario", "docs", "grupo", "membros"];
   async function carregarGrupo() {
     const consultada = id;
-    try { const r = await nuvem.rpc("grupo_basico", { p_campanha: id }); if (consultada === id) grupoBasico = Array.isArray(r) ? r : []; }
-    catch (e) { if (consultada === id) grupoBasico = { erro: e.message || "indisponível" }; }
+    try {
+      let r;
+      try { r = await nuvem.rpc("grupo_fichas", { p_campanha: id }); } catch (_) { r = await nuvem.rpc("grupo_basico", { p_campanha: id }); }   // sem a função completa, só os dados básicos
+      if (consultada === id) grupoBasico = Array.isArray(r) ? r : [];
+    } catch (e) { if (consultada === id) grupoBasico = { erro: e.message || "indisponível" }; }
     if (consultada === id && aba === "grupo") $("#conteudo").innerHTML = abaGrupo();
   }
+  const avatarGrupo = (nome, foto) => foto && /^data:image\//.test(foto) ? `<img class="av" src="${esc(foto)}" alt="Foto de ${esc(nome)}">` : `<span class="av av0">${esc((nome || "?").charAt(0).toUpperCase())}</span>`;
   function cartaoGrupo(p) {
-    const foto = p.foto && /^data:image\//.test(p.foto) ? `<img class="av" style="width:48px;height:48px;margin:0" src="${esc(p.foto)}" alt="Foto de ${esc(p.nome)}">` : `<span class="av av0" style="width:48px;height:48px;font-size:20px;margin:0">${esc((p.nome || "?").charAt(0).toUpperCase())}</span>`;
-    const pct = p.pv_max > 0 ? Math.max(0, Math.min(100, Math.round((p.pv_atual / p.pv_max) * 100))) : 0;
-    const vida = `<span class="grupo-numeros"><span><b>PV</b> ${p.pv_atual}/${p.pv_max}${p.pv_temp ? ` <span class="muted">(+${p.pv_temp})</span>` : ""}</span><span><b>CA</b> ${p.ca}</span></span>`;
-    return `<a class="res grupo-cartao" style="text-decoration:none;color:inherit" href="personagem.html?id=${encodeURIComponent(p.id)}&grupo=${encodeURIComponent(id)}" aria-label="Ver dados de ${esc(p.nome)}">${foto}<span class="grow"><b>${esc(p.nome)}</b><br><span class="muted">${esc(nomes[p.dono_id] || "Jogador")}</span></span>${vida}</a>`;
+    const f = p.ficha || {}, r = window.FICHA_COMPONENTES?.resumoPersonagem ? window.FICHA_COMPONENTES.resumoPersonagem(f) : { classes: f.classe || "", nivel: Number(f.nivel) || 0 };
+    const linha = [f.raca, r.classes, r.nivel ? "Nível " + r.nivel : ""].filter(Boolean).join(" · ");
+    const pct = p.pv_max > 0 ? Math.max(0, Math.min(100, Math.round((p.pv_atual / p.pv_max) * 100))) : 0, nivelPv = pct <= 25 ? "baixo" : pct <= 60 ? "medio" : "alto";
+    return `<a class="grupo-ficha" href="personagem.html?id=${encodeURIComponent(p.id)}&grupo=${encodeURIComponent(id)}" aria-label="Ver a ficha de ${esc(p.nome)}">${avatarGrupo(p.nome, p.foto || f.foto)}<span class="grupo-ficha-texto"><b class="grupo-nome">${esc(p.nome)}</b>${linha ? `<span class="grupo-sub">${esc(linha)}</span>` : ""}<span class="grupo-jogador">Jogador: ${esc(nomes[p.dono_id] || "Jogador")}</span></span><span class="grupo-vida"><span class="grupo-barra" aria-hidden="true"><span class="grupo-barra-cheia ${nivelPv}" style="width:${pct}%"></span></span><span class="grupo-nums"><span><b>PV</b> ${p.pv_atual}/${p.pv_max}${p.pv_temp ? ` <span class="muted">(+${p.pv_temp})</span>` : ""}</span><span><b>CA</b> ${p.ca}</span></span></span></a>`;
   }
+  const cartaoMestre = (m) => `<div class="grupo-ficha grupo-mestre">${avatarGrupo(nomes[m.usuario_id] || "Mestre", "")}<span class="grupo-ficha-texto"><b class="grupo-nome">${esc(nomes[m.usuario_id] || "Mestre")}</b><span class="grupo-sub">Mestre da campanha</span></span></div>`;
   function abaGrupo() {
     if (grupoBasico === null) return '<span class="muted" role="status">Carregando o grupo…</span>';
     if (!Array.isArray(grupoBasico)) return '<div class="panel"><p class="err">Não foi possível carregar o grupo agora.</p><p class="muted">Este recurso depende de uma atualização do banco de dados que ainda pode não ter sido aplicada.</p><button type="button" class="small" id="grupo-tentar">Tentar novamente</button></div>';
-    return grupoBasico.length ? `<p class="muted">Foto, nome, jogador, PV e CA dos personagens do grupo. Toque em um personagem para ver os dados dele. A ficha completa é vista só pelo dono e pelo mestre.</p>${grupoBasico.map(cartaoGrupo).join("")}` : '<div class="estado-vazio"><strong>Nenhum personagem no grupo ainda</strong><p>Quando os jogadores tiverem personagens vinculados, eles aparecem aqui.</p></div>';
+    return grupoBasico.length ? `<p class="muted">Foto, nome, jogador, PV e CA dos personagens do grupo. Toque em um personagem para ver a ficha dele em modo leitura. Inventário, dinheiro e observações não aparecem.</p><h3 class="sub">Mestre</h3>${membros.filter((m) => m.papel === "mestre").map(cartaoMestre).join("") || '<p class="muted">Sem mestre listado.</p>'}<h3 class="sub">Jogadores</h3>${grupoBasico.map(cartaoGrupo).join("")}` : '<div class="estado-vazio"><strong>Nenhum personagem no grupo ainda</strong><p>Quando os jogadores tiverem personagens vinculados, eles aparecem aqui.</p></div>';
   }
 
   async function desenhar() {
