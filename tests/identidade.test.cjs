@@ -7,7 +7,7 @@ const PAGINAS=['index.html','conta.html','campanha.html','personagem.html','cria
 test('nome oficial: todas as páginas e o manifesto usam "Compêndio 5e" e nenhuma exibe o nome antigo',()=>{
   for(const p of PAGINAS){const h=ler(p);assert.match(h,/<title>[^<]*Compêndio 5e<\/title>/,p);assert.ok(!/Rastreador D&(amp;)?D/.test(h),p+' ainda cita o nome antigo');}
   for(const f of ['js/navegacao.js','js/campanha.js','js/personagem.js','js/entrar.js','js/conta.js'])assert.ok(!/Rastreador D&(amp;)?D/.test(ler(f)),f);
-  const m=JSON.parse(ler('manifest.json'));assert.equal(m.name,'Compêndio 5e');assert.equal(m.short_name,'Compêndio 5e');
+  const m=JSON.parse(ler('manifest.json'));assert.equal(m.name,'Compêndio 5e');assert.equal(m.short_name,'Compêndio');
   assert.match(ler('README.md'),/^# Compêndio 5e/);
 });
 test('o que NÃO deve mudar com o nome: id, start_url, scope, chaves de armazenamento e identificadores técnicos',()=>{

@@ -51,6 +51,10 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261111194808_imagens_campanhas.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261112090000_enquadramento_campanhas.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261112090000_enquadramento_campanhas.sql
+      - name: Proteção dos campos exclusivos do mestre — aplicar e reaplicar localmente
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261112171652_proteger_campos_mestre.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261112171652_proteger_campos_mestre.sql
       - name: Permissões de imagens em banco descartável
         run: |
           psql -v ON_ERROR_STOP=1 -f tests/imagens-campanhas-permissoes.test.sql
@@ -60,4 +64,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f tests/supabase-permissoes.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/admin.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/fase5-jogo-permissoes.test.sql
+      - name: Concessões e itens — ataques diretos e estados reais dos motores
+        run: |
+          node tests/fixtures/campos-mestre.cjs > "$RUNNER_TEMP/campos-mestre-fixture.sql"
+          psql -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/campos-mestre-fixture.sql" -f tests/campos-mestre.test.sql
       - run: bash tests/acervo-concorrencia.sh
