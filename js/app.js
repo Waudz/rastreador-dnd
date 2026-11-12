@@ -166,7 +166,7 @@
       const r = ALL.filter((m) => match(m, q)).slice(0, 12);
       sug.innerHTML = r.map((m) => `<div data-sug="${esc(m.key)}">${av(m, 22)}${esc(pt(m) || m.name)}${pt(m) ? ` <span class="muted">(${esc(m.name)})</span>` : ""} <span class="muted">· ${CAT[catOf(m)]} · ${lvl(m)} · CA ${m.armor_class} · PV ${m.hit_points} · ${esc(srcOf(m))}</span></div>`).join("");
     }
-    $("#name").addEventListener("input", () => { if (window.__ini.pending) $("#ini-mod").value = 0; window.__ini.pending = ""; sugg(); });
+    $("#name").addEventListener("input", () => { if (window.__ini.pending) { $("#ini-mod").value = 0; limparPrevia(); } window.__ini.pending = ""; sugg(); });
     $("#name").addEventListener("focus", sugg);
     const uniq = (base) => {
       const re = new RegExp("^" + rx(base) + "(?: (\\d+))?$");
@@ -176,13 +176,24 @@
     };
     const iniBonus = (m) => m.initiative_bonus ?? Math.floor(((m.ability_scores?.dexterity ?? 10) - 10) / 2);
     const rollInit = (m) => 1 + Math.floor(Math.random() * 20) + iniBonus(m);
+    const sinal = (n) => (n >= 0 ? "+" : "-") + Math.abs(n);
+    function limparPrevia() { const p = $("#add-previa"); if (p) { p.hidden = true; p.innerHTML = ""; } const c = $("#add-conta"); if (c) c.textContent = ""; }
     function pick(k) {
       const m = ALL.find((x) => x.key === k); if (!m) return;
-      $("#name").value = uniq(pt(m) || m.name); $("#kind").value = CAT[catOf(m)]; $("#initiative").value = 1 + Math.floor(Math.random() * 20); // só o d20 (você pode trocar pelo seu); o modificador vai no campo ao lado
-      $("#ini-mod").value = iniBonus(m);
+      $("#name").value = uniq(pt(m) || m.name); $("#kind").value = CAT[catOf(m)];
+      $("#ini-mod").value = iniBonus(m); $("#initiative").value = ""; $("#add-conta").textContent = "";   // a iniciativa sai do botão d20 ou do seu dado
       $("#hp").value = $("#maxHp").value = m.hit_points; $("#ac").value = m.armor_class;
       window.__ini.pending = m.key; sug.hidden = true;
+      const p = $("#add-previa"); p.hidden = false;
+      p.innerHTML = `${av(m, 56)}<div class="add-previa-info"><b>${esc(pt(m) || m.name)}</b>${pt(m) ? `<span class="muted">${esc(m.name)}</span>` : ""}<span>CA <b>${m.armor_class}</b></span><span>PV <b>${m.hit_points}</b></span><span>Iniciativa <b>${sinal(iniBonus(m))}</b></span></div>`;
     }
+    /* d20 + modificador: usa a rolagem compartilhada (js/rolagens.js) e mostra a conta; o resultado continua editável */
+    $("#add-d20").addEventListener("click", () => {
+      const mod = Math.round(Number($("#ini-mod").value) || 0), r = window.ROLAGENS.rolar("1d20", mod);
+      $("#initiative").value = r.total; $("#add-conta").textContent = `d20 ${r.dados[0]} ${sinal(mod).replace("+", "+ ").replace("-", "- ")} = ${r.total}`;
+    });
+    $("#initiative").addEventListener("input", () => { $("#add-conta").textContent = $("#initiative").value === "" ? "" : "Valor informado por você"; });
+    $("#add-form").addEventListener("submit", () => { limparPrevia(); });
     window.__ini.acoesDe = (key) => {
       const m = ALL.find((x) => x.key === key); if (!m) return [];
       return (m.actions || []).map((a) => { const r = rollInfo(a); return r ? { nome: nmA(a), hit: r.hit, dmg: r.dmg } : null; }).filter(Boolean);

@@ -168,3 +168,11 @@ test('cartão da iniciativa: identidade em cima e ações embaixo (campo Ini., R
  const css=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','css','fluxos.css'),'utf8'),bloco=css.slice(css.indexOf('/* Iniciativa dos personagens: cartão em duas linhas'),css.indexOf('/* Celular e telas de toque'));
  for(const regra of bloco.split('\n').filter(l=>l.includes('{')&&!l.startsWith('/*')&&!l.startsWith('.ci-resultado')))assert.ok(regra.startsWith('#ci-lista .ci-cartao'),'regra restrita: '+regra.slice(0,60));
 });
+test('Adicionar combatente: prévia do monstro (foto, nome, CA, PV, iniciativa), botão d20 com a conta, resultado editável, Adicionar em destaque; improvisados e iniciativa em branco continuam',()=>{
+  const fs=require('node:fs'),lerA=p=>fs.readFileSync(require('node:path').join(__dirname,'..',p),'utf8'),html=lerA('iniciativa.html'),app=lerA('js/app.js'),ini=lerA('js/iniciativa.js'),css=lerA('css/fluxos.css'),ic=lerA('js/icones.js');
+  assert.match(html,/id="add-previa"/);assert.match(html,/id="add-d20"[^>]*aria-label="Rolar 1d20 mais o modificador de iniciativa"><i data-i="d20">/);assert.match(html,/<input id="initiative"[^>]*step="1"[^>]*placeholder/);assert.ok(!/id="initiative"[^>]*required/.test(html),'iniciativa pode ficar em branco (pendente)');
+  assert.match(html,/<input id="name"[^>]*required/,'só o nome é obrigatório para um combatente improvisado');assert.match(ic,/d20: '/);
+  assert.match(app,/window\.ROLAGENS\.rolar\("1d20", mod\)/,'usa a rolagem compartilhada, sem duplicar');assert.match(app,/\$\{av\(m, 56\)\}/,'foto cadastrada ou inicial do nome quando não há imagem');assert.match(app,/Valor informado por você/);
+  assert.match(ini,/initiative: \$\("initiative"\)\.value\.trim\(\) === "" \? null : Number\(\$\("initiative"\)\.value\)/,'o campo é o resultado final, sem somar o modificador duas vezes');
+  assert.match(css,/#add-form \.add-wrap button \{ width:100%; min-height:46px/);assert.ok(!/^\.form-grid|^\.add-wrap/m.test(css.slice(css.indexOf('/* Iniciativa: "Adicionar combatente"'))),'regras restritas ao #add-form');
+});

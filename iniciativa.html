@@ -120,12 +120,13 @@
     </details>
     <details class="vista-iniciativa panel" id="adicionar-combatente" open>
       <summary class="panel-title"><i data-i="plus"></i>Adicionar combatente</summary>
-      <form id="add-form" class="form-grid">
+      <form id="add-form" class="form-grid add-form-novo">
         <div class="field-name">
           <label for="name">Nome</label>
           <input id="name" name="name" placeholder="Nome — digite para buscar no bestiário" maxlength="48" autocomplete="off" required>
           <div id="sug" class="sug" hidden></div>
         </div>
+        <div id="add-previa" class="add-previa" hidden></div>
         <div>
           <label for="kind">Tipo</label>
           <select id="kind" name="kind">
@@ -135,12 +136,8 @@
           </select>
         </div>
         <div>
-          <label for="initiative">Iniciativa (d20)</label>
-          <input id="initiative" name="initiative" type="number" value="10" step="1" required>
-        </div>
-        <div>
-          <label for="ini-mod">Modificador</label>
-          <input id="ini-mod" name="ini-mod" type="number" value="0" step="1" title="Somado à iniciativa; vem da Destreza do monstro escolhido">
+          <label for="ac">CA</label>
+          <input id="ac" name="ac" type="number" value="10" min="0" step="1" required>
         </div>
         <div>
           <label for="hp">PV atuais</label>
@@ -150,9 +147,17 @@
           <label for="maxHp">PV máximos</label>
           <input id="maxHp" name="maxHp" type="number" value="10" min="1" step="1" required>
         </div>
-        <div>
-          <label for="ac">CA</label>
-          <input id="ac" name="ac" type="number" value="10" min="0" step="1" required>
+        <div class="add-ini">
+          <div>
+            <label for="ini-mod">Mod.</label>
+            <input id="ini-mod" name="ini-mod" type="number" value="0" step="1" title="Modificador de iniciativa (Destreza); usado pelo botão d20">
+          </div>
+          <button type="button" id="add-d20" class="d20-btn" title="Rolar 1d20 + modificador" aria-label="Rolar 1d20 mais o modificador de iniciativa"><i data-i="d20"></i></button>
+          <div>
+            <label for="initiative">Iniciativa</label>
+            <input id="initiative" name="initiative" type="number" step="1" placeholder="d20 + mod." title="Resultado final da iniciativa: role com o botão d20 ou digite o valor do seu dado">
+          </div>
+          <span id="add-conta" class="muted add-conta" role="status" aria-live="polite"></span>
         </div>
         <div class="add-wrap">
           <button class="primary" type="submit">Adicionar</button>
