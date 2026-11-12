@@ -1,6 +1,6 @@
 # Compêndio 5e — instruções para agentes (Codex e Claude)
 
-Pasta única: `C:\Users\LocaGOra\Downloads\William`. Repositório `Waudz/rastreador-dnd` (GitHub Pages, branch `main`). Só um agente edita por vez. Antes de começar: `git status` e `git pull --rebase origin main`. **Nunca fazer push nem alterar o Supabase sem o William pedir.**
+Pasta única: `<raiz-do-repositorio>`. Repositório `Waudz/rastreador-dnd` (GitHub Pages, branch `main`). Só um agente edita por vez. Antes de começar: `git status` e `git pull --rebase origin main`. **Nunca fazer push nem alterar o Supabase sem o William pedir.**
 
 ## Ler primeiro (e só isso)
 1. `docs/PENDENCIAS.md`: estado atual e **próxima tarefa**.
@@ -28,4 +28,4 @@ Site estático (HTML/CSS/JS puro, scripts clássicos com `defer`, sem build, sem
 - pt-BR. **Sem emojis; ícones SVG** (`js/icones.js`). Vocabulário: salvaguarda, círculo, metros.
 - Não misturar dados de campanhas. Nunca pedir nem gravar senha, token, `service_role` ou chave secreta.
 - Chaves de armazenamento e identificadores técnicos não mudam com o nome (`dnd5e_*`, `ini_*`, prefixo do cache `rastreador-vN`).
-- Arquivos privados ficam em `C:\Users\LocaGOra\Downloads\William-privado`, fora do repositório.
+- Arquivos privados ficam em `<diretorio-privado>`, fora do repositório.

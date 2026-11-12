@@ -23,7 +23,7 @@ function fixture({guardada,antiga,hash='',search='',config={},online=true,sessao
     updateUser:pega('updateUser',{data:{user:USUARIO},error:null}),reauthenticate:pega('reauthenticate',{data:{},error:null}),refreshSession:pega('refreshSession',{data:{session:SESSAO},error:null})
   };
   const supabase={createClient:(u,k,o)=>{criacoes.push({u,k,o});return {auth};}};
-  const fetch=async(url,opt={})=>{urls.push({url:String(url),auth:(opt.headers||{}).Authorization||''});const r=est.fetch?est.fetch(String(url)):{status:200,json:[]};return {ok:r.status<400,status:r.status,statusText:'x',text:async()=>JSON.stringify(r.json)};};
+  const fetch=async(url,opt={})=>{urls.push({url:String(url),auth:(opt.headers||{}).Authorization||''});const r=est.fetch?est.fetch(String(url)):{status:200,json:[]};return {ok:r.status<400,status:r.status,statusText:'x',text:async()=>{if(r.erroLeitura)throw new Error("conexão interrompida");return Object.prototype.hasOwnProperty.call(r,"texto")?r.texto:JSON.stringify(r.json);}};};
   const window={NUVEM_CONFIG:{url:'https://projeto.supabase.invalid',chave:'chave-publica-de-teste',...config},supabase};
   const ctx=vm.createContext({window,localStorage,fetch,location:{hash,search,href:'https://site.invalid/conta.html',pathname:'/conta.html'},history:{replaceState:(a,b,c)=>trocas.push(c)},document:{hidden:false,addEventListener(){}},URLSearchParams,setTimeout,clearTimeout,encodeURIComponent,navigator:{onLine:online}});
   executar('js/nuvem.js',ctx);
@@ -164,4 +164,18 @@ test('senha fraca recusada pelo servidor vira mensagem em português',async()=>{
 test('o armazenamento local guarda só a sessão do SDK, nunca a senha',async()=>{
   const f=fixture();await f.nuvem.entrar('ana@example.invalid','senha-original-1');
   assert.ok(![...f.localStorage.dados.values()].some(v=>String(v).includes('senha-original-1')));
+});
+
+test('resposta HTTP 200 malformada não é tratada como sucesso nem repetida automaticamente',async()=>{
+ const f=fixture({guardada:SESSAO});let envios=0;f.est.fetch=()=>{envios++;return {status:200,texto:'<html>proxy indisponível</html>'};};
+ await assert.rejects(()=>f.nuvem.patch('personagens?id=eq.teste',{nome:'Teste'}),/resposta inválida/);assert.equal(envios,1);assert.ok(f.nuvem.usuario());
+});
+test('erro HTTP não JSON preserva status e resposta 204 vazia continua válida',async()=>{
+ const f=fixture({guardada:SESSAO});f.est.fetch=()=>({status:503,texto:'<html>indisponível</html>'});
+ await assert.rejects(()=>f.nuvem.get('campanhas'),e=>e.status===503&&!e.message.includes('<html>'));
+ f.est.fetch=()=>({status:204,texto:''});assert.equal(await f.nuvem.apagar('personagens?id=eq.teste'),null);
+});
+test('interrupção ao ler o corpo da resposta avisa falha de rede sem encerrar sessão',async()=>{
+ const f=fixture({guardada:SESSAO});f.est.fetch=()=>({status:200,erroLeitura:true});
+ await assert.rejects(()=>f.nuvem.get('campanhas'),e=>e.semRede===true);assert.ok(f.nuvem.usuario());
 });

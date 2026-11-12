@@ -48,7 +48,7 @@ test('ficha: jogador só vê as próprias; dono e campanha não mudam por quem n
   assert.match(limpo,/if not public\.eh_mestre\(old\.campanha_id\) then[\s\S]*?new\.campanha_id\s*:=\s*old\.campanha_id;\s*new\.dono_id\s*:=\s*old\.dono_id/);
 });
 test('nenhum segredo (senha, service_role, token ou chave privada) no código publicado',()=>{
-  const arquivos=[];(function varre(d){for(const e of fs.readdirSync(path.join(root,d),{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory()){if(!['.git','node_modules','tests','docs'].includes(e.name))varre(p);}else if(/\.(js|html|json|sql|md|yml|cjs|py)$/.test(e.name))arquivos.push(p);}})('.');
+  const arquivos=[];(function varre(d){for(const e of fs.readdirSync(path.join(root,d),{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory()){if(!['.git','node_modules'].includes(e.name))varre(p);}else if(/\.(js|html|json|sql|md|yml|cjs|py)$/.test(e.name))arquivos.push(p);}})('.');
   const padroes=[/sb_secret_[A-Za-z0-9_-]{10,}/,/github_pat_[A-Za-z0-9_]{20,}/,/ghp_[A-Za-z0-9]{30,}/,/BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY/,/eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}/];
   for(const a of arquivos){const t=fs.readFileSync(path.join(root,a),'utf8');for(const p of padroes)assert.ok(!p.test(t),'possível segredo em '+a);}
   assert.ok(!/service_role/.test(ler('js/nuvem.js')+ler('js/config-nuvem.js')+ler('js/conta.js')));

@@ -28,7 +28,7 @@ Como o armazenamento local é compartilhado entre os dois endereços, a migraç�
 
 1. **Minha conta, "Backup e restauração":** baixar o backup das criações (monstros e fichas próprias, com fotos). Sincroniza e baixa o que está na conta.
 2. **Iniciativa, "Dados deste aparelho":** baixar o backup do combate (por campanha, o combate ativo) e, se usou o aplicativo sem conta, o backup das criações de visitante.
-3. **Repositório:** guardar uma cópia completa do histórico fora do GitHub, por exemplo `git clone --mirror https://github.com/Waudz/rastreador-dnd.git` em `C:\Users\LocaGOra\Downloads\William-privado`, antes de renomear.
+3. **Repositório:** guardar uma cópia completa do histórico fora do GitHub, por exemplo `git clone --mirror https://github.com/Waudz/rastreador-dnd.git` em `<diretorio-privado>`, antes de renomear.
 4. Conferir no Supabase (painel, Table Editor) que as tabelas de campanhas e personagens têm os dados esperados. A mudança não os toca, mas é o ponto de referência.
 
 Recuperação, se algo parecer vazio no novo endereço (por exemplo, outro navegador ou perfil, onde nunca houve dados locais): entrar na conta (campanhas, personagens e criações sincronizadas voltam do servidor) e usar "Restaurar" com os arquivos de backup. A restauração só adiciona e nunca apaga nem sobrescreve sem confirmação.

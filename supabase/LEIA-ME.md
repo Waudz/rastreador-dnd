@@ -12,8 +12,8 @@ Passo a passo para criar o projeto gratuito que guarda contas, campanhas, person
 ## 2. Criar as tabelas e as regras de acesso
 
 1. No menu lateral, **SQL Editor** → **New query**.
-2. Abra o arquivo `01-schema.sql` desta pasta, copie tudo, cole no editor e clique em **Run**.
-3. Deve aparecer "Success. No rows returned". Se aparecer algum erro, copie a mensagem e me mande.
+2. Em um projeto vazio, aplique nesta ordem: `01-schema.sql`, `02-acervos-e-transferencia.sql`, `03-administracao-conta.sql`, `migrations/20261111194808_imagens_campanhas.sql`, `migrations/20261112090000_enquadramento_campanhas.sql` e `migrations/20261112171652_proteger_campos_mestre.sql`. Revise cada script antes de executar. Em projetos existentes, confira primeiro o estado do esquema e o histórico de migrações; não reaplique tudo automaticamente.
+3. Deve aparecer "Success. No rows returned". Se aparecer erro, interrompa e revise a mensagem sem compartilhar credenciais.
 
 ## 3. Endereços do site no login
 
@@ -38,18 +38,18 @@ Resumo do que precisa estar assim em **Authentication**:
 
 O link "Entrar por link no e-mail" também usa o e-mail próprio (SMTP) configurado acima.
 
-## 5. Me passar os dados do projeto
+## 5. Configuração pública do cliente
 
 Em **Project Settings → API** copie:
 
 - **Project URL** (algo como `https://abcdefgh.supabase.co`);
 - **anon public key** (uma chave longa que começa com `eyJ`).
 
-Esses dois valores são públicos por desenho: ficam no código do site, e a proteção está nas regras do passo 2. **Nunca envie** a `service_role key` nem a senha do banco, para ninguém.
+Configure a URL e a chave em `js/config-nuvem.js` (chave publicável atual ou anon pública legada). Ajuste também o `connect-src` da CSP nos HTML para o novo domínio. Esses dois valores são públicos por desenho: ficam no código do site, e a proteção está nas regras do passo 2. **Nunca envie** a `service_role key` nem a senha do banco, para ninguém.
 
-## 6. Evitar que o projeto pause
+## 6. Disponibilidade
 
-Projetos gratuitos podem ser pausados depois de um período sem uso. O repositório terá uma rotina semanal do GitHub Actions que faz uma consulta simples ao banco para manter o projeto ativo. Se mesmo assim ele pausar, é só clicar em **Restore** no painel.
+O projeto não possui rotina de keep-alive. Acompanhe o estado e os limites do plano no painel do Supabase; restaure o projeto se estiver pausado. Configure backups e um procedimento de recuperação independente do GitHub Pages.
 
 ## O que cada tabela guarda
 
@@ -62,3 +62,5 @@ Projetos gratuitos podem ser pausados depois de um período sem uso. O repositó
 | `documentos` | resumos de sessão, notas e arquivos | membros leem o que for visível; só o mestre cria e edita |
 
 Qualquer pessoa logada pode criar campanhas (e ser mestre delas) e participar de várias, com um código de convite. Os arquivos (PDF, imagens, texto, até 10 MB cada) ficam num bucket privado do Supabase Storage.
+
+Imagens opcionais de campanha ficam no bucket privado `campanhas-visuais`, com referências em `campanha_visual`. Documentos continuam no bucket `documentos`. A proteção granular dos campos do mestre está na última migração; veja `docs/PUBLICACAO-CAMPOS-MESTRE.md`.

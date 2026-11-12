@@ -1,6 +1,6 @@
 # Validação real de imagens com contas temporárias
 
-Estado: cenário de três contas e duas campanhas autorizado; **criação ainda não iniciada**. Nenhum usuário ou campanha temporária foi criado. Projeto-alvo: rastreador-dnd / pdjzahpxjrlbqqtzkfdr. A migração de imagens já foi aplicada; push/deploy permanecem bloqueados.
+Estado: roteiro reutilizável. O andamento de cada execução e seus identificadores ficam em registros privados; não deduza o estado atual a partir dos exemplos deste documento.
 
 ## Autorização antes da criação
 
@@ -19,7 +19,7 @@ Campanha A: `<execução> — Imagens A`, exclusiva para todos os testes de imag
 
 ## Aliases Gmail e criação pelo painel
 
-William informou Gmail. Usar etiquetas com sinal de mais, sem criar três caixas: `seunome+qaimg-mestre-1111@gmail.com`, `seunome+qaimg-jogador-1111@gmail.com`, `seunome+qaimg-externo-1111@gmail.com`. São modelos: substituir seunome pela parte real do Gmail e preferir um sufixo único da execução. Não cadastrar os endereços literais destes exemplos. As mensagens chegam à caixa original; as contas de Auth devem ter três UUIDs distintos, verificados depois da criação.
+Para uma caixa Gmail, Usar etiquetas com sinal de mais, sem criar três caixas: `seunome+qaimg-mestre-1111@gmail.com`, `seunome+qaimg-jogador-1111@gmail.com`, `seunome+qaimg-externo-1111@gmail.com`. São modelos: substituir seunome pela parte real do Gmail e preferir um sufixo único da execução. Não cadastrar os endereços literais destes exemplos. As mensagens chegam à caixa original; as contas de Auth devem ter três UUIDs distintos, verificados depois da criação.
 
 1. Opcionalmente, William envia para si uma mensagem destinada a um dos aliases e confirma o recebimento na mesma caixa.
 2. Abrir https://supabase.com/dashboard/project/pdjzahpxjrlbqqtzkfdr/auth/users e confirmar o projeto rastreador-dnd.
@@ -36,14 +36,14 @@ Fonte Gmail: https://support.google.com/mail/answer/22370?hl=pt-BR. Fonte Supaba
 
 1. Confirmar novamente projeto/ref, bucket privado e versão da migração aplicada.
 2. Capturar UUIDs e hashes das campanhas, membros, personagens e documentos existentes em registro privado, somente para comparar ao final. Registrar também os IDs de usuários existentes, sem exportar credenciais.
-3. Manter um manifesto privado em `C:\Users\LocaGOra\Downloads\William-privado` com execução, data, UUIDs criados, UUIDs das duas campanhas, responsáveis e caminhos de TODOS os uploads, inclusive tentativas/orfãos. Nada desse manifesto vai para o GitHub.
+3. Manter um manifesto privado em `<diretorio-privado>` com execução, data, UUIDs criados, UUIDs das duas campanhas, responsáveis e caminhos de TODOS os uploads, inclusive tentativas/orfãos. Nada desse manifesto vai para o GitHub.
 4. Se um e-mail já existir, interromper; não redefinir senha nem adaptar uma conta real para os testes.
 
 ## Criação e login seguros
 
 O conector Supabase disponível nesta sessão não possui operações de criação/exclusão de usuários do Auth. Usar **Authentication → Users** no painel do projeto, operado por William, ou um canal administrativo seguro previamente aprovado. Não inserir/excluir diretamente em `auth.users` por SQL e não solicitar service_role/secret na conversa. A alternativa é cadastro normal pelo aplicativo com confirmação nos aliases controlados; não desabilitar confirmação, CAPTCHA ou outras proteções globais para facilitar o teste.
 
-William digita senhas temporárias e confirmações diretamente na interface. Confirmar o e-mail somente das contas temporárias, sem alterar regras globais de autenticação. Após cada criação, registrar o UUID retornado e verificar que é novo e não está na lista anterior. Não fornecer acesso administrativo global a essas contas.
+O responsável digita senhas temporárias e confirmações diretamente na interface. Confirmar o e-mail somente das contas temporárias, sem alterar regras globais de autenticação. Após cada criação, registrar o UUID retornado e verificar que é novo e não está na lista anterior. Não fornecer acesso administrativo global a essas contas.
 
 Abrir três perfis isolados de navegador (ou navegadores diferentes), rotulados Mestre/Jogador/Externo. Abas comuns do mesmo perfil compartilham sessão e não são isolamento suficiente. Não usar o perfil da conta principal.
 

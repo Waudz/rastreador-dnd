@@ -1,79 +1,99 @@
 # Compêndio 5e
 
-Compêndio 5e: rastreador de iniciativa, fichas, campanhas, monstros e magias de D&D 5ª edição (2014), em português. Site estático (HTML, CSS e JavaScript puro, sem build e sem framework) publicado no GitHub Pages, com contas e campanhas no Supabase e instalável como PWA.
+Aplicativo web em português para campanhas e sessões de Dungeons & Dragons 5ª edição, com regras de 2014. Reúne fichas de personagem, iniciativa, bestiário e magias em uma interface responsiva, instalável como PWA.
 
-Projeto de fãs, sem vínculo com a Wizards of the Coast. Conteúdo de D&D 5e (2014): o SRD 5.1 e resumos próprios de outros livros (veja "Licenças").
+[Abrir o aplicativo](https://waudz.github.io/rastreador-dnd/) · [Licenças e créditos](licencas.html)
 
-## O que faz
+Projeto de fãs, sem vínculo com a Wizards of the Coast. Não utiliza regras da revisão de 2024.
 
-- **Campanhas:** o mestre cria a campanha e convida jogadores com um código. Diário (anotações e documentos), personagens e grupo.
-- **Fichas:** criador guiado e ficha automática (classes, multiclasse, CA, PV, perícias, ataques, magias e espaços, inventário com peso, idiomas).
-- **Iniciativa:** combate com turnos, rodadas, efeitos e condições, dano e cura, relatório final. Cada campanha guarda o seu combate neste aparelho.
-- **Monstros e Magias:** catálogo SRD 5.1 com tradução para o português, fichas próprias (monstro, personagem, NPC) e fotos.
-- **PWA:** funciona offline com o que já foi aberto.
+## Funcionalidades disponíveis
 
-## Onde cada dado fica
+- **Visitante:** consulta de monstros e magias e rastreador de iniciativa sem conta.
+- **Personagens:** criação guiada, evolução e edição com histórico por nível, multiclasse, atributos, proficiências, CA, PV, ataques e recursos de classe contemplados pelo motor.
+- **Jogo:** dano, cura, PV temporários, condições, concentração, salvaguardas contra morte, dados de vida e descansos.
+- **Magias:** listas SRD, preparação, grimório, espaços comuns e de Pacto, Arcanum Místico e concessões do mestre. Escolhas e trocas respeitam as regras implementadas de cada classe/subclasse.
+- **Inventário:** equipamentos, moedas, peso, consumíveis, pergaminhos, cargas, sintonia e um catálogo limitado de itens com efeitos. O mestre pode configurar efeitos admitidos pelo sistema.
+- **Campanhas:** convites por código, participantes, personagens, diário/documentos e símbolo/backdrop opcionais com armazenamento compartilhado.
+- **Iniciativa:** turnos, rodadas, condições, dano/cura, fichas laterais e relatório. O combate é guardado por campanha **neste navegador**, sem sincronização em tempo real.
+- **Acervo:** criações próprias de monstros/NPCs, imagens, backup/restauração e sincronização por conta.
+- **PWA:** cache dos recursos do aplicativo e consulta offline do conteúdo disponível no aparelho. Login, campanhas, uploads e gravações na nuvem exigem conexão; não há promessa de sincronização de edições offline.
 
-| Dado | Onde |
-|---|---|
-| Contas e sessões | Supabase Auth; o navegador guarda só a sessão (`nuvem_sessao`) |
-| Personagens, campanhas, participantes, diário | Supabase (`personagens`, `campanhas`, `membros`, `documentos`) |
-| Documentos e imagens da campanha | Supabase Storage (bucket privado `documentos`) |
-| Criações próprias (monstros, NPCs, fotos) | IndexedDB `bestiario_<id da conta>` e cópia na conta (`acervos`) |
-| SRD em português e catálogo | arquivos deste repositório (`dados/`) |
-| Estado do combate, campanha ativa, preferências | `localStorage` deste aparelho |
+## Arquitetura e dados
 
-Não há mais sincronização por repositório do GitHub: o site não se conecta ao GitHub nem guarda tokens dele.
+Site estático em HTML5, CSS3 e JavaScript, sem framework, empacotador ou etapa de build. O SDK Supabase é distribuído em `vendor/supabase/`, com licença e versão documentadas nessa pasta. Node.js é usado apenas nas ferramentas e nos testes.
 
-## Estrutura
+| Área | Implementação |
+| --- | --- |
+| Construção e progressão | `js/criador-regras.js`, `js/criador.js`, `js/subclasses-2014.js` |
+| Regras e estado de jogo | `js/regras.js`, `js/jogo.js`, `js/recursos.js`, `js/magias-jogo.js` |
+| Inventário e efeitos | `js/inventario.js`, `js/itens-efeitos.js` |
+| Fichas, campanha e combate | `js/personagem.js`, `js/campanha.js`, `js/iniciativa.js` e componentes compartilhados |
+| Persistência remota | `js/nuvem.js`, Supabase Auth, PostgreSQL/RLS e Storage privado |
+| Persistência local | IndexedDB para acervo; localStorage para combate, preferências e sessão do SDK |
+| Catálogos e apresentação | `dados/`, `css/`, HTML na raiz |
+| PWA | `manifest.json`, `sw.js`, `js/navegacao.js` |
+| Banco e validação | `supabase/`, `tests/`, `.github/workflows/validar.yml` |
 
-```
-index.html, conta.html           entrada, campanhas, personagens e conta
-campanha.html, personagem.html   campanha e ficha
-criar-personagem.html            criador guiado
-iniciativa.html                  iniciativa, Monstros e Magias (?aba=)
-licencas.html                    licenças e créditos
-admin.html                       ferramentas do administrador
-sw.js, manifest.json             PWA
-css/                             estilo.css, identidade.css, fichas.css, magias.css
-js/                              um arquivo por área (veja AGENTS.md)
-dados/                           SRD 5.1 em português e catálogo
-supabase/                        SQL do banco e instruções
-tests/                           testes (node --test tests/*.cjs)
-```
+Documentos usam o bucket privado `documentos`; símbolo e backdrop usam `campanhas-visuais`. Imagens de campanha são independentes e só o mestre responsável pode modificá-las. RLS isola os registros; um gatilho valida campos exclusivos do mestre dentro do JSON da ficha. A interface não é a única barreira de autorização. Isso não torna todas as regras de D&D autoritativas no servidor.
+
+O aplicativo não acessa o antigo repositório privado de sincronização nem exige tokens do GitHub. Dados antigos que nunca foram importados precisam ser preservados separadamente: veja [migração do acervo legado](docs/MIGRACAO-REPOSITORIO-PRIVADO.md). Nenhum repositório antigo é excluído por este projeto.
 
 ## Executar localmente
 
-```bash
+Recomendado: Git e Node.js 22, a mesma versão usada no CI. Não é necessário `npm install`.
+
+```sh
+git clone https://github.com/Waudz/rastreador-dnd.git
+cd rastreador-dnd
 node ferramentas/servidor-local.cjs
 ```
 
-Ou `python -m http.server 8000` e abra `http://localhost:8000`. O service worker e o `fetch` não funcionam em `file://`.
+Abra **http://127.0.0.1:8766**. Alternativa: `python -m http.server 8000` e **http://localhost:8000**. Não abra os HTML por `file://`: carregamento de dados e service worker precisam de HTTP/HTTPS. Para revisão visual, o modo visitante não exige conta.
 
-## Testes
+**Atenção:** a configuração distribuída aponta para o Supabase de produção. Para testar gravações, configure um projeto isolado; não use contas ou campanhas reais de terceiros. O servidor local é uma ferramenta de desenvolvimento, não um serviço de hospedagem.
 
-```bash
+## Configurar um Supabase independente
+
+Consulte [supabase/LEIA-ME.md](supabase/LEIA-ME.md) para a ordem dos scripts e [segurança do Supabase](docs/SEGURANCA-SUPABASE.md) para Auth, URLs de retorno e SMTP. Banco vazio e atualização de produção são procedimentos diferentes: nunca execute todos os SQL indiscriminadamente em um projeto existente.
+
+No projeto de desenvolvimento, configure a URL e a chave **publicável** em `js/config-nuvem.js`; ajuste também o destino `connect-src` das políticas CSP nos HTML e os testes que verificam essa configuração. A chave publicável é própria para clientes públicos. Senha do banco, `service_role`, chaves secretas, tokens e credenciais SMTP nunca entram no repositório ou no navegador.
+
+Não há variáveis secretas de GitHub Actions necessárias para os testes: o PostgreSQL do CI é descartável. A senha definida no workflow serve exclusivamente a esse serviço de teste.
+
+## Testar e contribuir
+
+```sh
+# Teste direcionado durante o desenvolvimento
+node --test tests/fase5-integracao.test.cjs
+# Verificação independente das regras
+node tests/regras.test.cjs
+# Suíte JavaScript completa
 node --test tests/*.cjs
 ```
 
-O fluxo do GitHub também aplica `supabase/*.sql` num Postgres temporário e roda `tests/supabase.test.sql`. Isso não substitui validar as regras no projeto real (veja `supabase/VALIDACAO.md`).
+Os testes opcionais de fotografias reais dependem de `FICHAS_REAIS_JSON`, apontando para um arquivo privado fora do repositório; sem ele, são pulados. Não são necessários para executar a suíte pública e não devem ser preenchidos com dados pessoais versionados.
 
-## Publicar
+O workflow `validar.yml` reproduz a instalação do esquema em PostgreSQL 16 descartável, aplica/reaplica as migrações e executa as suítes SQL de permissões e concorrência. Para reproduzir localmente, use um banco PostgreSQL descartável e siga a mesma ordem do workflow com `psql -v ON_ERROR_STOP=1`. **Nunca execute as fixtures de `tests/` em produção.** Testes SQL não substituem login real, navegador e dispositivos físicos.
 
-1. Push na branch `main`; o GitHub Pages publica a pasta raiz.
-2. Ao mudar arquivos já publicados, aumente `CACHE` em `sw.js`.
-3. Quem tem a PWA aberta recebe o aviso "Nova versão disponível".
+Para revisar: comece pelo fluxo alterado e seus testes, confira a fronteira cliente/servidor e preserve isolamento por conta/campanha, conflitos de versão e compatibilidade dos dados. Leia [AGENTS.md](AGENTS.md), [decisões](docs/DECISOES.md) e [pendências](docs/PENDENCIAS.md) antes de contribuir. Faça mudanças pequenas, sem incluir backups, sessões, fichas reais ou segredos. Alterações no Supabase exigem revisão e autorização próprias.
 
-## Licenças
+## Publicação e PWA
 
-- Monstros, magias, classes e raças do **System Reference Document 5.1**, de Wizards of the Coast LLC, sob **Creative Commons Attribution 4.0** (dados obtidos pela API Open5e). A atribuição completa e as alterações feitas estão em [`licencas.html`](licencas.html) e no rodapé de todas as páginas.
-- As traduções de `dados/` são do autor do projeto, feitas com auxílio de IA a partir do texto do SRD (confirmado pelo autor em 11/11/2026). São obras derivadas do SRD, publicadas sob a mesma licença CC BY 4.0, com a atribuição e a indicação das alterações em `licencas.html`.
-- A estrutura do criador foi adaptada do HeroQuill (MIT); aviso em [`docs/FONTES-CRIADOR.md`](docs/FONTES-CRIADOR.md).
-- O texto de livros publicados e de outras edições não faz parte do repositório. O criador também oferece resumos próprios de raças, subclasses e antecedentes de outros livros de D&D 5e (2014); esse material **não** é coberto pela licença do SRD e fica por conta do autor (decisão registrada em 11/11/2026). Se o projeto for distribuído amplamente, vale revisar esse ponto.
+O destino é **Waudz/rastreador-dnd**, branch `main`, GitHub Pages a partir da raiz (`/`). Configure essa origem em Settings → Pages; o workflow de validação não é um deploy. Após os testes e a autorização do responsável, publique os commits e confira a versão no endereço público.
 
-## Documentos do projeto
+Ao publicar mudanças em recursos do aplicativo, incremente `CACHE` em `sw.js`. Preserve caminhos relativos, `id`, `scope` e `start_url` da PWA para hospedagem em `/rastreador-dnd/`. Confirme atualização do cache, aviso de nova versão, login/retorno e navegação. No Android, confira instalação, nome, atualização e consulta offline. Não mude o endereço/origem sem planejar a migração do armazenamento local.
 
-- `AGENTS.md` e `CLAUDE.md`: contexto e regras de trabalho.
-- `docs/CHECKLIST.md`, `docs/PENDENCIAS.md`: decisões e pendências.
-- `docs/MIGRACAO-REPOSITORIO-PRIVADO.md`: como confirmar que os dados antigos foram preservados antes de arquivar o repositório privado.
-- `supabase/LEIA-ME.md`, `supabase/VALIDACAO.md`: banco de dados.
+A [revisão técnica de publicação](docs/REVISAO-TECNICA-PUBLICACAO.md) registra a correção recente, os pontos estruturais a melhorar e os limites da validação.
+
+## Limitações e planejamento
+
+A cobertura de classes, subclasses, talentos e itens é parcial. Descrição no catálogo não significa automação mecânica completa; efeitos dependentes de alvo/distância/cobertura, resistências condicionais e diversas exceções continuam exigindo decisão à mesa. Não há motor completo de encontros nem combate multiusuário em tempo real.
+
+Estão **planejados**, não disponíveis: encontros preparados, lojas/saques, iniciativa em tempo real e concessões extras genéricas de características com sentidos/efeitos por alvo. O caso de cegueira permanente com Luta às Cegas está documentado como requisito futuro; a condição não deve ser simplesmente removida. Veja a lista atual em [PENDENCIAS.md](docs/PENDENCIAS.md).
+
+## Licenças e conteúdo
+
+- SRD 5.1 da Wizards of the Coast LLC: **CC BY 4.0**. Dados derivados da Open5e e traduções/adaptações do projeto têm atribuição em [licencas.html](licencas.html).
+- O criador inclui adaptação de HeroQuill (MIT): [fontes e avisos](docs/FONTES-CRIADOR.md).
+- Resumos próprios de opções de suplementos não são cobertos pela licença do SRD; sua presença não implica licença geral dos livros. O texto integral dos livros não integra o projeto.
+- Licenças dos componentes de terceiros permanecem nos respectivos diretórios. Não presuma que a licença do SRD se aplica automaticamente a todo o código e a todos os recursos do repositório.

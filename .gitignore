@@ -1,1 +1,15 @@
 supabase/.temp/
+node_modules/
+.env
+.env.*
+!.env.example
+*.local
+*.log
+*.pem
+*.key
+*.dump
+coverage/
+backups/
+privado/
+.DS_Store
+Thumbs.db

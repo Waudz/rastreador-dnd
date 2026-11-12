@@ -81,12 +81,16 @@
   async function http(url, opt) {
     let r;
     try { r = await fetch(url, opt); } catch (e) { const x = new Error(SEM_REDE); x.semRede = true; throw x; }
-    const txt = await r.text();
-    let j = null; try { j = txt ? JSON.parse(txt) : null; } catch (_) {}
+    let txt;
+    try { txt = await r.text(); }
+    catch (_) { const e = new Error(SEM_REDE); e.semRede = true; throw e; }
+    let j = null, jsonInvalido = false;
+    try { j = txt ? JSON.parse(txt) : null; } catch (_) { jsonInvalido = true; }
     if (!r.ok) {
       const m = (j && (j.message || j.msg || j.error_description || j.error)) || r.statusText || "Erro " + r.status;
       const e = new Error(traduz(String(m))); e.status = r.status; e.detalhe = j; throw e;
     }
+    if (jsonInvalido) throw new Error("O servidor retornou uma resposta inválida. Confira os dados antes de tentar novamente.");
     return j;
   }
   const JSONH = { apikey: C.chave, "Content-Type": "application/json" };

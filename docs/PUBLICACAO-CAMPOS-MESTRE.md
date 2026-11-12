@@ -1,6 +1,6 @@
 # Publicação — proteção dos campos do mestre
 
-Estado: preparada e testada somente em banco descartável. **Produção continua sem esta correção até autorização e aplicação.** Push/deploy bloqueados.
+Estado: migração autorizada e aplicada em produção em 12/11/2026; validação SQL de permissões aprovada. Publicação ainda não realizada.
 
 ## Mudança proposta
 
@@ -34,3 +34,19 @@ Uma falha antes do COMMIT não deixa migração parcial. Se houver incompatibili
 A proteção não transforma todo o jogo em regras autoritativas no servidor: atributos, construção e estado normal continuam editáveis conforme o produto existente. Não implementa concessões extras futuras, sentidos por alvo, recursos de todas as subclasses nem regras ausentes. Dados legados inconsistentes podem ter salvamentos recusados até revisão; registros existentes não são apagados. As validações locais não substituem Auth, configuração, backup e Android reais.
 
 Referências: [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security) e [gatilhos PostgreSQL](https://supabase.com/docs/guides/database/postgres/triggers).
+
+## Preflight real — 12/11/2026
+
+- Base local: commit `754371a`, cache v102; sem alterações de código. Projeto confirmado: `rastreador-dnd` / `pdjzahpxjrlbqqtzkfdr`, ACTIVE_HEALTHY, PostgreSQL 17.11. SHA-256 da migração confere com o plano.
+- Leitura de produção: 3 campanhas, 7 vínculos, 5 personagens. Nenhum formato inválido, contador inválido, concessão de mestre legada ou item com efeitos a revisar. Coluna e RPC de enquadramento já existem, apesar de não constarem no histórico remoto de migrações.
+- Backup lógico privado em `<diretorio-privado>\publicacao-20261112\backup-publicacao.json`, SHA-256 `9f6b78e67367a1cbcfa82b3b24268fc34d50287b396f36f931fc66b339324e6b`. Inclui 9 perfis, 3 campanhas, 7 vínculos, 5 personagens e 2 registros visuais. Restauração em PGlite aprovada, conteúdo e integridade referencial conferidos; migração de segurança aplicada somente nessa cópia. Verificação em `verificacao.json`, no mesmo diretório. Não inclui Auth nem arquivos Storage; não foi possível confirmar backups automáticos pelo conector. Esses serviços não são alterados pela migração proposta.
+- Advisors: alertas de execução de SECURITY DEFINER incluem gatilhos/event trigger e RPCs autenticadas existentes; não demonstram nova falha. Proteção contra senhas vazadas está desativada no Auth (configuração não alterada; referência: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+- Nenhuma escrita em produção, push ou deploy. Aguardar autorização explícita para aplicar **somente** `20261112171652_proteger_campos_mestre.sql`; depois validar permissões reais e fluxos essenciais antes de publicar. Não repetidos os 390 testes completos: não houve mudança de implementação. Permanecem pendentes testes Android de instalação/nome, atualização do cache, navegação mobile e uso offline após publicação.
+
+## Aplicação autorizada e validação — 12/11/2026
+
+Aplicado exclusivamente o conteúdo aprovado de `20261112171652_proteger_campos_mestre.sql` no projeto `pdjzahpxjrlbqqtzkfdr`, via conector Supabase (histórico remoto: `20261112180759_proteger_campos_mestre`; o serviço atribuiu o horário de aplicação, mantendo o conteúdo aprovado). Gatilho ativo, catálogo com 10 referências e RLS; authenticated sem gravação no catálogo nem execução da função de gatilho.
+
+Suíte direcionada executada no banco real sob SET ROLE authenticated e auth.uid das contas temporárias existentes, com campanhas/personagens sintéticos dentro de transação integralmente revertida: jogador bloqueado ao forjar/remover concessões, definições de itens, recargas, limites e cópias; mestre responsável autorizado; mestre externo sem acesso. Fluxos gerados pelos motores reais aprovados: derivação/edição, preparação, uso de magia, cargas/sintonia, poção, descanso, catálogo, criação comum e descarte. Nenhum usuário criado ou alterado; teste de administrador permaneceu na evidência local, sem elevar conta real.
+
+Comparação recursiva pós-teste com backup confirmou conteúdo integral idêntico dos 9 perfis, 3 campanhas, 7 vínculos, 5 personagens e 2 registros visuais. Nenhuma campanha sintética permaneceu. Sete testes de fase5-integracao passaram; não houve mudança de implementação que justificasse repetir os 390. Não foi realizado login/browser end-to-end com contas reais: esta validação cobre RLS/gatilhos no servidor, não emissão de JWT ou navegação. Não houve push/deploy; tecnicamente pronto para solicitar publicação, com smoke test das sessões e Android após publicar.
