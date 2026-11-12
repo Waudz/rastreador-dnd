@@ -61,8 +61,9 @@
     let destruido = false;
     if (fonte === "pergaminho") {
       const p = listaPergaminhos(P).find((i) => i.uid === pergaminhoUid);
-      p.qtd = Number(p.qtd) - 1; destruido = true;
-      if (p.qtd <= 0) P.inventario = P.inventario.filter((i) => i !== p);
+      destruido = true;
+      if (window.INVENTARIO) window.INVENTARIO.consumir(window.INVENTARIO.conteinerDe(P), p.uid, 1, (sucesso ? "Copiado para o grimório: " : "Cópia falhou: ") + m.n, "copia");   // sai do inventário e fica no histórico de movimentações
+      else { p.qtd = Number(p.qtd) - 1; if (p.qtd <= 0) P.inventario = P.inventario.filter((i) => i !== p); }
     }
     const registro = { tipo: "copia", fonte, magia: idDe(m), circulo: l, sucesso, custoPO: v.custo.po, horas: v.custo.horas, cd: v.cd, arcanismo: fonte === "pergaminho" ? Number(arcanismo) : null, pergaminhoDestruido: destruido, quando: agora() };
     f.criacao.historicoMagias.push(registro);
@@ -80,6 +81,7 @@
   /* Preparar ou desmarcar. Mago: só do grimório. Clérigo, Druida e Paladino: da lista da classe. Conhecedores (Bardo, Feiticeiro, Bruxo, Patrulheiro): não preparam, usam as conhecidas. */
   function podePreparar(f, entrada) {
     const cid = entrada.classeConj || (entrada.classes && entrada.classes[0] ? entrada.classes[0].replace(/^./, (c) => c.toUpperCase()) : null);
+    if (entrada.fonte === "mestre" && !entrada.noGrimorio) return { ok: false, motivo: "Magia concedida pelo mestre: não entra no limite de preparadas." };
     if (entrada.l === 0 || entrada.semprePreparada) return { ok: false, motivo: "Truques e magias sempre preparadas não são preparados." };
     const t = tipoClasse(cid);
     if (t === "known") return { ok: false, motivo: "Esta classe conhece suas magias: não as prepara." };
@@ -88,6 +90,7 @@
   }
 
   /* Troca de uma magia conhecida ao subir de nível (Bardo, Feiticeiro, Bruxo e Patrulheiro, uma por nível). Só existe como escolha DO NÍVEL. */
+  const nivelNaClasse = (st, cid) => (st.niveis || []).filter((x) => x.c === cid).length;
   function aplicarTroca(p, cid, de, para, { grupoKey }) {
     const f = p.ficha, st = f.criacao;
     if (!CLASSES_TROCA.includes(cid)) throw new Error("Esta classe não troca magias ao subir de nível.");
@@ -97,6 +100,14 @@
     const lista = (st.selecoes[grupoKey] || []).slice(), i = lista.indexOf(de);
     if (i < 0) throw new Error("A magia a trocar não é uma das suas conhecidas.");
     if (lista.includes(para)) throw new Error("Você já conhece a nova magia.");
+    if (nivelNaClasse(st, cid) < 2) throw new Error("No primeiro nível da classe ainda não há magia anterior para trocar.");
+    const CR0 = window.CRIADOR, d0 = CR0 && CR0.derivar(p).ficha;
+    if (d0) {
+      const racial = (id) => (d0.magias || []).some((x) => idDe(x) === id && (x.origem === "Raça" || x.autoCriador));
+      if (racial(de) || racial(para) || CR0.magiasConcedidas(d0).some((m) => m.id === de || m.id === para)) throw new Error("Magias concedidas por raça, talento ou subclasse não entram na troca.");
+      const ent = (d0.magias || []).find((x) => idDe(x) === de);
+      if (ent && (ent.fonte !== "classe" || (ent.classeConj && ent.classeConj !== cid))) throw new Error("Só magias aprendidas por esta classe podem ser trocadas.");
+    }
     const CR = window.CRIADOR, g = CR && CR.gruposMagias(CR.derivar(p).ficha).find((x) => x.key === grupoKey);
     if (g && !g.opts.includes(para)) throw new Error("A nova magia precisa ser da lista da classe e de um círculo para o qual você tem espaços de magia.");
     lista[i] = para; st.selecoes[grupoKey] = lista; entrada.troca = { de, para };
@@ -112,18 +123,52 @@
     return p;
   }
 
-  /* Concessão do mestre: magia especial ou personalizada, separada das aprendidas pelas regras. */
-  function concederMestre(P, m, nota) {
-    const f = garantir(P.ficha || (P.ficha = {}));
+  /* Concessão do mestre: o mestre escolhe COMO a magia é concedida. Fica separada das aprendidas pelas regras.
+     modo: conhecida (repertório, sem preparar nem contar no limite), grimorio (entra no grimório do Mago; prepara-se pelas regras do Mago),
+           sempre (sempre preparada), uso-limitado ({max, recarga: curto|longo|nenhum}), outra (texto livre em `forma`). */
+  const MODOS_CONCESSAO = { conhecida: "Conhecida", grimorio: "Adicionada ao grimório", sempre: "Sempre preparada", "uso-limitado": "Uso limitado", outra: "Outra forma" };
+  function concederMestre(P, m, nota, opcoes = {}) {
+    const f = garantir(P.ficha || (P.ficha = {})), modo = opcoes.modo || "conhecida";
+    if (!MODOS_CONCESSAO[modo]) throw new Error("Escolha como a magia é concedida.");
     f.magiasMestre ||= [];
     const base = { n: m.n, en: m.en || m.n, l: circuloMagia(m) || 0, cab: m.cab || "", d: m.d || "", conc: !!m.conc, ritual: !!m.ritual, personalizada: !m.en };
     if (f.magiasMestre.some((x) => norm(x.en) === norm(base.en))) throw new Error("Esta magia já foi concedida.");
-    const reg = { ...base, nota: String(nota || "").slice(0, 200), quando: agora() };
+    const concessao = { modo };
+    if (modo === "grimorio") {
+      if (!classeDe(f, "Wizard")) throw new Error("Só o Mago tem grimório.");
+      if (base.l < 1) throw new Error("Truques não vão para o grimório.");
+    }
+    if (modo === "uso-limitado") {
+      const max = Math.round(Number(opcoes.usos));
+      if (!(max >= 1 && max <= 99)) throw new Error("Informe quantos usos a magia tem (1 a 99).");
+      const recarga = ["curto", "longo", "nenhum"].includes(opcoes.recarga) ? opcoes.recarga : "longo";
+      concessao.usos = { max, usados: 0, recarga };
+    }
+    if (modo === "outra") { concessao.forma = String(opcoes.forma || "").trim().slice(0, 200); if (!concessao.forma) throw new Error("Descreva como a magia foi concedida."); }
+    const reg = { ...base, nota: String(nota || "").slice(0, 200), concessao, quando: agora() };
     f.magiasMestre.push(reg);
-    f.magias.push({ ...base, prep: true, semprePreparada: true, fonte: "mestre", registroOrigem: { tipo: "mestre", nota: reg.nota }, origem: "Concedida pelo mestre", classes: [], autoCriador: false });
-    f.criacao.historicoMagias.push({ tipo: "concessao-mestre", magia: base.en, nota: reg.nota, quando: reg.quando });
+    const entrada = { ...base, prep: modo === "sempre" || modo === "uso-limitado", semprePreparada: modo === "sempre", fonte: "mestre", concessao: JSON.parse(JSON.stringify(concessao)), registroOrigem: { tipo: "mestre", nota: reg.nota, modo }, origem: "Concedida pelo mestre", classes: [], autoCriador: false };
+    if (modo === "grimorio") { entrada.noGrimorio = true; entrada.classeConj = "Wizard"; entrada.classes = ["wizard"]; entrada.prep = false; }
+    f.magias.push(entrada);
+    f.criacao.historicoMagias.push({ tipo: "concessao-mestre", magia: base.en, modo, nota: reg.nota, quando: reg.quando });
     return reg;
   }
+  /* Uso limitado: gasta um uso (na magia e no registro do mestre, que é o que sobrevive ao recálculo); recupera no descanso conforme a recarga. */
+  function usarConcedida(f, entrada) {
+    const u = entrada && entrada.concessao && entrada.concessao.usos;
+    if (!u) throw new Error("Esta magia não tem usos limitados.");
+    if (u.usados >= u.max) throw new Error("Sem usos restantes.");
+    u.usados += 1;
+    const reg = (f.magiasMestre || []).find((x) => x.en === entrada.en); if (reg && reg.concessao && reg.concessao.usos) reg.concessao.usos.usados = u.usados;
+    return u;
+  }
+  function recuperarUsos(f, descanso) {
+    let n = 0;
+    const regra = (u) => u && u.usados && (descanso === "longo" ? u.recarga !== "nenhum" : u.recarga === "curto");
+    for (const m of f.magias || []) { const u = m.concessao && m.concessao.usos; if (regra(u)) { u.usados = 0; n++; } }
+    for (const m of f.magiasMestre || []) { const u = m.concessao && m.concessao.usos; if (regra(u)) u.usados = 0; }
+    return n;
+  }
 
-  window.MAGIAS_JOGO = { escola, custoCopia, validarCopia, copiarParaGrimorio, podePreparar, aplicarTroca, desfazerTroca, concederMestre, listaPergaminhos, entradaGrimorio, tipoClasse, noGrimorio, maiorCirculo, CLASSES_TROCA, ROTULO_ORIGEM, SAVANT };
+  window.MAGIAS_JOGO = { escola, custoCopia, validarCopia, copiarParaGrimorio, podePreparar, aplicarTroca, desfazerTroca, usarConcedida, recuperarUsos, MODOS_CONCESSAO, concederMestre, listaPergaminhos, entradaGrimorio, tipoClasse, noGrimorio, maiorCirculo, CLASSES_TROCA, ROTULO_ORIGEM, SAVANT };
 })();

@@ -1,13 +1,13 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
 const {vm,executar,documentoFalso,tick}=require("./helpers.cjs");
-async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={}}={}){
+async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={},registro={}}={}){
   const document=documentoFalso(),eventos={},timers=new Map();let proximo=0;
   document.addEventListener=(n,fn)=>(eventos[n]??=[]).push(fn);
   const p={id:"p",nome:"Inicial",campanha_id:"c",dono_id:"u",pv_atual:10,pv_max:10,pv_temp:0,ca:10,versao:1,ficha:{classes:[{c:"Fighter",n:1}]}};
-  Object.assign(p.ficha,fichaInicial);
+  Object.assign(p.ficha,fichaInicial);Object.assign(p,registro);
   const nuvem={usuario:()=>({id:"u"}),esc:s=>String(s??""),retornoDoLink:async()=>{},observar(){},rpc:async()=>mestre,patch,get:async q=>q.startsWith("personagens")?[p]:q.startsWith("campanhas")?[{id:"c",nome:"Campanha"}]:q.startsWith("membros")?[{papel:"mestre"}]:[{id:"u",nome:"Pessoa"}]};
   const c=vm.createContext({window:{addEventListener(){}},document,nuvem,location:{search},URLSearchParams,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
-  executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/magias-jogo.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
+  executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/magias-jogo.js",c);executar("js/inventario.js",c);executar("js/itens-efeitos.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
   const nome=v=>eventos.input.forEach(fn=>fn({target:{dataset:{col:"nome"},value:v}}));
   const salvar=async()=>{const a=[...timers.values()];timers.clear();for(const fn of a)await fn();};
   return {document,nome,salvar,timers,p,eventos};
@@ -69,4 +69,25 @@ test('aba Magias: sem busca livre no catálogo; Mago tem grimório e cópia; mes
  assert.ok(!/id="mag-q"|Adicionar do catálogo/.test(h));assert.match(h,/id="cp-abrir"/);assert.match(h,/id="ms-abrir"/);
  assert.match(h,/Grimório do Mago/);assert.match(h,/Concedidas pelo mestre/);assert.match(h,/Inativa/);assert.match(h,/Copiada de outro grimório/);assert.match(h,/Retirar concessão/);
  assert.equal((h.match(/data-prep=/g)||[]).length,1,'só a magia ativa do grimório pode ser preparada (a inativa e a do mestre não)');
+});
+
+const clicar=async(f,sel,dataset={})=>{for(const fn of f.eventos.click)await fn({target:{closest:s=>s===sel?{dataset,id:sel.replace(/^#/,'')}:null}});};
+const digitar=(f,dataset,value)=>f.eventos.input.forEach(fn=>fn({target:{dataset,value}}));
+const pocao=(qtd)=>({uid:'it_pocao',nome:'Poção de Cura',qtd,peso:0.5,tipo:'consumivel',ref:'srd51:item/potion-of-healing',origem:{tipo:'inicial'},propriedades:{efeitos:[{tipo:'cura',dados:{n:2,d:4,b:2}}]},magiaVinculada:null});
+test('usar poção de cura na ficha: confirma, cura sem passar do máximo, consome uma unidade e grava tudo numa só requisição; clique duplo não consome duas vezes',async()=>{
+ const envios=[];const f=await ficha(async(_q,d)=>{envios.push(d);return[{versao:2}];},{fichaInicial:{pvAuto:false,caAuto:false},registro:{pv_atual:15,pv_max:20,inventario:[pocao(2)]}});
+ await clicar(f,'[data-inv-usar]',{invUsar:'0'});
+ assert.match(f.document.el('uso-box').innerHTML,/Poção de Cura/);assert.match(f.document.el('uso-box').innerHTML,/disabled/,'sem resultado, o botão de confirmar fica desativado');
+ await clicar(f,'#uso-ok');assert.equal(f.p.pv_atual,15,'sem resultado nada acontece');assert.equal(f.p.inventario[0].qtd,2);
+ digitar(f,{usoRol:'0'},'9');await clicar(f,'#uso-ok');await clicar(f,'#uso-ok');
+ assert.equal(f.p.pv_atual,20,'15 + 9 limitado a 20');assert.equal(f.p.inventario[0].qtd,1,'uma unidade consumida, não duas');
+ await f.salvar();assert.equal(envios.length,1);assert.equal(envios[0].pv_atual,20);assert.equal(envios[0].inventario[0].qtd,1);assert.ok(envios[0].ficha.movimentos.some(m=>m.tipo==='uso-efeito'&&/PV 15 → 20/.test(m.resultado[0])));
+});
+test('falha ao gravar o uso: o estado completo fica pendente e é reenviado, sem consumir de novo',async()=>{
+ let tentativas=0;const envios=[];const f=await ficha(async(_q,d)=>{tentativas++;envios.push(JSON.parse(JSON.stringify(d)));if(tentativas===1)throw new Error('sem rede');return[{versao:3}];},{fichaInicial:{pvAuto:false,caAuto:false},registro:{pv_atual:5,pv_max:20,inventario:[pocao(1)]}});
+ await clicar(f,'[data-inv-usar]',{invUsar:'0'});digitar(f,{usoRol:'0'},'6');await clicar(f,'#uso-ok');
+ await f.salvar();assert.equal(tentativas,1);assert.equal(f.p.inventario.length,0,'o uso já vale na ficha mesmo sem rede');
+ f.nome('Outro nome');await f.salvar();   // a próxima gravação leva junto o que ficou pendente
+ assert.equal(tentativas,2);assert.equal(f.p.pv_atual,11);assert.equal(f.p.inventario.length,0);
+ assert.deepEqual(JSON.parse(JSON.stringify(envios[1].inventario)),[],'o reenvio leva o mesmo estado final, sem segunda baixa');assert.equal(envios[1].pv_atual,11);
 });

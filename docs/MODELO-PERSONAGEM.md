@@ -38,21 +38,22 @@ A `progressao` é só resultado. As decisões moram em `criacao.niveis`, `criaca
 ## Salvamento seguro
 Toda alteração de um personagem é **uma única linha** (`personagens`) gravada por **um único PATCH** com controle de versão (`versao=eq.N`): ou grava tudo ou nada. Se a rede falha ou a ficha mudou em outro aparelho, o assistente avisa, mantém o rascunho local e não altera a ficha. Operações que envolvam mais de uma linha ou tabela (por exemplo compra em loja: moedas do personagem + estoque da coleção + histórico) **devem ser uma função SQL (RPC) transacional**, nunca duas gravações separadas do navegador. Isso exigirá migração e só será feito com autorização do William.
 
-## Preparação para Itens, coleções e Enciclopédia (futuro, não implementado)
-Ao fazer o inventário (fase 3), adotar um formato de item que permita transferência, estoque e histórico:
-`{uid, ref, nome, qtd, peso, preco, tipo, equipado, propriedades, cargas, magiaVinculada, origem}`:
-- `uid`: identificador único da instância (não usar posição na lista); `ref`: item do catálogo ou nulo (item personalizado);
-- `origem`: inicial, compra, saque, jogo, com a coleção de origem quando houver;
-- `magiaVinculada`: para pergaminhos e itens mágicos, ligando ao sistema de magias e à cópia para o grimório;
-- coleções do mestre (lojas, baús, saques) usarão o mesmo formato de item, com estoque (número ou ilimitado) e permissões, e um histórico de movimentações (compra, venda, saque, descarte, transferência, consumo).
-Nada disso tem interface agora.
+## Inventário e itens (fase 3, `js/inventario.js` e `js/itens-efeitos.js`)
+Item: `{uid, ref, nome, qtd, peso, preco, tipo, equipado, origem:{tipo,id?,nota?}, propriedades:{...}, magiaVinculada:{en,n,l}|null, desc}`; `tipo` = equipamento, consumivel, magico, pergaminho, outro. `uid` identifica a instância (itens antigos recebem um uid estável derivado de personagem, posição e nome; passa a valer na próxima gravação). A coluna `inventario` continua sendo `jsonb` (sem migração).
+- Contêiner `{dono:{tipo,id}, itens, movimentos}`: o personagem usa `P.inventario` e `ficha.movimentos`. As operações (`adicionar`, `retirar`, `consumir`, `transferir`) são as mesmas que servirão a NPCs, monstros, lojas, baús e saques; transferir parte de uma pilha cria nova instância e registra entrada e saída nos dois lados. Sem interface de lojas ou central de itens.
+- Histórico: toda entrada, saída, uso, descarte, carga, cópia de pergaminho e transferência vira um registro `{tipo, uid, nome, qtd, nota, origem?, alvo?, resultado?, consumido?, quando}`.
+- Pergaminho: item real ligado à magia (`magiaVinculada`); copiar para o grimório consome uma unidade (sucesso ou falha) e fica no histórico; usar o pergaminho é outra ação (consome, a magia é conjurada à mesa).
+- Efeitos: `propriedades.efeitos = [{tipo, ...}]` com os tipos cura, pv-temp, modificador, atributo, condicao, resistencia e manual (ver o cabeçalho de `js/itens-efeitos.js` para campos, o que é passivo e o que não é suportado). Outros campos: `consumo` (unidade, carga, nenhum), `cargas`, `custoCarga`, `sintonia`, `raridade`. Para um novo tipo basta acrescentar uma entrada em `TIPOS_EFEITO`.
+- Uso: `ITENS_EFEITOS.usar(P, uid, escolhas)` valida tudo antes, calcula numa cópia e só no fim grava (inventário, PV e efeitos juntos); falha não consome nada. A ficha grava com uma única requisição.
+- Efeitos ativos em `ficha.efeitosAtivos` (duração: manual, até descanso curto ou longo). `REGRAS.bonusTemp` e `REGRAS.atributoEf` somam os efeitos ativos; efeitos passivos de item são recalculados do inventário (equipado e, se exigir, sintonizado).
 
 ## Magias (fase 2, `js/magias-jogo.js`)
 Cada magia em `ficha.magias[]` guarda `fonte` (classe, raca, mestre), `classeConj` (classe que conjura; multiclasse), `noGrimorio`, `prep`, `semprePreparada`, `ativa` (false = círculo ainda não alcançado; guardada, não preparável) e `registroOrigem` (`classe`, `nivel`, `copia-pergaminho`, `copia-grimorio`, `mestre`...).
 - Decisões que sobrevivem ao recálculo: `criacao.grimorioExtra` (cópias), `criacao.historicoMagias` (cópias com custo, horas, CD e resultado; concessões), `ficha.magiasMestre`, `criacao.niveis[i].troca = {de, para}` (também exposta em `progressao[i].troca`) e `prep` anterior.
 - Cópia para o grimório: 50 PO e 2 h por círculo; Evocation Savant (Escola de Evocação) paga metade para magia de evocação. Pergaminho: teste de Inteligência (Arcanismo) CD 10 + círculo; o pergaminho é destruído em qualquer resultado. Uma só gravação (ficha, inventário e dinheiro).
-- Troca ao subir de nível: só Bardo, Feiticeiro, Bruxo e Patrulheiro; uma por nível; a nova magia precisa estar na lista da classe e em círculo com espaços.
+- Troca ao subir de nível: só Bardo, Feiticeiro, Bruxo e Patrulheiro; uma por nível; a nova magia precisa estar na lista da classe e em círculo com espaços; não troca magia racial, de talento ou de subclasse, nem no 1º nível da classe.
+- Concessão do mestre (`concessao.modo`): conhecida (sem preparar nem contar no limite), grimorio (entra no grimório do Mago), sempre (sempre preparada), uso-limitado (`usos:{max,usados,recarga}`, recupera no descanso conforme a recarga) e outra (`forma` em texto).
 - Bônus temporários por categoria em `ficha.bonusTemp` (`testes`, `ataques`, `salvaguardas`, `ca`, `cdMagia`); só `ficha.modTemp` (atributo) altera a capacidade de preparar.
 
 ## Ainda a fazer neste modelo
-Inventário com itens mágicos e pergaminhos (fase 3), recursos com usos e descansos, condições e efeitos. Ver `docs/PENDENCIAS.md`.
+Recursos de classe com usos e descansos, condições, concentração e efeitos de duração (fase 4). Ver `docs/PENDENCIAS.md`.

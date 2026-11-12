@@ -27,14 +27,16 @@ Fonte única das decisões do William. Não repetir em outros arquivos: apontar 
 
 ## Magias (2014)
 - Diferenciar: aprendidas ao subir de nível, copiadas, no grimório, preparadas, sempre preparadas, concedidas por raça, talento ou característica, por item.
-- **Não aprender magia livremente pelo catálogo.** Concessão do mestre existe, explícita e separada, com origem "mestre".
+- **Não aprender magia livremente pelo catálogo.** Concessão do mestre existe, explícita e separada, com origem "mestre"; o mestre escolhe a forma: conhecida, adicionada ao grimório, sempre preparada, de uso limitado ou outra.
 - Grimório do Mago: cópia de **pergaminho** exige teste de Inteligência (Arcanismo) com **CD 10 + círculo**; o pergaminho é **destruído em qualquer resultado**. Cópia normal (outro grimório): **50 PO e 2 horas por círculo**, com as exceções de características (ex.: escola do Mago paga metade). Copiar não é preparar nem conjurar. Mostrar requisitos, custo, tempo e resultado antes de confirmar.
 - Bardo, Feiticeiro, Bruxo e Patrulheiro trocam uma magia conhecida ao subir de nível (escolha do nível). Clérigo, Druida e Paladino preparam da lista da classe. Pacto do Bruxo e multiclasse (espaços compartilhados) tratados à parte.
+- Troca de magia ao subir de nível respeita a classe e nunca troca magia racial, de talento ou de subclasse.
 - Origem e vínculo de cada magia sempre registrados.
+- **O sistema de magias só está concluído com: lista do Paladino, Arcanum Místico do Bruxo e revisão da conjuração multiclasse** (`docs/PENDENCIAS.md`).
 
 ## Inventário (fase 3; arquitetura já decidida)
 - Item com `uid` (instância), `ref` (catálogo ou nulo), origem, `magiaVinculada`, quantidade, peso, propriedades. Pergaminhos são itens reais ligados a uma magia; usar (conjurar) é diferente de copiar para o grimório.
-- Consumo, custos, testes e resultados atualizam todos os registros sem duplicar itens.
+- Consumo, custos, testes e resultados atualizam todos os registros sem duplicar itens. Usar item é uma operação atômica (item, PV e efeitos juntos); poção de cura rola no app ou aceita resultado manual e nunca passa do máximo; itens do mestre têm efeitos configuráveis, inclusive manuais. Não automatizar todos os itens: suportar uma base e documentar o que falta.
 - Futuro (não implementar agora): a mesma estrutura servirá personagens, NPCs, monstros, lojas, baús e saques; o mestre verá inventários e moedas, transferirá, venderá, comprará e acompanhará histórico. Operações em mais de uma linha serão função SQL transacional.
 
 ## Dados, Supabase e publicação

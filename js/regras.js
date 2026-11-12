@@ -106,8 +106,9 @@ window.REGRAS = (() => {
      Nunca grava em f.atributos: o permanente só muda no criador, na evolução e no Editar personagem. */
   /* Bônus temporários de jogo por categoria (f.bonusTemp): testes, ataques, salvaguardas, ca, cdMagia. Nenhum altera atributo permanente nem a capacidade de preparar magias. */
   const CATEGORIAS_TEMP = [["testes", "Testes de atributo e perícias"], ["ataques", "Jogadas de ataque"], ["salvaguardas", "Salvaguardas"], ["ca", "Classe de Armadura"], ["cdMagia", "CD e ataque de magia"]];
-  const bonusTemp = (f, k) => Number(f?.bonusTemp?.[k]) || 0;
-  const atributoEf = (f, k) => { const v = Number(f?.atributos?.[k]); return (Number.isFinite(v) && v > 0 ? v : 10) + (Number(f?.modTemp?.[k]) || 0); };
+  const efeitosSoma = (f, tipo, chave, valor) => (Array.isArray(f?.efeitosAtivos) ? f.efeitosAtivos : []).filter((e) => e && e.tipo === tipo && e[chave] === valor).reduce((n, e) => n + (Number(e.valor) || 0), 0);   // efeitos ativos (poção, item equipado)
+  const bonusTemp = (f, k) => (Number(f?.bonusTemp?.[k]) || 0) + efeitosSoma(f, "modificador", "categoria", k);
+  const atributoEf = (f, k) => { const v = Number(f?.atributos?.[k]); return (Number.isFinite(v) && v > 0 ? v : 10) + (Number(f?.modTemp?.[k]) || 0) + efeitosSoma(f, "atributo", "atributo", k); };
   const prof = (nivel) => 2 + Math.floor((Math.max(1, nivel) - 1) / 4);
   const nivelTotal = (cls) => (cls || []).filter(c=>classe(c.c)).reduce((s,c)=>s+Math.max(0,Math.floor(Number(c.n)||0)),0);
 

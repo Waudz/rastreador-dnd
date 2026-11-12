@@ -110,9 +110,9 @@ test('troca de magia ao subir de nível: só Bardo, Feiticeiro, Bruxo e Patrulhe
 });
 test('magia concedida pelo mestre: origem própria, sempre preparada, fora do limite de preparadas e preservada ao recalcular',()=>{
   const {C,R,M,cat}=motor(),P=MAGO5(C,R),m=por(cat,'Wish');
-  M.concederMestre(P,m,'Recompensa da campanha');M.concederMestre(P,{n:'Chama Antiga',l:4,cab:'Evocação · 1 ação',d:'Magia única da campanha.'},'Criada pelo mestre');
+  M.concederMestre(P,m,'Recompensa da campanha',{modo:'sempre'});M.concederMestre(P,{n:'Chama Antiga',l:4,cab:'Evocação · 1 ação',d:'Magia única da campanha.'},'Criada pelo mestre',{modo:'sempre'});
   const e=P.ficha.magias.filter(x=>x.fonte==='mestre');assert.equal(e.length,2);assert.ok(e.every(x=>x.semprePreparada&&!x.noGrimorio));assert.equal(e[1].personalizada,true);
-  assert.throws(()=>M.concederMestre(P,m,'repetida'),/já foi concedida/);
+  assert.throws(()=>M.concederMestre(P,m,'repetida',{modo:'sempre'}),/já foi concedida/);
   const f2=reabrir(C,P);assert.equal(f2.magias.filter(x=>x.fonte==='mestre').length,2);assert.ok(f2.magias.some(x=>x.en==='Wish'&&x.registroOrigem.tipo==='mestre'));
   assert.equal(M.podePreparar(f2,f2.magias.find(x=>x.fonte==='mestre')).ok,false);
   const usadas=R.preparacao(f2).find(x=>x.id==='Wizard').usadas;assert.equal(usadas,R.preparacao(P.ficha).find(x=>x.id==='Wizard').usadas);   // concessão não consome preparadas
@@ -140,4 +140,32 @@ test('troca de magia: só por magia da lista da classe e de círculo com espaço
   assert.throws(()=>M.desfazerTroca(q,chave),/Não há troca/);
   for(const cid of ['Cleric','Druid','Paladin','Wizard'])assert.ok(!M.CLASSES_TROCA.includes(cid),cid);
   assert.ok(ler('js/criador.js').includes('troca-magia'),'o subir de nível oferece o passo de troca');
+});
+
+test('concessão do mestre: ele escolhe a forma (conhecida, grimório, sempre preparada, uso limitado, outra) e cada uma se comporta de modo diferente',()=>{
+  const {C,R,M,cat}=motor(),P=MAGO5(C,R);
+  M.concederMestre(P,por(cat,'Wish'),'a',{modo:'conhecida'});M.concederMestre(P,por(cat,'Fireball'),'b',{modo:'grimorio'});
+  M.concederMestre(P,por(cat,'Shield'),'c',{modo:'sempre'});M.concederMestre(P,por(cat,'Fly'),'d',{modo:'uso-limitado',usos:2,recarga:'longo'});
+  M.concederMestre(P,por(cat,'Haste'),'e',{modo:'outra',forma:'Dom de um artefato, só em combate'});
+  const e=en=>P.ficha.magias.find(x=>x.en===en);
+  assert.ok(!e('Wish').semprePreparada);assert.equal(e('Wish').prep,false);assert.equal(M.podePreparar(P.ficha,e('Wish')).ok,false);
+  assert.equal(e('Fireball').noGrimorio,true);assert.equal(e('Fireball').prep,false);assert.equal(M.podePreparar(P.ficha,e('Fireball')).ok,true,'no grimório, prepara-se pelas regras do Mago');
+  assert.equal(e('Shield').semprePreparada,true);assert.equal(e('Fly').concessao.usos.max,2);assert.match(e('Haste').concessao.forma,/artefato/);
+  assert.throws(()=>M.concederMestre(P,por(cat,'Bless'),'x',{modo:'uso-limitado'}),/usos/);assert.throws(()=>M.concederMestre(P,por(cat,'Bless'),'x',{modo:'outra'}),/Descreva/);
+  assert.throws(()=>M.concederMestre(P,por(cat,'Bless'),'x',{modo:'xyz'}),/Escolha como/);
+  const fighter=personagem(C,R,[{c:'Fighter',n:3,sub:'srd51:subclass/champion'}],{for:15,des:14,con:13,int:10,sab:10,car:10});assert.throws(()=>M.concederMestre(fighter,por(cat,'Fireball'),'',{modo:'grimorio'}),/Só o Mago/);
+  M.usarConcedida(P.ficha,e('Fly'));M.usarConcedida(P.ficha,e('Fly'));assert.throws(()=>M.usarConcedida(P.ficha,e('Fly')),/Sem usos/);
+  let f2=reabrir(C,P);assert.equal(f2.magias.find(x=>x.en==='Fly').concessao.usos.usados,2,'usos gastos sobrevivem ao recálculo');
+  assert.equal(f2.magias.find(x=>x.en==='Fireball').noGrimorio,true);assert.equal(f2.magias.filter(x=>x.en==='Fireball').length,1);assert.ok(!f2.magias.find(x=>x.en==='Wish').semprePreparada);
+  assert.equal(M.recuperarUsos(P.ficha,'curto'),0);assert.equal(M.recuperarUsos(P.ficha,'longo'),1);assert.equal(reabrir(C,P).magias.find(x=>x.en==='Fly').concessao.usos.usados,0);
+});
+test('troca de magia respeita a classe: sem magias raciais, no 1º nível da classe, nem magia fora da lista',()=>{
+  const {C,R,M}=motor(),P=personagem(C,R,[{c:'Bard',n:3,sub:'srd51:subclass/lore'}],{for:8,des:14,con:13,int:10,sab:10,car:15},'Elfo (Drow)');
+  const q=C.subir(C.iniciar(copia(P),'nivel'),'Bard','media'),chave='magias|Bard|magias',g=C.gruposMagias(C.derivar(q).ficha).find(x=>x.key===chave);
+  assert.ok(C.derivar(q).ficha.magias.some(m=>m.en==='Faerie Fire'&&m.origem==='Raça'),'Drow ganha Faerie Fire pela raça');
+  assert.ok(!g.opts.includes('Faerie Fire'),'magia racial não é oferecida como troca');
+  assert.throws(()=>M.aplicarTroca(q,'Bard','Faerie Fire',g.opts.find(o=>!g.selecionadas.includes(o)),{grupoKey:chave}),/conhecidas|concedidas/);
+  const mult=personagem(C,R,[{c:'Fighter',n:2,sub:''}],{for:15,des:14,con:13,int:10,sab:10,car:14});
+  const bardo1=C.subir(C.iniciar(copia(mult),'nivel'),'Bard','media');
+  assert.throws(()=>M.aplicarTroca(bardo1,'Bard','a','b',{grupoKey:chave}),/primeiro nível da classe|conhecidas/);
 });

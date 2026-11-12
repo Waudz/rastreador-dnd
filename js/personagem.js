@@ -54,7 +54,7 @@
     for(const h of manuais){const d=catalogo?.criador?.find(x=>x.id===h.cf);if(d){h.nome=d.nome;h.desc=d.descricao;}}
     f.caracteristicas=manuais.concat([...raciais,...classes].filter(x=>{const k=x.cf||x.nome;if(vistos.has(k)||vistos.has(x.nome))return false;vistos.add(k);vistos.add(x.nome);return true;}));
   }
-  document.addEventListener("focusin",e=>{if(!P)return;if(e.target.id==="cat-q")buscarCatalogo(e.target.value);});
+  document.addEventListener("focusin",e=>{if(!P)return;if(e.target.id==="pg-mag"&&e.target.options.length<3)catalogoMagiasInv().then(l=>{const sel=document.getElementById("pg-mag");if(sel&&sel.options.length<3)sel.insertAdjacentHTML("beforeend",l.slice().sort((a,b)=>a.l-b.l||a.n.localeCompare(b.n,"pt-BR")).map(m=>opt(m.en,`${m.n} (${m.l?m.l+"º círculo":"truque"})`,false)).join(""));}).catch(()=>{});if(e.target.id==="cat-q")buscarCatalogo(e.target.value);});
 
   /* ---------- salvar (agrupa as alterações por 0,6 s) ---------- */
   function agendar(campos) { pend = { ...(pend || {}), ...campos }; notificar('ficha-salvando'); $("#estado").textContent = "Salvando…"; clearTimeout(timer); timer = setTimeout(enviar, 600); }
@@ -174,7 +174,6 @@
     <details class="vida-config"><summary>Ajustes de vida</summary><div class="row" style="margin:0"><div><label>PV máximo (ajuste manual)</label><input class="num" type="number" min="0" data-col="pv_max" value="${P.pv_max}"></div><div><label>PV temporário</label><input class="num" type="number" min="0" data-col="pv_temp" value="${P.pv_temp}"></div></div>
     <div class="row" style="margin:8px 0 0"><label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-auto="pvAuto" ${autoOn("pvAuto") ? "checked" : ""}> PV máximo automático (dado de vida médio + Constituição)</label><div class="inline"><label style="margin:0">PV extra por nível</label><input class="num" type="number" step="1" data-f="pvExtra" value="${num(F().pvExtra, 0)}" title="Ex.: anão da colina +1, talento Robusto +2"></div></div></details>`;
 
-  const linhaInv = (it, i) => `<div class="row" style="margin:0 0 6px" data-i="${i}"><input style="flex:1 1 160px" data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"><input class="num" type="number" min="0" step="1" data-inv="qtd" value="${num(it.qtd, 1)}" aria-label="Quantidade"><input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}" aria-label="Peso de cada unidade em kg"><button type="button" class="small subtle" data-rm-item="${i}" aria-label="Remover item">${window.ico ? window.ico("x") : "x"}</button></div>`;
   const cabInv = '<div class="row inv-h" style="margin:0 0 4px"><span style="flex:1 1 160px">Item</span><span class="num-h">Qtd.</span><span class="num-h">Peso cada (kg)</span><span style="width:34px"></span></div>';
   const blocoCarga = () => { const c = capacidade(), p = pesoTotal(), pc = Math.min(100, c > 0 ? (p / c) * 100 : 0); return `<div class="hp-top"><span>Carga total (qtd. × peso)</span><strong id="carga-txt" ${p > c ? 'class="err"' : ""}>${kg(p)} / ${kg(c)} kg</strong></div><div class="hp-track"><div class="hp-fill ${p > c ? "low" : pc > 66 ? "mid" : ""}" id="carga-barra" style="width:${pc}%"></div></div>`; };
 
@@ -260,7 +259,7 @@
     const inativa = m.ativa === false, org = rotuloOrigem(m);
     const pp = !inativa && m.l > 0 && !m.semprePreparada && m.origem !== "Raça" && R.preparacao(F()).some((x) => x.pertence(m)) && MJ.podePreparar(F(), m).ok;
     const etiqueta = inativa ? ' <span class="badge">Inativa</span>' : m.l === 0 ? ' <span class="badge">Truque</span>' : m.semprePreparada ? ' <span class="badge">Sempre Preparada</span>' : m.origem === "Raça" ? ' <span class="badge">Magia Racial</span>' : R.preparacao(F()).some((x) => x.pertence(m)) ? (m.prep ? ' <span class="badge">Preparada</span>' : ' <span class="muted">Não Preparada</span>') : ' <span class="badge">Conhecida</span>';
-    return `<article class="item magia-conhecida${inativa ? " magia-inativa" : ""}" data-mag-i="${i}"><button type="button" class="magia-consultar" data-consultar-magia="${i}">${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${etiqueta}${org ? ` <span class="muted">· ${esc(org)}</span>` : ""}</button>${inativa ? '<p class="muted" style="margin:6px 0 0">Guardada: o círculo desta magia ainda não é alcançado. Volta a valer se o nível voltar.</p>' : ""}<div class="row" style="margin:8px 0 0">${pp ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span>${m.fonte === "mestre" && souMestre ? `<button type="button" class="small danger" data-rm-mag="${i}">Retirar concessão</button>` : ""}</div></article>`;
+    return `<article class="item magia-conhecida${inativa ? " magia-inativa" : ""}" data-mag-i="${i}"><button type="button" class="magia-consultar" data-consultar-magia="${i}">${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${etiqueta}${org ? ` <span class="muted">· ${esc(org)}</span>` : ""}</button>${m.concessao && m.concessao.modo ? `<p class="muted" style="margin:6px 0 0">Concessão: ${esc(MJ.MODOS_CONCESSAO[m.concessao.modo] || "")}${m.concessao.forma ? " · " + esc(m.concessao.forma) : ""}${m.concessao.usos ? ` · usos ${m.concessao.usos.max - m.concessao.usos.usados} de ${m.concessao.usos.max} (recarga: ${{ curto: "descanso curto ou longo", longo: "descanso longo", nenhum: "não recarrega" }[m.concessao.usos.recarga]})` : ""}</p>` : ""}${inativa ? '<p class="muted" style="margin:6px 0 0">Guardada: o círculo desta magia ainda não é alcançado. Volta a valer se o nível voltar.</p>' : ""}<div class="row" style="margin:8px 0 0">${pp ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}${m.concessao && m.concessao.usos ? `<button type="button" class="small" data-usar-concedida="${i}" ${m.concessao.usos.usados >= m.concessao.usos.max ? "disabled" : ""}>Usar (gasta 1)</button>` : ""}<span class="grow"></span>${m.fonte === "mestre" && souMestre ? `<button type="button" class="small danger" data-rm-mag="${i}">Retirar concessão</button>` : ""}</div></article>`;
   };
   function listaMagias() {
     const l = MAG().map((m, i) => ({ m, i })).sort((a, b) => a.m.l - b.m.l || a.m.n.localeCompare(b.m.n));
@@ -269,6 +268,152 @@
     l.forEach((x) => (grupos[catMag(x.m)] = grupos[catMag(x.m)] || []).push(x));
     return R.preparacao(F()).map((x) => `<p class="muted">${esc(x.nome)}: ${x.usadas} de ${x.limite} magias preparadas. Truques e magias sempre preparadas não contam nesse limite.</p>`).join("") +
       ORDEM_CAT.filter((k) => grupos[k]).map((k) => `<h3 class="sub magia-secao-titulo">${k} <span class="muted">(${grupos[k].length})</span></h3>` + grupos[k].map((x, n) => (n === 0 || grupos[k][n - 1].m.l !== x.m.l ? '<h4 class="circulo-titulo">' + (x.m.l ? x.m.l + "º círculo" : "Truques") + "</h4>" : "") + linhaMag(x.m, x.i)).join("")).join("");
+  }
+  /* ---------- inventário: itens, uso de consumíveis e efeitos ---------- */
+  const IV = window.INVENTARIO, IE = window.ITENS_EFEITOS;
+  const cont = () => IV.conteinerDe(P);
+  const ROT_ORIGEM = { inicial: "Inicial", criacao: "Criação", compra: "Compra", saque: "Saque", jogo: "Jogo", mestre: "Mestre", transferencia: "Transferência" };
+  let uso = null, usando = false, edEf = null;
+  const itemPor = (i) => INV()[i];
+  function linhaInv(it, i) {
+    const t = it.tipo || "equipamento", pr = it.propriedades || {}, sint = pr.sintonia && pr.sintonia.requer, passivo = IE.efeitosDe(it).some((e) => e.passivo);
+    const acoes = [];
+    if (t === "pergaminho" && it.magiaVinculada) { acoes.push(`<span class="muted">Contém ${esc(it.magiaVinculada.n)} (${it.magiaVinculada.l}º círculo)</span>`); if (wizard()) acoes.push(`<button type="button" class="small" data-inv-copiar="${i}">Copiar para o grimório</button>`); acoes.push(`<button type="button" class="small" data-inv-usar="${i}">Usar o pergaminho</button>`); }
+    else if (IE.temEfeitos(it) || t === "consumivel") acoes.push(`<button type="button" class="small" data-inv-usar="${i}">Usar</button>`);
+    if (passivo || sint || t === "magico") acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-equip ${it.equipado ? "checked" : ""}> Equipado</label>`);
+    if (sint) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-sint ${pr.sintonia.sintonizado ? "checked" : ""}> Sintonizado</label>`);
+    if (pr.cargas) acoes.push(`<span class="muted">Cargas ${num(pr.cargas.atual, 0)}/${num(pr.cargas.max, 0)}</span>`);
+    if (pr.raridade) acoes.push(`<span class="muted">${esc(pr.raridade)}</span>`);
+    const org = it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? ` · ${esc(ROT_ORIGEM[it.origem.tipo] || it.origem.tipo)}${it.origem.nota ? ": " + esc(it.origem.nota) : ""}` : "";
+    return `<div class="item-inv" style="margin:0 0 8px" data-i="${i}"><div class="row" style="margin:0 0 4px"><input style="flex:1 1 160px" data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"><input class="num" type="number" min="0" step="1" data-inv="qtd" value="${num(it.qtd, 1)}" aria-label="Quantidade"><input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}" aria-label="Peso de cada unidade em kg"><button type="button" class="small subtle" data-rm-item="${i}" aria-label="Remover item">${window.ico ? window.ico("x") : "x"}</button></div>
+      <div class="row" style="margin:0"><select data-inv-tipo aria-label="Tipo do item">${Object.entries(IV.TIPOS).map(([k, n]) => opt(k, n, t === k)).join("")}</select>${acoes.join(" ")}${souMestre ? `<button type="button" class="small subtle" data-inv-editar="${i}">Efeitos do item</button>` : ""}<span class="muted">${org}</span></div></div>`;
+  }
+  function histInv() {
+    const l = (F().movimentos || []).slice(-20).reverse();
+    return l.length ? `<ul class="hist-inv">${l.map((m) => `<li><b>${esc(IV.ROTULO_MOV[m.tipo] || (m.tipo === "uso-efeito" ? "Uso" : m.tipo))}</b> · ${esc(m.nome || "")}${m.qtd ? " ×" + m.qtd : ""}${m.alvo && m.tipo === "uso-efeito" ? " em " + esc(m.alvo) : ""}${m.resultado && m.resultado.length ? " — " + esc(m.resultado.join("; ")) : ""}${m.nota ? " (" + esc(m.nota) + ")" : ""} <span class="muted">${esc(String(m.quando || "").slice(0, 16).replace("T", " "))}</span></li>`).join("")}</ul>` : '<span class="muted">Nenhuma movimentação registrada.</span>';
+  }
+  function redesenharInv() {
+    const l = $("#inv"); if (l) l.innerHTML = INV().map(linhaInv).join("");
+    const h = $("#inv-hist"); if (h) h.innerHTML = histInv();
+    atualizarCarga(); const e = $("#bloco-efeitos"); if (e) e.innerHTML = blocoEfeitos();
+  }
+  function blocoEfeitos() {
+    const l = F().efeitosAtivos || [];
+    return l.length ? `<h3 class="sub">Efeitos ativos</h3><ul class="efeitos-ativos">${l.map((e) => `<li><b>${esc(e.texto || e.tipo)}</b>${e.duracao && e.duracao.texto ? ` <span class="muted">· ${esc(e.duracao.texto)}</span>` : ""}${e.origem ? ` <span class="muted">· ${esc(e.origem.item)}</span>` : ""} ${e.passivo ? "" : `<button type="button" class="small subtle" data-enc-efeito="${esc(e.id)}">Encerrar</button>`}</li>`).join("")}</ul>` : "";
+  }
+  function salvarInv(extra = {}) { IE.sincronizarPassivos(P); agendar({ inventario: P.inventario, ficha: P.ficha, ...extra }); }
+  /* --- usar item --- */
+  function abrirUso(i) {
+    const it = itemPor(i); if (!it) return;
+    uso = { uid: it.uid, alvo: "proprio", nome: "", rolagens: {}, danos: {}, textoRolagem: {} };
+    renderUso();
+  }
+  const escUso = () => ({ alvo: uso.alvo === "outro" ? { tipo: "outro", nome: uso.nome } : { tipo: "proprio" }, rolagens: uso.rolagens, danos: uso.danos });
+  function previaUso() {
+    const it = INV().find((x) => x.uid === uso.uid); if (!it) return "";
+    const v = IE.previa(P, uso.uid, escUso()); let h = "";
+    if (v.ok && uso.alvo === "proprio") {
+      const cura = v.linhas.filter((l) => l.tipo === "cura").reduce((s, l) => s + l.ctx.total, 0);
+      if (cura) h += `<p><b>PV:</b> ${P.pv_atual} → ${Math.min(P.pv_max, P.pv_atual + cura)} de ${P.pv_max}</p>`;
+      const pt = v.linhas.filter((l) => l.tipo === "pv-temp").reduce((m, l) => Math.max(m, l.ctx.total), 0);
+      if (pt) h += `<p><b>PV temporários:</b> ${num(P.pv_temp, 0)} → ${Math.max(num(P.pv_temp, 0), pt)}</p>`;
+    }
+    h += `<p class="muted">Consumo: ${v.consumo === "carga" ? "1 carga do item" : v.consumo === "unidade" ? "1 unidade" : "nenhum (o item permanece)"}.</p>`;
+    if (!v.ok) h += `<ul class="err">${v.motivos.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>`;
+    return h;
+  }
+  function renderUso() {
+    const box = $("#uso-box"); if (!box || !uso) return;
+    const it = INV().find((x) => x.uid === uso.uid); if (!it) { box.hidden = true; return; }
+    const plano = IE.plano(it);
+    const linhas = plano.map((p) => {
+      if (!p.suportado) return `<p class="err">Efeito ${p.i + 1}: tipo "${esc(p.tipo)}" ainda não é suportado.</p>`;
+      if (p.dado && num(p.dados.n) * num(p.dados.d) > 0) { const fx = IE.faixa(p.dados); return `<div class="row"><b>${esc(p.rotulo)} ${IE.formatarDados(p.dados)}</b><button type="button" class="small" data-uso-rolar="${p.i}">Rolar</button><label class="inline" style="margin:0">Resultado <input class="num" type="number" min="${fx.min}" max="${fx.max}" step="1" data-uso-rol="${p.i}" value="${uso.rolagens[p.i] ?? ""}"></label><span class="muted">${esc(uso.textoRolagem[p.i] || "ou informe o resultado de " + fx.min + " a " + fx.max)}</span></div>`; }
+      if (p.dado) return `<p><b>${esc(p.rotulo)}:</b> ${num(p.dados.b)} (valor fixo)</p>`;
+      if (p.escolhaDano) return `<label>Tipo de dano da resistência<select data-uso-dano="${p.i}">${opt("", "Escolher…", !uso.danos[p.i])}${IE.TIPOS_DANO.map((d) => opt(d, d, uso.danos[p.i] === d)).join("")}</select></label>`;
+      const t = IE.TIPOS_EFEITO[p.tipo]; return `<p><b>${esc(p.rotulo)}:</b> ${esc(t.descrever ? t.descrever(p.ef) : "")}${p.ef.duracao && p.ef.duracao.texto ? ` <span class="muted">(${esc(p.ef.duracao.texto)})</span>` : ""}</p>`;
+    }).join("");
+    const nota = it.tipo === "pergaminho" && it.magiaVinculada ? `<p class="muted">Pergaminho de ${esc(it.magiaVinculada.n)}: se a magia está na lista da sua classe, basta usar; se o círculo for maior do que você conjura, faça um teste de característica de conjuração com CD ${10 + num(it.magiaVinculada.l)} (a falha faz a magia sumir). O pergaminho é consumido. A magia em si é conjurada à mesa.</p>` : "";
+    box.hidden = false;
+    box.innerHTML = `<h3>Usar: ${esc(it.nome)}</h3>${nota}${linhas}
+      <fieldset><legend class="muted">Alvo</legend><label class="inline"><input type="radio" name="uso-alvo" value="proprio" style="width:auto;height:auto" ${uso.alvo === "proprio" ? "checked" : ""}> Este personagem</label> <label class="inline"><input type="radio" name="uso-alvo" value="outro" style="width:auto;height:auto" ${uso.alvo === "outro" ? "checked" : ""}> Outro alvo</label></fieldset>
+      ${uso.alvo === "outro" ? `<label>Nome do alvo<input id="uso-nome" maxlength="80" value="${esc(uso.nome)}"></label><p class="muted">Para outro alvo o resultado fica registrado e a ficha dele deve ser ajustada pelo próprio jogador ou pelo mestre. Este personagem só gasta o item.</p>` : ""}
+      <div id="uso-previa">${previaUso()}</div><div class="row"><button type="button" id="uso-ok" ${IE.previa(P, uso.uid, escUso()).ok ? "" : "disabled"}>Confirmar uso</button><button type="button" class="small subtle" id="uso-cancel">Cancelar</button></div><div id="uso-res" role="status" class="muted"></div>`;
+  }
+  const atualizaUso = () => { const p = $("#uso-previa"); if (p && uso) p.innerHTML = previaUso(); const b = $("#uso-ok"); if (b && uso) b.disabled = !IE.previa(P, uso.uid, escUso()).ok; };
+  function confirmarUso() {
+    if (usando || !uso) return;
+    usando = true;
+    try {
+      const nome = (INV().find((x) => x.uid === uso.uid) || {}).nome || "item";
+      const r = IE.usar(P, uso.uid, escUso());
+      if (!r.ok) { $("#uso-res").innerHTML = `<span class="err">${esc(r.motivos.join(" "))}</span>`; return; }
+      agendar({ inventario: P.inventario, ficha: P.ficha, pv_atual: P.pv_atual, pv_temp: P.pv_temp });   // uma única gravação: item, PV e efeitos juntos
+      IE.sincronizarPassivos(P);
+      uso = null; const box = $("#uso-box"); box.hidden = true; box.innerHTML = "";
+      redesenharInv(); atualizarPV(); const bpv = $("#bloco-pv"); if (bpv) bpv.innerHTML = blocoPV(); refrescar();
+      aviso(`${nome} usado. ${r.resultado.map((x) => x.texto).join(" ")}`);
+    } finally { usando = false; }
+  }
+  /* --- editor de efeitos do item (mestre) --- */
+  function htmlEditorEfeitos(it) {
+    const ef = IE.efeitosDe(it), pr = it.propriedades;
+    const campos = (tipos, h) => `<div data-ef-campos="${tipos}" ${edEf && tipos.split(" ").includes(edEf.tipo) ? "" : "hidden"}>${h}</div>`;
+    return `<h3>Efeitos de ${esc(it.nome)}</h3><p class="muted">Configuração do mestre. Os tipos manuais não são automatizados: ficam como texto no efeito ativo.</p>
+      ${ef.length ? `<ul>${ef.map((e, k) => `<li>${esc((IE.TIPOS_EFEITO[e.tipo] || {}).rotulo || e.tipo)}: ${esc(e.tipo === "cura" || e.tipo === "pv-temp" ? IE.formatarDados(e.dados) : ((IE.TIPOS_EFEITO[e.tipo] || {}).descrever ? IE.TIPOS_EFEITO[e.tipo].descrever(e) : ""))}${e.passivo ? " (enquanto equipado)" : ""} <button type="button" class="small subtle" data-ef-rm="${k}">Remover</button></li>`).join("")}</ul>` : '<p class="muted">Sem efeitos.</p>'}
+      <label>Novo efeito<select id="ef-tipo">${Object.entries(IE.TIPOS_EFEITO).map(([k, t]) => opt(k, t.rotulo, edEf && edEf.tipo === k)).join("")}</select></label>
+      ${campos("cura pv-temp", '<div class="row"><label>Dados<input class="num" id="ef-n" type="number" min="0" max="20" value="1"></label><label>Faces<input class="num" id="ef-d" type="number" min="0" max="100" value="4"></label><label>Bônus<input class="num" id="ef-b" type="number" min="0" max="500" value="0"></label></div>')}
+      ${campos("modificador", `<label>Categoria<select id="ef-cat">${R.CATEGORIAS_TEMP.map(([k, n]) => opt(k, n, false)).join("")}</select></label>`)}
+      ${campos("atributo", `<label>Atributo<select id="ef-atr">${ATR.map(([k]) => opt(k, R.ATR_NOME[k], false)).join("")}</select></label>`)}
+      ${campos("modificador atributo", '<label>Valor<input class="num" id="ef-valor" type="number" min="-20" max="20" value="1"></label>')}
+      ${campos("condicao", `<label>Condição<select id="ef-cond">${IE.CONDICOES.map((c) => opt(c, c, false)).join("")}</select></label>`)}
+      ${campos("resistencia", `<label>Tipo de dano<select id="ef-dano">${opt("escolher", "Escolhido ao usar", true)}${IE.TIPOS_DANO.map((d) => opt(d, d, false)).join("")}</select></label>`)}
+      ${campos("manual", '<label>Descrição<textarea id="ef-texto" rows="2" maxlength="300"></textarea></label>')}
+      ${campos("modificador atributo condicao resistencia manual", `<label>Duração (texto)<input id="ef-dur" maxlength="60" placeholder="Ex.: 1 hora"></label><label>Termina<select id="ef-ate">${Object.entries(IE.DURACOES).map(([k, n]) => opt(k, n, k === "manual")).join("")}</select></label>`)}
+      <label class="inline"><input type="checkbox" id="ef-passivo" style="width:auto;height:auto"> Passivo (vale enquanto o item estiver equipado)</label>
+      <div class="row"><button type="button" class="small" id="ef-add">Adicionar efeito</button></div>
+      <h4 class="sub">Consumo e propriedades</h4>
+      <div class="row"><label>Ao usar<select id="ef-consumo">${opt("unidade", "Gasta 1 unidade", (pr.consumo || (it.tipo === "magico" ? "carga" : "unidade")) === "unidade")}${opt("carga", "Gasta carga(s)", (pr.consumo || (it.tipo === "magico" ? "carga" : "unidade")) === "carga")}${opt("nenhum", "Não gasta nada", pr.consumo === "nenhum")}</select></label><label>Cargas (atual)<input class="num" id="ef-c-atual" type="number" min="0" max="999" value="${pr.cargas ? pr.cargas.atual : 0}"></label><label>Cargas (máx.)<input class="num" id="ef-c-max" type="number" min="0" max="999" value="${pr.cargas ? pr.cargas.max : 0}"></label><label>Custo por uso<input class="num" id="ef-c-custo" type="number" min="1" max="99" value="${num(pr.custoCarga, 1)}"></label></div>
+      <label class="inline"><input type="checkbox" id="ef-sint" style="width:auto;height:auto" ${pr.sintonia && pr.sintonia.requer ? "checked" : ""}> Exige sintonia</label>
+      <label>Raridade<input id="ef-rar" maxlength="30" value="${esc(pr.raridade || "")}"></label>
+      <div class="row"><button type="button" class="small" id="ef-salvar-props">Salvar propriedades</button><button type="button" class="small subtle" id="ef-fechar">Fechar</button></div><div id="ef-res" class="err" role="alert"></div>`;
+  }
+  function abrirEditor(i) { const it = itemPor(i); if (!it || !souMestre) return; edEf = { uid: it.uid, tipo: "cura" }; const box = $("#ef-box"); box.hidden = false; box.innerHTML = htmlEditorEfeitos(it); }
+  function efeitoDoForm() {
+    const t = $("#ef-tipo").value, v = (id) => $("#" + id).value, ef = { tipo: t };
+    if (t === "cura" || t === "pv-temp") ef.dados = { n: Math.round(num(v("ef-n"), 0)), d: Math.round(num(v("ef-d"), 0)), b: Math.round(num(v("ef-b"), 0)) };
+    if (t === "modificador") { ef.categoria = v("ef-cat"); ef.valor = Math.round(num(v("ef-valor"), 0)); }
+    if (t === "atributo") { ef.atributo = v("ef-atr"); ef.valor = Math.round(num(v("ef-valor"), 0)); }
+    if (t === "condicao") ef.condicao = v("ef-cond");
+    if (t === "resistencia") ef.dano = v("ef-dano");
+    if (t === "manual") ef.texto = v("ef-texto").trim();
+    if (["modificador", "atributo", "condicao", "resistencia", "manual"].includes(t)) ef.duracao = { texto: v("ef-dur").trim(), ate: v("ef-ate") };
+    if ($("#ef-passivo").checked) ef.passivo = true;
+    return ef;
+  }
+  function addEfeito() {
+    const it = INV().find((x) => x.uid === edEf.uid); if (!it) return;
+    const ef = efeitoDoForm(), antes = JSON.stringify(it.propriedades);
+    it.propriedades.efeitos = [...IE.efeitosDe(it), ef];
+    const erros = IE.validarItem(it);
+    if (erros.length) { it.propriedades = JSON.parse(antes); $("#ef-res").textContent = erros.join(" "); return; }
+    salvarInv(); redesenharInv(); $("#ef-box").innerHTML = htmlEditorEfeitos(it);
+  }
+  function salvarProps() {
+    const it = INV().find((x) => x.uid === edEf.uid); if (!it) return; const pr = it.propriedades, v = (id) => $("#" + id).value;
+    pr.consumo = v("ef-consumo"); const max = Math.max(0, Math.round(num(v("ef-c-max"), 0))), atual = Math.max(0, Math.min(max, Math.round(num(v("ef-c-atual"), 0))));
+    if (max > 0) { pr.cargas = { atual, max, recarga: (pr.cargas && pr.cargas.recarga) || "" }; pr.custoCarga = Math.max(1, Math.round(num(v("ef-c-custo"), 1))); } else { delete pr.cargas; delete pr.custoCarga; }
+    if ($("#ef-sint").checked) pr.sintonia = { requer: true, sintonizado: !!(pr.sintonia && pr.sintonia.sintonizado) }; else delete pr.sintonia;
+    const r = v("ef-rar").trim(); if (r) pr.raridade = r; else delete pr.raridade;
+    if (pr.consumo === "carga" && !pr.cargas) { $("#ef-res").textContent = "Defina as cargas máximas."; return; }
+    salvarInv(); redesenharInv(); $("#ef-res").textContent = "";
+  }
+  async function catalogoMagiasInv() { await carregarCat(); return magiasCat; }
+  function adicionarPergaminho() {
+    const en = $("#pg-mag").value; if (!en || !magiasCat) return;
+    const m = magiasCat.find((x) => x.en === en); if (!m) return;
+    IV.adicionar(cont(), IV.criarPergaminho(m, { origem: { tipo: souMestre ? "mestre" : "jogo", nota: $("#pg-nota").value.trim().slice(0, 80) } }), { nota: $("#pg-nota").value.trim().slice(0, 80) });
+    $("#pg-nota").value = ""; salvarInv(); redesenharInv();
   }
   /* ---------- grimório: copiar magia (Mago) ---------- */
   async function carregarCat() { if (!magiasCat) magiasCat = await fetch("dados/magias.json").then((r) => r.json()); return magiasCat; }
@@ -307,6 +452,7 @@
     cp.en = ""; cp.arc = ""; cp.uid = "";
     $("#lista-mag").innerHTML = listaMagias();
     const po = document.querySelector('[data-din="po"]'); if (po) po.value = DIN().po;
+    redesenharInv();
     $("#copia-box").innerHTML = htmlCopia(); atualizaCopia();
     $("#cp-res").textContent = r.sucesso ? `“${m.n}” entrou no grimório (${r.custo.po} PO, ${r.custo.horas} h).` : "A cópia falhou: a magia não entrou no grimório. O custo foi gasto e o pergaminho foi destruído.";
   }
@@ -315,9 +461,12 @@
     const box = $("#mestre-box"); if (!box) return;
     try { await carregarCat(); } catch (_) { box.hidden = false; box.innerHTML = '<span class="err">Não consegui carregar as magias.</span>'; return; }
     box.hidden = false;
-    box.innerHTML = `<p class="muted">Uso do mestre para magias especiais ou personalizadas. Fica registrada como concedida pelo mestre, sempre preparada e fora do limite de preparadas.</p>
+    box.innerHTML = `<p class="muted">Uso do mestre para magias especiais ou personalizadas. Fica registrada como concedida pelo mestre, com a forma escolhida abaixo. Nenhuma forma conta no limite de preparadas, exceto a que entra no grimório (regras do Mago).</p>
       <label>Magia do catálogo<select id="ms-cat">${opt("", "Magia personalizada (preencher abaixo)", true)}${magiasCat.slice().sort((a, b) => a.n.localeCompare(b.n, "pt-BR")).map((m) => opt(m.en, `${m.n} (${m.l ? m.l + "º" : "truque"})`, false)).join("")}</select></label>
       <div id="ms-custom"><label>Nome<input id="ms-nome" maxlength="80"></label><label>Círculo (0 a 9)<input id="ms-nivel" class="num" type="number" min="0" max="9" value="1"></label><label>Descrição<textarea id="ms-desc" rows="3" maxlength="1500"></textarea></label></div>
+      <label>Forma da concessão<select id="ms-modo">${Object.entries(MJ.MODOS_CONCESSAO).map(([k, n]) => opt(k, n, k === "conhecida")).join("")}</select></label>
+      <div id="ms-uso" hidden><label>Usos<input id="ms-usos" class="num" type="number" min="1" max="99" value="1"></label><label>Recarga<select id="ms-recarga">${opt("longo", "Descanso longo", true)}${opt("curto", "Descanso curto ou longo", false)}${opt("nenhum", "Não recarrega", false)}</select></label></div>
+      <div id="ms-outra" hidden><label>Como foi concedida<input id="ms-forma" maxlength="200" placeholder="Ex.: dom de um artefato, só em combate"></label></div>
       <label>Nota (opcional)<input id="ms-nota" maxlength="200" placeholder="Ex.: recompensa da missão"></label>
       <div class="row"><button type="button" class="small" id="ms-ok">Conceder magia</button><button type="button" class="small subtle" id="ms-fechar">Fechar</button></div><div id="ms-res" class="err" role="alert"></div>`;
   }
@@ -326,19 +475,20 @@
     const en = $("#ms-cat").value, nota = $("#ms-nota").value; let m;
     if (en) m = magiasCat.find((x) => x.en === en);
     else { const n = $("#ms-nome").value.trim(); if (!n) { $("#ms-res").textContent = "Informe o nome da magia."; return; } m = { n, l: Math.max(0, Math.min(9, Math.round(num($("#ms-nivel").value, 1)))), d: $("#ms-desc").value.trim(), cab: "Personalizada" }; }
-    try { MJ.concederMestre(P, m, nota); } catch (e) { $("#ms-res").textContent = e.message; return; }
+    try { MJ.concederMestre(P, m, nota, { modo: $("#ms-modo").value, usos: $("#ms-usos").value, recarga: $("#ms-recarga").value, forma: $("#ms-forma").value }); } catch (e) { $("#ms-res").textContent = e.message; return; }
     agendar({ ficha: P.ficha }); $("#lista-mag").innerHTML = listaMagias(); $("#mestre-box").hidden = true;
   }
 
   const fotoHTML = () => { const f = F().foto; return f && /^data:image\//.test(f) ? `<img class="av" style="width:72px;height:72px;margin:0" src="${esc(f)}" alt="Foto">` : `<span class="av av0" style="width:72px;height:72px;font-size:30px;margin:0">${esc((P.nome || "?").charAt(0).toUpperCase())}</span>`; };
 
   function desenhar() {
+    IV.normalizar(INV(), "p" + (P.id || id)); IE.sincronizarPassivos(P);
     const f = F(), outro = souMestre && P.dono_id !== nuvem.usuario().id, rs = racaSel(), c = conj();
     const mostraMag = c.habilidades.length || MAG().length || magiaRacial();
     $("#ficha").innerHTML = `
       <header class="panel ficha-resumo"><div class="ficha-identidade"><div class="ficha-foto">${fotoHTML()}<button type="button" class="small subtle ficha-trocar-foto" id="b-foto">Trocar foto</button><input type="file" id="in-foto" accept="image/*" hidden></div><div><p class="eyebrow">Ficha de personagem · D&D 2014</p><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p class="ficha-meta"><span class="badge">Nível ${nivelTotal()}</span>${nivelTotal()<20?`<a class="btnlike small ficha-subir-nivel" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a>`:""} Proficiência ${fm(bonusProf())} · ${esc(f.background||"Origem não definida")}</p></div></div><div class="ficha-destaques">${C.estatistica({rotulo:"CA",valor:P.ca,id:"resumo-ca"})}${C.estatistica({rotulo:"Iniciativa",valor:fm(modA("des")+R.bonusSemProf(F())),id:"resumo-iniciativa",tipo:"iniciativa"})}${C.estatistica({rotulo:"Desloc.",valor:String(f.deslocamento ?? 9).replace(".",",")+" m",id:"resumo-deslocamento",tipo:"deslocamento"})}</div></header>
       <div class="panel vida-ficha"><div id="bloco-pv">${blocoPV()}</div><details class="vida-descanso"><summary>Dados de vida e descanso</summary><div id="bloco-dv">${blocoDV()}</div>
-        <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-curto">Registrar Descanso Curto</button><button type="button" class="small" id="b-longo">Descanso Longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></details></div>
+        <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-curto">Registrar Descanso Curto</button><button type="button" class="small" id="b-longo">Descanso Longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></details><div id="bloco-efeitos">${blocoEfeitos()}</div></div>
 <nav class="ficha-abas" aria-label="Seções da ficha" role="tablist"><button type="button" role="tab" id="aba-principal" aria-controls="secao-principal" data-ficha-aba="principal">Principal</button><button type="button" role="tab" id="aba-combate" aria-controls="secao-combate" data-ficha-aba="combate">Combate</button><button type="button" role="tab" id="aba-magias" aria-controls="secao-magias" data-ficha-aba="magias">Magias</button><button type="button" role="tab" id="aba-inventario" aria-controls="secao-inventario" data-ficha-aba="inventario">Inventário</button><button type="button" role="tab" id="aba-personagem" aria-controls="secao-personagem" data-ficha-aba="personagem">Personagem</button><button type="button" role="tab" id="aba-notas" aria-controls="secao-notas" data-ficha-aba="notas">Notas</button></nav><section id="secao-principal" role="tabpanel" aria-labelledby="aba-principal" data-ficha-secao="principal" class="ficha-conteudo" tabindex="0">      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2>${blocoAtr()}<details class="mod-temp-ficha"><summary>Modificadores temporários</summary><p class="muted">Poções, magias e itens que alteram um atributo por um tempo. São ajustes de jogo: <b>não mudam o atributo permanente</b> (isso é no Editar personagem ou ao subir de nível).</p><div class="grade2">${ATR.map(([k,r])=>`<label class="mod-temp-campo">${esc(R.ATR_NOME[k])}<input class="num" type="number" min="-20" max="20" step="1" data-modtemp="${k}" value="${num(F().modTemp?.[k],0)}" aria-label="Modificador temporário de ${esc(R.ATR_NOME[k])}"></label>`).join("")}</div><p class="muted">Bônus temporários por categoria (valem só para o que descrevem; o valor do atributo é o único que muda a capacidade de preparar magias):</p><div class="grade2">${R.CATEGORIAS_TEMP.map(([k,n])=>`<label class="mod-temp-campo">${esc(n)}<input class="num" type="number" min="-20" max="20" step="1" data-bonustemp="${k}" value="${R.bonusTemp(F(),k)}" aria-label="Bônus temporário: ${esc(n)}"></label>`).join("")}</div><div class="row" style="margin:8px 0 0"><button type="button" class="small" id="zerar-modtemp">Zerar modificadores temporários</button></div></details></div>
       <div class="panel"><h2 class="panel-title">Testes de resistência</h2><div id="bloco-sal">${blocoSal()}</div></div>
       <details class="panel pericias-ficha" open><summary class="panel-title">Perícias <span class="muted">Expandir / recolher</span></summary><div id="bloco-per">${blocoPer()}</div></details>
@@ -362,6 +512,10 @@
       </section><section id="secao-inventario" role="tabpanel" aria-labelledby="aba-inventario" data-ficha-secao="inventario" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
         ${cabInv}<div id="inv">${INV().map(linhaInv).join("")}</div>
         <div class="row"><button type="button" class="small" id="add-item">Adicionar item</button><select id="eq-pre" style="flex:1 1 180px">${opt("", "Adicionar equipamento comum…", true)}${presets().map((p, i) => opt(i, `${p[0]} (${p[1]} kg)`)).join("")}</select><button type="button" class="small" id="add-pre">Adicionar</button></div>
+        <div class="row"><select id="it-cat" style="flex:1 1 200px">${opt("", "Adicionar poção ou item mágico…", true)}${Object.entries(IE.CATALOGO).map(([k, m]) => opt(k, m.nome, false)).join("")}</select><button type="button" class="small" id="it-cat-add">Adicionar</button></div>
+        <div class="row"><select id="pg-mag" style="flex:1 1 200px" aria-label="Magia do pergaminho">${opt("", "Pergaminho de magia: escolher a magia…", true)}</select><input id="pg-nota" style="flex:1 1 140px" maxlength="80" placeholder="Onde foi encontrado (opcional)"><button type="button" class="small" id="pg-add">Adicionar pergaminho</button></div>
+        <div id="uso-box" class="panel" hidden></div><div id="ef-box" class="panel" hidden></div>
+        <details class="historico-inv"><summary>Histórico de movimentações</summary><div id="inv-hist">${histInv()}</div></details>
         <div id="bloco-carga">${blocoCarga()}</div>
         <div class="sub">Dinheiro</div>
         <div class="moedas">${MOEDAS.map(([k, r]) => `<div class="moeda-controle"><label>${r}</label><input class="num" type="number" min="0" step="1" data-din="${k}" value="${moeda(DIN()[k])}"><div class="inline"><button type="button" data-moeda="${k}" data-sinal="-1" aria-label="Diminuir ${r}">−</button><input class="num" type="number" min="1" step="1" id="ajuste-${k}" placeholder="1" aria-label="Quantidade de ${r}"><button type="button" data-moeda="${k}" data-sinal="1" aria-label="Somar ${r}">+</button></div></div>`).join("")}<div><label>Total em PO</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="total-po">${totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div></div>
@@ -416,6 +570,7 @@
     const lc=$("#lista-car");if(lc)lc.innerHTML=CAR().map(itemCar).join("");atualizarRecursos();
     const nt = $("#nivel-total"); if (nt) nt.textContent = nivelTotal() || "—";
     const bs = $("#bloco-slots"); if (bs) bs.innerHTML = blocoSlots();
+    const be = $("#bloco-efeitos"); if (be) be.innerHTML = blocoEfeitos();
     ATQ().forEach((a, i) => { const e = $("#atk-res-" + i); if (e) e.innerHTML = `<b>${resAtq(a)}</b>`; });
     profTxt(); avisoArm(); atualizarCarga();
     if($("#resumo-pv"))$("#resumo-pv").textContent=P.pv_atual+" / "+P.pv_max;if($("#resumo-ca"))$("#resumo-ca").textContent=P.ca;
@@ -444,7 +599,7 @@
     if (!confirm("Descanso longo: recupera todos os PV, os espaços de magia e metade dos dados de vida. Continuar?")) return;
     const f = F(), dv = dadosVida(), us = f.dvUsados = f.dvUsados || {};
     Object.keys(dv).forEach((d) => { us[d] = Math.max(0, num(us[d], 0) - Math.max(1, Math.floor(dv[d] / 2))); });
-    f.slotsUsados = []; f.pactoUsado = 0; P.pv_atual = P.pv_max; P.pv_temp = 0;
+    f.slotsUsados = []; f.pactoUsado = 0; MJ.recuperarUsos(f, "longo"); IE.recuperarNoDescanso(f, "longo"); P.pv_atual = P.pv_max; P.pv_temp = 0;
     agendar({ ficha: P.ficha, pv_atual: P.pv_atual, pv_temp: 0 }); desenhar(); aviso("Descanso longo concluído.");
   }
 
@@ -468,7 +623,10 @@
     if (t.id === "eq-bonus") { EQ().bonus = num(t.value, 0); refrescar(); return; }
     if (t.id === "raca-txt") { F().raca = t.value; F().racaCustom = true; agendar({ ficha: P.ficha }); return; }
     if (t.id === "cat-q") return buscarCatalogo(t.value);
+    if (t.dataset.usoRol !== undefined && uso) { uso.rolagens[+t.dataset.usoRol] = t.value; uso.textoRolagem[+t.dataset.usoRol] = ""; atualizaUso(); return; }
+    if (t.id === "uso-nome" && uso) { uso.nome = t.value; atualizaUso(); return; }
     if (t.id === "cp-arc") { cp.arc = t.value; atualizaCopia(); return; }
+    if (t.id === "ms-modo") { $("#ms-uso").hidden = t.value !== "uso-limitado"; $("#ms-outra").hidden = t.value !== "outra"; return; }
     if (t.id === "ms-cat") { $("#ms-custom").hidden = !!t.value; return; }
   });
 
@@ -489,6 +647,12 @@
       R.aplicarRaca(f,antes); refrescar(); desenhar(); agendar({ ficha: P.ficha }); return;
     }
     if (t.dataset.prep) { const magia=MAG()[+t.dataset.prep],limites=R.preparacao(F()).filter(x=>x.pertence(magia)),disponivel=limites.find(x=>x.usadas<x.limite);if(t.checked&&!magia.prep&&!disponivel){t.checked=false;aviso("Limite de magias preparadas atingido. Desmarque uma magia antes de preparar outra.",true);return;}if(disponivel)magia.classePreparacao=disponivel.id; magia.prep = t.checked; $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
+    if (t.dataset.invTipo !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; it.tipo = t.value; salvarInv(); redesenharInv(); return; }
+    if (t.dataset.invEquip !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; it.equipado = t.checked; salvarInv(); refrescar(); redesenharInv(); return; }
+    if (t.dataset.invSint !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; try { IV.sintonizar(cont(), it.uid, t.checked); } catch (e) { t.checked = !t.checked; aviso(e.message, true); return; } salvarInv(); refrescar(); redesenharInv(); return; }
+    if (t.name === "uso-alvo" && uso) { uso.alvo = t.value; renderUso(); return; }
+    if (t.dataset.usoDano !== undefined && uso) { uso.danos[+t.dataset.usoDano] = t.value; atualizaUso(); return; }
+    if (t.id === "ef-tipo" && edEf) { edEf.tipo = t.value; const it = INV().find((x) => x.uid === edEf.uid); if (it) $("#ef-box").innerHTML = htmlEditorEfeitos(it); return; }
     if (t.id === "cp-mag") { cp.en = t.value; cp.uid = ""; $("#copia-box").innerHTML = htmlCopia(); atualizaCopia(); return; }
     if (t.name === "cp-fonte") { cp.fonte = t.value; $("#copia-box").innerHTML = htmlCopia(); atualizaCopia(); return; }
     if (t.id === "cp-perg") { cp.uid = t.value; atualizaCopia(); return; }
@@ -527,7 +691,7 @@
     if (c("#b-cura")) return mudarPV(false);
     if (c("#b-foto")) return $("#in-foto").click();
     if (c("#b-longo")) return descansoLongo();
-    if(c("#b-curto")){F().descansosCurtos=num(F().descansosCurtos,0)+1;F().pactoUsado=0;agendar({ficha:P.ficha});desenhar();aviso("Descanso curto registrado. Os dados de vida são gastos separadamente; os espaços de pacto foram recuperados.");return;}
+    if(c("#b-curto")){F().descansosCurtos=num(F().descansosCurtos,0)+1;F().pactoUsado=0;MJ.recuperarUsos(F(),"curto");IE.recuperarNoDescanso(F(),"curto");agendar({ficha:P.ficha});desenhar();aviso("Descanso curto registrado. Os dados de vida são gastos separadamente; os espaços de pacto foram recuperados.");return;}
     if((b=c("[data-dv-manual]")))return usarDado(+b.dataset.dvManual,"fisico");
     if((b=c("[data-dv-marcar]")))return usarDado(+b.dataset.dvMarcar,"marcar");
     if ((b = c("[data-dv]"))) return usarDado(+b.dataset.dv);
@@ -548,15 +712,29 @@
     if (c("#add-atq-arma")) { const v = $("#atq-arma").value; if (v === "") return; const a = R.ARMAS[+v]; ATQ().push({ nome: a[0], atr: a[3], dado: a[1], tipo: a[2], magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); $("#atq-arma").value = ""; agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-atq]"))) { ATQ().splice(+b.dataset.rmAtq, 1); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'; agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-mag]"))) { const i = +b.dataset.rmMag, m = MAG()[i]; if (!m || m.fonte !== "mestre" || !souMestre) return; if (!confirm(`Retirar a concessão de “${m.n}”?`)) return; F().magiasMestre = (F().magiasMestre || []).filter((x) => x.en !== m.en); MAG().splice(i, 1); $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
+    if ((b = c("[data-usar-concedida]"))) { const m = MAG()[+b.dataset.usarConcedida]; try { MJ.usarConcedida(F(), m); } catch (e) { aviso(e.message, true); return; } $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
     if (c("#cp-abrir")) { abrirCopia(); return; }
     if (c("#cp-fechar")) { $("#copia-box").hidden = true; return; }
     if (c("#cp-ok")) { confirmarCopia(); return; }
     if (c("#ms-abrir")) { abrirMestre(); return; }
     if (c("#ms-fechar")) { $("#mestre-box").hidden = true; return; }
     if (c("#ms-ok")) { concederMagia(); return; }
-    if (c("#add-item")) { INV().push({ nome: "", qtd: 1, peso: 0 }); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector("input").focus(); agendar({ inventario: P.inventario }); return; }
-    if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; INV().push({ nome: p[0], qtd: 1, peso: p[1] }); $("#inv").innerHTML = INV().map(linhaInv).join(""); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
-    if ((b = c("[data-rm-item]"))) { INV().splice(+b.dataset.rmItem, 1); $("#inv").innerHTML = INV().map(linhaInv).join(""); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
+    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0 })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector("input").focus(); agendar({ inventario: P.inventario }); return; }
+    if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; IV.adicionar(cont(), IV.novoItem({ nome: p[0], qtd: 1, peso: p[1], origem: { tipo: "jogo" } })); redesenharInv(); salvarInv(); return; }
+    if ((b = c("[data-rm-item]"))) { const it = itemPor(+b.dataset.rmItem); if (!it) return; if (num(it.qtd, 0) >= 1) IV.retirar(cont(), it.uid, null, { tipo: "descarte" }); else INV().splice(+b.dataset.rmItem, 1); salvarInv(); redesenharInv(); return; }
+    if ((b = c("[data-inv-usar]"))) { abrirUso(+b.dataset.invUsar); return; }
+    if ((b = c("[data-inv-copiar]"))) { const it = itemPor(+b.dataset.invCopiar); if (!it || !it.magiaVinculada) return; cp.fonte = "pergaminho"; cp.en = it.magiaVinculada.en; cp.uid = it.uid; cp.arc = ""; const aba = document.querySelector('[data-ficha-aba="magias"]'); if (aba) aba.click(); abrirCopia(); return; }
+    if (c("#uso-ok")) { confirmarUso(); return; }
+    if (c("#uso-cancel")) { uso = null; $("#uso-box").hidden = true; return; }
+    if ((b = c("[data-uso-rolar]"))) { const k = +b.dataset.usoRolar, it = INV().find((x) => x.uid === uso.uid), p = it && IE.plano(it).find((x) => x.i === k); if (!p) return; const r = IE.rolar(p.dados, window.crypto && crypto.getRandomValues ? () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296 : Math.random); uso.rolagens[k] = r.total; uso.textoRolagem[k] = "rolou " + r.rolls.join(" + ") + (r.bonus ? (r.bonus > 0 ? " + " : " - ") + Math.abs(r.bonus) : "") + " = " + r.total; renderUso(); return; }
+    if ((b = c("[data-enc-efeito]"))) { try { IE.encerrarEfeito(P, b.dataset.encEfeito); } catch (e) { aviso(e.message, true); return; } agendar({ ficha: P.ficha }); refrescar(); return; }
+    if (c("#it-cat-add")) { const k = $("#it-cat").value; if (!k) return; IV.adicionar(cont(), IE.itemDoCatalogo(k, { tipo: souMestre ? "mestre" : "jogo" })); salvarInv(); redesenharInv(); return; }
+    if (c("#pg-add")) { adicionarPergaminho(); return; }
+    if ((b = c("[data-inv-editar]"))) { abrirEditor(+b.dataset.invEditar); return; }
+    if (c("#ef-add")) { addEfeito(); return; }
+    if (c("#ef-salvar-props")) { salvarProps(); return; }
+    if (c("#ef-fechar")) { $("#ef-box").hidden = true; edEf = null; return; }
+    if ((b = c("[data-ef-rm]"))) { const it = edEf && INV().find((x) => x.uid === edEf.uid); if (!it) return; it.propriedades.efeitos.splice(+b.dataset.efRm, 1); salvarInv(); redesenharInv(); $("#ef-box").innerHTML = htmlEditorEfeitos(it); return; }
     if ((b = c("[data-rm-car]"))) { const i = +b.dataset.rmCar; if(CAR()[i].auto)return; if (!confirm(`Remover “${CAR()[i].nome}” da ficha?`)) return; CAR().splice(i, 1); $("#lista-car").innerHTML = CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>';atualizarRecursos(); agendar({ ficha: P.ficha }); return; }
     if (c("#add-car")) { const nome = $("#car-nome").value.trim(); if (!nome) return; adicionarCar({ nome, desc: $("#car-desc").value }); $("#car-nome").value = ""; $("#car-desc").value = ""; return; }
     if ((b = c("[data-cat]"))) { const r = (catalogo || {}).achados[+b.dataset.cat]; if (r) { adicionarCar({ nome: r.titulo, desc: r.desc, cf: r.chave }); $("#cat-q").value = ""; $("#cat-res").innerHTML = ""; } return; }
