@@ -6,7 +6,7 @@
   const esc = nuvem.esc;
   const params = new URLSearchParams(location.search), pedido = params.get("campanha"), personagemPedido = params.get("personagem");
   const conta = nuvem.usuario()?.id;
-  let jogador = false, camps = [], pers = [], atual = "", enviado = {}, falhas = 0, adicionouPedido = false, buscando = false, carregou = false, resumoId = null, focoAnterior = null, ultimaGrade = null;
+  let forcarSync = false, vistos = {}, jogador = false, camps = [], pers = [], atual = "", enviado = {}, falhas = 0, adicionouPedido = false, buscando = false, carregou = false, resumoId = null, focoAnterior = null, ultimaGrade = null;
   const msg = (t, erro) => { $("#ci-msg").innerHTML = erro ? '<span class="err">'+esc(t)+'</span>' : esc(t || ""); };
   const mesmaConta = () => nuvem.usuario()?.id === conta;
   const emCombate = p => window.__ini.list().some(c => c.pid === p.id);
@@ -71,11 +71,20 @@
       let mudouFoto = false;
       for (const c of window.__ini.list()) {
         const p = pers.find(p => p.id === c.pid);
+        /* A ficha é a fonte dos PV, CA e PV máximo: quando ela muda (ou o jogador pede "Atualizar personagens"), o combate acompanha. O jogador não grava na ficha. */
+        if (p && (jogador || forcarSync)) {
+          const assinatura = [p.pv_atual, p.pv_max, p.ca].join("|");
+          if (forcarSync || (vistos[p.id] !== undefined && vistos[p.id] !== assinatura)) { c.hp = p.pv_atual; c.maxHp = Math.max(1, p.pv_max); c.ac = p.ca || 0; enviado[p.id] = p.pv_atual; mudouFoto = true; }
+          vistos[p.id] = assinatura;
+          if (p.ficha?.foto && c.foto !== p.ficha.foto) { c.foto = p.ficha.foto; mudouFoto = true; }
+          continue;
+        }
         if(p && !ocupadas.has(p.id) && enviado[p.id] === c.hp && (c.hp !== p.pv_atual || c.maxHp !== p.pv_max || c.ac !== p.ca)) {
           c.hp=p.pv_atual;c.maxHp=p.pv_max;c.ac=p.ca;enviado[p.id]=p.pv_atual;mudouFoto=true;
         }
         if (p?.ficha?.foto && c.foto !== p.ficha.foto) { c.foto = p.ficha.foto; mudouFoto = true; }
       }
+      forcarSync = false;
       if (mudouFoto) window.__ini.render();
       const pedidos=(params.get('personagens')||'').split(',').filter(Boolean);
       if(pedidos.length&&!adicionouPedido){
@@ -120,7 +129,7 @@
     if(e.target.closest('#ci-todos')){if(!podeUsar())return;pers.filter(p=>!emCombate(p)).forEach(p=>selecionados.add(p.id));desenhar();return;}
     if(e.target.closest('#ci-nenhum')){selecionados.clear();desenhar();return;}
     if(e.target.closest('#ci-rolar')){adicionarSelecionados([...selecionados]).catch(e=>msg(e.message,true));return;}
-    if(e.target.closest("#ci-recarregar")){falhas=0;carregou=false;carregar();}
+    if(e.target.closest("#ci-recarregar")){falhas=0;carregou=false;forcarSync=true;carregar();}
   });
   box.addEventListener("change",e=>{
     if(e.target.dataset?.ciSel){if(!podeUsar())return;const pid=e.target.dataset.ciSel;if(!pers.some(p=>p.id===pid&&!emCombate(p)))return;e.target.checked?selecionados.add(pid):selecionados.delete(pid);desenhar();document.querySelector('[data-ci-sel="'+pid+'"]')?.focus();return;}

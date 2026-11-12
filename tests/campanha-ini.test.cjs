@@ -1,16 +1,16 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
 const {vm,executar,documentoFalso,armazenamento,tick}=require("./helpers.cjs");
-async function fixture({search="?campanha=antiga",erro=false,user={id:"mestre"},ficha={},papel='mestre',autorizado=true}={}){
+async function fixture({sheet={pv:12},search="?campanha=antiga",erro=false,user={id:"mestre"},ficha={},papel='mestre',autorizado=true}={}){
   const document=documentoFalso(),localStorage=armazenamento(),lista=[],consultas=[],rpcs=[],eventos={};let atualizar;
   localStorage.setItem("ini_campanha","antiga");
   const nuvem={usuario:()=>user,esc:s=>String(s??""),rpc:async n=>{rpcs.push(n);return autorizado;},observar(fn){atualizar=fn;},get:async q=>{
     consultas.push(q);if(erro)throw Error("Permissão recusada");
-    return q.startsWith("membros")?[{papel,campanha:{id:"antiga",nome:"Antiga"}},{papel,campanha:{id:"atual",nome:"Atual"}}]:[{id:"p",nome:"Herói",pv_atual:12,pv_max:15,ca:13,ficha:{foto:"data:image/png;base64,FOTO",classes:[{c:"Bard",n:2}],atributos:{des:14},...ficha}}];
+    return q.startsWith("membros")?[{papel,campanha:{id:"antiga",nome:"Antiga"}},{papel,campanha:{id:"atual",nome:"Atual"}}]:[{id:"p",nome:"Herói",pv_atual:sheet.pv,pv_max:15,ca:13,ficha:{foto:"data:image/png;base64,FOTO",classes:[{c:"Bard",n:2}],atributos:{des:14},...ficha}}];
   }};
   const window={nuvem,addEventListener:(n,fn)=>eventos[n]=fn,__ini:{list:()=>lista,add:c=>lista.push(c),render(){}}};
   const c=vm.createContext({window,nuvem,document,location:{search,origin:'http://localhost'},localStorage,URLSearchParams,setInterval(){}});
   executar("js/origens.js",c);executar("js/regras.js",c);c.REGRAS=window.REGRAS;executar('js/ficha-componentes.js',c);executar('js/rolagens.js',c);executar('js/grupo-personagens.js',c);executar("js/campanha-ini.js",c);await tick();
-  return {document,lista,consultas,rpcs,atualizar,nuvem,eventos,window};
+  return {document,lista,consultas,rpcs,atualizar,nuvem,eventos,window,sheet};
 }
 test("link da campanha escolhe a campanha atual em vez da preferência antiga",async()=>{
   const f=await fixture({search:"?campanha=atual&personagem=p"});
@@ -136,4 +136,14 @@ test('adicionar monstro pelo bestiário responde na hora: aviso, contagem da cri
  assert.match(fonte,/window\.FEEDBACK\?\.mostrar\(`“\$\{nome\}” adicionado à iniciativa\./);assert.match(fonte,/Já são \$\{qtd\} desta criatura no combate/);
  assert.match(fonte,/botao\.textContent = qtd > 1 \? "Adicionado \(" \+ qtd \+ "\)" : "Adicionado"/);assert.match(fonte,/addMon\(m, t\.closest\("\[data-add\]"\)\)/);
  assert.match(html,/js\/feedback\.js/,'a página da iniciativa carrega o aviso');
+});
+
+test('PV alterados na ficha aparecem no combate (jogador), inclusive depois de recarregar a página; "Atualizar personagens" força a sincronia',async()=>{
+ const f=await fixture({papel:'jogador',user:{id:'jog'},search:'?campanha=atual'});
+ f.lista.push({name:'Herói',kind:'Personagem',hp:5,maxHp:15,ac:13,pid:'p',key:''});   // combatente restaurado do aparelho, com PV antigo
+ await f.atualizar();assert.equal(f.lista[0].hp,5,'primeira leitura só registra a ficha');
+ f.sheet.pv=9;await f.atualizar();assert.equal(f.lista[0].hp,9,'a ficha mudou: o combate acompanha');
+ f.lista[0].hp=2;await f.atualizar();assert.equal(f.lista[0].hp,2,'dano feito no combate não é desfeito sem mudança na ficha');
+ f.document.el('camp-ini').events.click({target:{closest:s=>s==='#ci-recarregar'?{}:null}});await new Promise(r=>setTimeout(r,20));
+ assert.equal(f.lista[0].hp,9,'o botão Atualizar personagens traz os PV da ficha');
 });
