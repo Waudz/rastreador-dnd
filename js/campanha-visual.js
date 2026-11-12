@@ -24,6 +24,10 @@
     }catch(err){if(g===geracao){mensagem('Não foi possível carregar as imagens: '+err.message);}}
   }
   async function salvar(){
+        if (!editando || Object.keys(mudancas).length === 0) {
+      mensagem('Nenhuma imagem nova foi preparada. Selecione uma imagem e confirme a prévia antes de salvar.');
+      return;
+    }
     if(!podeEditar||!base||salvando||preparando)return;const usuarioSalvar=conta;salvando=true;consulta++;geracao++;travar(true);mensagem('Salvando imagens…');
     try{const r=await window.CAMPANHA_IMAGENS.salvar(campanha,base,{...mudancas,posicao:estado.posicao,posicaoMobile:estado.posicaoMobile,...(estado.enquadramento?{enquadramento:estado.enquadramento}:{})});
       if(window.nuvem.usuario()?.id!==usuarioSalvar)throw Error('A conta mudou. Abra a campanha novamente.');base=r.visual;mudancas={};editando=false;
@@ -91,13 +95,39 @@ if (nomeArquivo) {
 
 mensagem('Imagem selecionada. Preparando prévia...');
 
-const atual = ++geracao;
 preparando++;
+const atual = ++geracao;
+consulta++;
 travar(true);
     try{let entrada=arquivo,frame=null;
-      if(tipo==='simbolo'){const data=await window.recortarFoto(arquivo);if(!data)return;entrada=await (await fetch(data)).blob();}
+      if (tipo === 'simbolo') {
+  const data = await window.recortarFoto(arquivo);
+  if (!data) return;
+
+  const [cabecalho, conteudo] = data.split(',');
+  const mime = cabecalho.match(/^data:([^;]+);base64$/)?.[1];
+
+  if (!mime || !conteudo) {
+    throw new Error('Formato inválido da imagem recortada.');
+  }
+
+  const binario = atob(conteudo);
+  const bytes = new Uint8Array(binario.length);
+
+  for (let i = 0; i < binario.length; i++) {
+    bytes[i] = binario.charCodeAt(i);
+  }
+
+  entrada = new Blob([bytes], { type: mime });
+}
       else if(enquadramentoDisponivel()){frame=await window.ajustarFundo(arquivo);if(!frame)return;}
-      const blob=await otimizar(entrada,tipo);if(atual!==geracao||!podeEditar)return;if(frame)estado.enquadramento=frame;const url=URL.createObjectURL(blob);urls.push(url);estado[tipo]=url;mudancas[tipo]=blob;editando=true;const nome=$('[data-arquivo-nome="'+tipo+'"]');if(nome)nome.textContent=arquivo.name||'Imagem selecionada';aplicar();mensagem('Prévia atualizada. Clique em Salvar imagens para compartilhar.');}
+      const blob = await otimizar(entrada, tipo);
+
+if (atual !== geracao || !podeEditar) {
+  mensagem('A seleção da imagem foi interrompida por uma atualização da campanha. Tente novamente.');
+  return;
+}
+if(frame)estado.enquadramento=frame;const url=URL.createObjectURL(blob);urls.push(url);estado[tipo]=url;mudancas[tipo]=blob;editando=true;const nome=$('[data-arquivo-nome="'+tipo+'"]');if(nome)nome.textContent=arquivo.name||'Imagem selecionada';aplicar();mensagem('Prévia atualizada. Clique em Salvar imagens para compartilhar.');}
     catch(err){$('#visual-msg').textContent=err.message;}finally{e.target.value='';preparando--;if(!preparando)travar(false);}
   });
   document.addEventListener('input',e=>{const campo=e.target.dataset?.visualPos;if(!podeEditar||salvando||!['posicao','posicaoMobile'].includes(campo))return;editando=true;estado[campo]=Math.max(0,Math.min(100,Number(e.target.value)||0));aplicar();});
