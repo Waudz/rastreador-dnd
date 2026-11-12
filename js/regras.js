@@ -84,13 +84,16 @@ window.REGRAS = (() => {
 
   /* armas comuns: [nome, dado, tipo de dano, atributo (for | des | acuidade), peso kg] */
   const ARMAS = [
-    ["Adaga", "1d4", "perfurante", "acuidade", 0.5], ["Bordão", "1d6", "contundente", "for", 2], ["Clava", "1d4", "contundente", "for", 1], ["Lança", "1d6", "perfurante", "for", 1.5],
+    ["Adaga", "1d4", "perfurante", "acuidade", 0.5], ["Bordão (bastão)", "1d6", "contundente", "for", 2], ["Clava", "1d4", "contundente", "for", 1], ["Lança", "1d6", "perfurante", "for", 1.5],
     ["Maça", "1d6", "contundente", "for", 2], ["Machadinha", "1d6", "cortante", "for", 1], ["Azagaia", "1d6", "perfurante", "for", 1], ["Arco curto", "1d6", "perfurante", "des", 1],
     ["Besta leve", "1d8", "perfurante", "des", 2.5], ["Funda", "1d4", "contundente", "des", 0], ["Espada curta", "1d6", "perfurante", "acuidade", 1], ["Cimitarra", "1d6", "cortante", "acuidade", 1.5],
     ["Rapieira", "1d8", "perfurante", "acuidade", 1], ["Espada longa", "1d8", "cortante", "for", 1.5], ["Machado de batalha", "1d8", "cortante", "for", 2], ["Martelo de guerra", "1d8", "contundente", "for", 1],
     ["Arco longo", "1d8", "perfurante", "des", 1], ["Besta de mão", "1d6", "perfurante", "des", 1.5], ["Besta pesada", "1d10", "perfurante", "des", 9], ["Machado grande", "1d12", "cortante", "for", 3.5],
     ["Espada grande", "2d6", "cortante", "for", 3], ["Maça estrela", "1d8", "perfurante", "for", 2], ["Mangual", "1d8", "contundente", "for", 1], ["Glaive", "1d10", "cortante", "for", 3],
-    ["Lança de cavalaria", "1d12", "perfurante", "for", 3], ["Tridente", "1d6", "perfurante", "for", 2], ["Desarmado", "1", "contundente", "for", 0]
+    ["Lança de cavalaria", "1d12", "perfurante", "for", 3], ["Tridente", "1d6", "perfurante", "for", 2],
+    /* versáteis empunhadas com as duas mãos (2014): Bordão 1d8, Lança 1d8, Tridente 1d8, Espada longa 1d10, Machado de batalha 1d10, Martelo de guerra 1d10 */
+    ["Bordão (bastão, duas mãos)", "1d8", "contundente", "for", 2], ["Lança (duas mãos)", "1d8", "perfurante", "for", 1.5], ["Tridente (duas mãos)", "1d8", "perfurante", "for", 2],
+    ["Espada longa (duas mãos)", "1d10", "cortante", "for", 1.5], ["Machado de batalha (duas mãos)", "1d10", "cortante", "for", 2], ["Martelo de guerra (duas mãos)", "1d10", "contundente", "for", 1], ["Desarmado", "1", "contundente", "for", 0]
   ];
   const TIPOS_DANO = ["cortante", "perfurante", "contundente", "ácido", "frio", "fogo", "força", "elétrico", "necrótico", "venenoso", "psíquico", "radiante", "trovejante"];
 
