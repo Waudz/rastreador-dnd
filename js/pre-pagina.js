@@ -4,6 +4,7 @@
 (() => {
   const el = document.documentElement, q = new URLSearchParams(location.search), aba = q.get("aba");
   const pagina = location.pathname.split("/").pop();
+  if(pagina==="personagem.html"&&["painel","leitura"].includes(q.get("modo")))el.classList.add("ficha-frame");
   if (pagina === "iniciativa.html") el.dataset.appView = ["monstros", "magias"].includes(aba) ? aba : aba === "consulta" ? "monstros" : "iniciativa";
   if (pagina === "conta.html" || pagina === "index.html" || pagina === "") el.dataset.contaAba = ["conta", "personagens"].includes(aba) ? aba : "campanhas";
   let logado = false, h = "", uid = "";

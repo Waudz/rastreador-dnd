@@ -10,7 +10,7 @@
   const msg = (t, erro) => { $("#ci-msg").innerHTML = erro ? '<span class="err">'+esc(t)+'</span>' : esc(t || ""); };
   const mesmaConta = () => nuvem.usuario()?.id === conta;
   const emCombate = p => window.__ini.list().some(c => c.pid === p.id);
-  const podeUsar = () => mesmaConta() && camps.some(c => c.id === atual);
+  const podeUsar = () => mesmaConta() && camps.some(c => c.id === atual && c.papel!=="jogador");
   const selecionados=new Set();
   const ocupadas = new Set();
   const basesPV = new Map();
@@ -21,6 +21,7 @@
   function desenhar() {
     const G=window.GRUPO_PERSONAGENS;
     for(const pid of selecionados)if(!pers.some(p=>p.id===pid&&!emCombate(p)))selecionados.delete(pid);
+    window.__ini.selecaoPendente?.(selecionados.size,()=>adicionarSelecionados([...selecionados]));
     const barra=G.barra('ci',selecionados.size);if($('#ci-selecao').innerHTML!==barra)$('#ci-selecao').innerHTML=barra;
     const html=pers.length?pers.map(p=>'<article class="ci-cartao grupo-cartao">'+G.checkbox(p,selecionados.has(p.id),'ci-sel',emCombate(p))+G.identidade(p,{resumo:true,vida:true})+(emCombate(p)?'<span class="muted ci-no-combate">No combate</span>':'<button type="button" class="grupo-icone" data-ci="'+esc(p.id)+'" title="Adicionar à iniciativa" aria-label="Adicionar '+esc(p.nome)+' à iniciativa">'+G.icone('swords')+'</button>')+'</article>').join(''):'<span class="muted">Esta campanha ainda não tem personagens. Importe ou crie as fichas dentro da campanha.</span>';
     if(ultimaGrade!==html){$("#ci-lista").innerHTML=html;ultimaGrade=html;}
@@ -30,11 +31,7 @@
     if (resumoId && resumoId !== p.id && ocupadas.has(resumoId)) { msg('Aguarde a ficha terminar de salvar antes de trocar de personagem.'); return; }
     if (resumoId === p.id && !$("#ci-resumo").hidden) return;
     resumoId=p.id;focoAnterior=document.activeElement;
-    if($('#ci-ficha-frame')?.dataset?.personagem !== p.id) $("#ci-resumo-corpo").innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(p.id)+'" title="Ficha de '+esc(p.nome)+'" src="personagem.html?id='+encodeURIComponent(p.id)+'&modo=painel"></iframe>';
-    
-    document.body.classList.add('com-ficha-lateral');
-    if(window.PAINEL)window.PAINEL.mostrar("ci-resumo");else{if(window.reorganizarPaineis)$("#sheet").hidden=true;$("#ci-resumo").hidden=false;}
-    window.reorganizarPaineis?.();$("#ci-resumo-fechar").focus?.();
+    if(window.LEITOR_FICHAS){if(!window.LEITOR_FICHAS.personagem(p.id,p.nome))return;}else{$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(p.id)+'" title="Ficha de '+esc(p.nome)+'" src="personagem.html?id='+encodeURIComponent(p.id)+'&modo=painel"></iframe>';$('#ci-resumo').hidden=false;window.reorganizarPaineis?.();}
   }
   function fecharResumo(){if(window.PAINEL)window.PAINEL.fechar();$("#ci-resumo").hidden=true;document.body.classList.remove('com-ficha-lateral');window.reorganizarPaineis?.();focoAnterior?.focus?.();}
 
@@ -49,21 +46,22 @@
   async function adicionarSelecionados(ids){
     if(!podeUsar())return;
     const campanha=atual;
-    if(await nuvem.rpc('eh_mestre',{c:campanha})!==true){bloquear();return;}
+    if(await nuvem.rpc('eh_mestre',{c:campanha})!==true){if(campanha===atual){bloquear();contextoVisual(false);}return false;}
     if(!podeUsar()||campanha!==atual)return;
     const escolhidos=pers.filter(p=>ids.includes(p.id)&&!emCombate(p));
     escolhidos.forEach(p=>adicionar(p,true));selecionados.clear();desenhar();
-    msg(escolhidos.length+' personagem(ns) adicionado(s). Os participantes atuais foram preservados.');
+    msg(escolhidos.length+' personagem(ns) adicionado(s). Os participantes atuais foram preservados.');return true;
   }
   async function carregar() {
     if (buscando || !podeUsar()) return;
     buscando = true; if(!carregou&&window.ESQ){window.ESQ.mostrar($("#ci-lista"),"lista","Carregando personagens…",3);msg("");}
-    const campanhaConsultada=atual;
+    const campanhaConsultada=atual,geracaoConsultada=geracaoContexto;
     try {
       const mestre = await nuvem.rpc('eh_mestre', {c:atual});
-      if(mestre !== true){bloquear();return;}
-      const lista = await nuvem.get("personagens?select=id,nome,pv_atual,pv_max,ca,ficha&campanha_id=eq."+encodeURIComponent(atual)+"&order=nome");
-      if (!mesmaConta() || atual !== campanhaConsultada) return;
+      if(atual!==campanhaConsultada||geracaoConsultada!==geracaoContexto)return;
+      if(mestre !== true){window.CAMPANHAS_UI?.esquecer(atual);bloquear();contextoVisual(false);return;}
+      const lista = await nuvem.get("personagens?select=id,nome,pv_atual,pv_max,ca,ficha&campanha_id=eq."+encodeURIComponent(campanhaConsultada)+"&order=nome");
+      if (!mesmaConta() || atual !== campanhaConsultada||geracaoConsultada!==geracaoContexto) return;
       pers = lista;
       if(resumoId && !pers.some(p=>p.id===resumoId)){fecharResumo();$('#ci-resumo-corpo').innerHTML='';resumoId=null;}
       let mudouFoto = false;
@@ -84,42 +82,32 @@
         else { adicionar(p); adicionouPedido = true; msg("Personagem adicionado à iniciativa."); }
       } else msg("");
       desenhar();carregou=true;
-    } catch(e) { if(!carregou&&window.ESQ)window.ESQ.erro($("#ci-lista"),"Não foi possível carregar os personagens: "+e.message+".",()=>carregar(),""); else msg("Não foi possível carregar os personagens: "+e.message,true); }
-    finally { buscando = false; }
+    } catch(e) { if(atual!==campanhaConsultada||geracaoConsultada!==geracaoContexto)return;if(!carregou&&window.ESQ)window.ESQ.erro($("#ci-lista"),"Não foi possível carregar os personagens: "+e.message+".",()=>carregar(),""); else msg("Não foi possível carregar os personagens: "+e.message,true); }
+    finally { if(atual===campanhaConsultada&&geracaoConsultada===geracaoContexto)buscando = false; }
   }
   function contextoVisual(ativa){
-    const lista=$('#ini-selecao'),topo=$('#ini-contexto');
-    if(!lista||!topo)return;
-    lista.hidden=ativa;topo.hidden=!ativa;
     for(const id of ['iniciativa-atual','adicionar-combatente']){const el=$('#'+id);if(el)el.hidden=!ativa;}
-    box.hidden=!ativa;
-    if(ativa){$('#ini-campanha-nome').textContent=camps.find(c=>c.id===atual)?.nome||'';box.querySelector('.ci-filtros')?.setAttribute('hidden','');}
-    else $('#ini-campanhas').innerHTML=camps.map(c=>'<a class="card" href="iniciativa.html?aba=iniciativa&campanha='+encodeURIComponent(c.id)+'">'+esc(c.nome)+'</a>').join('');
+    box.hidden=!ativa;const vazio=$('#ini-sem-campanha');if(vazio)vazio.hidden=ativa;
   }
-  $('#ini-voltar')?.addEventListener('click',()=>{fecharResumo();atual='';window.__ini.trocarContexto?.('');location.href='iniciativa.html?aba=iniciativa';});
-  async function iniciar() {
-    if (!conta) { box.hidden = true; return; }   // visitante: o painel de campanhas nem aparece (a iniciativa continua com combatentes manuais)
-    box.hidden = false; box.open = true;
-    if(window.ESQ){window.ESQ.mostrar($("#ci-lista"),"lista","Carregando campanhas…",3);msg("");}else msg("Carregando campanhas…");
-    try {
-      const ms = await nuvem.get("membros?select=campanha_id,papel,campanha:campanhas(id,nome)&usuario_id=eq."+encodeURIComponent(conta)+"&papel=eq.mestre");
-      if (!mesmaConta()) return;
-      camps = ms.filter(m => m.papel === "mestre" && m.campanha).map(m => m.campanha);
-
-      if (!camps.length) { box.hidden=true; msg("Você pode consultar o bestiário. Para adicionar o grupo à iniciativa, abra uma campanha onde você é mestre."); return; }
-      $("#ci-camp").innerHTML = camps.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join("");
-      let anterior = ""; try { anterior = (window.CAMPANHAS_UI ? window.CAMPANHAS_UI.ativaId() : localStorage.getItem("ini_campanha")) || ""; } catch (_) {}
-      const escolhida=camps.find(c=>c.id===pedido);
-      if(!escolhida && $('#ini-selecao')){contextoVisual(false);return;}
-      atual = escolhida?.id || camps.find(c=>c.id===anterior)?.id || camps[0].id;
-      contextoVisual(true);
-      $("#ci-camp").value = atual;
-      if(window.CAMPANHAS_UI)window.CAMPANHAS_UI.lembrar(atual);
-      window.__ini.trocarContexto?.(atual);
-      await carregar();
-      nuvem.observar?.(carregar,5000);
-    } catch(e) { if(window.ESQ)window.ESQ.erro($("#ci-lista"),"Não foi possível carregar as campanhas: "+e.message+".",()=>iniciar(),""); else msg("Não foi possível carregar as campanhas: "+e.message,true); }
+  let geracaoContexto=0,pararConsulta=null;
+  async function iniciar(novoPedido){
+    if(!conta){box.hidden=true;return;}
+    const g=++geracaoContexto;buscando=false;pararConsulta?.();pararConsulta=null;selecionados.clear();pers=[];ultimaGrade=null;carregou=false;
+    window.__ini.selecaoPendente?.(0,null);
+    try{
+      const ms=window.CAMPANHAS_UI?.carregar?await window.CAMPANHAS_UI.carregar(true):await nuvem.get('membros?select=papel,campanha:campanhas(id,nome)&usuario_id=eq.'+encodeURIComponent(conta));
+      if(!mesmaConta()||g!==geracaoContexto)return;
+      camps=ms.filter(m=>m.campanha).map(m=>({...m.campanha,papel:m.papel}));
+      const preferida=novoPedido||pedido||(window.CAMPANHAS_UI?.ativaId()||localStorage.getItem('ini_campanha'));
+      const c=window.CAMPANHAS_UI?.validar?window.CAMPANHAS_UI.validar(ms,preferida):camps.find(c=>c.id===preferida);
+      if(!c||c.papel==='jogador'){if(!c&&preferida)window.CAMPANHAS_UI?.esquecer(preferida);atual='';contextoVisual(false);await window.CAMPANHAS_UI?.montarSeletor({});return;}
+      atual=c.id;window.CAMPANHAS_UI?.lembrar(atual);window.__ini.trocarContexto?.(atual);contextoVisual(true);box.open=true;
+      await carregar();if(g!==geracaoContexto)return;
+      await window.CAMPANHAS_UI?.montarSeletor({...c,podeEditarVisual:false});
+      pararConsulta=nuvem.observar?.(carregar,5000);
+    }catch(e){box.hidden=false;msg('Não foi possível carregar as campanhas: '+e.message,true);}
   }
+  window.addEventListener('campanha:alterada',e=>{if(e.detail?.id&&e.detail.id!==atual){fecharResumo();iniciar(e.detail.id);}});
   box.addEventListener("click",e=>{
     const resumo=e.target.closest("[data-ci-resumo]");if(resumo){const p=pers.find(p=>p.id===resumo.dataset.ciResumo);if(p)abrirResumo(p);return;}
     const b=e.target.closest("[data-ci]");
@@ -131,14 +119,11 @@
   });
   box.addEventListener("change",e=>{
     if(e.target.dataset?.ciSel){if(!podeUsar())return;const pid=e.target.dataset.ciSel;if(!pers.some(p=>p.id===pid&&!emCombate(p)))return;e.target.checked?selecionados.add(pid):selecionados.delete(pid);desenhar();document.querySelector('[data-ci-sel="'+pid+'"]')?.focus();return;}
-    if(e.target.id!=="ci-camp" || !camps.some(c=>c.id===e.target.value))return;selecionados.clear();atual=e.target.value;carregou=false;if(resumoId)fecharResumo();
-    if(window.CAMPANHAS_UI)window.CAMPANHAS_UI.lembrar(atual);else try{localStorage.setItem("ini_campanha",atual);}catch(_){}
-    window.__ini.trocarContexto?.(atual);
-    carregar();
+
   });
   document.addEventListener("ficha:fechar-personagem",()=>{if(!$("#ci-resumo").hidden)fecharResumo();});
   $("#ci-resumo-fechar").addEventListener("click",fecharResumo);
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&resumoId)fecharResumo();});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&resumoId&&!window.PAINEL)fecharResumo();});
   $("#combatants").addEventListener("click",e=>{if(e.target.closest("button,input,select"))return;const artigo=e.target.closest("[data-pid]");const p=artigo&&pers.find(p=>p.id===artigo.dataset.pid);if(p)abrirResumo(p);});
   setInterval(async()=>{
     if(!podeUsar() || falhas>5)return;
@@ -154,8 +139,7 @@
   window.addEventListener('message',async e=>{
     const frame=$('#ci-ficha-frame');
     if(!podeUsar() || e.origin!==location.origin || !frame?.contentWindow || e.source!==frame.contentWindow || e.data?.id!==frame.dataset.personagem)return;
-    if(e.data.tipo==='ficha-fechar'){fecharResumo();return;}
-    if(e.data.tipo==='ficha-magia'){if(typeof e.data.en==='string'&&e.data.en.length<120)window.abrirMagiaNoPainel?.(e.data.en);return;}
+    if(e.data.tipo==='ficha-fechar'||e.data.tipo==='ficha-magia')return;
     if(e.data.tipo==='ficha-salvando'){
       if(!ocupadas.has(e.data.id))basesPV.set(e.data.id,window.__ini.list().find(c=>c.pid===e.data.id)?.hp);
       ocupadas.add(e.data.id);return;

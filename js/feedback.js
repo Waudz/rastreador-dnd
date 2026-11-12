@@ -1,0 +1,2 @@
+/* Feedback temporário compartilhado, sem substituir erros que exigem ação. */
+(() => {let timer;window.FEEDBACK={mostrar(texto,{erro=false}={}){let el=document.getElementById('feedback-app');if(!el){el=document.createElement('div');el.id='feedback-app';el.className='app-feedback';el.setAttribute('role','status');el.setAttribute('aria-live','polite');document.body.append(el);}el.textContent=texto;el.hidden=false;el.classList.toggle('err',erro);clearTimeout(timer);if(!erro)timer=setTimeout(()=>el.hidden=true,3500);}};})();

@@ -2,7 +2,8 @@
 (() => {
   "use strict";
   const $ = (s) => document.querySelector(s), esc = nuvem.esc;
-  const id = new URLSearchParams(location.search).get("id");
+  let id = new URLSearchParams(location.search).get("id");
+  let geracaoCampanha=0;
   let camp = null, papel = "", membros = [], nomes = {}, pers = [], docs = [], aba = "pers", editandoDoc = null, anexosForm = [], formAberto = false;
   const mestre = () => papel === "mestre";
   const responsavelVisual=()=>camp?.mestre_id===meuId()&&membros.some(m=>m.usuario_id===meuId()&&m.papel==="mestre");
@@ -10,7 +11,7 @@
   const pct = (a, m) => (m > 0 ? Math.max(0, Math.min(100, (a / m) * 100)) : 0);
   const fmtData = (t) => new Date(t).toLocaleDateString("pt-BR");
   const tamanho = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB");
-  const aviso = (t, erro) => { const e = $("#erro"); e.innerHTML = t ? (erro ? `<span class="err">${esc(t)}</span>` : esc(t)) : ""; };
+  const aviso = (t, erro) => { if(t&&!erro&&window.FEEDBACK){window.FEEDBACK.mostrar(t);t='';}const e = $("#erro"); e.innerHTML = t ? (erro ? `<span class="err">${esc(t)}</span>` : esc(t)) : ""; };
 
   /* anotações: os documentos anexados ficam numa última linha "@@anexos:id,id" (não aparece no texto);
      [[Título|id]] no meio do texto continua funcionando como link; endereços http(s) viram links */
@@ -34,6 +35,7 @@
   const usadoEm = (arq) => docs.filter((x) => x.tipo !== "arquivo" && idsDe(x).includes(arq.id));
 
   async function carregar() {
+    const consultada=id,geracao=geracaoCampanha;
     const [c, m, pf, ps, ds] = await Promise.all([
       nuvem.get(`campanhas?select=id,nome,mestre_id&id=eq.${encodeURIComponent(id)}`),
       nuvem.get(`membros?select=usuario_id,papel&campanha_id=eq.${encodeURIComponent(id)}`),
@@ -41,10 +43,12 @@
       nuvem.get(`personagens?select=id,nome,dono_id,pv_atual,pv_max,pv_temp,ca,ficha&campanha_id=eq.${encodeURIComponent(id)}&order=nome`),
       nuvem.get(`documentos?select=id,tipo,titulo,conteudo,sessao,arquivo_path,arquivo_nome,arquivo_tipo,arquivo_tamanho,visivel,criado_em&campanha_id=eq.${encodeURIComponent(id)}&order=criado_em.desc`)
     ]);
+    if(consultada!==id||geracao!==geracaoCampanha)return false;
     if (!c[0]) throw new Error("Campanha não encontrada ou você não participa dela.");
-    camp = c[0]; membros = m; pers = ps; docs = ds;
-    nomes = Object.fromEntries(pf.map((x) => [x.id, x.nome || "Jogador"]));
-    const eu = m.find((x) => x.usuario_id === meuId()); papel = (window.ACESSO && await ACESSO.pronto) ? "mestre" : eu ? eu.papel : "jogador";
+    const eu = m.find((x) => x.usuario_id === meuId()),novoPapel=(window.ACESSO && await ACESSO.pronto)?"mestre":eu?eu.papel:"jogador";
+    if(consultada!==id||geracao!==geracaoCampanha)return false;
+    camp=c[0];membros=m;pers=ps;docs=ds;papel=novoPapel;
+    nomes=Object.fromEntries(pf.map(x=>[x.id,x.nome||"Jogador"]));
   }
 
   /* ---------- desenho ---------- */
@@ -62,10 +66,9 @@
     const G=window.GRUPO_PERSONAGENS, v=pct(p.pv_atual,p.pv_max);
     const dono=mestre()?`<div class="jogador-vinculo"><label>Jogador<select data-dono="${esc(p.id)}"><option value="">Vincular conta…</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?'selected':''}>${esc(nomes[m.usuario_id]||'Jogador')}</option>`).join('')}</select></label></div>`:'';
     return `<article class="card personagem-card grupo-cartao" data-id="${esc(p.id)}"><div class="grupo-cartao-topo">
-      ${mestre()?G.checkbox(p,selecionados.has(p.id)):''}${G.identidade(p,{jogador:nomes[p.dono_id]||'Sem vínculo'})}
+      ${mestre()?G.checkbox(p,selecionados.has(p.id)):''}${G.identidade(p,{jogador:nomes[p.dono_id]||'Sem vínculo',vida:true})}
       <div class="grupo-cartao-acoes">${mestre()?`<a class="grupo-icone" href="${esc(G.destino(id,[p.id]))}" title="Adicionar à iniciativa" aria-label="Adicionar ${esc(p.nome)} à iniciativa">${ico('swords')}</a>`:''}
       <details class="compact-menu"><summary title="Mais opções" aria-label="Mais opções de ${esc(p.nome)}">${ico('more')}</summary><div class="compact-popover"><a href="personagem.html?id=${encodeURIComponent(p.id)}">Abrir ficha</a>${dono}<button type="button" class="small danger" data-excluir-pers="${esc(p.id)}">Excluir personagem</button></div></details></div></div>
-      <div class="grupo-pv"><strong>PV ${p.pv_atual}/${p.pv_max}</strong></div>
       <div class="hp-track" role="meter" aria-label="Pontos de vida de ${esc(p.nome)}" aria-valuemin="0" aria-valuemax="${Math.max(1,p.pv_max)}" aria-valuenow="${p.pv_atual}"><div class="hp-fill ${v<=25?'low':v<=50?'mid':''}" style="width:${v}%"></div></div>${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''}</article>`;
   };
 
@@ -201,7 +204,7 @@
   }
 
   function abaMembros() {
-    const convite = mestre() ? `<div class="panel convite-gestao"><h3 class="sub" style="margin-top:0">Código de convite</h3><p class="muted" style="margin:0 0 8px">Quem tem o código entra na campanha como jogador. Ao trocar, o código antigo deixa de valer para novos jogadores; quem já entrou continua no grupo.</p><button type="button" class="small" id="novo-cod">Trocar código</button></div>` : "";
+    const convite = mestre() ? `<div class="panel convite-gestao"><h3 class="sub" style="margin-top:0">Convite da campanha</h3><p class="muted" style="margin:0 0 8px">Quem tem o código entra na campanha como jogador. Ao trocar, o código antigo deixa de valer para novos jogadores; quem já entrou continua no grupo.</p><div id="conv" role="status">Carregando convite…</div><button type="button" class="small" id="novo-cod">Renovar código</button></div>` : "";
     return convite + membros.map((m) => `<div class="res"><span><b>${esc(nomes[m.usuario_id] || "Jogador")}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></span>${m.papel !== "mestre" ? `<button type="button" class="small danger" data-remover="${esc(m.usuario_id)}">Remover</button>` : ""}</div>`).join("");
   }
 
@@ -209,15 +212,17 @@
     for(const pid of selecionados)if(!pers.some(p=>p.id===pid))selecionados.delete(pid);
     cabecalho();
     $("#conteudo").innerHTML = aba === "pers" ? abaPers() : aba === "diario" ? abaDiario() : aba === "docs" ? abaDocs() : abaMembros();
+    if(aba==="membros")await mostrarConvite();
   }
 
   async function mostrarConvite() {
     if (!mestre()) return;
-    const box = $("#conv"); box.hidden = false;
+    const box = $("#conv"),consultada=id;if(!box)return;box.hidden = false;
     try {
       const cod = await nuvem.rpc("codigo_da_campanha", { p_campanha: id });
+      if(consultada!==id||box!==$("#conv"))return;
       box.innerHTML = `<span class="muted convite-rotulo">Código de convite:</span><button type="button" class="convite-cod" id="copiar-cod" title="Copiar código" aria-label="Copiar código de convite ${esc(cod)}"><code id="codigo">${esc(cod)}</code><span class="convite-icone">${window.ico ? window.ico("copy") : ""}</span></button><span id="convite-aviso" class="convite-aviso" role="status" aria-live="polite"></span>`;
-    } catch (e) { box.hidden = true; }
+    } catch (e) { box.textContent = "Não foi possível carregar o convite: "+e.message; }
   }
 
   /* ---------- ações ---------- */
@@ -295,16 +300,16 @@
     const t = e.target, c = (s) => t.closest(s);
     try {
       let b;
-      const cartao=c('.personagem-card');if(cartao&&!c('a,button,input,select,textarea,summary,label,details')){location.href='personagem.html?id='+encodeURIComponent(cartao.dataset.id);return;}
+      const cartao=c('.personagem-card');if(cartao&&!c('a,button,input,select,textarea,summary,label,details')){if(window.LEITOR_FICHAS)window.LEITOR_FICHAS.personagem(cartao.dataset.id,pers.find(p=>p.id===cartao.dataset.id)?.nome);else location.href='personagem.html?id='+encodeURIComponent(cartao.dataset.id);return;}
       if(c('[data-camp-aparencia]')){if(!responsavelVisual())return;const painel=$('#aparencia-painel');painel.hidden=false;painel.open=true;$('#conteudo').hidden=true;document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);window.CAMPANHA_VISUAL.montar({id,mestre:responsavelVisual()});painel.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
-      if(c('#aparencia-painel > summary')){e.preventDefault();$('#visual-descartar')?.click();fecharAparencia();return;}
+      if(c('#aparencia-voltar')){if(window.CAMPANHA_VISUAL?.sair())fecharAparencia();return;}
       if(c('[data-camp-convite]')){mostrarConvite();return;}
       if(c('[data-camp-grupo]')){if(!mestre())return;aba='membros';document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);return desenhar();}
       if(c('#grupo-todos')){if(!mestre())return;pers.forEach(p=>selecionados.add(p.id));return desenhar();}
       if(c('#grupo-nenhum')){selecionados.clear();return desenhar();}
       if(c('#grupo-rolar')){if(!mestre()||!selecionados.size)return;location.href=window.GRUPO_PERSONAGENS.destino(id,pers.filter(p=>selecionados.has(p.id)).map(p=>p.id));return;}
 
-      if ((b = c("[data-aba]"))) { fecharAparencia(); aba = b.dataset.aba; editandoDoc = null; formAberto = false; anexosForm = []; return desenhar(); }
+      if ((b = c("[data-aba]"))) { if(!$("#aparencia-painel").hidden&&!window.CAMPANHA_VISUAL?.sair())return;fecharAparencia(); aba = b.dataset.aba; editandoDoc = null; formAberto = false; anexosForm = []; return desenhar(); }
       if ((b = c("[data-excluir-pers]"))) {const p=pers.find(p=>p.id===b.dataset.excluirPers);if(!p||!confirm("Excluir "+p.nome+"? Esta ação remove a ficha da campanha."))return;await nuvem.apagar("personagens?id=eq."+encodeURIComponent(p.id));return recarregar();}
       if ((b = c("[data-dano]"))) return mudarPV(c(".card"), true);
       if ((b = c("[data-cura]"))) return mudarPV(c(".card"), false);
@@ -372,12 +377,12 @@
     window.ESQ.mostrar($("#conteudo"), "campanha", "Carregando a campanha…");
   }
   async function abrir() {
-    const area = $("#conteudo");
+    const geracao=++geracaoCampanha,area = $("#conteudo");
     if (!area.hasAttribute("aria-busy")) esqueletoDaPagina();
     const cancelar = window.ESQ ? window.ESQ.vigiar(area, abrir, 20000, "A conexão está lenta e a campanha ainda não chegou.") : () => {};
-    try { await carregar(); await desenhar(); cancelar(); window.ESQ?.pronto(area); aviso(''); await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre(),podeEditarVisual:responsavelVisual()}); window.ESQ?.pronto($("#campanha-contexto")); window.CAMPANHA_VISUAL?.montar({id,mestre:mestre()}); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); }
+    try { const aberta=id;if(await carregar()===false||aberta!==id){cancelar();return;} await desenhar(); cancelar(); window.ESQ?.pronto(area); aviso(''); await window.CAMPANHAS_UI?.montarSeletor({...camp,podeGerenciar:mestre(),podeEditarVisual:responsavelVisual()}); window.ESQ?.pronto($("#campanha-contexto")); window.CAMPANHA_VISUAL?.montar({id,mestre:responsavelVisual()}); if(pers.some(p=>(p.ficha||{}).origem&&!(p.ficha||{}).foto))await recuperarFotos(true); }
     catch (e) {
-      cancelar(); camp = null;
+      cancelar();if(geracao!==geracaoCampanha)return;camp = null;
       $("#abas").hidden = true; $("#campanha-contexto").hidden = true; $("#titulo").textContent = "Campanha"; $("#papel").textContent = "";
       if (window.ESQ) window.ESQ.erro(area, e.message, abrir); else aviso(e.message, true);
       if (/não encontrada|não participa/.test(e.message)) { window.CAMPANHAS_UI?.esquecer(id); area.insertAdjacentHTML("beforeend", ' <a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1">Escolher outra campanha</a>'); }
@@ -388,6 +393,9 @@
   /* A aparência substitui a lista (não aparece por cima nem embaixo); fechar, ou trocar de aba, volta ao conteúdo. */
   function fecharAparencia() { const p = $('#aparencia-painel'); if (p) { p.hidden = true; p.open = false; } $('#conteudo').hidden = false; }
 
+  window.addEventListener('campanha:antes',e=>{if(e.detail?.id!==id&&!$('#aparencia-painel').hidden&&!window.CAMPANHA_VISUAL?.sair())e.preventDefault();});
+  window.addEventListener('campanha:alterada',async e=>{const nova=e.detail?.id;if(!nova||nova===id)return;if(!$('#aparencia-painel').hidden&&!window.CAMPANHA_VISUAL?.sair()){window.CAMPANHAS_UI.lembrar(id);return;}window.PAINEL?.encerrar();id=nova;camp=null;selecionados.clear();aba='pers';fecharAparencia();await abrir();});
+  document.addEventListener('personagem:atualizado',()=>recarregar());
   document.addEventListener('campanha-visual:fechar', fecharAparencia);   // Salvar (com sucesso) ou Cancelar voltam para onde a pessoa estava
 
   /* ---------- início ---------- */
@@ -401,7 +409,7 @@
       const ativo = document.activeElement;
       if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;     // não interrompe quem está digitando
       if (document.querySelector("#forms form") || document.querySelector("#imp .panel")) return;
-      const antes = assinatura(); await carregar();
+      const antes = assinatura(); if(await carregar()===false)return;
       if (assinatura() !== antes) desenhar();     // só redesenha se algo mudou (não fecha o que o usuário abriu)
     }, 6000);
   })();

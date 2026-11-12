@@ -32,6 +32,7 @@
       nuvem.get(`personagens?select=id,nome,pv_atual,pv_max,ca,ficha,campanha:campanhas(id,nome)&dono_id=eq.${u.id}&order=nome`)
     ]);
     if(nuvem.usuario()?.id !== u.id) return;
+    window.CAMPANHAS_UI?.validar?.(membros);
     const destino=window.CAMPANHAS_UI?.entrada(membros,location.search);
     if(destino){location.replace(destino);return;}
     liberar();
@@ -142,7 +143,7 @@
     if (nuvem.usuario() && nuvem.retornoTipo?.() === "recovery") { location.replace("entrar.html?recuperar=1"); return; }   // link de nova senha: a tela dele é a página de entrada
     const rapido = nuvem.usuario() ? window.CAMPANHAS_UI?.entradaRapida(location.search) : '';
     if (rapido) { location.replace(rapido); return; }
-    if (nuvem.usuario()) { await mostrarArea(); return; }
+    if (nuvem.usuario()) { await mostrarArea(); window.ESTADO_SECAO?.restaurar(); return; }
     /* a página inicial do aplicativo (index.html / "./") para quem não tem conta é a iniciativa: ninguém é obrigado a entrar */
     if (/(^|\/)index\.html$|\/$/.test(String((window.location || location).pathname || ""))) { location.replace("iniciativa.html"); return; }
     mostrarLogin();

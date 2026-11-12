@@ -1,58 +1,32 @@
-/* Contexto de navegação neste aparelho. Nunca decide permissões nem amplia consultas. */
+/* Uma preferência de campanha por conta. Permissões e pertencimento vêm do servidor. */
 (() => {
-  const legado='ini_campanha'; // chave antiga, global do aparelho; continua sendo escrita para o rastreador e versões antigas
-  const campanhasDe=membros=>membros.filter(m=>m.campanha?.id).map(m=>m.campanha);
-  const uid=()=>{try{return window.nuvem?.usuario?.()?.id||'';}catch(_){return '';}};
-  const chaveDe=u=>u?legado+':'+u:legado;
-  function ler(){
-    try{
-      const u=uid(),propria=u?localStorage.getItem(chaveDe(u)):null;
-      return propria!==null?propria:(localStorage.getItem(legado)||'');   // sem registro próprio: usa a antiga, sempre validada contra as campanhas deste usuário
-    }catch(_){return '';}
-  }
-  /* campanha ativa deste usuário: só vale se ele ainda for membro dela */
-  function preferida(membros){const id=ler();return campanhasDe(membros).find(c=>c.id===id)||null;}
-  function lembrar(id){try{const u=uid();if(u)localStorage.setItem(chaveDe(u),id);localStorage.setItem(legado,id);}catch(_){} }
-  function esquecer(id){try{const u=uid();if(u&&localStorage.getItem(chaveDe(u))===id)localStorage.removeItem(chaveDe(u));if(localStorage.getItem(legado)===id)localStorage.removeItem(legado);}catch(_){} }
-  /* para onde ir ao abrir o aplicativo: a campanha ativa; sem nenhuma preferência, a única campanha do usuário; senão, a lista */
-  function entrada(membros,busca){
-    const q=new URLSearchParams(busca||'');
-    if(q.get('gerenciar')==='1'||['conta','personagens'].includes(q.get('aba')))return '';
-    const lista=campanhasDe(membros),atual=preferida(membros)||(!ler()&&lista.length===1?lista[0]:null);   // preferência inválida: mostra a lista para escolher outra
-    return atual?'campanha.html?id='+encodeURIComponent(atual.id):'';
-  }
-  /* abertura imediata, sem esperar a rede: usa só a preferência local deste usuário; a página da campanha confere o acesso */
-  function entradaRapida(busca){
-    const q=new URLSearchParams(busca||'');
-    if(q.get('gerenciar')==='1'||q.get('acao')||['conta','personagens'].includes(q.get('aba'))||!uid())return '';
-    const id=ler();return id?'campanha.html?id='+encodeURIComponent(id):'';
-  }
-  async function entrarPorCodigo(codigo){
-    const cod=String(codigo||'').trim();if(!cod)throw Error('Digite o código de convite.');
-    return nuvem.rpc('entrar_na_campanha',{p_codigo:cod});
-  }
-  async function montarSeletor(atual){
-    const box=document.querySelector('#campanha-contexto');if(!box||!nuvem.usuario())return;
-    const usuario=nuvem.usuario().id,esc=nuvem.esc,ico=window.ico||(()=>''),url='conta.html?aba=campanhas&gerenciar=1';
-    const menu=(icone,nome,corpo)=>'<details class="compact-menu"><summary title="'+nome+'" aria-label="'+nome+'">'+ico(icone)+'</summary><div class="compact-popover">'+corpo+'</div></details>';
-    box.hidden=false;box.removeAttribute('aria-hidden');
-    box.innerHTML='<nav class="campanha-ferramentas" aria-label="Ações da campanha">'+
-      '<details class="compact-menu"><summary title="Abrir lista de campanhas" aria-label="Campanhas">'+ico('list')+'<span>Campanhas</span></summary><div class="compact-popover"><h2>Suas campanhas</h2><div id="camp-lista" class="compact-lista" role="status">Carregando…</div></div></details>'+
-      menu('more','Mais opções','<button type="button" data-camp-entrada>Entrar em campanha</button>'+(atual.podeGerenciar?'<button type="button" data-camp-convite>Compartilhar convite</button>':'')+(atual.podeEditarVisual?'<button type="button" data-camp-aparencia>Editar aparência</button>':'')+'<a href="'+url+'&acao=criar">Criar campanha</a><a href="'+url+'">Minhas campanhas</a>')+'</nav><div id="camp-painel-entrada" class="panel" hidden><form id="camp-entrar"><label for="camp-codigo">Código de convite</label><input id="camp-codigo" required autocomplete="off"><button type="submit" class="small primary">Entrar</button><span id="camp-entrar-msg" role="status" class="muted"></span></form></div><div id="conv" class="bar" hidden></div>';
-    box.querySelector('[data-camp-entrada]').addEventListener('click',()=>{const p=box.querySelector('#camp-painel-entrada');p.hidden=!p.hidden;if(!p.hidden)box.querySelector('#camp-codigo').focus();});
-    box.querySelector('#camp-entrar').addEventListener('submit',async e=>{
-      e.preventDefault();const botao=e.target.querySelector('button'),msg=box.querySelector('#camp-entrar-msg');botao.disabled=true;
-      try{await entrarPorCodigo(box.querySelector('#camp-codigo').value);msg.textContent='Entrada confirmada.';await montarSeletor(atual);}
-      catch(err){msg.textContent=err.message;}finally{botao.disabled=false;}
-    });
-    try{
-      const membros=await nuvem.get('membros?select=papel,campanha:campanhas(id,nome)&usuario_id=eq.'+encodeURIComponent(usuario)+'&order=entrou_em.desc');
-      if(nuvem.usuario()?.id!==usuario){box.innerHTML='';box.hidden=true;return;}
-      const lista=campanhasDe(membros);if(lista.some(c=>c.id===atual.id))lembrar(atual.id);
-      box.querySelector('#camp-lista').innerHTML=lista.map(c=>'<a href="campanha.html?id='+encodeURIComponent(c.id)+'" '+(c.id===atual.id?'aria-current="page"':'')+'>'+'<span data-visual-campanha="'+esc(c.id)+'">'+(window.CAMPANHA_VISUAL?window.CAMPANHA_VISUAL.simbolo('',c.nome,true):'')+'</span>'+esc(c.nome)+'</a>').join('')||'<p class="muted">Nenhuma campanha disponível.</p>';
-      window.CAMPANHA_IMAGENS?.miniaturas(lista.map(c=>c.id)).then(imagens=>{if(nuvem.usuario()?.id!==usuario)return;for(const c of lista){const a=box.querySelector('[data-visual-campanha="'+c.id+'"]');if(a&&imagens[c.id])a.innerHTML=window.CAMPANHA_VISUAL.simbolo(imagens[c.id],c.nome,true);}}).catch(()=>{});
-    }catch(err){const lista=box.querySelector('#camp-lista');if(lista)lista.innerHTML='<p class="err">'+esc(err.message)+'</p><a href="'+url+'">Ver minhas campanhas</a>';}
-  }
-
-  window.CAMPANHAS_UI={campanhasDe,preferida,lembrar,esquecer,entrada,entradaRapida,montarSeletor,entrarPorCodigo,ativaId:ler,chaveDe};
+ const legado='ini_campanha',uid=()=>window.nuvem?.usuario?.()?.id||'',chaveDe=u=>u?legado+':'+u:legado;
+ const campanhasDe=ms=>ms.filter(m=>m.campanha?.id).map(m=>({...m.campanha,papel:m.papel}));
+ let cache=[],donoCache='',carregando=null;
+ function ler(){try{const propria=uid()?localStorage.getItem(chaveDe(uid())):null;return propria!==null?propria:localStorage.getItem(legado)||'';}catch(_){return '';}}
+ function lembrar(id){const antes=ler();try{if(uid())localStorage.setItem(chaveDe(uid()),id);localStorage.setItem(legado,id);}catch(_){}if(antes!==id&&typeof CustomEvent!=='undefined')window.dispatchEvent?.(new CustomEvent('campanha:alterada',{detail:{id}}));}
+ function esquecer(id){try{if(uid()&&ler()===id)localStorage.setItem(chaveDe(uid()),'');if(localStorage.getItem(legado)===id)localStorage.removeItem(legado);}catch(_){} }
+ const preferida=ms=>campanhasDe(ms).find(c=>c.id===ler())||null;
+ function validar(ms,pedido){const id=pedido||ler(),c=campanhasDe(ms).find(c=>c.id===id)||null;if(id&&!c)esquecer(id);return c;}
+ function podeEscolherUnica(){try{return !uid()||localStorage.getItem(chaveDe(uid()))!=='';}catch(_){return false;}}
+ function entrada(ms,busca){const q=new URLSearchParams(busca||'');if(q.get('gerenciar')==='1'||['conta','personagens'].includes(q.get('aba')))return '';const lista=campanhasDe(ms),c=preferida(ms)||(!ler()&&podeEscolherUnica()&&lista.length===1?lista[0]:null);return c?'campanha.html?id='+encodeURIComponent(c.id):'';}
+ function entradaRapida(busca){const q=new URLSearchParams(busca||'');if(q.get('gerenciar')==='1'||q.get('acao')||['conta','personagens'].includes(q.get('aba'))||!uid())return '';return ler()?'campanha.html?id='+encodeURIComponent(ler()):'';}
+ async function carregar(forcar=false){const u=uid();if(!u)return [];if(donoCache===u&&!forcar&&cache.length)return cache;if(carregando&&donoCache===u)return carregando;donoCache=u;carregando=(async()=>{const ms=await nuvem.get('membros?select=papel,campanha:campanhas(id,nome)&usuario_id=eq.'+encodeURIComponent(u)+'&order=entrou_em.desc');if(uid()!==u)throw Error('A conta mudou.');cache=ms;validar(ms);return ms;})();try{return await carregando;}finally{carregando=null;}}
+ async function entrarPorCodigo(codigo){const cod=String(codigo||'').trim();if(!cod)throw Error('Digite o código de convite.');return nuvem.rpc('entrar_na_campanha',{p_codigo:cod});}
+ function navegar(id){if(typeof CustomEvent!=='undefined'&&window.dispatchEvent?.(new CustomEvent('campanha:antes',{detail:{id},cancelable:true}))===false)return;lembrar(id);window.MENUS?.fecharTodos();window.FEEDBACK?.mostrar('Campanha selecionada');const pagina=typeof location!=='undefined'?location.pathname.split('/').pop():'';if(pagina==='campanha.html'||pagina==='iniciativa.html'){const q=new URLSearchParams(location.search);q.set(pagina==='campanha.html'?'id':'campanha',id);history.replaceState(history.state,'',pagina+'?'+q);return;}if(typeof location!=='undefined')location.href='campanha.html?id='+encodeURIComponent(id);}
+ async function montarSeletor(atual={}){
+  const box=document.querySelector('#campanha-contexto');if(!box||!uid())return;
+  const usuario=uid(),esc=nuvem.esc,ico=window.ico||(()=>''),destino=(typeof location!=='undefined'&&location.pathname.endsWith('iniciativa.html'))?'iniciativa.html?aba=iniciativa&campanha=':'campanha.html?id=';
+  box.hidden=false;box.removeAttribute?.('aria-hidden');
+  box.innerHTML='<nav class="campanha-ferramentas" aria-label="Ações da campanha"><details class="compact-menu" id="camp-seletor"><summary aria-label="Campanhas" title="Abrir lista de campanhas">'+ico('list')+'<span>Campanhas</span></summary><div class="compact-popover"><h2>Suas campanhas</h2><div id="camp-lista" class="compact-lista" role="status">Carregando…</div><div class="camp-seletor-acoes"><button type="button" data-camp-form="criar">Criar campanha</button><button type="button" data-camp-form="entrar">Entrar com código</button></div><form id="camp-acao-form" hidden><label id="camp-acao-rotulo" for="camp-acao-valor">Nome da campanha</label><input id="camp-acao-valor" required maxlength="80" autocomplete="off"><button type="submit" class="small primary" id="camp-acao-enviar">Criar campanha</button><span id="camp-acao-msg" class="muted" role="status"></span></form></div></details>'+(atual.podeEditarVisual?'<details class="compact-menu"><summary aria-label="Mais opções" title="Mais opções">'+ico('more')+'</summary><div class="compact-popover"><button type="button" data-camp-aparencia>Editar aparência</button></div></details>':'')+'</nav>';
+  let acao='criar';
+  box.querySelectorAll?.('[data-camp-form]').forEach(b=>b.addEventListener('click',()=>{acao=b.dataset.campForm;box.querySelector('#camp-acao-form').hidden=false;box.querySelector('#camp-acao-rotulo').textContent=acao==='criar'?'Nome da campanha':'Código de convite';box.querySelector('#camp-acao-enviar').textContent=acao==='criar'?'Criar campanha':'Entrar com código';box.querySelector('#camp-acao-valor').value='';box.querySelector('#camp-acao-valor').focus();}));
+  box.querySelector('#camp-acao-form').addEventListener('submit',async e=>{e.preventDefault();const botao=box.querySelector('#camp-acao-enviar'),msg=box.querySelector('#camp-acao-msg'),valor=box.querySelector('#camp-acao-valor').value.trim();if(!valor)return;botao.disabled=true;try{const r=acao==='criar'?await nuvem.rpc('criar_campanha',{p_nome:valor}):await entrarPorCodigo(valor);const ms=await carregar(true),id=typeof r==='string'?r:r?.id||r?.[0]?.id;const c=campanhasDe(ms).find(c=>c.id===id)||campanhasDe(ms).find(c=>acao==='criar'&&c.nome===valor);if(c){navegar(c.id);await montarSeletor({...c,podeEditarVisual:c.papel==='mestre'});}else{await montarSeletor(atual);window.FEEDBACK?.mostrar('Campanha adicionada. Selecione na lista.');}}catch(err){msg.textContent=err.message;}finally{botao.disabled=false;}});
+  try{const ms=await carregar(true);if(uid()!==usuario)return;const lista=campanhasDe(ms);if(atual.id&&lista.some(c=>c.id===atual.id))lembrar(atual.id);const selecionada=ler();box.querySelector('#camp-lista').innerHTML=lista.map(c=>'<a data-camp-escolher="'+esc(c.id)+'" href="'+destino+encodeURIComponent(c.id)+'" '+(c.id===selecionada?'aria-current="page"':'')+'><span data-visual-campanha="'+esc(c.id)+'"></span>'+esc(c.nome)+'</a>').join('')||'<p class="muted">Nenhuma campanha disponível.</p>';
+   box.querySelectorAll?.('[data-camp-escolher]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();if(lista.some(c=>c.id===a.dataset.campEscolher))navegar(a.dataset.campEscolher);}));
+   window.CAMPANHA_IMAGENS?.miniaturas(lista.map(c=>c.id)).then(imagens=>{if(uid()!==usuario)return;for(const c of lista){const el=box.querySelector('[data-visual-campanha="'+c.id+'"]');if(el&&imagens[c.id])el.innerHTML='<img class="camp-miniatura" src="'+esc(imagens[c.id])+'" alt="">';}}).catch(()=>{});
+  }catch(err){box.querySelector('#camp-lista').textContent=err.message;}
+ }
+ if(window.addEventListener)window.addEventListener('storage',e=>{if(e.key===chaveDe(uid())&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('campanha:alterada',{detail:{id:ler()}}));});
+ window.CAMPANHAS_UI={campanhasDe,preferida,lembrar,esquecer,validar,carregar,entrada,entradaRapida,montarSeletor,entrarPorCodigo,ativaId:ler,chaveDe};
 })();

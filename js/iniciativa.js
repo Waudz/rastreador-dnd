@@ -11,6 +11,7 @@
       let editId = null;
       let stats = {};
       let report = null, relatorioLegado = null;
+      let selecao={qtd:0,preparar:null},iniciando=false;
       let edicaoIniciativa = null;const ouvintes=[];
       const notificar=()=>ouvintes.forEach(fn=>fn());
 
@@ -39,7 +40,7 @@
       function trocarContexto(novo) {
         novo = novo || "";
         if (novo === contexto) return;
-        save(); contexto = novo; zerar(); load(); render(); notificar();
+        save(); contexto = novo; selecao={qtd:0,preparar:null}; zerar(); load(); render(); notificar();
       }
 
       function load() {
@@ -209,8 +210,7 @@
           ? `Vez de: <strong>${escapeText(active.name)}</strong>`
           : "Nenhum turno ativo. Comece o combate quando estiver pronto.";
 
-        $("start").disabled = ordered.length === 0 || ordered.some(pendente);
-        $("start").title = ordered.some(pendente) ? "Preencha as iniciativas após as rolagens." : "";
+        atualizarInicio(ordered);
         $("previous").disabled = ordered.length < 2 || !currentId;
         $("next").disabled = ordered.length < 2 || !currentId;
         $("reset").disabled = !currentId;
@@ -384,16 +384,21 @@
         if(e.key==="Escape"){e.preventDefault();e.stopPropagation?.();const c=combatants.find(c=>c.id===id);e.target.value=c?.initiative==null?"":String(c.initiative);if(edicaoIniciativa)edicaoIniciativa.cancelar=true;e.target.blur();edicaoIniciativa=null;render(true);}
         else if(e.key==="Enter"){e.preventDefault();e.target.blur();}
       });
-      $("start").addEventListener("click", () => {
-        if(combatants.some(pendente))return;
-        const first = sorted()[0];
-        if (!first) return;
-        currentId = first.id;
-        round = 1;
-        stats = {};
-        report = null;
-        fxNote.textContent = "";
-        render();
+      function atualizarInicio(ordered=sorted()){
+        const pendentes=ordered.some(pendente),vazio=!ordered.length&&!selecao.qtd;
+        $('start').disabled=iniciando||pendentes||vazio;
+        $('start').title=pendentes?'Preencha as iniciativas após as rolagens.':vazio?'Selecione ou adicione combatentes.':'';
+        const aviso=$('inicio-aviso');if(aviso)aviso.textContent=pendentes?'Preencha as iniciativas pendentes antes de iniciar.':vazio?'Selecione os personagens abaixo ou adicione um combatente.':selecao.qtd?selecao.qtd+' selecionado(s); suas iniciativas serão roladas ao iniciar.':'';
+      }
+      $('start').addEventListener('click',async()=>{
+        if(iniciando||combatants.some(pendente))return;const campanhaInicial=contexto;
+        iniciando=true;let erroInicio="";atualizarInicio();
+        try{if(selecao.qtd&&selecao.preparar&&await selecao.preparar()===false)return;
+          if(contexto!==campanhaInicial||combatants.some(pendente))return;
+          const first=sorted()[0];if(!first)return;
+          currentId=first.id;round=1;stats={};report=null;fxNote.textContent='';render();
+        }catch(e){erroInicio=e.message;if(window.FEEDBACK)window.FEEDBACK.mostrar(e.message,{erro:true});else $('inicio-aviso').textContent=e.message;}
+        finally{iniciando=false;atualizarInicio();if(erroInicio)$('inicio-aviso').textContent=erroInicio;}
       });
 
       $("next").addEventListener("click", () => moveTurn(1));
@@ -457,6 +462,7 @@
       }
       window.__ini = {
         pending: "",
+        selecaoPendente:(qtd,preparar)=>{selecao={qtd,preparar};atualizarInicio();},
         exportarCombate,
         importarCombate,
         aoAlterar:fn=>ouvintes.push(fn),

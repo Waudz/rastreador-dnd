@@ -28,6 +28,8 @@
     pilha=pilha.slice(0,nivel);atualizar();voltando=false;
     if(!nivel)window.scrollTo({top:scroll,behavior:'instant'});
   });
+  painel.encerrar=()=>{pilha=[];orig.fechar();atualizar();};
+  window.addEventListener('pageshow',()=>{if(history.state?.compendioLeitura){history.replaceState({...history.state,compendioLeitura:0},'');}pilha=[];orig.fechar();atualizar();});
   window.addEventListener('resize',atualizar);
   document.addEventListener('click',e=>{if(e.target.closest('[data-leitura-voltar]'))painel.voltar();});
   const topo=document.createElement('div');topo.className='leitura-mobile-topo';topo.hidden=true;

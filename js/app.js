@@ -345,8 +345,7 @@
       const meta = rec ? [["Círculo", rec.level ? rec.level + "º círculo" : "Truque"], ["Escola", SCH[rec.school?.name] || rec.school?.name], ["Tempo de conjuração", cap(tr(rec.casting_time || ""))], ["Alcance", tr(rec.range_text || "")], ["Componentes", [rec.verbal && "V", rec.somatic && "S", rec.material && "M"].filter(Boolean).join(", ")], ["Duração", cap(tr(rec.duration || "")) + (rec.concentration ? " (concentração)" : "")], ["Ritual", rec.ritual ? "Sim" : ""], ["Fonte", srcOf(rec)]] : [];
       const mat = d?.[2] || rec?.material_specified || "", en = rec ? (rec.desc || "") + (rec.higher_level ? "\n\n" + rec.higher_level : "") : "";
       const other = d && rec && rec.document?.key !== "srd-2014";
-      $("#spd-body").innerHTML = window.MAGIAS_UI.detalhes({nome:d?d[0]:rec.name,original:rec?rec.name:d[3],meta,descricao:d?d[1]:en,materiais:mat,nota:other?'Texto em português do SRD 5.1 (2014). A versão desta fonte pode ter diferenças; o original está no final.':'',originalTexto:other&&en?en:'',concentracao:!!rec?.concentration});
-      window.PAINEL.empilhar("spd");
+      window.LEITOR_FICHAS.magia({nome:d?d[0]:rec.name,original:rec?rec.name:d[3],meta,descricao:d?d[1]:en,materiais:mat,nota:other?'Texto em português do SRD 5.1 (2014). A versão desta fonte pode ter diferenças; o original está no final.':'',originalTexto:other&&en?en:'',concentracao:!!rec?.concentration});
     }
 
     /* criar / editar ficha (monstro, personagem ou NPC) */
@@ -577,6 +576,6 @@
     const o = indexedDB.open(acervo.banco(), 3);
     o.onupgradeneeded = () => { const d = o.result; ["mon", "spl", "img"].forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "key" }); }); };
     o.onblocked = () => status("Feche as outras abas do aplicativo e recarregue para atualizar o armazenamento.");
-    o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(syncNow).then(initPacks).then(carregarCatalogo); };
+    o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(syncNow).then(initPacks).then(carregarCatalogo).then(()=>window.ESTADO_SECAO?.restaurar()); };
     o.onerror = () => status("Este navegador bloqueou o armazenamento local.");
   })();

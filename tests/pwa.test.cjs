@@ -41,7 +41,7 @@ test('cabeçalho usa o logotipo transparente pequeno e o avatar da conta é circ
 });
 test('controles compactos da campanha preservam o convite e a troca de código no Grupo',()=>{
  const ui=ler('js/campanhas-ui.js'),c=ler('js/campanha.js'),css=ler('css/identidade.css');
- for(const nome of ['Abrir lista de campanhas','Compartilhar convite','Entrar em campanha','Mais opções'])assert.ok(ui.includes(nome));
+ for(const nome of ['Abrir lista de campanhas','Suas campanhas','Entrar com código','Mais opções'])assert.ok(ui.includes(nome));
  assert.match(ler('css/grupo-personagens.css'),/justify-content:flex-end/);
  assert.ok(!/id="copiar-cod">Copiar</.test(c));assert.match(c,/convite-cod/);
  const conv=c.slice(c.indexOf('async function mostrarConvite'),c.indexOf('/* ---------- ações'));assert.ok(!conv.includes('novo-cod'),'Trocar código saiu do topo');

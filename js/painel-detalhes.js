@@ -40,7 +40,7 @@
       return a.id;
     }
     function fechar() { anterior = null; esconderTodas(null); atualizar(); }
-    return { mostrar: mostrar, empilhar: empilhar, voltar: voltar, fechar: fechar, visivel: visivel, temAnterior: function () { return !!anterior; }, VISTAS: VISTAS };
+    return { encerrar: fechar, mostrar: mostrar, empilhar: empilhar, voltar: voltar, fechar: fechar, visivel: visivel, temAnterior: function () { return !!anterior; }, VISTAS: VISTAS };
   }
   var api = { criar: criar, VISTAS: VISTAS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

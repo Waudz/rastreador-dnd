@@ -14,11 +14,11 @@ async function fixture({search="?campanha=antiga",erro=false,user={id:"mestre"},
 }
 test("link da campanha escolhe a campanha atual em vez da preferência antiga",async()=>{
   const f=await fixture({search:"?campanha=atual&personagem=p"});
-  assert.equal(f.document.el("ci-camp").value,"atual");assert(f.consultas.some(q=>q.includes("campanha_id=eq.atual")));
+  assert.equal(f.document.el("iniciativa-atual").hidden,false);assert(f.consultas.some(q=>q.includes("campanha_id=eq.atual")));
   assert.equal(f.lista.length,1);assert.equal(f.lista[0].pid,"p");assert.equal(f.lista[0].foto,"data:image/png;base64,FOTO");
 });
 
-test('sem campanha na URL mostra seleção antes de carregar personagens',async()=>{const f=await fixture({search:''});assert.equal(f.document.el('ini-selecao').hidden,false);assert.equal(f.document.el('iniciativa-atual').hidden,true);assert.match(f.document.el('ini-campanhas').innerHTML,/campanha=atual/);assert(!f.consultas.some(q=>q.startsWith('personagens')));});
+test('sem campanha na URL restaura a preferência validada antes de carregar personagens',async()=>{const f=await fixture({search:''});assert.equal(f.document.el('iniciativa-atual').hidden,false);assert(f.consultas.some(q=>q.includes('campanha_id=eq.antiga')));});
 test("adicionar manualmente preserva foto e evita duplicação",async()=>{
   const f=await fixture({search:"?campanha=atual"});
   const e={target:{closest:s=>s==="[data-ci]"?{dataset:{ci:"p"}}:null}};

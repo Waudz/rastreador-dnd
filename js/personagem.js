@@ -5,7 +5,8 @@
   "use strict";
   const $ = (s) => document.querySelector(s), esc = nuvem.esc, R = window.REGRAS, C = window.FICHA_COMPONENTES;
   const id = new URLSearchParams(location.search).get("id");
-  const emPainel = new URLSearchParams(location.search).get("modo") === "painel";
+  const modoLeitura=new URLSearchParams(location.search).get("modo"),exclusivoMestre=modoLeitura==="painel";
+  const emPainel = ["painel","leitura"].includes(modoLeitura);
   if (emPainel) document.body.classList.add('ficha-embutida');
   const notificar = tipo => { if(emPainel && window.parent !== window) window.parent.postMessage({tipo,id},location.origin); };
   const filtrosMagia={nivel:"",escola:"",tipo:""};
@@ -65,7 +66,7 @@
     if (!pend || salvando) return;
     const corpo = JSON.parse(JSON.stringify(pend)); pend = null; salvando = true; let falhou = false;
     try {
-      if(emPainel && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true) throw new Error('Este painel é exclusivo do mestre da campanha.');
+      if(exclusivoMestre && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true) throw new Error('Este painel é exclusivo do mestre da campanha.');
       const r = await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}`, corpo);
       if (!r || !r[0]) throw new Error("O personagem não foi atualizado. Confira se você ainda tem acesso.");
       P.versao = r[0].versao;
@@ -89,11 +90,11 @@
       nuvem.get("perfis?select=id,nome")
     ]);
     camp = c[0] || { id: P.campanha_id, nome: "Campanha" };
-    if(emPainel && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true) throw new Error('Este painel é exclusivo do mestre da campanha.');
+    if(exclusivoMestre && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true) throw new Error('Este painel é exclusivo do mestre da campanha.');
     souMestre = !!(m[0] && m[0].papel === "mestre") || !!(window.ACESSO && await ACESSO.pronto);
     const d = pf.find((x) => x.id === P.dono_id); donoNome = d ? d.nome : "";
     $("#voltar").href = souMestre ? `campanha.html?id=${encodeURIComponent(P.campanha_id)}` : "conta.html";
-    $("#voltar").textContent = souMestre ? camp.nome : "Voltar";
+    $("#voltar").textContent = "Voltar";
   }
 
   /* fichas antigas: classe/nível em texto viram a lista de classes; moedas de electro e platina somem */
@@ -252,7 +253,7 @@
     const info = c.habilidades.map((h) => { const m = modA(h.atr), prep = h.id === "Cleric" || h.id === "Druid" ? niv(h.id) + m : h.id === "Wizard" ? niv(h.id) + m : h.id === "Paladin" ? Math.floor(niv(h.id) / 2) + m : h.id === "Artificer" ? Math.floor(niv(h.id) / 2) + m : null; return window.MAGIAS_UI.conjurador({classe:h.classe,atributo:R.ATR_NOME[h.atr],cd:8+pb+m,ataque:fm(pb+m),preparar:prep==null?null:Math.max(1,prep)}); }).join("");
     return '<div class="magia-conjuradores">'+info+'</div><h3 class="sub magia-secao-titulo">Espaços de magia</h3>' + (partes.length ? '<div class="magia-slots">'+partes.join("")+'</div>' : '<span class="muted">Sem espaços de magia para esta combinação de classes.</span>');
   }
-  const linhaMag = (m, i) => `<details class="item magia-conhecida"${m.en?` data-mag-en="${esc(m.en)}"`:""}><summary>${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${m.l===0?' <span class="badge">Truque</span>':m.semprePreparada?' <span class="badge">Sempre Preparada</span>':m.origem==='Raça'?' <span class="badge">Magia Racial</span>':R.preparacao(F()).some(x=>x.pertence(m))?(m.prep?' <span class="badge">Preparada</span>':' <span class="muted">Não Preparada</span>'):' <span class="badge">Conhecida</span>'}</summary><div>${m.conc ? '<span class="badge">Concentração</span>' : ""}${m.ritual ? '<span class="badge">Ritual</span>' : ""}${window.MAGIAS_UI.propriedades(window.MAGIAS_UI.camposCabecalho(m.cab))}<div class="magia-texto">${window.MAGIAS_UI.paragrafos(m.d)}</div><div class="row" style="margin:8px 0 0">${m.l > 0 && !m.semprePreparada && m.origem!=="Raça" && R.preparacao(F()).some(x=>x.pertence(m)) ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span><button type="button" class="small danger" data-rm-mag="${i}">Remover</button></div></div></details>`;
+  const linhaMag = (m,i) => `<article class="item magia-conhecida" data-mag-i="${i}"><button type="button" class="magia-consultar" data-consultar-magia="${i}">${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${m.l===0?' <span class="badge">Truque</span>':m.semprePreparada?' <span class="badge">Sempre Preparada</span>':m.origem==='Raça'?' <span class="badge">Magia Racial</span>':R.preparacao(F()).some(x=>x.pertence(m))?(m.prep?' <span class="badge">Preparada</span>':' <span class="muted">Não Preparada</span>'):' <span class="badge">Conhecida</span>'}</button><div class="row" style="margin:8px 0 0">${m.l > 0 && !m.semprePreparada && m.origem!=="Raça" && R.preparacao(F()).some(x=>x.pertence(m)) ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span><button type="button" class="small danger" data-rm-mag="${i}">Remover</button></div></article>`;
   function listaMagias() {
     const l = MAG().map((m, i) => ({ m, i })).sort((a, b) => a.m.l - b.m.l || a.m.n.localeCompare(b.m.n));
     return l.length ? R.preparacao(F()).map(x=>`<p class="muted">${esc(x.nome)}: ${x.usadas} de ${x.limite} magias preparadas. Truques e magias sempre preparadas não contam nesse limite.</p>`).join("")+l.map((x,i) => (i===0 || l[i-1].m.l!==x.m.l ? '<h3 class="circulo-titulo">'+(x.m.l?x.m.l+"º círculo":"Truques")+'</h3>':'')+linhaMag(x.m,x.i)).join("") : '<div class="estado-vazio"><strong>Seu repertório começa aqui</strong><p>Busque no catálogo abaixo para adicionar as magias conhecidas e preparar as disponíveis para sua classe.</p><button type="button" class="small" id="focar-catalogo-magias">Buscar uma magia</button></div>';
@@ -441,11 +442,10 @@
 
   /* na ficha embutida na iniciativa, a magia abre no painel de detalhes do rastreador (e "Voltar" retorna a esta ficha) */
   document.addEventListener("click", (e) => {
-    if (!emPainel || window.parent === window) return;
-    const s = e.target.closest("summary"), d = s && s.parentElement && s.parentElement.dataset && s.parentElement.dataset.magEn;
-    if (!d || !s.closest("#lista-mag")) return;
-    e.preventDefault();
-    window.parent.postMessage({ tipo: "ficha-magia", id, en: d }, location.origin);
+    const botao=e.target.closest('[data-consultar-magia]'),linha=botao?.closest('#lista-mag [data-mag-i]');if(!linha)return;
+    const m=MAG()[Number(linha.dataset.magI)];if(!m)return;e.preventDefault();
+    if(emPainel&&window.parent!==window)window.parent.postMessage({tipo:'ficha-magia',id,magia:m,en:m.en},location.origin);
+    else window.LEITOR_FICHAS?.magia(m);
   }, true);
   document.addEventListener("click", async (e) => {
     const t = e.target, c = (s) => t.closest(s); if (!P) return;
@@ -570,7 +570,7 @@
     try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); cancelar(); window.ESQ?.pronto($("#ficha")); } catch (e) { cancelar(); document.querySelector(".esq-topo")?.remove?.(); if (window.ESQ) window.ESQ.erro($("#ficha"), e.message, recarregar); else aviso(e.message, true); return; }
     nuvem.observar(async () => {
       if (pend) return;
-      if(emPainel && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true){$('#ficha').innerHTML='';aviso('Este painel é exclusivo do mestre da campanha.',true);return;}
+      if(exclusivoMestre && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true){$('#ficha').innerHTML='';aviso('Este painel é exclusivo do mestre da campanha.',true);return;}
       const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;
       const r = await carregar();
       if (r.versao > P.versao) { P = r; desenhar(); $("#estado").textContent = "Atualizado"; }

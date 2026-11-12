@@ -49,7 +49,7 @@ test('movimento reduzido e identidade: animação suave, desligada quando o sist
 test('cada página trata erro e lentidão sem desconectar: usa js/esqueleto.js com nova tentativa',()=>{
   for(const [f,re] of [['js/campanha.js',/ESQ\.erro\(area, e\.message, abrir\)/],['js/campanha.js',/ESQ\.vigiar\(area, abrir, 20000/],['js/personagem.js',/ESQ\.erro\(\$\("#ficha"\), e\.message, recarregar\)/],['js/criador.js',/ESQ\.erro\(/],['js/conta.js',/ESQ\.erro\(\$\("#campanhas"\), texto, mostrarArea\)/],['js/campanha-ini.js',/ESQ\.erro\(\$\("#ci-lista"\)/],['js/app.js',/ESQ\.erro\(\$\("#blist"\)/]])
     assert.match(ler(f),re,f+' '+re);
-  const semSessao=/nuvem\.(sair|sairDeTodos)|encerrar\(|localStorage\.clear|removeItem\("nuvem/;
+  const semSessao=/nuvem\.(sair|sairDeTodos)|(?<!PAINEL\?\.)encerrar\(|localStorage\.clear|removeItem\("nuvem/;
   for(const f of ['js/campanha.js','js/personagem.js','js/criador.js'])assert.ok(!semSessao.test(ler(f)),f+' não mexe na sessão em falha de rede');
   const c=ler('js/conta.js');assert.ok(!semSessao.test(c.slice(c.indexOf('const falhaAbertura'),c.indexOf('function mostrarLogin'))),'conta.js: falha de rede não mexe na sessão');
 });

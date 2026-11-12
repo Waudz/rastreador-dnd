@@ -10,7 +10,7 @@
   function liberarUrls(){urls.forEach(u=>URL.revokeObjectURL(u));urls=[];}
   function formulario(){
     const area=$('#campanha-aparencia');if(!area)return;
-    area.innerHTML=podeEditar?'<p class="muted">Escolha as imagens e ajuste o enquadramento. As alterações serão compartilhadas ao salvar.</p><div class="campanha-visual-campos"><label>Imagem de capa<input type="file" accept="image/png,image/jpeg,image/webp" data-visual-arquivo="simbolo"></label><button type="button" class="small" data-visual-remover="simbolo">Remover imagem de capa</button><label>Imagem de fundo<input type="file" accept="image/png,image/jpeg,image/webp" data-visual-arquivo="backdrop"></label><button type="button" class="small" data-visual-remover="backdrop">Remover imagem de fundo</button><button type="button" data-visual-ajustar '+(!estado.backdrop?'disabled':'')+'>Ajustar enquadramento PC e celular</button></div><div class="row"><button type="button" class="small" id="visual-descartar">Cancelar</button><button type="button" class="small primary" id="visual-salvar" '+(!base?'disabled':'')+'>Salvar imagens</button><button type="button" class="small" id="visual-recarregar">Atualizar imagens</button></div><p id="visual-msg" class="muted" role="status"></p>':'';
+    area.innerHTML=podeEditar?'<p class="muted">Escolha as imagens e ajuste o enquadramento. As alterações serão compartilhadas ao salvar.</p><div class="campanha-visual-campos"><label>Imagem de capa<span class="visual-upload">Escolher imagem<input type="file" accept="image/png,image/jpeg,image/webp" data-visual-arquivo="simbolo"></span><small data-arquivo-nome="simbolo">Nenhum arquivo selecionado</small></label><button type="button" class="small" data-visual-remover="simbolo">Remover imagem de capa</button><label>Imagem de fundo<span class="visual-upload">Escolher imagem<input type="file" accept="image/png,image/jpeg,image/webp" data-visual-arquivo="backdrop"></span><small data-arquivo-nome="backdrop">Nenhum arquivo selecionado</small></label><button type="button" class="small" data-visual-remover="backdrop">Remover imagem de fundo</button><button type="button" data-visual-ajustar '+(!estado.backdrop?'disabled':'')+'>Ajustar enquadramento PC e celular</button></div><div class="row"><button type="button" class="small" id="visual-descartar">Cancelar</button><button type="button" class="small primary" id="visual-salvar" '+(!base?'disabled':'')+'>Salvar imagens</button><button type="button" class="small" id="visual-recarregar">Recarregar imagens salvas</button></div><p class="muted">Salvar confirma a prévia. Recarregar recupera a última versão salva.</p><p id="visual-msg" class="muted" role="status"></p>':'';
     if(podeEditar){
       if(base&&!enquadramentoDisponivel())area.insertAdjacentHTML('beforeend','<p class="muted">Enquadramento avançado indisponível nesta campanha. Novas imagens usarão a posição atual.</p>');
       travar(salvando||preparando>0);
@@ -27,7 +27,7 @@
     if(!podeEditar||!base||salvando||preparando)return;const usuarioSalvar=conta;salvando=true;consulta++;geracao++;travar(true);mensagem('Salvando imagens…');
     try{const r=await window.CAMPANHA_IMAGENS.salvar(campanha,base,{...mudancas,posicao:estado.posicao,posicaoMobile:estado.posicaoMobile,...(estado.enquadramento?{enquadramento:estado.enquadramento}:{})});
       if(window.nuvem.usuario()?.id!==usuarioSalvar)throw Error('A conta mudou. Abra a campanha novamente.');base=r.visual;mudancas={};editando=false;
-      try{const pronto=r.apresentacao||await window.CAMPANHA_IMAGENS.apresentar(base);liberarUrls();estado=pronto;original={...pronto};aplicar();mensagem(r.aviso||'Imagens salvas para todos os participantes.');document.dispatchEvent(new CustomEvent('campanha-visual:fechar'));}
+      try{const pronto=r.apresentacao||await window.CAMPANHA_IMAGENS.apresentar(base);liberarUrls();estado=pronto;original={...pronto};aplicar();mensagem(r.aviso||'Imagens salvas para todos os participantes.');window.FEEDBACK?.mostrar(r.aviso||'Imagens salvas');document.dispatchEvent(new CustomEvent('campanha-visual:fechar'));}
       catch(err){mensagem('Imagens salvas, mas não foi possível recarregá-las: '+err.message);}
     }catch(err){mensagem('Não foi possível confirmar a gravação: '+err.message+' As imagens anteriores não foram apagadas. Use Atualizar imagens antes de tentar novamente.');}
     finally{salvando=false;travar(false);}
@@ -63,7 +63,7 @@
   function montar({id,mestre,visual={}}){
     const uid=window.nuvem?.usuario()?.id||'';
     if(campanha!==id||uid!==conta){liberarUrls();campanha=id;conta=uid;estado={...vazio(),...visual};original={...estado};geracao++;base=null;editando=false;mudancas={};}
-    podeEditar=mestre;aplicar();formulario();
+    podeEditar=mestre;aplicar();if(!editando&&!salvando&&!preparando)formulario();
     if(!observadorFundo&&window.ResizeObserver){observadorFundo=new ResizeObserver(posicionarFundo);observadorFundo.observe(document.documentElement);observadorFundo.observe($('#campanha-faixa'));}
     if(window.CAMPANHA_IMAGENS){atualizar();if(!parar)parar=window.nuvem.observar?.(atualizar,60000);}
   }
@@ -82,7 +82,7 @@
     try{let entrada=arquivo,frame=null;
       if(tipo==='simbolo'){const data=await window.recortarFoto(arquivo);if(!data)return;entrada=await (await fetch(data)).blob();}
       else if(enquadramentoDisponivel()){frame=await window.ajustarFundo(arquivo);if(!frame)return;}
-      const blob=await otimizar(entrada,tipo);if(atual!==geracao||!podeEditar)return;if(frame)estado.enquadramento=frame;const url=URL.createObjectURL(blob);urls.push(url);estado[tipo]=url;mudancas[tipo]=blob;editando=true;aplicar();mensagem('Prévia atualizada. Clique em Salvar imagens para compartilhar.');}
+      const blob=await otimizar(entrada,tipo);if(atual!==geracao||!podeEditar)return;if(frame)estado.enquadramento=frame;const url=URL.createObjectURL(blob);urls.push(url);estado[tipo]=url;mudancas[tipo]=blob;editando=true;const nome=$('[data-arquivo-nome="'+tipo+'"]');if(nome)nome.textContent=arquivo.name||'Imagem selecionada';aplicar();mensagem('Prévia atualizada. Clique em Salvar imagens para compartilhar.');}
     catch(err){$('#visual-msg').textContent=err.message;}finally{e.target.value='';preparando--;if(!preparando)travar(false);}
   });
   document.addEventListener('input',e=>{const campo=e.target.dataset?.visualPos;if(!podeEditar||salvando||!['posicao','posicaoMobile'].includes(campo))return;editando=true;estado[campo]=Math.max(0,Math.min(100,Number(e.target.value)||0));aplicar();});
@@ -90,9 +90,11 @@
     if(!podeEditar||salvando||preparando)return;
     if(e.target.closest('[data-visual-ajustar]')){if(!enquadramentoDisponivel())return;(async()=>{preparando++;travar(true);try{const r=await fetch(estado.backdrop);if(!r.ok)throw Error('Não foi possível abrir a imagem original.');const arquivo=await r.blob();arquivo.enquadramento=estado.enquadramento;const frame=await window.ajustarFundo(arquivo);if(frame){estado.enquadramento=frame;editando=true;aplicar();mensagem('Enquadramento preparado. Salve para compartilhar.');}}catch(err){mensagem(err.message);}finally{preparando--;travar(false);}})();return;}
     if(e.target.closest('#visual-salvar')){salvar();return;}if(e.target.closest('#visual-recarregar')){if(editando&&!confirm('Descartar alterações locais e carregar as imagens salvas?'))return;editando=false;mudancas={};geracao++;atualizar();return;}const b=e.target.closest('[data-visual-remover]');if(b){estado[b.dataset.visualRemover]='';if(b.dataset.visualRemover==='backdrop')estado.enquadramento=null;mudancas[b.dataset.visualRemover]=null;editando=true;aplicar();mensagem('Remoção preparada. Clique em Salvar imagens para confirmar.');}
-    if(e.target.closest('#visual-descartar')){estado={...original};liberarUrls();editando=false;mudancas={};geracao++;aplicar();formulario();atualizar();document.dispatchEvent(new CustomEvent('campanha-visual:fechar'));}
+    if(e.target.closest('#visual-descartar')&&sair())document.dispatchEvent(new CustomEvent('campanha-visual:fechar'));
   });
+  function sair(){if(salvando||preparando){mensagem('Aguarde a operação terminar.');return false;}if(editando&&!confirm('Descartar alterações de aparência não salvas?'))return false;estado={...original};liberarUrls();editando=false;mudancas={};geracao++;aplicar();formulario();return true;}
+  window.addEventListener?.('beforeunload',e=>{if(editando||salvando||preparando){e.preventDefault();e.returnValue='';}});
   let observadorFundo=null;
   window.addEventListener?.('resize',posicionarFundo);
-  window.CAMPANHA_VISUAL={montar,simbolo,validar};
+  window.CAMPANHA_VISUAL={montar,simbolo,validar,sair};
 })();

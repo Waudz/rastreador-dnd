@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://pdjzahpxjrlbqqtzkfdr.supabase.co; frame-src blob:; worker-src 'self'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://pdjzahpxjrlbqqtzkfdr.supabase.co; frame-src 'self' blob:; worker-src 'self'; base-uri 'self'; form-action 'self'">
   <title>Campanha — Compêndio 5e</title>
   <meta name="theme-color" content="#101820">
   <link rel="manifest" href="manifest.json">
@@ -22,23 +22,34 @@
   <script src="js/config-nuvem.js" defer></script>
   <script src="vendor/supabase/supabase.js" defer></script>
   <script src="js/nuvem.js" defer></script>
+  <script src="js/feedback.js" defer></script>
+
   <script src="js/navegacao.js" defer></script>
   <script src="js/esqueleto.js" defer></script>
+  <script src="js/ficha-componentes.js" defer></script>
+  <script src="js/magias-ui.js" defer></script>
+  <script src="js/paineis-layout.js" defer></script>
+  <script src="js/painel-detalhes.js" defer></script>
+  <script src="js/menus.js" defer></script>
+  <script src="js/leitor-fichas.js" defer></script>
+  <script src="js/leitura-mobile.js" defer></script>
+  <script src="js/estado-secao.js" defer></script>
   <script src="js/paineis.js" defer></script>
   <script src="js/acervo.js" defer></script>
   <script src="js/regras.js" defer></script>
   <script src="js/personagens-dados.js" defer></script>
   <script src="js/campanha-imagens.js" defer></script>
   <script src="js/campanhas-ui.js" defer></script>
-  <script src="js/ficha-componentes.js" defer></script>
   <script src="js/grupo-personagens.js" defer></script>
-  <script src="js/menus.js" defer></script>
   <script src="js/foto.js" defer></script>
   <script src="js/enquadramento.js" defer></script>
   <script src="js/campanha-visual.js" defer></script>
   <script src="js/campanha.js" defer></script>
   <script src="js/interface.js" defer></script>
   <link rel="stylesheet" href="css/mobile.css">
+  <link rel="stylesheet" href="css/magias.css">
+  <link rel="stylesheet" href="css/fluxos.css">
+
 </head>
 <body>
   <main class="tracker">
@@ -46,7 +57,7 @@
     <section class="campanha-faixa" id="campanha-faixa"><div class="campanha-fundo" id="campanha-fundo" aria-hidden="true" hidden><img id="campanha-backdrop" alt="" hidden></div><header class="header campanha-header campanha-compacta"><div id="campanha-contexto" class="campanha-contexto" aria-hidden="true"><span class="esq esq-seletor"></span></div><div class="campanha-identificacao"><span id="campanha-simbolo"></span><div><p class="eyebrow" id="papel"><span class="esq esq-papel"></span></p><h1 id="titulo"><span class="esq esq-titulo"></span><span class="sr-only">Campanha</span></h1></div></div></header>
     <div id="erro" class="muted" role="status" aria-live="polite"></div>
     <div class="tabs esq-abas" id="abas" aria-hidden="true"><!--esq:abas--><span class="esq esq-aba"></span><span class="esq esq-aba"></span><span class="esq esq-aba"></span><span class="esq esq-aba"></span><!--/esq--></div></section>
-    <details id="aparencia-painel" class="panel" hidden><summary>Editar aparência</summary><div id="campanha-aparencia"></div></details>
+    <section id="aparencia-painel" class="panel" hidden><header class="aparencia-topo"><h2>Editar aparência</h2><button type="button" id="aparencia-voltar">Voltar</button></header><div id="campanha-aparencia"></div></section>
     <div id="conteudo" aria-busy="true"><span class="sr-only" role="status">Carregando a campanha…</span><!--esq:campanha--><div class="bar esq-ferramentas" aria-hidden="true"><span class="grow"></span><span class="esq esq-botao esq-botao-solto"></span><span class="esq esq-botao esq-botao-solto"></span></div><div class="cards" aria-hidden="true"><div class="card personagem-card esq-cartao"><span class="esq esq-linha curta"></span><span class="esq esq-linha media"></span><span class="esq esq-linha"></span><span class="esq esq-barra"></span><div class="esq-acoes"><span class="esq esq-botao"></span><span class="esq esq-botao"></span></div></div><div class="card personagem-card esq-cartao"><span class="esq esq-linha curta"></span><span class="esq esq-linha media"></span><span class="esq esq-linha"></span><span class="esq esq-barra"></span><div class="esq-acoes"><span class="esq esq-botao"></span><span class="esq esq-botao"></span></div></div><div class="card personagem-card esq-cartao"><span class="esq esq-linha curta"></span><span class="esq esq-linha media"></span><span class="esq esq-linha"></span><span class="esq esq-barra"></span><div class="esq-acoes"><span class="esq esq-botao"></span><span class="esq esq-botao"></span></div></div></div><!--/esq--></div>
   </main>
   <div id="leitor" class="leitor" hidden role="dialog" aria-modal="true" aria-label="Documento">
