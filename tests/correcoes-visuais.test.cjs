@@ -12,11 +12,19 @@ test('menu de três pontos da ficha: o popover fica sob o botão, não no meio d
 });
 test('aparência da campanha: o campo mostra o que está vinculado (salva, escolhida ou removida)',()=>{
   const v=ler('js/campanha-visual.js');
-  assert.match(v,/Imagem salva e vinculada à campanha/);assert.match(v,/\(prévia, ainda não salva\)/);assert.match(v,/Remoção preparada \(salve para confirmar\)/);
+  assert.match(v,/Imagem salva e vinculada à campanha/);assert.match(v,/\(salva e vinculada\)/);assert.match(v,/\(prévia, ainda não salva\)/);assert.match(v,/Remoção preparada \(salve para confirmar\)/);
 });
 test('enquadramento do fundo: migração proposta (não aplicada) cobre coluna, RPC versionada e testes',()=>{
   const m=ler('supabase/migrations/20261112090000_enquadramento_campanhas.sql');
   assert.match(m,/PROPOSTA PARA APROVAÇÃO\. Não aplicada/);assert.match(m,/salvar_visual_campanha_enquadrada/);assert.match(m,/visual_responsavel\(p_campanha\)/);
   assert.ok(!/drop (table|policy)|delete from|truncate/i.test(m.replace(/^--.*$/gm,'')),'aditiva: sem apagar nada');
   assert.match(ler('tests/enquadramento-campanhas.test.sql'),/Jogador gravou o enquadramento/);
+});
+
+test('ajustar só o enquadramento (sem trocar arquivo) pode ser salvo, fecha a aba e não pede descarte depois',()=>{
+  const v=ler('js/campanha-visual.js');
+  assert.match(v,/Object\.keys\(mudancas\)\.length === 0 && !quadroMudou/);
+  assert.match(v,/estado\.enquadramento=frame;editando=true;quadroMudou=true/);
+  assert.match(v,/base=r\.visual;mudancas=\{\};editando=false;quadroMudou=false;/);
+  assert.match(v,/campanha-visual:fechar/);
 });

@@ -3,13 +3,15 @@
   const esc=window.FICHA_COMPONENTES.esc;
   const vazio=()=>({simbolo:'',backdrop:'',posicao:50,posicaoMobile:50,enquadramento:null});
   let estado=vazio(),original=vazio(),campanha='',podeEditar=false,urls=[],geracao=0;
-  let base=null,editando=false,salvando=false,preparando=0,conta='',mudancas={},parar=null,consulta=0;
+  let quadroMudou=false,base=null,editando=false,salvando=false,preparando=0,conta='',mudancas={},parar=null,consulta=0;
   const $=s=>document.querySelector(s);
   const enquadramentoDisponivel=()=>!!base&&Object.prototype.hasOwnProperty.call(base,'enquadramento');
   const mensagem=t=>{const el=$('#visual-msg');if(el)el.textContent=t;};
   /* Mostra o que está vinculado à campanha: imagem salva, arquivo escolhido ainda não salvo, ou nada. */
   const nomesEscolhidos={};
-  function rotuloArquivo(tipo){if(tipo in mudancas&&mudancas[tipo]===null)return 'Remoção preparada (salve para confirmar)';if(mudancas[tipo])return (nomesEscolhidos[tipo]||'Imagem escolhida')+' (prévia, ainda não salva)';return estado[tipo]?'Imagem salva e vinculada à campanha':'Nenhum arquivo selecionado';}
+  const chaveNome=t=>'visual_nome:'+campanha+':'+t;
+  const nomeSalvo=t=>{try{return localStorage.getItem(chaveNome(t))||'';}catch(_){return '';}};
+  function rotuloArquivo(tipo){if(tipo in mudancas&&mudancas[tipo]===null)return 'Remoção preparada (salve para confirmar)';if(mudancas[tipo])return (nomesEscolhidos[tipo]||'Imagem escolhida')+' (prévia, ainda não salva)';return estado[tipo]?((nomeSalvo(tipo)||nomesEscolhidos[tipo])?(nomeSalvo(tipo)||nomesEscolhidos[tipo])+' (salva e vinculada)':'Imagem salva e vinculada à campanha'):'Nenhum arquivo selecionado';}
   function atualizarRotulos(){for(const tipo of ['simbolo','backdrop']){const el=$('[data-arquivo-nome="'+tipo+'"]');if(el)el.textContent=rotuloArquivo(tipo);}}
   function liberarUrls(){urls.forEach(u=>URL.revokeObjectURL(u));urls=[];}
   function formulario(){
@@ -28,13 +30,14 @@
     }catch(err){if(g===geracao){mensagem('Não foi possível carregar as imagens: '+err.message);}}
   }
   async function salvar(){
-        if (!editando || Object.keys(mudancas).length === 0) {
-      mensagem('Nenhuma imagem nova foi preparada. Selecione uma imagem e confirme a prévia antes de salvar.');
+        if (!editando || (Object.keys(mudancas).length === 0 && !quadroMudou)) {
+      mensagem('Nada para salvar. Escolha uma imagem ou ajuste o enquadramento antes de salvar.');
       return;
     }
     if(!podeEditar||!base||salvando||preparando)return;const usuarioSalvar=conta;salvando=true;consulta++;geracao++;travar(true);mensagem('Salvando imagens…');
     try{const r=await window.CAMPANHA_IMAGENS.salvar(campanha,base,{...mudancas,posicao:estado.posicao,posicaoMobile:estado.posicaoMobile,...(estado.enquadramento?{enquadramento:estado.enquadramento}:{})});
-      if(window.nuvem.usuario()?.id!==usuarioSalvar)throw Error('A conta mudou. Abra a campanha novamente.');base=r.visual;mudancas={};editando=false;
+      if(window.nuvem.usuario()?.id!==usuarioSalvar)throw Error('A conta mudou. Abra a campanha novamente.');for(const t of ['simbolo','backdrop']){if(mudancas[t]&&nomesEscolhidos[t]){try{localStorage.setItem(chaveNome(t),nomesEscolhidos[t]);}catch(_){}}if(mudancas[t]===null){try{localStorage.removeItem(chaveNome(t));}catch(_){}}}
+      base=r.visual;mudancas={};editando=false;quadroMudou=false;
       try{const pronto=r.apresentacao||await window.CAMPANHA_IMAGENS.apresentar(base);liberarUrls();estado=pronto;original={...pronto};aplicar();mensagem(r.aviso||'Imagens salvas para todos os participantes.');window.FEEDBACK?.mostrar(r.aviso||'Imagens salvas');document.dispatchEvent(new CustomEvent('campanha-visual:fechar'));}
       catch(err){mensagem('Imagens salvas, mas não foi possível recarregá-las: '+err.message);}
     }catch(err){mensagem('Não foi possível confirmar a gravação: '+err.message+' As imagens anteriores não foram apagadas. Use Atualizar imagens antes de tentar novamente.');}
@@ -138,11 +141,11 @@ if(frame)estado.enquadramento=frame;const url=URL.createObjectURL(blob);urls.pus
   document.addEventListener('input',e=>{const campo=e.target.dataset?.visualPos;if(!podeEditar||salvando||!['posicao','posicaoMobile'].includes(campo))return;editando=true;estado[campo]=Math.max(0,Math.min(100,Number(e.target.value)||0));aplicar();});
   document.addEventListener('click',e=>{
     if(!podeEditar||salvando||preparando)return;
-    if(e.target.closest('[data-visual-ajustar]')){if(!enquadramentoDisponivel())return;(async()=>{preparando++;travar(true);try{const r=await fetch(estado.backdrop);if(!r.ok)throw Error('Não foi possível abrir a imagem original.');const arquivo=await r.blob();arquivo.enquadramento=estado.enquadramento;const frame=await window.ajustarFundo(arquivo);if(frame){estado.enquadramento=frame;editando=true;aplicar();mensagem('Enquadramento preparado. Salve para compartilhar.');}}catch(err){mensagem(err.message);}finally{preparando--;travar(false);}})();return;}
+    if(e.target.closest('[data-visual-ajustar]')){if(!enquadramentoDisponivel())return;(async()=>{preparando++;travar(true);try{const r=await fetch(estado.backdrop);if(!r.ok)throw Error('Não foi possível abrir a imagem original.');const arquivo=await r.blob();arquivo.enquadramento=estado.enquadramento;const frame=await window.ajustarFundo(arquivo);if(frame){estado.enquadramento=frame;editando=true;quadroMudou=true;aplicar();mensagem('Enquadramento preparado. Salve para compartilhar.');}}catch(err){mensagem(err.message);}finally{preparando--;travar(false);}})();return;}
     if(e.target.closest('#visual-salvar')){salvar();return;}if(e.target.closest('#visual-recarregar')){if(editando&&!confirm('Descartar alterações locais e carregar as imagens salvas?'))return;editando=false;mudancas={};geracao++;atualizar();return;}const b=e.target.closest('[data-visual-remover]');if(b){estado[b.dataset.visualRemover]='';if(b.dataset.visualRemover==='backdrop')estado.enquadramento=null;mudancas[b.dataset.visualRemover]=null;editando=true;aplicar();mensagem('Remoção preparada. Clique em Salvar imagens para confirmar.');}
     if(e.target.closest('#visual-descartar')&&sair())document.dispatchEvent(new CustomEvent('campanha-visual:fechar'));
   });
-  function sair(){if(salvando||preparando){mensagem('Aguarde a operação terminar.');return false;}if(editando&&!confirm('Descartar alterações de aparência não salvas?'))return false;estado={...original};liberarUrls();editando=false;mudancas={};geracao++;aplicar();formulario();return true;}
+  function sair(){if(salvando||preparando){mensagem('Aguarde a operação terminar.');return false;}if(editando&&!confirm('Descartar alterações de aparência não salvas?'))return false;estado={...original};liberarUrls();editando=false;quadroMudou=false;mudancas={};geracao++;aplicar();formulario();return true;}
   window.addEventListener?.('beforeunload',e=>{if(editando||salvando||preparando){e.preventDefault();e.returnValue='';}});
   let observadorFundo=null;
   window.addEventListener?.('resize',posicionarFundo);
