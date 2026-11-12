@@ -22,3 +22,14 @@ test('edição mostra orçamento e rejeita aumentar atributo sem pontos disponí
 test('resumo de atributos inclui bônus racial e somente a melhoria do nível permitido',async()=>{
  const f=await tela('?id=sintetico-ui&modo=editar',{nivel:4});await mudar(f,{asi:'Fighter:4',i:'0'},'for');await mudar(f,{asi:'Fighter:4',i:'1'},'for');await atributos(f);const html=f.document.el('criador-conteudo').innerHTML;assert.ok(html.includes('Base 15 · Raça +1 · Nível +2'));assert.ok(html.includes('Soma dos valores finais: <strong>80</strong>'));assert.match(html,/0 pontos restantes/);
 });
+const clicarBotao=async(f,dataset)=>{for(const fn of f.eventos.click)await fn({target:{closest:s=>s==='button'?{dataset,id:''}:null}});};
+test('criação/edição com mais de 1 nível: PV por nível com média, rolagem no app ou resultado físico, e o total muda',async()=>{
+ const f=await tela('?id=sintetico-ui&modo=editar',{nivel:3});await atributos(f);
+ let html=f.document.el('criador-conteudo').innerHTML;assert.match(html,/Pontos de vida por nível/);assert.match(html,/data-pv-rolar="1"/);assert.match(html,/Rolar d10 no app/);assert.match(html,/d10 no máximo/);
+ const total=h=>+h.match(/Total de PV:<\/b> (\d+)/)[1],antes=total(html);
+ await mudar(f,{pvValor:'1'},'10');await mudar(f,{pvValor:'2'},'10');html=f.document.el('criador-conteudo').innerHTML;
+ assert.ok(total(html)>=antes,'dois dados no máximo não reduzem o total');assert.equal(rascunho(f).ficha.criacao.niveis[1].pv.valor,10);assert.equal(rascunho(f).ficha.criacao.niveis[1].pv.modo,'rolagem');
+ await mudar(f,{pvValor:'1'},'11');assert.match(f.document.el('aviso').textContent,/entre 1 e 10/);assert.equal(rascunho(f).ficha.criacao.niveis[1].pv.valor,10,'valor inválido não altera');
+ await clicarBotao(f,{pvRolar:'2'});const n=rascunho(f).ficha.criacao.niveis[2].pv;assert.equal(n.modo,'rolagem');assert.ok(n.valor>=1&&n.valor<=10);
+ await mudar(f,{pvModo:'1'},'fixo');assert.equal(rascunho(f).ficha.criacao.niveis[1].pv.modo,'fixo');
+});
