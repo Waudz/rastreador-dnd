@@ -64,3 +64,12 @@ test('subir de nível só acrescenta: escolhas, subclasse e melhorias anteriores
   assert.match(j,/asiAntigos/);assert.match(j,/Subclasse já escolhida \(bloqueada\)/);assert.match(j,/data-classe="\$\{i\}" \$\{evolucao\?'disabled':''\}/);
   assert.match(j,/const RACA_NIVEIS=/);for(const raca of ['Fada','Drow','Tiefling','Draconato'])assert.ok(j.includes(raca),raca);
 });
+
+test('salvamento seguro: uma só gravação por personagem, com controle de versão, e o rascunho só sai depois do sucesso',()=>{
+  const j=ler('js/criador.js'),a=j.indexOf("const rows=await nuvem.patch("),b=j.indexOf("localStorage.removeItem(chave())");
+  assert.ok(a>0&&b>a,'o rascunho local só é removido depois da gravação');
+  assert.ok(j.includes("personagens?id=eq.${encodeURIComponent(id)}&versao=eq.${original.versao}"));assert.match(j,/Esta ficha mudou em outro aparelho/);
+  assert.equal((j.match(/nuvem\.patch\(/g)||[]).length,1,'um único PATCH por salvamento (uma linha, atômico)');
+  const corpo=j.slice(j.indexOf('async function salvar'),j.indexOf("document.addEventListener('input'"));
+  assert.ok(!/nuvem\.(post|apagar|rpc)\(/.test(corpo),'salvar não mexe em outras tabelas');
+});

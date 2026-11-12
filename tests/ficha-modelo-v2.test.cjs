@@ -78,3 +78,36 @@ test('modificadores temporários entram nos testes e ataques sem mudar o atribut
   assert.equal(R.valorPericia(f,'atletismo'),antes+1);assert.equal(f.atributos.for,16);assert.equal(R.valoresAtaque(f,{atr:'for',prof:true}).dano,4);assert.equal(R.atributoEf(f,'for'),18);
   f.modTemp={};assert.equal(R.atributoEf(f,'for'),16);
 });
+
+/* Persistência das decisões: a progressão é derivada; as decisões do jogador moram em campos próprios e sobrevivem a salvar, fechar, reabrir e recalcular. */
+const decisoes=f=>copia({criacao:{...f.criacao,modo:undefined,concluido:undefined,equipAplicado:undefined},melhorias:f.melhorias||{},classes:f.classes.map(c=>({c:c.c,n:c.n,sub:c.sub})),raca:f.raca,backgroundId:f.backgroundId,atrRaca:f.atrRaca||[],atrMagiaRaca:f.atrMagiaRaca||null});
+function novoMago(C,R){
+  const row={nome:'Mago',versao:1,pv_max:10,pv_atual:10,inventario:[],dinheiro:{},ficha:{}},p=C.iniciar(row,'criacao'),f=p.ficha;
+  f.classes=[{c:'Wizard',n:5,sub:'srd51:subclass/evocation'}];f.raca='Humano';f.backgroundId='soldado';
+  C.estado(f).base={for:8,des:13,con:14,int:15,sab:12,car:10};preencher(C,R,p);
+  delete f.melhorias['Wizard:4'];C.estado(f).talentos={'Wizard:4':{nome:'Sentinela'}};         // no nível 4 o jogador escolheu um talento em vez de +2 em atributos
+  return p;
+}
+test('persistência: subclasse, talento, perícias, magias e escolhas de características sobrevivem a salvar, reabrir e recalcular',()=>{
+  const {C,R}=motor(),p=novoMago(C,R),q=C.derivar(p);
+  assert.deepEqual(copia(C.validar(q)),[],'mago de nível 5 completo');
+  const antes=decisoes(q.ficha),{linha}=salvar(C,q,'criacao');
+  assert.deepEqual(decisoes(linha.ficha),antes,'o que foi gravado contém exatamente as decisões');
+  const q2=C.derivar(C.iniciar(copia(linha),'criacao'));
+  assert.deepEqual(decisoes(q2.ficha),antes,'reabrir e recalcular não muda nenhuma decisão');
+  assert.equal(q2.ficha.classes[0].sub,'Escola de Evocação');assert.equal(q2.ficha.progressao[3].melhoria.talento,'Sentinela');
+  const gMag=C.gruposMagias(q2.ficha).find(g=>g.key==='magias|Wizard|magias');assert.equal(gMag.selecionadas.length,gMag.qtd);
+  assert.deepEqual(copia(gMag.selecionadas),copia(C.estado(q.ficha).selecoes['magias|Wizard|magias']));
+  assert.ok(q2.ficha.magias.length>=gMag.qtd);
+});
+test('a progressão é só um resultado: apagá-la e recalcular dá a mesma progressão, e as decisões continuam valendo',()=>{
+  const {C,R}=motor(),q=C.derivar(novoMago(C,R)),{linha}=salvar(C,q,'criacao');
+  const sem=copia(linha);delete sem.ficha.progressao;
+  const q2=C.derivar(C.iniciar(sem,'criacao'));
+  assert.deepEqual(copia(q2.ficha.progressao),copia(q.ficha.progressao));assert.deepEqual(decisoes(q2.ficha),decisoes(q.ficha));
+});
+test('ao reduzir de nível a escolha antiga não é apagada em silêncio: ela fica guardada e a revisão acusa o que sobrou ou faltou',()=>{
+  const {C,R}=motor(),{linha}=salvar(C,C.derivar(novoMago(C,R)),'criacao');
+  const e=C.iniciar(copia(linha),'criacao');const guardada=copia(C.estado(e.ficha).selecoes);e.ficha.classes[0].n=2;e.ficha.classes[0].sub='';
+  const q=C.derivar(e);assert.deepEqual(copia(C.estado(q.ficha).selecoes),guardada,'as seleções gravadas continuam no registro');
+});

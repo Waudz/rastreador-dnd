@@ -28,8 +28,9 @@ test('evolução permanece em Personagem e Combate prioriza defesa e ataques',as
  const combate=h.split('id="secao-combate"')[1].split('</section>')[0];
  const personagem=h.split('id="secao-personagem"')[1].split('</section>')[0];
  assert.match(combate,/Classe de armadura/);assert.match(combate,/Ataques/);assert.doesNotMatch(combate,/Criação e evolução/);
- assert.match(personagem,/Criação e evolução/);assert.match(personagem,/melhorias/);
- assert.equal((h.match(/id="melhorias"/g)||[]).length,1);
+ assert.match(personagem,/Construção do personagem/);assert.match(personagem,/modo=editar/);assert.match(personagem,/modo=nivel/);
+ assert.ok(!/id="melhorias"|data-asi|data-escolha|id="cat-q"/.test(h),'a ficha não traz seletores de construção');
+ assert.ok(!/data-atr=/.test(h),'atributos permanentes são só leitura');assert.match(h,/data-modtemp="for"/);assert.match(h,/id="b-foto"/);
 });
 test('perícias mostram o atributo da regra e preservam o botão de rolagem',async()=>{
  const f=await ficha(async()=>[{versao:2}]);const h=f.document.el('ficha').innerHTML;

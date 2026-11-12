@@ -27,7 +27,8 @@
   const CLS = () => (F().classes = Array.isArray(F().classes) ? F().classes : []);
   const ATQ = () => (F().ataques = Array.isArray(F().ataques) ? F().ataques : []);
   const MAG = () => (F().magias = Array.isArray(F().magias) ? F().magias : []);
-  const IDI = () => (F().idiomas = Array.isArray(F().idiomas) ? F().idiomas : []);
+  const IDI = () => (Array.isArray(F().idiomas) ? F().idiomas : []);          // automáticos (raça, origem, escolhas do criador)
+  const IDX = () => (F().idiomasExtras = Array.isArray(F().idiomasExtras) ? F().idiomasExtras : []);   // aprendidos durante o jogo
   const EQ = () => (F().equip = F().equip || { armadura: "", escudo: false, bonus: 0 });
   const PER = () => R.fontesPericias(F()).valores;
   const aviso = (t, erro) => { $("#erro").innerHTML = t ? (erro ? `<span class="err">${esc(t)}</span>` : esc(t)) : ""; };
@@ -35,10 +36,6 @@
 
 
 
-  function blocoMelhorias(){
-    const disponiveis=R.melhoriasDisponiveis(CLS());
-    return disponiveis.map(x=>'<div class="sub">'+esc(x.classe)+' · melhoria de atributos no nível '+x.n+'</div><p class="muted">Escolha dois +1 (podem ser no mesmo atributo, até 20), ou deixe vazio se escolheu um talento.</p><div class="row">'+[0,1].map(i=>`<select data-asi="${esc(x.id)}" data-i="${i}" aria-label="Melhoria ${esc(x.id)} escolha ${i+1}">${opt("","Talento / escolher depois",!F().melhorias?.[x.id]?.[i])}${R.ATR.map(k=>opt(k,R.ATR_NOME[k],F().melhorias?.[x.id]?.[i]===k)).join("")}</select>`).join("")+'</div>').join("");
-  }
   const magiaRacial = () => /Tiefling|Elfo \(Alto\)|Elfo \(Drow\)|Fada|Firbolg|Genasi|Yuan-ti/.test(F().raca||"");
   function escolhasAtributosRaca() {
     const r=R.racial(F().raca);if(!r.atributos)return "";
@@ -126,7 +123,7 @@
   /* ---------- cálculos ---------- */
   const nivelTotal = () => R.nivelTotal(CLS());
   const bonusProf = () => R.prof(nivelTotal() || num(F().nivel, 1) || 1);
-  const modA = (k) => mod(A()[k]);
+  const modA = (k) => mod(R.atributoEf(F(), k));   // inclui o modificador temporário (f.modTemp); o permanente nunca é alterado aqui
   const salvaProf = () => { const c = CLS()[0] && R.classe(CLS()[0].c); return c ? c.salv : []; };
 
   function calcCA() {
@@ -174,14 +171,14 @@
   const blocoPV = () => `<div class="vida-cabecalho"><h2 class="panel-title">Pontos de vida</h2><div class="big" id="pv-num">${P.pv_atual}<span class="muted"> / ${P.pv_max} PV</span></div></div>
     <div class="hp-track" role="progressbar" aria-label="Pontos de vida" aria-valuemin="0" aria-valuemax="${P.pv_max}" aria-valuenow="${P.pv_atual}"><div class="hp-fill ${pctPV()<=25?'low':pctPV()<=50?'mid':''}" id="pv-barra" style="width:${pctPV()}%"></div></div>
     <div class="vida-controles"><div class="inline"><button type="button" class="danger" id="b-dano">− Dano</button><input class="num" id="qtd" type="number" min="1" value="1" aria-label="Quantidade de dano ou cura"><button type="button" id="b-cura">+ Cura</button></div><span class="muted" id="pv-temp-txt">${P.pv_temp ? '+'+P.pv_temp+' PV temporários' : 'PV temporários: 0'}</span></div>
-    <details class="vida-config"><summary>Ajustes de vida</summary><div class="row" style="margin:0"><div><label>PV máximo</label><input class="num" type="number" min="0" data-col="pv_max" value="${P.pv_max}"></div><div><label>PV temporário</label><input class="num" type="number" min="0" data-col="pv_temp" value="${P.pv_temp}"></div></div>
+    <details class="vida-config"><summary>Ajustes de vida</summary><div class="row" style="margin:0"><div><label>PV máximo (ajuste manual)</label><input class="num" type="number" min="0" data-col="pv_max" value="${P.pv_max}"></div><div><label>PV temporário</label><input class="num" type="number" min="0" data-col="pv_temp" value="${P.pv_temp}"></div></div>
     <div class="row" style="margin:8px 0 0"><label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-auto="pvAuto" ${autoOn("pvAuto") ? "checked" : ""}> PV máximo automático (dado de vida médio + Constituição)</label><div class="inline"><label style="margin:0">PV extra por nível</label><input class="num" type="number" step="1" data-f="pvExtra" value="${num(F().pvExtra, 0)}" title="Ex.: anão da colina +1, talento Robusto +2"></div></div></details>`;
 
   const linhaInv = (it, i) => `<div class="row" style="margin:0 0 6px" data-i="${i}"><input style="flex:1 1 160px" data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"><input class="num" type="number" min="0" step="1" data-inv="qtd" value="${num(it.qtd, 1)}" aria-label="Quantidade"><input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}" aria-label="Peso de cada unidade em kg"><button type="button" class="small subtle" data-rm-item="${i}" aria-label="Remover item">${window.ico ? window.ico("x") : "x"}</button></div>`;
   const cabInv = '<div class="row inv-h" style="margin:0 0 4px"><span style="flex:1 1 160px">Item</span><span class="num-h">Qtd.</span><span class="num-h">Peso cada (kg)</span><span style="width:34px"></span></div>';
   const blocoCarga = () => { const c = capacidade(), p = pesoTotal(), pc = Math.min(100, c > 0 ? (p / c) * 100 : 0); return `<div class="hp-top"><span>Carga total (qtd. × peso)</span><strong id="carga-txt" ${p > c ? 'class="err"' : ""}>${kg(p)} / ${kg(c)} kg</strong></div><div class="hp-track"><div class="hp-fill ${p > c ? "low" : pc > 66 ? "mid" : ""}" id="carga-barra" style="width:${pc}%"></div></div>`; };
 
-  const blocoAtr = () => '<div class="attrs">'+ATR.map(([k,r])=>C.atributo({sigla:r,valor:num(A()[k],10),modificador:fm(modA(k)),id:'mod-'+k,controle:`<input id="atributo-${k}" aria-label="${R.ATR_NOME[k]}" type="number" min="1" max="30" data-atr="${k}" value="${num(A()[k],10)}">`,rolagem:`<button type="button" class="rolar-atributo" data-rolar-atr="${k}" aria-label="Rolar teste de ${R.ATR_NOME[k]}">Rolar d20</button>`})).join('')+'</div><div class="muted" id="prof-txt"></div>';
+  const blocoAtr = () => '<div class="attrs">'+ATR.map(([k,r])=>C.atributo({sigla:r,valor:R.atributoEf(F(),k),modificador:fm(modA(k)),id:'mod-'+k,controle:`<span class="atr-valor" id="atributo-${k}" role="text" aria-label="${R.ATR_NOME[k]}: ${R.atributoEf(F(),k)}">${R.atributoEf(F(),k)}${num(F().modTemp?.[k],0)?`<small class="atr-temp" title="Modificador temporário de jogo">${fm(num(F().modTemp[k],0))} temp.</small>`:""}</span>`,rolagem:`<button type="button" class="rolar-atributo" data-rolar-atr="${k}" aria-label="Rolar teste de ${R.ATR_NOME[k]}">Rolar d20</button>`})).join('')+'</div><div class="muted" id="prof-txt"></div>';
 
   const itemCar = (c, i) => `<details class="item"><summary>${esc(c.nome)}</summary><div><div class="pre">${TEXTO_REGRAS.html(c.desc || "")}</div>${!c.auto?`<div class="row" style="margin:8px 0 0"><button type="button" class="small danger" data-rm-car="${i}">Remover</button></div>`:""}</div></details>`;
   const recursosCombate = () => CAR().map(c=>`<details class="item"><summary>${esc(c.nome)}</summary><div class="pre">${TEXTO_REGRAS.html(c.desc||'')}</div></details>`).join('') || '<p class="muted">As habilidades e recursos cadastrados em Personagem aparecem aqui para consulta durante o combate.</p>';
@@ -213,7 +210,7 @@
     CLS().slice(1).forEach((c,i)=>{const d=R.classe(c.c);if(d&&["Bard","Ranger","Rogue"].includes(c.c))h+=`<div class="sub">Multiclasse: ${esc(d.n)} · uma perícia</div>${escolhas("multi-"+(i+1),d.per[1],c.per||[],1)}`;});
     const lim=R.limiteEspecializacao(CLS());
     if(lim)h+=`<p class="muted">Especializações: ${fontes.especializadas.length}/${lim}. Escolha entre as perícias proficientes.</p>`;
-    h='<details class="config-pericias" '+(editandoFicha?'open':'')+'><summary>Escolhas e especializações</summary>'+h+'</details><div class="grade2">'+R.PERICIAS.map(([k,n,a])=>{
+    h='<div class="grade2">'+R.PERICIAS.map(([k,n,a])=>{
       const e=pr[k]||0,v=R.valorPericia(f,k);
       return `<div class="lin pericia-linha"><span class="pbol${e?' on':''}${e===2?' dup':''}" role="img" aria-label="${e===2?'Especialização':e?'Proficiente':'Sem proficiência'}" title="${e===2?'Especialização':e?'Proficiente':'Sem proficiência'}"></span><b>${fm(v)}</b><button type="button" class="rolar-pericia" data-rolar-per="${k}" aria-label="Rolar ${n}, ${R.ATR_NOME[a]}"><span>${n}</span><small class="pericia-atributo">${a.toUpperCase()}</small></button>${editandoFicha&&lim&&e?`<button type="button" class="small pericia-editar" data-per="${k}" aria-pressed="${e===2}">${e===2?'Especializada':'Especializar'}</button>`:''}</div>`;
     }).join("")+'</div>';
@@ -265,31 +262,16 @@
     const f = F(), outro = souMestre && P.dono_id !== nuvem.usuario().id, rs = racaSel(), c = conj();
     const mostraMag = c.habilidades.length || MAG().length || f.magiaExtra || magiaRacial();
     $("#ficha").innerHTML = `
-      <header class="panel ficha-resumo"><div class="ficha-identidade">${fotoHTML()}<div><p class="eyebrow">Ficha de personagem · D&D 2014</p><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p class="ficha-meta"><span class="badge">Nível ${nivelTotal()}</span>${nivelTotal()<20?`<a class="btnlike small ficha-subir-nivel" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a>`:""} Proficiência ${fm(bonusProf())} · ${esc(f.background||"Origem não definida")}</p></div></div><div class="ficha-destaques">${C.estatistica({rotulo:"CA",valor:P.ca,id:"resumo-ca"})}${C.estatistica({rotulo:"Iniciativa",valor:fm(modA("des")+R.bonusSemProf(F())),id:"resumo-iniciativa",tipo:"iniciativa"})}${C.estatistica({rotulo:"Desloc.",valor:String(f.deslocamento ?? 9).replace(".",",")+" m",id:"resumo-deslocamento",tipo:"deslocamento"})}</div></header>
-      <div class="panel identidade-editor" style="${editandoFicha?"":"display:none"}">
-        <div class="row" style="margin:0 0 8px;flex-wrap:nowrap;gap:12px"><span id="foto-box">${fotoHTML()}</span><div style="flex:1 1 auto;min-width:0">
-          <input id="nome" data-col="nome" value="${esc(P.nome)}" maxlength="80" style="font-family:Georgia,serif;font-size:22px;height:46px;font-weight:700" aria-label="Nome">
-          <div class="muted" style="margin-top:4px"><button type="button" class="small" id="b-foto">Trocar foto</button><input type="file" id="in-foto" accept="image/*" hidden> ${esc(camp.nome)}${donoNome ? " · responsável: " + esc(donoNome) : ""}${outro ? ' · <span class="badge">editando como mestre</span>' : ""}</div></div></div>
-        <div class="row" style="margin:0">
-          <div style="flex:1 1 200px"><label>Raça</label><select id="raca-sel">${opt("", "Escolha…", !rs)}${R.RACAS.filter(r=>R.RACAS_BASE.includes(r[0])||r[0]===f.raca).map((r) => opt(r[0], r[0], rs === r[0])).join("")}${opt("__custom", "Outra (personalizada)…", rs === "__custom")}</select></div>
-          <div style="flex:1 1 200px" id="raca-txt-box" ${rs === "__custom" ? "" : "hidden"}><label>Nome da raça personalizada</label><input id="raca-txt" value="${esc(R.RACAS.some((x) => x[0] === f.raca) ? "" : f.raca || "")}" maxlength="60" placeholder="Ex.: Fada, Sereia…"></div>
-          <div><label>Deslocamento (m)</label><input class="num" type="number" min="0" step="1.5" data-f="deslocamento" value="${f.deslocamento != null ? f.deslocamento : 9}"></div>
-          <div><label>Nível total</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="nivel-total">${nivelTotal() || "—"}</div></div>
-        </div>
-        <div id="info-raca">${infoRaca()}${escolhasAtributosRaca()}</div>
-        <div class="sub">Classes</div>
-        <div id="classes">${blocoClasses()}</div>
-        <div class="row" style="margin:0"><button type="button" class="small" id="add-cls">${CLS().length ? "Adicionar classe (multiclasse)" : "Escolher classe"}</button></div>
-      </div>
+      <header class="panel ficha-resumo"><div class="ficha-identidade"><div class="ficha-foto">${fotoHTML()}<button type="button" class="small subtle ficha-trocar-foto" id="b-foto">Trocar foto</button><input type="file" id="in-foto" accept="image/*" hidden></div><div><p class="eyebrow">Ficha de personagem · D&D 2014</p><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p class="ficha-meta"><span class="badge">Nível ${nivelTotal()}</span>${nivelTotal()<20?`<a class="btnlike small ficha-subir-nivel" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a>`:""} Proficiência ${fm(bonusProf())} · ${esc(f.background||"Origem não definida")}</p></div></div><div class="ficha-destaques">${C.estatistica({rotulo:"CA",valor:P.ca,id:"resumo-ca"})}${C.estatistica({rotulo:"Iniciativa",valor:fm(modA("des")+R.bonusSemProf(F())),id:"resumo-iniciativa",tipo:"iniciativa"})}${C.estatistica({rotulo:"Desloc.",valor:String(f.deslocamento ?? 9).replace(".",",")+" m",id:"resumo-deslocamento",tipo:"deslocamento"})}</div></header>
       <div class="panel vida-ficha"><div id="bloco-pv">${blocoPV()}</div><details class="vida-descanso"><summary>Dados de vida e descanso</summary><div id="bloco-dv">${blocoDV()}</div>
         <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-curto">Registrar Descanso Curto</button><button type="button" class="small" id="b-longo">Descanso Longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></details></div>
-<nav class="ficha-abas" aria-label="Seções da ficha" role="tablist"><button type="button" role="tab" id="aba-principal" aria-controls="secao-principal" data-ficha-aba="principal">Principal</button><button type="button" role="tab" id="aba-combate" aria-controls="secao-combate" data-ficha-aba="combate">Combate</button><button type="button" role="tab" id="aba-magias" aria-controls="secao-magias" data-ficha-aba="magias">Magias</button><button type="button" role="tab" id="aba-inventario" aria-controls="secao-inventario" data-ficha-aba="inventario">Inventário</button><button type="button" role="tab" id="aba-personagem" aria-controls="secao-personagem" data-ficha-aba="personagem">Personagem</button><button type="button" role="tab" id="aba-notas" aria-controls="secao-notas" data-ficha-aba="notas">Notas</button></nav><section id="secao-principal" role="tabpanel" aria-labelledby="aba-principal" data-ficha-secao="principal" class="ficha-conteudo" tabindex="0">      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2>${blocoAtr()}</div>
+<nav class="ficha-abas" aria-label="Seções da ficha" role="tablist"><button type="button" role="tab" id="aba-principal" aria-controls="secao-principal" data-ficha-aba="principal">Principal</button><button type="button" role="tab" id="aba-combate" aria-controls="secao-combate" data-ficha-aba="combate">Combate</button><button type="button" role="tab" id="aba-magias" aria-controls="secao-magias" data-ficha-aba="magias">Magias</button><button type="button" role="tab" id="aba-inventario" aria-controls="secao-inventario" data-ficha-aba="inventario">Inventário</button><button type="button" role="tab" id="aba-personagem" aria-controls="secao-personagem" data-ficha-aba="personagem">Personagem</button><button type="button" role="tab" id="aba-notas" aria-controls="secao-notas" data-ficha-aba="notas">Notas</button></nav><section id="secao-principal" role="tabpanel" aria-labelledby="aba-principal" data-ficha-secao="principal" class="ficha-conteudo" tabindex="0">      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2>${blocoAtr()}<details class="mod-temp-ficha"><summary>Modificadores temporários</summary><p class="muted">Poções, magias e itens que alteram um atributo por um tempo. São ajustes de jogo: <b>não mudam o atributo permanente</b> (isso é no Editar personagem ou ao subir de nível).</p><div class="grade2">${ATR.map(([k,r])=>`<label class="mod-temp-campo">${esc(R.ATR_NOME[k])}<input class="num" type="number" min="-20" max="20" step="1" data-modtemp="${k}" value="${num(F().modTemp?.[k],0)}" aria-label="Modificador temporário de ${esc(R.ATR_NOME[k])}"></label>`).join("")}</div><div class="row" style="margin:8px 0 0"><button type="button" class="small" id="zerar-modtemp">Zerar modificadores temporários</button></div></details></div>
       <div class="panel"><h2 class="panel-title">Testes de resistência</h2><div id="bloco-sal">${blocoSal()}</div></div>
       <details class="panel pericias-ficha" open><summary class="panel-title">Perícias <span class="muted">Expandir / recolher</span></summary><div id="bloco-per">${blocoPer()}</div></details>
       <div class="panel inspiracao-ficha"><label class="inline"><input type="checkbox" id="inspiracao" ${f.inspiracao?"checked":""}> Inspiração</label><span class="muted">Concedida pelo mestre · marque quando disponível.</span></div><details class="panel proficiencias-ficha"><summary class="panel-title">Proficiências e idiomas</summary><div id="bloco-prof">${blocoProf()}</div>
-        <div class="sub">Idiomas</div><div id="idiomas" class="anexos">${IDI().map((x, i) => `<span class="chip">${esc(x)}<button type="button" class="chip-x" data-rm-idi="${i}" aria-label="Tirar">${window.ico ? window.ico("x") : "x"}</button></span>`).join("") || '<span class="muted">Nenhum ainda.</span>'}</div>
-        <div class="row" style="margin:8px 0 0"><select id="idi-sel" style="flex:1 1 160px">${opt("", "Adicionar idioma…", true)}${R.IDIOMAS.filter((x) => !IDI().includes(x)).map((x) => opt(x, x)).join("")}</select><input id="idi-txt" style="flex:1 1 160px" maxlength="40" placeholder="Outro idioma"><button type="button" class="small" id="add-idi">Adicionar</button></div>
-        <div class="sub">Outras proficiências (ferramentas, veículos, jogos…)</div><textarea data-f="outrasProf" rows="2" style="width:100%">${esc(f.outrasProf || "")}</textarea></details>
+        <div class="sub">Idiomas</div><div id="idiomas" class="anexos">${IDI().map((x) => `<span class="chip" title="Definido na construção do personagem">${esc(x)}</span>`).join("")}${IDX().map((x, i) => `<span class="chip">${esc(x)}<button type="button" class="chip-x" data-rm-idi="${i}" aria-label="Tirar">${window.ico ? window.ico("x") : "x"}</button></span>`).join("")}${IDI().length || IDX().length ? "" : '<span class="muted">Nenhum ainda.</span>'}</div>
+        <div class="row" style="margin:8px 0 0"><select id="idi-sel" style="flex:1 1 160px">${opt("", "Adicionar idioma…", true)}${R.IDIOMAS.filter((x) => !IDI().includes(x) && !IDX().includes(x)).map((x) => opt(x, x)).join("")}</select><input id="idi-txt" style="flex:1 1 160px" maxlength="40" placeholder="Outro idioma"><button type="button" class="small" id="add-idi">Adicionar</button></div>
+        <div class="sub">Outras proficiências (ferramentas, veículos, jogos…)</div>${f.outrasProf?`<p class="muted">Da construção do personagem: <b style="color:var(--text)">${esc(f.outrasProf)}</b></p>`:""}<label class="muted" for="outras-extra">Registradas no jogo</label><textarea id="outras-extra" data-f="outrasProfExtras" rows="2" style="width:100%">${esc(f.outrasProfExtras || "")}</textarea></details>
       </section><section id="secao-combate" role="tabpanel" aria-labelledby="aba-combate" data-ficha-secao="combate" class="ficha-conteudo" tabindex="0">      <div class="panel"><h2 class="panel-title">Classe de armadura</h2><div id="bloco-ca">${blocoCA()}</div>
         <div class="row" style="margin:8px 0 0"><div style="flex:1 1 200px"><label>Armadura</label><select id="eq-arm">${opt("", "Nenhuma", !EQ().armadura)}${R.ARMADURAS.map((a) => opt(a[0], `${a[1]} (${a[2]}, CA ${a[3]})`, EQ().armadura === a[0])).join("")}</select></div>
           <label class="inline" style="margin:18px 0 0"><input type="checkbox" style="width:auto;height:auto" id="eq-esc" ${EQ().escudo ? "checked" : ""}> Escudo (+2)</label>
@@ -309,13 +291,11 @@
         <div class="sub">Dinheiro</div>
         <div class="moedas">${MOEDAS.map(([k, r]) => `<div class="moeda-controle"><label>${r}</label><input class="num" type="number" min="0" step="1" data-din="${k}" value="${moeda(DIN()[k])}"><div class="inline"><button type="button" data-moeda="${k}" data-sinal="-1" aria-label="Diminuir ${r}">−</button><input class="num" type="number" min="1" step="1" id="ajuste-${k}" placeholder="1" aria-label="Quantidade de ${r}"><button type="button" data-moeda="${k}" data-sinal="1" aria-label="Somar ${r}">+</button></div></div>`).join("")}<div><label>Total em PO</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="total-po">${totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div></div>
       </div>
-      </section><section id="secao-personagem" role="tabpanel" aria-labelledby="aba-personagem" data-ficha-secao="personagem" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Criação e evolução</h2><div class="row"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}">Criação guiada</a><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a></div></div><details class="panel" ${editandoFicha?"open":""}><summary class="panel-title">Melhorias de atributos e talentos</summary><div id="melhorias">${blocoMelhorias()}</div></details><div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosDaFicha(f).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Esta raça não concede traços adicionais.</p>'}</div>
+      </section><section id="secao-personagem" role="tabpanel" aria-labelledby="aba-personagem" data-ficha-secao="personagem" class="ficha-conteudo" tabindex="0"><div class="panel ficha-construcao"><h2 class="panel-title">Construção do personagem</h2><p class="muted">Raça, origem, classes, subclasses, atributos, perícias, talentos e melhorias de atributo se escolhem nos fluxos guiados. Aqui na ficha ficam só as ações de jogo.</p><div class="row"><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=editar">Editar personagem</a><a class="btnlike" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a></div></div><div class="panel"><h2 class="panel-title">Traços raciais</h2>${R.tracosDaFicha(f).map(t=>'<details class="item" open><summary>'+esc(t.nome)+'</summary><p class="muted">'+esc(t.origem)+'</p><p class="descricao-regra">'+esc(t.desc)+'</p></details>').join("")||'<p class="muted">Esta raça não concede traços adicionais.</p>'}</div>
       ${f.backgroundCaracteristica?'<div class="panel"><h2 class="panel-title">Origem · '+esc(f.background||"")+'</h2><h3>'+esc(f.backgroundCaracteristica.nome)+'</h3><p class="descricao-regra">'+esc(f.backgroundCaracteristica.desc)+'</p></div>':""}
       <div class="panel"><h2 class="panel-title">Características de classe e outras habilidades</h2>
         <div id="lista-car">${CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>'}</div>
-        <div class="sub">Adicionar do catálogo (SRD)</div>
-        <input id="cat-q" placeholder="Buscar: fúria, ataque furtivo, rage…" autocomplete="off"><div id="cat-res" class="catalogo-lista" style="margin-top:6px"></div>
-        <details class="item" style="margin-top:8px"><summary>Criar uma habilidade própria</summary><div>
+        <details class="item" style="margin-top:8px"><summary>Registrar uma habilidade própria ou ganha no jogo</summary><div>
           <input id="car-nome" maxlength="80" placeholder="Nome" style="margin-bottom:6px"><textarea id="car-desc" rows="4" placeholder="O que ela faz" style="width:100%"></textarea>
           <div class="row" style="margin:6px 0 0"><button type="button" class="small primary" id="add-car">Adicionar</button></div></div></details>
       </div>
@@ -357,9 +337,8 @@
   /* recalcula tudo o que depende de atributos, classes, armadura */
   function refrescar() {
     aplicarAuto(true); atualizarPV();
-    ATR.forEach(([k])=>{const campo=document.querySelector('[data-atr="'+k+'"]');if(campo&&document.activeElement!==campo)campo.value=num(A()[k],10);const m=$("#mod-"+k);if(m)m.textContent=fm(modA(k));});
+    ATR.forEach(([k])=>{const v=$("#atributo-"+k);if(v)v.innerHTML=R.atributoEf(F(),k)+(num(F().modTemp?.[k],0)?`<small class="atr-temp" title="Modificador temporário de jogo">${fm(num(F().modTemp[k],0))} temp.</small>`:"");const m=$("#mod-"+k);if(m)m.textContent=fm(modA(k));});
     $("#bloco-ca").innerHTML = blocoCA(); $("#bloco-sal").innerHTML = blocoSal(); $("#bloco-per").innerHTML = blocoPer(); $("#bloco-dv").innerHTML = blocoDV(); $("#bloco-prof").innerHTML = blocoProf();
-    const bm=$("#melhorias");if(bm)bm.innerHTML=blocoMelhorias();
     const lc=$("#lista-car");if(lc)lc.innerHTML=CAR().map(itemCar).join("");atualizarRecursos();
     const nt = $("#nivel-total"); if (nt) nt.textContent = nivelTotal() || "—";
     const bs = $("#bloco-slots"); if (bs) bs.innerHTML = blocoSlots();
@@ -405,6 +384,7 @@
       atualizarPV(); agendar(col === "pv_max" ? { ficha: P.ficha, pv_max: P.pv_max, pv_atual: P.pv_atual } : { [col]: v }); return;
     }
     if (t.dataset.f) { const k = t.dataset.f; F()[k] = ["nivel", "deslocamento", "pvExtra"].includes(k) ? (t.value === "" ? (k === "pvExtra" ? 0 : null) : num(t.value, 0)) : t.value; if(k === "deslocamento" && $("#resumo-deslocamento")) $("#resumo-deslocamento").textContent=(F()[k] ?? 9)+" m"; if (k === "pvExtra") return refrescar(); agendar({ ficha: P.ficha }); return; }
+    if (t.dataset.modtemp) { const k = t.dataset.modtemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))); const f = F(); f.modTemp = { ...(f.modTemp || {}) }; if (v) f.modTemp[k] = v; else delete f.modTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.atr) { const k = t.dataset.atr; A()[k] = num(t.value, 10); $("#mod-" + k).textContent = fm(mod(A()[k])); refrescar(); return; }
     if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; INV()[i][k] = k === "nome" ? t.value : num(t.value, 0); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
     if (t.dataset.din) { DIN()[t.dataset.din] = moeda(t.value); t.value = DIN()[t.dataset.din]; $("#total-po").textContent = totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); agendar({ dinheiro: P.dinheiro }); return; }
@@ -422,7 +402,6 @@
     if (t.dataset.cls === "c") { const i = +t.closest("[data-ci]").dataset.ci; if(CLS().some((c,j)=>j!==i && c.c===t.value && t.value)){aviso("Esta classe já foi adicionada.",true);desenhar();return;} if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; CLS()[i].c = t.value; CLS()[i].sub = ""; F().classesEditadas=true; if(i===0){F().perClasse=[];F().especializacoes=[];} refrescar(); desenhar(); return; }
     if (t.dataset.atq && (t.tagName === "SELECT" || t.type === "checkbox")) { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = t.type === "checkbox" ? t.checked : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
 
-    if(t.dataset.asi){const f=F();f.melhorias ||= {};f.melhorias[t.dataset.asi] ||= [];f.melhorias[t.dataset.asi][+t.dataset.i]=t.value;refrescar();desenhar();return;}
     if(t.dataset.atrRaca!==undefined){const f=F(), i=+t.dataset.atrRaca; f.atrRaca ||= []; f.atrRaca[i]=t.value; R.aplicarRaca(f,f.bonusRaca);refrescar();desenhar();return;}
     if (t.dataset.auto) { F()[t.dataset.auto] = t.checked; refrescar(); return; }
     if (t.id === "eq-arm") { EQ().armadura = t.value; refrescar(); return; }
@@ -467,14 +446,8 @@
     }
 
     if ((b=c("[data-moeda]"))) { const k=b.dataset.moeda, n=Math.max(1,moeda($("#ajuste-"+k).value||1)); DIN()[k]=moeda(moeda(DIN()[k])+(+b.dataset.sinal)*n); $('[data-din="'+k+'"]').value=DIN()[k]; $("#total-po").textContent=totalPO().toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});agendar({dinheiro:P.dinheiro});return; }
-    if ((b=c("[data-escolha]"))) { const f=F(), k=b.dataset.k, tipo=b.dataset.escolha, fontes=R.fontesPericias(f), r=R.racial(f.raca), d=CLS()[0]&&R.classe(CLS()[0].c);
-      const multi=tipo.startsWith("multi-") ? CLS()[+tipo.slice(6)] : null;
-      const arr=multi ? (multi.per ||= []) : tipo==="classe" ? (f.perClasse=fontes.classePer) : (f.perRaca=fontes.raciais);
-      const lim=multi?1:tipo==="classe"?(d?d.per[0]:0):r.escolhas, i=arr.indexOf(k);
-      if(i>=0)arr.splice(i,1);else if(!fontes.basicas.includes(k)&&arr.length<lim)arr.push(k);
-      $("#bloco-per").innerHTML=blocoPer();agendar({ficha:P.ficha});return;
-    }
     if(c("#b-mag-fechar")) { if(MAG().length){aviso("Remova as magias adicionais antes de desativar essa fonte.",true);return;}F().magiaExtra=false;agendar({ficha:P.ficha});desenhar();return; }
+    if (c("#zerar-modtemp")) { F().modTemp = {}; document.querySelectorAll("[data-modtemp]").forEach(e => { e.value = 0; }); refrescar(); agendar({ ficha: P.ficha }); return; }
     if (c("#b-dano")) return mudarPV(true);
     if (c("#b-cura")) return mudarPV(false);
     if (c("#b-foto")) return $("#in-foto").click();
@@ -492,8 +465,8 @@
     if (c("#add-cls")) { if(CLS().some(c=>!c.c)){aviso("Escolha a classe pendente antes de adicionar outra.",true);return;} if(nivelTotal()>=20){aviso("O limite é 20 níveis no total.",true);return;} CLS().push({ c: "", n: 1, sub: "" }); desenhar(); return; }
     if ((b = c("[data-rm-cls]"))) { CLS().splice(+b.dataset.rmCls, 1); F().classesEditadas=true; refrescar(); desenhar(); return; }
     if ((b = c("[data-per]"))) { const k=b.dataset.per, f=F(), fontes=R.fontesPericias(f); f.especializacoes=fontes.especializadas; const i=f.especializacoes.indexOf(k); if(i>=0)f.especializacoes.splice(i,1); else if(fontes.basicas.includes(k)&&f.especializacoes.length<R.limiteEspecializacao(CLS()))f.especializacoes.push(k); $("#bloco-per").innerHTML = blocoPer(); agendar({ ficha: P.ficha }); return; }
-    if ((b = c("[data-rm-idi]"))) { IDI().splice(+b.dataset.rmIdi, 1); desenhar(); agendar({ ficha: P.ficha }); return; }
-    if (c("#add-idi")) { const v = ($("#idi-txt").value.trim() || $("#idi-sel").value); if (v && !IDI().includes(v)) { IDI().push(v); desenhar(); agendar({ ficha: P.ficha }); } return; }
+    if ((b = c("[data-rm-idi]"))) { IDX().splice(+b.dataset.rmIdi, 1); desenhar(); agendar({ ficha: P.ficha }); return; }
+    if (c("#add-idi")) { const v = ($("#idi-txt").value.trim() || $("#idi-sel").value); if (v && !IDI().includes(v) && !IDX().includes(v)) { IDX().push(v); desenhar(); agendar({ ficha: P.ficha }); } return; }
     if(c("#editar-ficha")){location.href="criar-personagem.html?id="+encodeURIComponent(id)+"&modo=editar";return;}
     if(c("#excluir-personagem")){if(!confirm("Excluir "+P.nome+" e sua ficha?"))return;try{await nuvem.apagar("personagens?id=eq."+encodeURIComponent(id));location.href="campanha.html?id="+encodeURIComponent(P.campanha_id);}catch(e){aviso(e.message,true);}return;}
     if (c("#add-atq")) { ATQ().push({ nome: "Personalizado", atr: "for", dado: "1d6", tipo: "cortante", magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); agendar({ ficha: P.ficha }); return; }
@@ -523,7 +496,7 @@
   /* ---------- foto ---------- */
 
   async function trocarFoto(file) {
-    try { const foto=await window.recortarFoto(file);if(!foto)return; F().foto=foto;$("#foto-box").innerHTML=fotoHTML();agendar({ficha:P.ficha}); }
+    try { const foto=await window.recortarFoto(file);if(!foto)return; F().foto=foto;document.querySelector(".ficha-foto .av")?.replaceWith(Object.assign(document.createElement("div"),{innerHTML:fotoHTML()}).firstElementChild);agendar({ficha:P.ficha}); }
     catch(e){aviso("Não consegui usar a imagem: "+e.message,true);}
   }
 
