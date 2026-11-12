@@ -165,6 +165,6 @@ test('cartão da iniciativa: identidade em cima e ações embaixo (campo Ini., R
  assert.match(h,/data-ci-rolar="p"[^>]*>Rolar d20<\/button><button type="button" class="small primary" data-ci="p"[^>]*>Adicionar<\/button>/);
  f.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci-rolar]'?{dataset:{ciRolar:'p'}}:s==='button'?null:null}});
  assert.match(f.document.el('ci-lista').innerHTML,/<p class="ci-ini-res" role="status">d20 \d+ \+ 3 = \d+<\/p>/,'o resultado aparece no próprio cartão');
- const css=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','css','fluxos.css'),'utf8'),bloco=css.slice(css.indexOf('/* Iniciativa dos personagens: cartão em duas linhas'));
+ const css=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','css','fluxos.css'),'utf8'),bloco=css.slice(css.indexOf('/* Iniciativa dos personagens: cartão em duas linhas'),css.indexOf('/* Celular e telas de toque'));
  for(const regra of bloco.split('\n').filter(l=>l.includes('{')&&!l.startsWith('/*')&&!l.startsWith('.ci-resultado')))assert.ok(regra.startsWith('#ci-lista .ci-cartao'),'regra restrita: '+regra.slice(0,60));
 });
