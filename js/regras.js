@@ -104,6 +104,9 @@ window.REGRAS = (() => {
   const mod = (v) => Math.floor((Number(v) - 10) / 2);
   /* Valor EFETIVO de um atributo: o permanente (f.atributos) mais o modificador temporário do jogo (f.modTemp: poção, magia, item).
      Nunca grava em f.atributos: o permanente só muda no criador, na evolução e no Editar personagem. */
+  /* Bônus temporários de jogo por categoria (f.bonusTemp): testes, ataques, salvaguardas, ca, cdMagia. Nenhum altera atributo permanente nem a capacidade de preparar magias. */
+  const CATEGORIAS_TEMP = [["testes", "Testes de atributo e perícias"], ["ataques", "Jogadas de ataque"], ["salvaguardas", "Salvaguardas"], ["ca", "Classe de Armadura"], ["cdMagia", "CD e ataque de magia"]];
+  const bonusTemp = (f, k) => Number(f?.bonusTemp?.[k]) || 0;
   const atributoEf = (f, k) => { const v = Number(f?.atributos?.[k]); return (Number.isFinite(v) && v > 0 ? v : 10) + (Number(f?.modTemp?.[k]) || 0); };
   const prof = (nivel) => 2 + Math.floor((Math.max(1, nivel) - 1) / 4);
   const nivelTotal = (cls) => (cls || []).filter(c=>classe(c.c)).reduce((s,c)=>s+Math.max(0,Math.floor(Number(c.n)||0)),0);
@@ -225,9 +228,9 @@ window.REGRAS = (() => {
   const chaveTexto=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   const tituloTexto=v=>String(v||'').replace(/(^|\s)(\p{L})/gu,(m,a,b)=>a+b.toLocaleUpperCase('pt-BR'));
   function tracosDaFicha(f){const atuais=tracosRaciais(f.raca),mapa=new Map(atuais.map(t=>[chaveTexto(t.nome),{...t,nome:tituloTexto(t.nome)}]));for(const t of f.tracosRaciais||[]){const k=chaveTexto(t.nome);if(!mapa.has(k))mapa.set(k,{...t,nome:tituloTexto(t.nome)});}return [...mapa.values()];}
-  function valorPericia(f,k){const p=PERICIAS.find(p=>p[0]===k);return mod(atributoEf(f,p?.[2]))+bonusPericia(f,k);}
+  function valorPericia(f,k){const p=PERICIAS.find(p=>p[0]===k);return mod(atributoEf(f,p?.[2]))+bonusPericia(f,k)+bonusTemp(f,'testes');}
   function percepcaoPassiva(f){return 10+valorPericia(f,'percepcao');}
-  function valoresAtaque(f,a){const at=a.atr==='acuidade'?Math.max(mod(atributoEf(f,'for')),mod(atributoEf(f,'des'))):mod(atributoEf(f,a.atr||'for')),mg=Number(a.magico)||0;return {ataque:at+(a.prof===false?0:prof(nivelTotal(f.classes||[])||f.nivel||1))+mg,dano:at+mg+(Number(a.extra)||0)};}
+  function valoresAtaque(f,a){const at=a.atr==='acuidade'?Math.max(mod(atributoEf(f,'for')),mod(atributoEf(f,'des'))):mod(atributoEf(f,a.atr||'for')),mg=Number(a.magico)||0;return {ataque:at+(a.prof===false?0:prof(nivelTotal(f.classes||[])||f.nivel||1))+mg+bonusTemp(f,'ataques'),dano:at+mg+(Number(a.extra)||0)};}
   function resumoMestre(f){const fontes=fontesPericias(f),tracos=tracosDaFicha(f);return {passiva:percepcaoPassiva(f),pericias:PERICIAS.filter(([k])=>fontes.basicas.includes(k)).map(([k,n])=>({id:k,nome:n,valor:valorPericia(f,k),especializada:fontes.especializadas.includes(k)})),tracos,resistencias:[...(Array.isArray(f.resistencias)?f.resistencias:f.resistencias?[f.resistencias]:[]),...tracos.filter(t=>/resistência|imunidade/i.test(t.desc)).map(t=>t.desc)],ataques:(f.ataques||[]).map(a=>({...a,...valoresAtaque(f,a)})),magias:f.magias||[],caracteristicas:f.caracteristicas||[]};}
-  return { atributoEf, chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, resumoMestre, RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+  return { atributoEf, bonusTemp, CATEGORIAS_TEMP, chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, resumoMestre, RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();

@@ -54,9 +54,24 @@ let cancelar=()=>{};   // vigia de lentidão do esqueleto (js/esqueleto.js)
   const slotsMudaram=slotsTexto(R.conjuracao(inicial.ficha.classes))!==slotsTexto(R.conjuracao(f().classes));
   return {q,dif,c,subOriginal,marcoSub,gs,magiasNovas,de,ate,racaLista,anao,novosAsi,gruposMagia,slotsMudaram};
  }
+ /* Troca de uma magia conhecida (Bardo, Feiticeiro, Bruxo, Patrulheiro): uma por nível, só entre as magias que o personagem já tinha. */
+ const chaveTroca=()=>'magias|'+classeNivel+'|magias';
+ function trocaDados(){
+  if(!evolucao||!subiu||!classeNivel||!window.MAGIAS_JOGO||!MAGIAS_JOGO.CLASSES_TROCA.includes(classeNivel))return null;
+  const g=C.gruposMagias(C.derivar(p).ficha).find(x=>x.key===chaveTroca());if(!g)return null;
+  const ant=origSel.get(g.key)||new Set(),de=g.selecionadas.filter(v=>ant.has(v)),entrada=(st().niveis||[]).at(-1);
+  return {g,de,para:g.opts.filter(v=>!g.selecionadas.includes(v)),troca:entrada&&entrada.c===classeNivel?entrada.troca||null:null,ativa:!!entrada&&entrada.c===classeNivel};
+ }
+ const trocaPossivel=()=>{const t=trocaDados();return !!(t&&t.ativa&&(t.troca||(t.de.length&&t.para.length)));};
+ function trocaHTML(){
+  const t=trocaDados();if(!t||!t.ativa||!(t.troca||(t.de.length&&t.para.length)))return '';
+  const cab='<section class="panel" id="troca-magia"><h3>Trocar uma magia conhecida</h3><p class="muted">Regra de 2014: ao ganhar um nível nesta classe, você pode trocar uma magia que conhece por outra da lista da classe, de um círculo para o qual tenha espaços de magia. É opcional e vale uma troca por nível.</p>';
+  if(t.troca)return cab+'<p>Troca registrada: <b>'+esc(C.rotulo(t.troca.de))+'</b> por <b>'+esc(C.rotulo(t.troca.para))+'</b>.</p><button type="button" class="small" id="troca-desfazer">Desfazer troca</button></section>';
+  return cab+'<label>Magia a trocar<select id="troca-de">'+t.de.map(v=>'<option value="'+esc(v)+'">'+esc(C.rotulo(v))+'</option>').join('')+'</select></label><label>Nova magia<select id="troca-para">'+t.para.map(v=>'<option value="'+esc(v)+'">'+esc(C.rotulo(v))+'</option>').join('')+'</select></label><button type="button" class="small" id="troca-ok">Aplicar troca</button><p class="err" id="troca-erro" role="alert"></p></section>';
+ }
  function atualizarEtapas(){
   if(!evolucao)return;const x=contextoNivel(),ultimo=feitos+1>=alvo,v=[0,8];
-  if(subiu&&x){if(x.dif.novas.length||x.gs.length||x.marcoSub||x.magiasNovas.length)v.push(9);if(x.racaLista.length||x.anao)v.push(10);if(x.novosAsi.length)v.push(3);if(x.gruposMagia.length||x.slotsMudaram)v.push(5);v.push(ultimo?7:11);}
+  if(subiu&&x){if(x.dif.novas.length||x.gs.length||x.marcoSub||x.magiasNovas.length)v.push(9);if(x.racaLista.length||x.anao)v.push(10);if(x.novosAsi.length)v.push(3);if(x.gruposMagia.length||x.slotsMudaram||trocaPossivel())v.push(5);v.push(ultimo?7:11);}
   VISIVEIS=v;
  }
  /* Começa um nível: o que já está escolhido neste momento fica bloqueado. */
@@ -122,7 +137,7 @@ let cancelar=()=>{};   // vigia de lentidão do esqueleto (js/esqueleto.js)
  function desenhar(){
   atualizarEtapas();if(!VISIVEIS.includes(etapa))etapa=VISIVEIS[0];
   $('#etapas').innerHTML=VISIVEIS.map((i,n)=>`<button type="button" data-etapa="${i}" class="small ${i===etapa?'on':''}" ${evolucao&&!subiu&&i===8&&!classeNivel?'disabled':''}>${n+1}. ${NOMES[i]||etapas[i]}</button>`).join('');
-  const gs=C.grupos(f());const telas=[classeHTML,racaHTML,backgroundHTML,atributosHTML,()=>'<h2>Perícias e Características da Classe</h2>'+resumoPericias()+escolhas(gs.filter(g=>g.source!=='raca'&&g.source!=='background'&&g.grants!=='spell')),()=>{const todas=[...gs.filter(g=>g.grants==='spell'),...C.gruposMagias(C.derivar(p).ficha)],lista=evolucao?todas.filter(g=>g.qtd>(origSel.get(g.key)?.size||0)):todas;return '<h2>Magias</h2><p class="muted">Ordenadas por círculo e nome. Truques não gastam espaços. Preparar magias define quais você pode conjurar hoje.</p>'+(evolucao&&(R.conjuracao(inicial.ficha.classes).slots.some(Boolean)||R.conjuracao(f().classes).slots.some(Boolean)||R.conjuracao(f().classes).pact)?'<p>Espaços de magia: '+esc(slotsTexto(R.conjuracao(inicial.ficha.classes)))+' → <b>'+esc(slotsTexto(R.conjuracao(f().classes)))+'</b></p>':'')+resumoMagia()+(lista.length?escolhas(lista):(evolucao?'<p class="muted">Nenhuma magia nova para escolher neste nível.</p>':'Sem escolhas de magia.'));},equipamentoHTML,revisaoHTML,pvHTML,novidadesClasseHTML,racaNovidadesHTML,resumoNivelHTML];$('#criador-conteudo').innerHTML=telas[etapa]();
+  const gs=C.grupos(f());const telas=[classeHTML,racaHTML,backgroundHTML,atributosHTML,()=>'<h2>Perícias e Características da Classe</h2>'+resumoPericias()+escolhas(gs.filter(g=>g.source!=='raca'&&g.source!=='background'&&g.grants!=='spell')),()=>{const todas=[...gs.filter(g=>g.grants==='spell'),...C.gruposMagias(C.derivar(p).ficha)],lista=evolucao?todas.filter(g=>g.qtd>(origSel.get(g.key)?.size||0)):todas;return '<h2>Magias</h2><p class="muted">Ordenadas por círculo e nome. Truques não gastam espaços. Preparar magias define quais você pode conjurar hoje.</p>'+trocaHTML()+(evolucao&&(R.conjuracao(inicial.ficha.classes).slots.some(Boolean)||R.conjuracao(f().classes).slots.some(Boolean)||R.conjuracao(f().classes).pact)?'<p>Espaços de magia: '+esc(slotsTexto(R.conjuracao(inicial.ficha.classes)))+' → <b>'+esc(slotsTexto(R.conjuracao(f().classes)))+'</b></p>':'')+resumoMagia()+(lista.length?escolhas(lista):(evolucao?'<p class="muted">Nenhuma magia nova para escolher neste nível.</p>':'Sem escolhas de magia.'));},equipamentoHTML,revisaoHTML,pvHTML,novidadesClasseHTML,racaNovidadesHTML,resumoNivelHTML];$('#criador-conteudo').innerHTML=telas[etapa]();
   $('#anterior').disabled=etapa===VISIVEIS[0];$('#proximo').disabled=etapa===VISIVEIS[VISIVEIS.length-1]||(evolucao&&!subiu&&(etapa===8||!classeNivel));persistir();if(evolucao&&!subiu&&etapa===8)atualizarNivelForm();
  }
  async function salvar(){
@@ -163,6 +178,8 @@ let cancelar=()=>{};   // vigia de lentidão do esqueleto (js/esqueleto.js)
  document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.etapa!==undefined){etapa=+b.dataset.etapa;desenhar();}
   if(b.id==='anterior'||b.id==='proximo'){const pos=VISIVEIS.indexOf(etapa)+(b.id==='proximo'?1:-1);etapa=VISIVEIS[Math.max(0,Math.min(VISIVEIS.length-1,pos))];desenhar();}
+  if(b.id==='troca-ok'){try{MAGIAS_JOGO.aplicarTroca(p,classeNivel,$('#troca-de').value,$('#troca-para').value,{grupoKey:chaveTroca()});desenhar();}catch(err){$('#troca-erro').textContent=err.message;}}
+  if(b.id==='troca-desfazer'){try{MAGIAS_JOGO.desfazerTroca(p,chaveTroca());desenhar();}catch(err){$('#aviso').textContent=err.message;}}
   if(b.id==='multi'){f().classes.push({c:'',n:1,sub:''});desenhar();}
   if(b.dataset.rmClasse!==undefined){f().classes.splice(+b.dataset.rmClasse,1);desenhar();}
   if(b.id==='subir'){try{if(!classeNivel)throw Error('Escolha a classe que ganha o nível.');{const antes=p.pv_max,cls=R.classe(classeNivel),con=R.mod(f().atributos?.con||10),bonus=(f().raca==='Anão (da Colina)'?1:0),valor=pvModo==='media'?Math.floor(cls.dv/2)+1:Number(pvRolagem);p=C.subir(p,classeNivel,pvModo==='media'?'media':pvRolagem);subiu=true;const ent=f().classes.find(x=>x.c===classeNivel);historico.push({total:R.nivelTotal(f().classes),classe:cls.n,cid:classeNivel,n:ent.n,ganho:p.pv_max-antes,calculo:valor+(con>=0?' + ':' - ')+Math.abs(con)+' Constituição'+(bonus?' + 1 anão':'')+(pvModo==='media'?', valor fixo':', rolagem')});atualizarEtapas();etapa=VISIVEIS[2]||VISIVEIS[VISIVEIS.length-1];$('#aviso').textContent='';desenhar();}}catch(err){$('#aviso').textContent=err.message;}}

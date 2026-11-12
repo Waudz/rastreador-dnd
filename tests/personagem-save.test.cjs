@@ -7,7 +7,7 @@ async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={}}={}){
   Object.assign(p.ficha,fichaInicial);
   const nuvem={usuario:()=>({id:"u"}),esc:s=>String(s??""),retornoDoLink:async()=>{},observar(){},rpc:async()=>mestre,patch,get:async q=>q.startsWith("personagens")?[p]:q.startsWith("campanhas")?[{id:"c",nome:"Campanha"}]:q.startsWith("membros")?[{papel:"mestre"}]:[{id:"u",nome:"Pessoa"}]};
   const c=vm.createContext({window:{addEventListener(){}},document,nuvem,location:{search},URLSearchParams,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
-  executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
+  executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/magias-jogo.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
   const nome=v=>eventos.input.forEach(fn=>fn({target:{dataset:{col:"nome"},value:v}}));
   const salvar=async()=>{const a=[...timers.values()];timers.clear();for(const fn of a)await fn();};
   return {document,nome,salvar,timers,p,eventos};
@@ -59,4 +59,14 @@ test('pacto usa as ações existentes e mantém o repertório ao gastar e recupe
  assert.match(f.document.el('ficha').innerHTML,/magia-slot-acoes/);
  for(const d of ['1','-1']){for(const fn of f.eventos.click)await fn({target:{closest:s=>s==='[data-slot]'?{dataset:{slot:'p',d}}:null}});assert.equal(f.p.ficha.pactoUsado,d==='1'?1:0);}
  assert.equal(f.p.ficha.magias[0].d,'Texto preservado');
+});
+test('aba Magias: sem busca livre no catálogo; Mago tem grimório e cópia; mestre tem concessão; seções por origem e magia inativa sinalizada',async()=>{
+ const f=await ficha(async()=>[{versao:2}],{fichaInicial:{classes:[{c:'Wizard',n:3}],atributos:{for:8,des:14,con:12,int:16,sab:10,car:10},magias:[
+  {n:'Mísseis Mágicos',en:'Magic Missile',l:1,d:'x',prep:true,noGrimorio:true,classeConj:'Wizard',registroOrigem:{tipo:'classe'}},
+  {n:'Bola de Fogo',en:'Fireball',l:3,d:'x',prep:false,noGrimorio:true,ativa:false,classeConj:'Wizard',registroOrigem:{tipo:'copia-grimorio'}},
+  {n:'Chama Antiga',en:'Chama Antiga',l:4,d:'x',prep:true,semprePreparada:true,fonte:'mestre',classeConj:'',registroOrigem:{tipo:'mestre'}}]}});
+ const h=f.document.el('ficha').innerHTML;
+ assert.ok(!/id="mag-q"|Adicionar do catálogo/.test(h));assert.match(h,/id="cp-abrir"/);assert.match(h,/id="ms-abrir"/);
+ assert.match(h,/Grimório do Mago/);assert.match(h,/Concedidas pelo mestre/);assert.match(h,/Inativa/);assert.match(h,/Copiada de outro grimório/);assert.match(h,/Retirar concessão/);
+ assert.equal((h.match(/data-prep=/g)||[]).length,1,'só a magia ativa do grimório pode ser preparada (a inativa e a do mestre não)');
 });

@@ -47,5 +47,12 @@ Ao fazer o inventário (fase 3), adotar um formato de item que permita transfer�
 - coleções do mestre (lojas, baús, saques) usarão o mesmo formato de item, com estoque (número ou ilimitado) e permissões, e um histórico de movimentações (compra, venda, saque, descarte, transferência, consumo).
 Nada disso tem interface agora.
 
+## Magias (fase 2, `js/magias-jogo.js`)
+Cada magia em `ficha.magias[]` guarda `fonte` (classe, raca, mestre), `classeConj` (classe que conjura; multiclasse), `noGrimorio`, `prep`, `semprePreparada`, `ativa` (false = círculo ainda não alcançado; guardada, não preparável) e `registroOrigem` (`classe`, `nivel`, `copia-pergaminho`, `copia-grimorio`, `mestre`...).
+- Decisões que sobrevivem ao recálculo: `criacao.grimorioExtra` (cópias), `criacao.historicoMagias` (cópias com custo, horas, CD e resultado; concessões), `ficha.magiasMestre`, `criacao.niveis[i].troca = {de, para}` (também exposta em `progressao[i].troca`) e `prep` anterior.
+- Cópia para o grimório: 50 PO e 2 h por círculo; Evocation Savant (Escola de Evocação) paga metade para magia de evocação. Pergaminho: teste de Inteligência (Arcanismo) CD 10 + círculo; o pergaminho é destruído em qualquer resultado. Uma só gravação (ficha, inventário e dinheiro).
+- Troca ao subir de nível: só Bardo, Feiticeiro, Bruxo e Patrulheiro; uma por nível; a nova magia precisa estar na lista da classe e em círculo com espaços.
+- Bônus temporários por categoria em `ficha.bonusTemp` (`testes`, `ataques`, `salvaguardas`, `ca`, `cdMagia`); só `ficha.modTemp` (atributo) altera a capacidade de preparar.
+
 ## Ainda a fazer neste modelo
-Magias (grimório, preparadas, origem, substituição), inventário com itens mágicos e pergaminhos, recursos com usos e descansos, condições e efeitos. Ver `docs/PENDENCIAS.md`.
+Inventário com itens mágicos e pergaminhos (fase 3), recursos com usos e descansos, condições e efeitos. Ver `docs/PENDENCIAS.md`.

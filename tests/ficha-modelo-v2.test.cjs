@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {vm,ler}=require('./helpers.cjs');
-function motor(){const ctx=vm.createContext({window:{}});for(const n of ['origens','regras','subclasses-2014','criador-regras'])vm.runInContext(ler('js/'+n+'.js'),ctx);const C=ctx.window.CRIADOR,R=ctx.window.REGRAS;C.configurar(JSON.parse(ler('dados/criacao-srd2014.json')),JSON.parse(ler('dados/magias.json')));return {C,R};}
+function motor(){const ctx=vm.createContext({window:{}});for(const n of ['origens','regras','magias-jogo','subclasses-2014','criador-regras'])vm.runInContext(ler('js/'+n+'.js'),ctx);const C=ctx.window.CRIADOR,R=ctx.window.REGRAS;C.configurar(JSON.parse(ler('dados/criacao-srd2014.json')),JSON.parse(ler('dados/magias.json')));return {C,R};}
 const copia=o=>JSON.parse(JSON.stringify(o));
 /* Responde às escolhas obrigatórias como o jogador faria no criador, sem inventar o que não é válido. */
 function preencher(C,R,p){

@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {vm,ler}=require('./helpers.cjs');
 /* Motor de regras (2014) usado pelo subir de nível e pelo Editar personagem: nível 1 a 20, uma classe por vez, em ordem. */
-function motor(){const ctx=vm.createContext({window:{}});for(const n of ['origens','regras','subclasses-2014','criador-regras'])vm.runInContext(ler('js/'+n+'.js'),ctx);const C=ctx.window.CRIADOR,R=ctx.window.REGRAS;C.configurar(JSON.parse(ler('dados/criacao-srd2014.json')),JSON.parse(ler('dados/magias.json')));return {C,R};}
+function motor(){const ctx=vm.createContext({window:{}});for(const n of ['origens','regras','magias-jogo','subclasses-2014','criador-regras'])vm.runInContext(ler('js/'+n+'.js'),ctx);const C=ctx.window.CRIADOR,R=ctx.window.REGRAS;C.configurar(JSON.parse(ler('dados/criacao-srd2014.json')),JSON.parse(ler('dados/magias.json')));return {C,R};}
 const ASI={Fighter:[4,6,8,12,14,16,19],Rogue:[4,8,10,12,16,19]};
 const CLASSES=['Barbarian','Bard','Cleric','Druid','Fighter','Monk','Paladin','Ranger','Rogue','Sorcerer','Warlock','Wizard'];
 function base(C,cid){const p=C.iniciar({nome:'T',versao:1,pv_max:10,pv_atual:10,inventario:[{nome:'Item',qtd:1}],dinheiro:{po:3},ficha:{atributos:{for:12,des:12,con:14,int:12,sab:12,car:12},raca:'Humano',backgroundId:'soldado',classes:[{c:cid,n:1,sub:''}]}},'nivel');return p;}

@@ -9,8 +9,7 @@
   const emPainel = ["painel","leitura"].includes(modoLeitura);
   if (emPainel) document.body.classList.add('ficha-embutida');
   const notificar = tipo => { if(emPainel && window.parent !== window) window.parent.postMessage({tipo,id},location.origin); };
-  const filtrosMagia={nivel:"",escola:"",tipo:""};
-  let editandoFicha = false, P = null, camp = null, souMestre = false, donoNome = "", pend = null, salvando = false, timer = null, catalogo = null, magiasCat = null, achadosM = [];
+  let editandoFicha = false, P = null, camp = null, souMestre = false, donoNome = "", pend = null, salvando = false, timer = null, catalogo = null, magiasCat = null;
   const ATR = [["for", "FOR"], ["des", "DES"], ["con", "CON"], ["int", "INT"], ["sab", "SAB"], ["car", "CAR"]];
   const MOEDAS = [["pc", "Cobre (PC)"], ["pp", "Prata (PP)"], ["po", "Ouro (PO)"]];
   const CLASSES = { Barbarian: "Bárbaro", Bard: "Bardo", Cleric: "Clérigo", Druid: "Druida", Fighter: "Guerreiro", Monk: "Monge", Paladin: "Paladino", Ranger: "Patrulheiro", Rogue: "Ladino", Sorcerer: "Feiticeiro", Warlock: "Bruxo", Wizard: "Mago" };
@@ -55,7 +54,7 @@
     for(const h of manuais){const d=catalogo?.criador?.find(x=>x.id===h.cf);if(d){h.nome=d.nome;h.desc=d.descricao;}}
     f.caracteristicas=manuais.concat([...raciais,...classes].filter(x=>{const k=x.cf||x.nome;if(vistos.has(k)||vistos.has(x.nome))return false;vistos.add(k);vistos.add(x.nome);return true;}));
   }
-  document.addEventListener("focusin",e=>{if(!P)return;if(e.target.id==="cat-q")buscarCatalogo(e.target.value);if(e.target.id==="mag-q")buscarMagias();});
+  document.addEventListener("focusin",e=>{if(!P)return;if(e.target.id==="cat-q")buscarCatalogo(e.target.value);});
 
   /* ---------- salvar (agrupa as alterações por 0,6 s) ---------- */
   function agendar(campos) { pend = { ...(pend || {}), ...campos }; notificar('ficha-salvando'); $("#estado").textContent = "Salvando…"; clearTimeout(timer); timer = setTimeout(enviar, 600); }
@@ -137,6 +136,7 @@
     }
     if (eq.escudo) { base += 2; desc += " + escudo (+2)"; }
     if (num(eq.bonus, 0)) { base += num(eq.bonus, 0); desc += ` ${fm(num(eq.bonus, 0))} outros`; }
+    if (R.bonusTemp(F(), "ca")) { base += R.bonusTemp(F(), "ca"); desc += ` ${fm(R.bonusTemp(F(), "ca"))} temporário`; }
     return { ca: base, desc };
   }
   function calcPV() {
@@ -194,7 +194,7 @@
   /* salvaguardas e perícias */
   function blocoSal() {
     const pb = bonusProf(), ps = salvaProf();
-    return `<div class="grade2">${ATR.map(([k, r]) => { const p = ps.includes(k), v = modA(k) + (p ? pb : 0); return `<div class="lin"><span class="pbol${p ? " on" : ""}"></span><b>${fm(v)}</b><button type="button" class="rolar-pericia" data-rolar-sal="${k}" aria-label="Rolar salvaguarda de ${R.ATR_NOME[k]}">${R.ATR_NOME[k]}</button></div>`; }).join("")}</div>`;
+    return `<div class="grade2">${ATR.map(([k, r]) => { const p = ps.includes(k), v = modA(k) + (p ? pb : 0) + R.bonusTemp(F(), "salvaguardas"); return `<div class="lin"><span class="pbol${p ? " on" : ""}"></span><b>${fm(v)}</b><button type="button" class="rolar-pericia" data-rolar-sal="${k}" aria-label="Rolar salvaguarda de ${R.ATR_NOME[k]}">${R.ATR_NOME[k]}</button></div>`; }).join("")}</div>`;
   }
 
   function blocoPer() {
@@ -247,25 +247,99 @@
     if (c.slots.length) partes.push(c.slots.map((tot, i) => { const g = Math.min(tot, num(us[i], 0)); return window.MAGIAS_UI.slot({titulo:(i+1)+'º círculo',total:tot,usados:g,chave:i}); }).join(""));
     if (c.pact) { const g = Math.min(c.pact.qtd, num(f.pactoUsado, 0)); partes.push(window.MAGIAS_UI.slot({titulo:'Pacto',subtitulo:c.pact.nivel+'º círculo',total:c.pact.qtd,usados:g,chave:'p'})); }
     const pb = bonusProf(), niv = (id) => (CLS().find((x) => x.c === id) || {}).n || 0;
-    const info = c.habilidades.map((h) => { const m = modA(h.atr), prep = h.id === "Cleric" || h.id === "Druid" ? niv(h.id) + m : h.id === "Wizard" ? niv(h.id) + m : h.id === "Paladin" ? Math.floor(niv(h.id) / 2) + m : h.id === "Artificer" ? Math.floor(niv(h.id) / 2) + m : null; return window.MAGIAS_UI.conjurador({classe:h.classe,atributo:R.ATR_NOME[h.atr],cd:8+pb+m,ataque:fm(pb+m),preparar:prep==null?null:Math.max(1,prep)}); }).join("");
+    const info = c.habilidades.map((h) => { const m = modA(h.atr), prep = h.id === "Cleric" || h.id === "Druid" ? niv(h.id) + m : h.id === "Wizard" ? niv(h.id) + m : h.id === "Paladin" ? Math.floor(niv(h.id) / 2) + m : h.id === "Artificer" ? Math.floor(niv(h.id) / 2) + m : null; return window.MAGIAS_UI.conjurador({classe:h.classe,atributo:R.ATR_NOME[h.atr],cd:8+pb+m+R.bonusTemp(F(),"cdMagia"),ataque:fm(pb+m+R.bonusTemp(F(),"cdMagia")),preparar:prep==null?null:Math.max(1,prep)}); }).join("");
     return '<div class="magia-conjuradores">'+info+'</div><h3 class="sub magia-secao-titulo">Espaços de magia</h3>' + (partes.length ? '<div class="magia-slots">'+partes.join("")+'</div>' : '<span class="muted">Sem espaços de magia para esta combinação de classes.</span>');
   }
-  const linhaMag = (m,i) => `<article class="item magia-conhecida" data-mag-i="${i}"><button type="button" class="magia-consultar" data-consultar-magia="${i}">${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${m.l===0?' <span class="badge">Truque</span>':m.semprePreparada?' <span class="badge">Sempre Preparada</span>':m.origem==='Raça'?' <span class="badge">Magia Racial</span>':R.preparacao(F()).some(x=>x.pertence(m))?(m.prep?' <span class="badge">Preparada</span>':' <span class="muted">Não Preparada</span>'):' <span class="badge">Conhecida</span>'}</button><div class="row" style="margin:8px 0 0">${m.l > 0 && !m.semprePreparada && m.origem!=="Raça" && R.preparacao(F()).some(x=>x.pertence(m)) ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span><button type="button" class="small danger" data-rm-mag="${i}">Remover</button></div></article>`;
+  const MJ = window.MAGIAS_JOGO;
+  const cp = { en: "", fonte: "grimorio", uid: "", arc: "" };
+  const cidMag = (m) => m.classeConj || (m.classes && m.classes[0] ? m.classes[0].replace(/^./, (x) => x.toUpperCase()) : "");
+  const catMag = (m) => m.fonte === "mestre" ? "Concedidas pelo mestre" : m.origem === "Raça" || m.fonte === "raca" ? "Raciais e de características" : m.noGrimorio ? "Grimório do Mago" : MJ.tipoClasse(cidMag(m)) === "known" ? "Magias conhecidas" : MJ.tipoClasse(cidMag(m)) === "prepared" ? "Lista da classe (preparar)" : "Outras magias";
+  const ORDEM_CAT = ["Magias conhecidas", "Grimório do Mago", "Lista da classe (preparar)", "Raciais e de características", "Concedidas pelo mestre", "Outras magias"];
+  const rotuloOrigem = (m) => { const t = m.registroOrigem && m.registroOrigem.tipo; return t && t !== "classe" && MJ.ROTULO_ORIGEM[t] ? MJ.ROTULO_ORIGEM[t] : ""; };
+  const linhaMag = (m, i) => {
+    const inativa = m.ativa === false, org = rotuloOrigem(m);
+    const pp = !inativa && m.l > 0 && !m.semprePreparada && m.origem !== "Raça" && R.preparacao(F()).some((x) => x.pertence(m)) && MJ.podePreparar(F(), m).ok;
+    const etiqueta = inativa ? ' <span class="badge">Inativa</span>' : m.l === 0 ? ' <span class="badge">Truque</span>' : m.semprePreparada ? ' <span class="badge">Sempre Preparada</span>' : m.origem === "Raça" ? ' <span class="badge">Magia Racial</span>' : R.preparacao(F()).some((x) => x.pertence(m)) ? (m.prep ? ' <span class="badge">Preparada</span>' : ' <span class="muted">Não Preparada</span>') : ' <span class="badge">Conhecida</span>';
+    return `<article class="item magia-conhecida${inativa ? " magia-inativa" : ""}" data-mag-i="${i}"><button type="button" class="magia-consultar" data-consultar-magia="${i}">${esc(m.n)} <span class="muted" style="font-weight:400">· ${m.l === 0 ? "Truque" : m.l + "º círculo"}</span>${etiqueta}${org ? ` <span class="muted">· ${esc(org)}</span>` : ""}</button>${inativa ? '<p class="muted" style="margin:6px 0 0">Guardada: o círculo desta magia ainda não é alcançado. Volta a valer se o nível voltar.</p>' : ""}<div class="row" style="margin:8px 0 0">${pp ? `<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-prep="${i}" ${m.prep ? "checked" : ""}> Preparada</label>` : ""}<span class="grow"></span>${m.fonte === "mestre" && souMestre ? `<button type="button" class="small danger" data-rm-mag="${i}">Retirar concessão</button>` : ""}</div></article>`;
+  };
   function listaMagias() {
     const l = MAG().map((m, i) => ({ m, i })).sort((a, b) => a.m.l - b.m.l || a.m.n.localeCompare(b.m.n));
-    return l.length ? R.preparacao(F()).map(x=>`<p class="muted">${esc(x.nome)}: ${x.usadas} de ${x.limite} magias preparadas. Truques e magias sempre preparadas não contam nesse limite.</p>`).join("")+l.map((x,i) => (i===0 || l[i-1].m.l!==x.m.l ? '<h3 class="circulo-titulo">'+(x.m.l?x.m.l+"º círculo":"Truques")+'</h3>':'')+linhaMag(x.m,x.i)).join("") : '<div class="estado-vazio"><strong>Seu repertório começa aqui</strong><p>Busque no catálogo abaixo para adicionar as magias conhecidas e preparar as disponíveis para sua classe.</p><button type="button" class="small" id="focar-catalogo-magias">Buscar uma magia</button></div>';
+    if (!l.length) return '<div class="estado-vazio"><strong>Nenhuma magia ainda</strong><p>As magias vêm das escolhas da criação e de cada nível, de raça, talentos e itens. Para mudar o repertório, use Subir de nível ou Editar personagem.</p></div>';
+    const grupos = {};
+    l.forEach((x) => (grupos[catMag(x.m)] = grupos[catMag(x.m)] || []).push(x));
+    return R.preparacao(F()).map((x) => `<p class="muted">${esc(x.nome)}: ${x.usadas} de ${x.limite} magias preparadas. Truques e magias sempre preparadas não contam nesse limite.</p>`).join("") +
+      ORDEM_CAT.filter((k) => grupos[k]).map((k) => `<h3 class="sub magia-secao-titulo">${k} <span class="muted">(${grupos[k].length})</span></h3>` + grupos[k].map((x, n) => (n === 0 || grupos[k][n - 1].m.l !== x.m.l ? '<h4 class="circulo-titulo">' + (x.m.l ? x.m.l + "º círculo" : "Truques") + "</h4>" : "") + linhaMag(x.m, x.i)).join("")).join("");
+  }
+  /* ---------- grimório: copiar magia (Mago) ---------- */
+  async function carregarCat() { if (!magiasCat) magiasCat = await fetch("dados/magias.json").then((r) => r.json()); return magiasCat; }
+  const wizard = () => CLS().some((c) => c.c === "Wizard");
+  const parCopia = () => ({ fonte: cp.fonte, pergaminhoUid: cp.uid });
+  function previaCopia() {
+    const m = (magiasCat || []).find((x) => x.en === cp.en); if (!m) return '<p class="muted">Escolha uma magia da lista do Mago.</p>';
+    const v = MJ.validarCopia(P, m, parCopia()), c = v.custo;
+    return `<p><b>Custo e tempo:</b> ${c.po} PO e ${c.horas} h${c.metade ? " (metade: Escola de Evocação, Evocation Savant)" : ""}.</p>` +
+      (cp.fonte === "pergaminho" ? `<p><b>Teste:</b> Inteligência (Arcanismo), CD ${v.cd}. O pergaminho é destruído com sucesso ou com falha.</p>` : '<p class="muted">Cópia de outro grimório: sem teste.</p>') +
+      (v.ok ? "" : `<ul class="err">${v.motivos.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`);
+  }
+  function htmlCopia() {
+    const mx = MJ.maiorCirculo(F()), cand = (magiasCat || []).filter((m) => (m.c || []).includes("Wizard") && m.l >= 1 && m.l <= mx && !MJ.noGrimorio(F(), m)).sort((a, b) => a.l - b.l || a.n.localeCompare(b.n, "pt-BR"));
+    const perg = MJ.listaPergaminhos(P).filter((i) => i.magiaVinculada.en === cp.en);
+    if (cp.fonte === "pergaminho" && !perg.some((i) => i.uid === cp.uid)) cp.uid = perg[0] ? perg[0].uid : "";
+    return `<label>Magia<select id="cp-mag">${opt("", "Escolher…", !cp.en)}${cand.map((m) => opt(m.en, `${m.n} (${m.l}º círculo)`, m.en === cp.en)).join("")}</select></label>
+      <fieldset><legend class="muted">Origem da cópia</legend><label class="inline"><input type="radio" name="cp-fonte" value="grimorio" style="width:auto;height:auto" ${cp.fonte === "grimorio" ? "checked" : ""}> Outro grimório</label> <label class="inline"><input type="radio" name="cp-fonte" value="pergaminho" style="width:auto;height:auto" ${cp.fonte === "pergaminho" ? "checked" : ""}> Pergaminho do inventário</label></fieldset>
+      ${cp.fonte === "pergaminho" ? (perg.length ? `<label>Pergaminho<select id="cp-perg">${perg.map((i) => opt(i.uid, `${i.nome} (x${i.qtd})`, i.uid === cp.uid)).join("")}</select></label><label>Resultado do teste de Inteligência (Arcanismo)<input id="cp-arc" class="num" type="number" step="1" value="${esc(cp.arc)}"></label>` : '<p class="muted">Nenhum pergaminho com essa magia no inventário.</p>') : ""}
+      <div id="cp-previa">${previaCopia()}</div><div class="row"><button type="button" class="small" id="cp-ok">Copiar para o grimório</button><button type="button" class="small subtle" id="cp-fechar">Fechar</button></div><div id="cp-res" class="muted" role="status"></div>`;
+  }
+  const copiaPronta = () => { const m = (magiasCat || []).find((x) => x.en === cp.en); if (!m) return false; return MJ.validarCopia(P, m, parCopia()).ok && (cp.fonte !== "pergaminho" || cp.arc !== ""); };
+  const atualizaCopia = () => { const b = $("#cp-ok"); if (b) b.disabled = !copiaPronta(); const pv = $("#cp-previa"); if (pv) pv.innerHTML = previaCopia(); };
+  async function abrirCopia() {
+    const box = $("#copia-box"); if (!box) return;
+    try { await carregarCat(); } catch (_) { box.hidden = false; box.innerHTML = '<span class="err">Não consegui carregar as magias.</span>'; return; }
+    box.hidden = false; box.innerHTML = htmlCopia(); atualizaCopia();
+  }
+  function confirmarCopia() {
+    const m = (magiasCat || []).find((x) => x.en === cp.en); if (!m || !copiaPronta()) return;
+    const v = MJ.validarCopia(P, m, parCopia());
+    if (!confirm(`Copiar “${m.n}” para o grimório?\n\nCusto: ${v.custo.po} PO e ${v.custo.horas} h.${cp.fonte === "pergaminho" ? `\nTeste: Arcanismo ${cp.arc} contra CD ${v.cd}. O pergaminho será destruído em qualquer resultado.` : ""}`)) return;
+    const r = MJ.copiarParaGrimorio(P, m, { ...parCopia(), arcanismo: cp.arc === "" ? undefined : Number(cp.arc) });
+    if (!r.ok) { $("#cp-res").textContent = r.motivos.join(" "); return; }
+    agendar({ ficha: P.ficha, dinheiro: P.dinheiro, inventario: P.inventario });
+    cp.en = ""; cp.arc = ""; cp.uid = "";
+    $("#lista-mag").innerHTML = listaMagias();
+    const po = document.querySelector('[data-din="po"]'); if (po) po.value = DIN().po;
+    $("#copia-box").innerHTML = htmlCopia(); atualizaCopia();
+    $("#cp-res").textContent = r.sucesso ? `“${m.n}” entrou no grimório (${r.custo.po} PO, ${r.custo.horas} h).` : "A cópia falhou: a magia não entrou no grimório. O custo foi gasto e o pergaminho foi destruído.";
+  }
+  /* ---------- concessão do mestre ---------- */
+  async function abrirMestre() {
+    const box = $("#mestre-box"); if (!box) return;
+    try { await carregarCat(); } catch (_) { box.hidden = false; box.innerHTML = '<span class="err">Não consegui carregar as magias.</span>'; return; }
+    box.hidden = false;
+    box.innerHTML = `<p class="muted">Uso do mestre para magias especiais ou personalizadas. Fica registrada como concedida pelo mestre, sempre preparada e fora do limite de preparadas.</p>
+      <label>Magia do catálogo<select id="ms-cat">${opt("", "Magia personalizada (preencher abaixo)", true)}${magiasCat.slice().sort((a, b) => a.n.localeCompare(b.n, "pt-BR")).map((m) => opt(m.en, `${m.n} (${m.l ? m.l + "º" : "truque"})`, false)).join("")}</select></label>
+      <div id="ms-custom"><label>Nome<input id="ms-nome" maxlength="80"></label><label>Círculo (0 a 9)<input id="ms-nivel" class="num" type="number" min="0" max="9" value="1"></label><label>Descrição<textarea id="ms-desc" rows="3" maxlength="1500"></textarea></label></div>
+      <label>Nota (opcional)<input id="ms-nota" maxlength="200" placeholder="Ex.: recompensa da missão"></label>
+      <div class="row"><button type="button" class="small" id="ms-ok">Conceder magia</button><button type="button" class="small subtle" id="ms-fechar">Fechar</button></div><div id="ms-res" class="err" role="alert"></div>`;
+  }
+  function concederMagia() {
+    if (!souMestre) return;
+    const en = $("#ms-cat").value, nota = $("#ms-nota").value; let m;
+    if (en) m = magiasCat.find((x) => x.en === en);
+    else { const n = $("#ms-nome").value.trim(); if (!n) { $("#ms-res").textContent = "Informe o nome da magia."; return; } m = { n, l: Math.max(0, Math.min(9, Math.round(num($("#ms-nivel").value, 1)))), d: $("#ms-desc").value.trim(), cab: "Personalizada" }; }
+    try { MJ.concederMestre(P, m, nota); } catch (e) { $("#ms-res").textContent = e.message; return; }
+    agendar({ ficha: P.ficha }); $("#lista-mag").innerHTML = listaMagias(); $("#mestre-box").hidden = true;
   }
 
   const fotoHTML = () => { const f = F().foto; return f && /^data:image\//.test(f) ? `<img class="av" style="width:72px;height:72px;margin:0" src="${esc(f)}" alt="Foto">` : `<span class="av av0" style="width:72px;height:72px;font-size:30px;margin:0">${esc((P.nome || "?").charAt(0).toUpperCase())}</span>`; };
 
   function desenhar() {
     const f = F(), outro = souMestre && P.dono_id !== nuvem.usuario().id, rs = racaSel(), c = conj();
-    const mostraMag = c.habilidades.length || MAG().length || f.magiaExtra || magiaRacial();
+    const mostraMag = c.habilidades.length || MAG().length || magiaRacial();
     $("#ficha").innerHTML = `
       <header class="panel ficha-resumo"><div class="ficha-identidade"><div class="ficha-foto">${fotoHTML()}<button type="button" class="small subtle ficha-trocar-foto" id="b-foto">Trocar foto</button><input type="file" id="in-foto" accept="image/*" hidden></div><div><p class="eyebrow">Ficha de personagem · D&D 2014</p><h1>${esc(P.nome)}</h1><p>${esc(f.raca||"Raça não definida")} · ${esc(R.resumoClasses(CLS()).descricao||"Classe não definida")}</p><p>${esc(CLS().map(c=>c.sub).filter(Boolean).join(" · "))}</p><p class="ficha-meta"><span class="badge">Nível ${nivelTotal()}</span>${nivelTotal()<20?`<a class="btnlike small ficha-subir-nivel" href="criar-personagem.html?id=${encodeURIComponent(id)}&modo=nivel">Subir de nível</a>`:""} Proficiência ${fm(bonusProf())} · ${esc(f.background||"Origem não definida")}</p></div></div><div class="ficha-destaques">${C.estatistica({rotulo:"CA",valor:P.ca,id:"resumo-ca"})}${C.estatistica({rotulo:"Iniciativa",valor:fm(modA("des")+R.bonusSemProf(F())),id:"resumo-iniciativa",tipo:"iniciativa"})}${C.estatistica({rotulo:"Desloc.",valor:String(f.deslocamento ?? 9).replace(".",",")+" m",id:"resumo-deslocamento",tipo:"deslocamento"})}</div></header>
       <div class="panel vida-ficha"><div id="bloco-pv">${blocoPV()}</div><details class="vida-descanso"><summary>Dados de vida e descanso</summary><div id="bloco-dv">${blocoDV()}</div>
         <div class="row" style="margin:8px 0 0"><button type="button" class="small" id="b-curto">Registrar Descanso Curto</button><button type="button" class="small" id="b-longo">Descanso Longo</button><span class="muted">Recupera todos os PV, os espaços de magia e metade dos dados de vida.</span></div></details></div>
-<nav class="ficha-abas" aria-label="Seções da ficha" role="tablist"><button type="button" role="tab" id="aba-principal" aria-controls="secao-principal" data-ficha-aba="principal">Principal</button><button type="button" role="tab" id="aba-combate" aria-controls="secao-combate" data-ficha-aba="combate">Combate</button><button type="button" role="tab" id="aba-magias" aria-controls="secao-magias" data-ficha-aba="magias">Magias</button><button type="button" role="tab" id="aba-inventario" aria-controls="secao-inventario" data-ficha-aba="inventario">Inventário</button><button type="button" role="tab" id="aba-personagem" aria-controls="secao-personagem" data-ficha-aba="personagem">Personagem</button><button type="button" role="tab" id="aba-notas" aria-controls="secao-notas" data-ficha-aba="notas">Notas</button></nav><section id="secao-principal" role="tabpanel" aria-labelledby="aba-principal" data-ficha-secao="principal" class="ficha-conteudo" tabindex="0">      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2>${blocoAtr()}<details class="mod-temp-ficha"><summary>Modificadores temporários</summary><p class="muted">Poções, magias e itens que alteram um atributo por um tempo. São ajustes de jogo: <b>não mudam o atributo permanente</b> (isso é no Editar personagem ou ao subir de nível).</p><div class="grade2">${ATR.map(([k,r])=>`<label class="mod-temp-campo">${esc(R.ATR_NOME[k])}<input class="num" type="number" min="-20" max="20" step="1" data-modtemp="${k}" value="${num(F().modTemp?.[k],0)}" aria-label="Modificador temporário de ${esc(R.ATR_NOME[k])}"></label>`).join("")}</div><div class="row" style="margin:8px 0 0"><button type="button" class="small" id="zerar-modtemp">Zerar modificadores temporários</button></div></details></div>
+<nav class="ficha-abas" aria-label="Seções da ficha" role="tablist"><button type="button" role="tab" id="aba-principal" aria-controls="secao-principal" data-ficha-aba="principal">Principal</button><button type="button" role="tab" id="aba-combate" aria-controls="secao-combate" data-ficha-aba="combate">Combate</button><button type="button" role="tab" id="aba-magias" aria-controls="secao-magias" data-ficha-aba="magias">Magias</button><button type="button" role="tab" id="aba-inventario" aria-controls="secao-inventario" data-ficha-aba="inventario">Inventário</button><button type="button" role="tab" id="aba-personagem" aria-controls="secao-personagem" data-ficha-aba="personagem">Personagem</button><button type="button" role="tab" id="aba-notas" aria-controls="secao-notas" data-ficha-aba="notas">Notas</button></nav><section id="secao-principal" role="tabpanel" aria-labelledby="aba-principal" data-ficha-secao="principal" class="ficha-conteudo" tabindex="0">      <div class="panel atributos-ficha"><h2 class="panel-title">Atributos</h2>${blocoAtr()}<details class="mod-temp-ficha"><summary>Modificadores temporários</summary><p class="muted">Poções, magias e itens que alteram um atributo por um tempo. São ajustes de jogo: <b>não mudam o atributo permanente</b> (isso é no Editar personagem ou ao subir de nível).</p><div class="grade2">${ATR.map(([k,r])=>`<label class="mod-temp-campo">${esc(R.ATR_NOME[k])}<input class="num" type="number" min="-20" max="20" step="1" data-modtemp="${k}" value="${num(F().modTemp?.[k],0)}" aria-label="Modificador temporário de ${esc(R.ATR_NOME[k])}"></label>`).join("")}</div><p class="muted">Bônus temporários por categoria (valem só para o que descrevem; o valor do atributo é o único que muda a capacidade de preparar magias):</p><div class="grade2">${R.CATEGORIAS_TEMP.map(([k,n])=>`<label class="mod-temp-campo">${esc(n)}<input class="num" type="number" min="-20" max="20" step="1" data-bonustemp="${k}" value="${R.bonusTemp(F(),k)}" aria-label="Bônus temporário: ${esc(n)}"></label>`).join("")}</div><div class="row" style="margin:8px 0 0"><button type="button" class="small" id="zerar-modtemp">Zerar modificadores temporários</button></div></details></div>
       <div class="panel"><h2 class="panel-title">Testes de resistência</h2><div id="bloco-sal">${blocoSal()}</div></div>
       <details class="panel pericias-ficha" open><summary class="panel-title">Perícias <span class="muted">Expandir / recolher</span></summary><div id="bloco-per">${blocoPer()}</div></details>
       <div class="panel inspiracao-ficha"><label class="inline"><input type="checkbox" id="inspiracao" ${f.inspiracao?"checked":""}> Inspiração</label><span class="muted">Concedida pelo mestre · marque quando disponível.</span></div><details class="panel proficiencias-ficha"><summary class="panel-title">Proficiências e idiomas</summary><div id="bloco-prof">${blocoProf()}</div>
@@ -282,8 +356,9 @@
         <div class="row" style="margin:8px 0 0"><select id="atq-arma" style="flex:1 1 180px">${opt("", "Adicionar arma comum…", true)}${R.ARMAS.map((a, i) => opt(i, `${a[0]} (${a[1]} ${a[2]})`)).join("")}</select><button type="button" class="small" id="add-atq-arma">Adicionar arma</button><button type="button" class="small" id="add-atq">Personalizado</button></div></div>
       <details class="panel recursos-combate"><summary class="panel-title">Recursos e habilidades</summary><div id="recursos-combate">${recursosCombate()}</div><p class="muted">Condições e duração dos efeitos são controladas por combatente no rastreador de iniciativa.</p></details>
       </section><section id="secao-magias" role="tabpanel" aria-labelledby="aba-magias" data-ficha-secao="magias" class="ficha-conteudo" tabindex="0">${mostraMag ? `<div class="panel" id="painel-mag"><h2 class="panel-title">Magias</h2><div id="bloco-slots">${blocoSlots()}</div>
-        ${f.magiaExtra ? '<button type="button" class="small subtle" id="b-mag-fechar">Desativar fonte adicional</button>' : ""}<div class="sub">Magias conhecidas e preparadas</div><div id="lista-mag">${listaMagias()}</div>
-        <div class="sub">Adicionar do catálogo (SRD)</div><div class="row" style="margin:0 0 6px"><input id="mag-q" style="flex:1 1 200px" placeholder="Buscar: bola de fogo, curar…" autocomplete="off"><label class="inline" style="margin:0"><input type="checkbox" id="mag-cls" style="width:auto;height:auto" ${c.habilidades.length ? "checked" : ""}> Só da minha classe</label></div><div class="filtros-magias"><label>Círculo<select id="mag-nivel">${opt("","Todos",true)}${Array.from({length:10},(_,i)=>opt(i,i?i+"º círculo":"Truques",false)).join("")}</select></label><label>Escola<select id="mag-escola">${opt("","Todas",true)}${["Abjuração","Conjuração","Adivinhação","Encantamento","Evocação","Ilusão","Necromancia","Transmutação"].map(x=>opt(x,x,false)).join("")}</select></label><label>Característica<select id="mag-extra">${opt("","Todas",true)}${opt("conc","Concentração",false)}${opt("ritual","Ritual",false)}</select></label></div><div id="mag-res" class="catalogo-lista"></div></div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia.</span><details><summary>Conjuração por raça, talento ou item</summary><p class="muted">Essas fontes podem conceder magias sem espaços de classe.</p><button type="button" class="small" id="b-mag-abrir">Habilitar magias de outra fonte</button></details></div>`}
+<h3 class="sub">Repertório</h3><div id="lista-mag">${listaMagias()}</div>
+        ${wizard() ? '<div class="sub">Grimório</div><button type="button" class="small" id="cp-abrir">Copiar magia para o grimório</button><div id="copia-box" class="panel" hidden></div>' : ""}
+        ${souMestre ? '<div class="sub">Mestre</div><button type="button" class="small" id="ms-abrir">Conceder magia ao personagem</button><div id="mestre-box" class="panel" hidden></div>' : ""}</div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia. Magias de raça, talento ou item aparecem aqui quando o personagem as tiver.</span></div>`}
       </section><section id="secao-inventario" role="tabpanel" aria-labelledby="aba-inventario" data-ficha-secao="inventario" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
         ${cabInv}<div id="inv">${INV().map(linhaInv).join("")}</div>
         <div class="row"><button type="button" class="small" id="add-item">Adicionar item</button><select id="eq-pre" style="flex:1 1 180px">${opt("", "Adicionar equipamento comum…", true)}${presets().map((p, i) => opt(i, `${p[0]} (${p[1]} kg)`)).join("")}</select><button type="button" class="small" id="add-pre">Adicionar</button></div>
@@ -302,7 +377,6 @@
       </section><section id="secao-notas" role="tabpanel" aria-labelledby="aba-notas" data-ficha-secao="notas" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Diário de aventuras</h2><p class="muted">História, objetivos, personalidade, aparência e aliados. Suas anotações permanecem reunidas neste diário.</p><textarea data-f="notas" rows="12" style="width:100%" placeholder="Anotações do personagem">${esc(f.notas || "")}</textarea></div></section>`;
     window.atualizarAbasFicha?.();
     document.querySelector("#ficha").classList?.toggle("editando-ficha",editandoFicha);
-    for(const [id,chave] of [["mag-nivel","nivel"],["mag-escola","escola"],["mag-extra","tipo"]]){const el=$("#"+id);if(el)el.value=filtrosMagia[chave];}
     /* ações do topo (Ficha completa / Editar): ficam fora do #ficha, então são atualizadas aqui */
     const topo = document.querySelector(".ficha-topo-acoes"), be = $("#editar-ficha"), fc = $("#ficha-completa");
     if (topo) { topo.hidden = false; document.querySelector(".esq-topo")?.remove?.(); }
@@ -384,6 +458,7 @@
       atualizarPV(); agendar(col === "pv_max" ? { ficha: P.ficha, pv_max: P.pv_max, pv_atual: P.pv_atual } : { [col]: v }); return;
     }
     if (t.dataset.f) { const k = t.dataset.f; F()[k] = ["nivel", "deslocamento", "pvExtra"].includes(k) ? (t.value === "" ? (k === "pvExtra" ? 0 : null) : num(t.value, 0)) : t.value; if(k === "deslocamento" && $("#resumo-deslocamento")) $("#resumo-deslocamento").textContent=(F()[k] ?? 9)+" m"; if (k === "pvExtra") return refrescar(); agendar({ ficha: P.ficha }); return; }
+    if (t.dataset.bonustemp) { const k = t.dataset.bonustemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))), f = F(); f.bonusTemp = { ...(f.bonusTemp || {}) }; if (v) f.bonusTemp[k] = v; else delete f.bonusTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.modtemp) { const k = t.dataset.modtemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))); const f = F(); f.modTemp = { ...(f.modTemp || {}) }; if (v) f.modTemp[k] = v; else delete f.modTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.atr) { const k = t.dataset.atr; A()[k] = num(t.value, 10); $("#mod-" + k).textContent = fm(mod(A()[k])); refrescar(); return; }
     if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; INV()[i][k] = k === "nome" ? t.value : num(t.value, 0); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
@@ -393,7 +468,8 @@
     if (t.id === "eq-bonus") { EQ().bonus = num(t.value, 0); refrescar(); return; }
     if (t.id === "raca-txt") { F().raca = t.value; F().racaCustom = true; agendar({ ficha: P.ficha }); return; }
     if (t.id === "cat-q") return buscarCatalogo(t.value);
-    if (t.id === "mag-q") return buscarMagias();
+    if (t.id === "cp-arc") { cp.arc = t.value; atualizaCopia(); return; }
+    if (t.id === "ms-cat") { $("#ms-custom").hidden = !!t.value; return; }
   });
 
   document.addEventListener("change", (e) => {
@@ -413,9 +489,10 @@
       R.aplicarRaca(f,antes); refrescar(); desenhar(); agendar({ ficha: P.ficha }); return;
     }
     if (t.dataset.prep) { const magia=MAG()[+t.dataset.prep],limites=R.preparacao(F()).filter(x=>x.pertence(magia)),disponivel=limites.find(x=>x.usadas<x.limite);if(t.checked&&!magia.prep&&!disponivel){t.checked=false;aviso("Limite de magias preparadas atingido. Desmarque uma magia antes de preparar outra.",true);return;}if(disponivel)magia.classePreparacao=disponivel.id; magia.prep = t.checked; $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
-    if(["mag-nivel","mag-escola","mag-extra"].includes(t.id)){filtrosMagia[{"mag-nivel":"nivel","mag-escola":"escola","mag-extra":"tipo"}[t.id]]=t.value;return buscarMagias();}
+    if (t.id === "cp-mag") { cp.en = t.value; cp.uid = ""; $("#copia-box").innerHTML = htmlCopia(); atualizaCopia(); return; }
+    if (t.name === "cp-fonte") { cp.fonte = t.value; $("#copia-box").innerHTML = htmlCopia(); atualizaCopia(); return; }
+    if (t.id === "cp-perg") { cp.uid = t.value; atualizaCopia(); return; }
     if(t.id==="inspiracao"){F().inspiracao=t.checked;agendar({ficha:P.ficha});return;}
-    if (t.id === "mag-cls") return buscarMagias();
     if (t.id === "in-foto" && t.files[0]) { trocarFoto(t.files[0]); t.value = ""; }
   });
 
@@ -428,13 +505,12 @@
   }, true);
   document.addEventListener("click", async (e) => {
     const t = e.target, c = (s) => t.closest(s); if (!P) return;
-    if(c("#focar-catalogo-magias")){ $("#mag-q").focus();buscarMagias();return;}
     let b;
     if((b=c('[data-rolar-atr],[data-rolar-sal],[data-rolar-per],[data-rolar-atq],[data-rolar-dano]'))){
       try {
         let expressao='1d20', bonus=0, nome='Teste';
         if(b.dataset.rolarAtr){nome=R.ATR_NOME[b.dataset.rolarAtr];bonus=modA(b.dataset.rolarAtr);}
-        if(b.dataset.rolarSal){const k=b.dataset.rolarSal;nome="Salvaguarda de "+R.ATR_NOME[k];bonus=modA(k)+(salvaProf().includes(k)?bonusProf():0);}
+        if(b.dataset.rolarSal){const k=b.dataset.rolarSal;nome="Salvaguarda de "+R.ATR_NOME[k];bonus=modA(k)+(salvaProf().includes(k)?bonusProf():0)+R.bonusTemp(F(),"salvaguardas");}
         if(b.dataset.rolarPer){const k=b.dataset.rolarPer;nome=R.PERICIAS.find(p=>p[0]===k)?.[1]||k;bonus=R.valorPericia(F(),k);}
         if(b.dataset.rolarAtq!==undefined || b.dataset.rolarDano!==undefined){
           const dano=b.dataset.rolarDano!==undefined,a=ATQ()[+(dano?b.dataset.rolarDano:b.dataset.rolarAtq)],v=R.valoresAtaque(F(),a);
@@ -446,8 +522,7 @@
     }
 
     if ((b=c("[data-moeda]"))) { const k=b.dataset.moeda, n=Math.max(1,moeda($("#ajuste-"+k).value||1)); DIN()[k]=moeda(moeda(DIN()[k])+(+b.dataset.sinal)*n); $('[data-din="'+k+'"]').value=DIN()[k]; $("#total-po").textContent=totalPO().toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});agendar({dinheiro:P.dinheiro});return; }
-    if(c("#b-mag-fechar")) { if(MAG().length){aviso("Remova as magias adicionais antes de desativar essa fonte.",true);return;}F().magiaExtra=false;agendar({ficha:P.ficha});desenhar();return; }
-    if (c("#zerar-modtemp")) { F().modTemp = {}; document.querySelectorAll("[data-modtemp]").forEach(e => { e.value = 0; }); refrescar(); agendar({ ficha: P.ficha }); return; }
+    if (c("#zerar-modtemp")) { F().modTemp = {}; F().bonusTemp = {}; document.querySelectorAll("[data-modtemp],[data-bonustemp]").forEach(e => { e.value = 0; }); refrescar(); agendar({ ficha: P.ficha }); return; }
     if (c("#b-dano")) return mudarPV(true);
     if (c("#b-cura")) return mudarPV(false);
     if (c("#b-foto")) return $("#in-foto").click();
@@ -472,9 +547,13 @@
     if (c("#add-atq")) { ATQ().push({ nome: "Personalizado", atr: "for", dado: "1d6", tipo: "cortante", magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); agendar({ ficha: P.ficha }); return; }
     if (c("#add-atq-arma")) { const v = $("#atq-arma").value; if (v === "") return; const a = R.ARMAS[+v]; ATQ().push({ nome: a[0], atr: a[3], dado: a[1], tipo: a[2], magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); $("#atq-arma").value = ""; agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-atq]"))) { ATQ().splice(+b.dataset.rmAtq, 1); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'; agendar({ ficha: P.ficha }); return; }
-    if (c("#b-mag-abrir")) { abrirMagias(); return; }
-    if ((b = c("[data-mag]"))) { const m = achadosM[+b.dataset.mag]; if (m && !MAG().some((x) => x.en === m.en)) { MAG().push({ n: m.n, en: m.en, l: m.l, cab: m.cab, d: m.d, conc:!!m.conc, ritual:!!m.ritual, prep: m.l === 0 }); $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); } $("#mag-q").value = ""; $("#mag-res").innerHTML = ""; return; }
-    if ((b = c("[data-rm-mag]"))) { const i = +b.dataset.rmMag; if (!confirm(`Remover “${MAG()[i].n}”?`)) return; MAG().splice(i, 1); $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
+    if ((b = c("[data-rm-mag]"))) { const i = +b.dataset.rmMag, m = MAG()[i]; if (!m || m.fonte !== "mestre" || !souMestre) return; if (!confirm(`Retirar a concessão de “${m.n}”?`)) return; F().magiasMestre = (F().magiasMestre || []).filter((x) => x.en !== m.en); MAG().splice(i, 1); $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
+    if (c("#cp-abrir")) { abrirCopia(); return; }
+    if (c("#cp-fechar")) { $("#copia-box").hidden = true; return; }
+    if (c("#cp-ok")) { confirmarCopia(); return; }
+    if (c("#ms-abrir")) { abrirMestre(); return; }
+    if (c("#ms-fechar")) { $("#mestre-box").hidden = true; return; }
+    if (c("#ms-ok")) { concederMagia(); return; }
     if (c("#add-item")) { INV().push({ nome: "", qtd: 1, peso: 0 }); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector("input").focus(); agendar({ inventario: P.inventario }); return; }
     if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; INV().push({ nome: p[0], qtd: 1, peso: p[1] }); $("#inv").innerHTML = INV().map(linhaInv).join(""); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
     if ((b = c("[data-rm-item]"))) { INV().splice(+b.dataset.rmItem, 1); $("#inv").innerHTML = INV().map(linhaInv).join(""); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
@@ -483,8 +562,6 @@
     if ((b = c("[data-cat]"))) { const r = (catalogo || {}).achados[+b.dataset.cat]; if (r) { adicionarCar({ nome: r.titulo, desc: r.desc, cf: r.chave }); $("#cat-q").value = ""; $("#cat-res").innerHTML = ""; } return; }
   });
 
-  /* botão "adicionar magias mesmo assim" para classes sem conjuração: cria o painel de magias */
-  function abrirMagias() { F().magiaExtra = true; agendar({ficha:P.ficha}); desenhar(); buscarMagias(); }
 
   function adicionarCar(c) {
     if (CAR().some((x) => x.nome === c.nome)) { aviso(`Você já tem “${c.nome}”.`, true); return; }
@@ -501,19 +578,6 @@
   }
 
   /* ---------- catálogos (dados do próprio site) ---------- */
-  async function buscarMagias() {
-    const box = $("#mag-res"), q = nz($("#mag-q").value.trim());
-
-    if (!magiasCat) {
-      if (window.ESQ) window.ESQ.mostrar(box, "linhas", "Carregando magias…", 3); else box.innerHTML = '<span class="muted">Carregando magias…</span>';
-      try { magiasCat = await fetch("dados/magias.json").then((r) => r.json()); } catch (_) { box.innerHTML = '<span class="err">Não consegui carregar as magias.</span>'; return; }
-    }
-    if(!document.contains(box))return;
-    window.ESQ?.pronto(box);
-    const meus = CLS().map((c) => c.c), so = $("#mag-cls") && $("#mag-cls").checked && meus.length, ws = q.split(/\s+/);
-    achadosM = magiasCat.filter((m) => ws.every((w) => nz(m.n + " " + m.en).includes(w)) && (!so || m.c.some((x) => meus.includes(x))) && (filtrosMagia.nivel==="" || +filtrosMagia.nivel===m.l) && (!filtrosMagia.escola || (m.cab||"").startsWith(filtrosMagia.escola)) && (!filtrosMagia.tipo || (filtrosMagia.tipo==="conc" ? m.conc : m.ritual || /ritual/i.test(m.cab||"")))).sort((a,b)=>a.l-b.l||a.n.localeCompare(b.n,"pt-BR"));
-    box.innerHTML = achadosM.length ? achadosM.map((m, i) => `<div class="res" data-mag="${i}" style="cursor:pointer"><span><b>${esc(m.n)}</b> <span class="muted">· ${m.l === 0 ? "truque" : m.l + "º círculo"} · ${esc(m.c.map((x) => CLASSES[x] || x).join(", "))}</span></span><span class="small">Adicionar</span></div>`).join("") : '<span class="muted">Nada encontrado.</span>';
-  }
   async function buscarCatalogo(q) {
     const box = $("#cat-res"); q = nz(q.trim());
 

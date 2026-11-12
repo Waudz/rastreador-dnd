@@ -135,7 +135,7 @@ window.CRIADOR = (() => {
      PV: o total sempre sai da progressão (um só cálculo para criação, evolução e edição). */
   function reconciliarNiveis(f){
     const st=estado(f),classes=(f.classes||[]).filter(x=>x.c&&classe(x.c)),alvo={};classes.forEach(x=>{alvo[x.c]=Math.max(0,Number(x.n)||0);});
-    const cont={};let niveis=(st.niveis||[]).filter(x=>alvo[x.c]!==undefined).map(x=>({c:x.c,pv:{...(x.pv||{modo:"fixo"})}}));
+    const cont={};let niveis=(st.niveis||[]).filter(x=>alvo[x.c]!==undefined).map(x=>({c:x.c,pv:{...(x.pv||{modo:"fixo"})},...(x.troca?{troca:{...x.troca}}:{})}));
     niveis=niveis.filter(x=>{cont[x.c]=(cont[x.c]||0)+1;return cont[x.c]<=alvo[x.c];});   // níveis a menos: sai o mais recente da classe
     for(const x of classes)while((cont[x.c]||0)<alvo[x.c]){niveis.push({c:x.c,pv:{modo:"fixo"}});cont[x.c]=(cont[x.c]||0)+1;}
     if(niveis.length&&classes.length&&niveis[0].c!==classes[0].c){const ordem=Object.fromEntries(classes.map((x,i)=>[x.c,i]));niveis=niveis.map((x,i)=>({x,i})).sort((a,b)=>ordem[a.x.c]-ordem[b.x.c]||a.i-b.i).map(o=>o.x);}
@@ -175,7 +175,7 @@ window.CRIADOR = (() => {
       }
       const idM=e.c+":"+nc,m=R.melhoriasDisponiveis(f.classes||[]).find(x=>x.id===idM);
       const melhoria=m?{id:idM,atributos:[...(f.melhorias?.[idM]||[])],talento:st.talentos?.[idM]?.nome||null}:null;
-      return {total:i+1,classe:e.c,nivelClasse:nc,pv:{modo:e.pv.modo,dado:dv,valor:e.pv.modo==="rolagem"?Number(e.pv.valor)||null:e.pv.modo==="maximo"?dv:Math.floor(dv/2)+1,ganho:ganhoPV(f,i,e)},automaticas,escolhas,melhoria};
+      return {total:i+1,classe:e.c,nivelClasse:nc,pv:{modo:e.pv.modo,dado:dv,valor:e.pv.modo==="rolagem"?Number(e.pv.valor)||null:e.pv.modo==="maximo"?dv:Math.floor(dv/2)+1,ganho:ganhoPV(f,i,e)},automaticas,escolhas,melhoria,troca:e.troca?{...e.troca}:null};
     });
   }
   /* Tudo o que é gravado ao concluir criação, evolução ou edição passa por aqui: um só lugar para PV, equipamento e marcações. */
@@ -214,10 +214,19 @@ window.CRIADOR = (() => {
     f.backgroundCaracteristica=bg?{nome:bg.caracteristica,desc:bg.id==="personalizado"?st.backgroundDescricao||bg.descricao:bg.descricao}:null;
     const escolhidas=[...gs,...gruposMagias(f)].filter(g=>g.grants==="spell").flatMap(g=>g.selecionadas.map(id=>({id,classe:g.source.split("/").pop()})));
     const mapa=new Map();
-    for(const {id,classe:fonteClasse} of escolhidas){const m=magiaPorId(id);if(!m)continue;const antigo=mapa.get(id);if(antigo){antigo.classes.push(fonteClasse);continue;}mapa.set(id,{...m,prep:m.l===0||classe(fonteClasse)?.data?.spellcasting?.preparation?.type==="prepared",classes:[fonteClasse],en:m.en,autoCriador:true});}
+    for(const {id,classe:fonteClasse} of escolhidas){const m=magiaPorId(id);if(!m)continue;const antigo=mapa.get(id);if(antigo){antigo.classes.push(fonteClasse);continue;}const cj=(f.classes||[]).find(x=>idClasse(x.c)==="srd51:class/"+fonteClasse)?.c||null,tipoC=classe(fonteClasse)?.data?.spellcasting?.preparation?.type;mapa.set(id,{...m,prep:m.l===0||tipoC==="prepared",classes:[fonteClasse],en:m.en,autoCriador:true,fonte:"classe",classeConj:cj,noGrimorio:tipoC==="spellbook"&&m.l>0,registroOrigem:{tipo:"classe"}});}
     for(const x of magiasConcedidas(f)){const m=magiaPorId(x.id);if(m)mapa.set(x.id,{...m,prep:true,semprePreparada:x.semprePreparada,classes:[x.classe],origem:x.origem,autoCriador:true});}
     for(const [nome,nivel] of (f.raca==="Fada"?[["Druidcraft",1],["Faerie Fire",3],["Enlarge/Reduce",5]]:f.raca==="Gnomo (da Floresta)"?[["Minor Illusion",1]]:f.raca==="Tiefling"?[["Thaumaturgy",1],["Hellish Rebuke",3],["Darkness",5]]:f.raca==="Elfo (Drow)"?[["Dancing Lights",1],["Faerie Fire",3],["Darkness",5]]:[])){const m=MAGIAS.find(m=>m.en===nome);if(m&&R.nivelTotal(f.classes)>=nivel)mapa.set(magiaId(m),{...m,prep:true,origem:"Raça",autoCriador:true});}
-    for(const m of f.magias||[])if(!m.autoCriador&&!mapa.has(magiaId(m)))mapa.set(magiaId(m),m);f.magias=[...mapa.values()];f.progressao=construirProgressao(f);return q;
+    /* Grimório do Mago: cópias feitas durante a aventura (pergaminho ou outro grimório) vêm de criacao.grimorioExtra; concessões do mestre vêm de f.magiasMestre.
+       Não são magias "aprendidas pelo catálogo": cada uma guarda a própria origem. */
+    for(const g of st.grimorioExtra||[]){const m=MAGIAS.find(x=>x.en===g.en);if(m&&window.MAGIAS_JOGO)mapa.set(magiaId(m),{...window.MAGIAS_JOGO.entradaGrimorio(m,g.origem,f),registroOrigem:{tipo:g.origem,nivelTotal:g.nivelTotal,custoPO:g.custoPO,horas:g.horas,quando:g.quando}});}
+    for(const x of f.magiasMestre||[])mapa.set("mestre|"+x.en,{...x,prep:true,semprePreparada:true,fonte:"mestre",origem:"Concedida pelo mestre",classes:[],registroOrigem:{tipo:"mestre",nota:x.nota},autoCriador:false});
+    for(const m of f.magias||[])if(!m.autoCriador&&!m.noGrimorio&&m.fonte!=="mestre"&&!mapa.has(magiaId(m)))mapa.set(magiaId(m),{...m,fonte:m.fonte||"manual",registroOrigem:m.registroOrigem||{tipo:"manual"}});
+    /* o que o jogador marcou como preparado continua preparado depois de recalcular; magia de círculo acima do que a classe permite fica inativa (guardada, sem benefício) */
+    const anteriores=new Map((p.ficha.magias||[]).map(m=>[magiaId(m),m])),maxCirc=R.conjuracao(f.classes||[]);const teto=maxCirc.pact?Math.max(maxCirc.pact.nivel,maxCirc.slots.reduce((n,x,i)=>x?i+1:n,0)):maxCirc.slots.reduce((n,x,i)=>x?i+1:n,0);
+    for(const [k,e] of mapa){const ant=anteriores.get(k);if(ant&&typeof ant.prep==="boolean"&&e.l>0&&!e.semprePreparada&&e.fonte!=="mestre")e.prep=ant.prep;
+      e.ativa=!(e.fonte==="classe"&&e.l>0&&teto>0&&e.l>teto)&&!(e.fonte==="classe"&&e.l>0&&teto===0);if(!e.ativa)e.prep=false;}
+    f.magias=[...mapa.values()];f.progressao=construirProgressao(f);return q;
   }
   function itemCategoria(cat){return D.items.filter(i=>{const w=i.data.weapon,g=i.data.gear;return cat==="simple-weapons"?w?.category==="simple":cat==="simple-melee-weapons"?w?.category==="simple"&&w.kind==="melee":cat==="martial-weapons"?w?.category==="martial":cat==="martial-melee-weapons"?w?.category==="martial"&&w.kind==="melee":cat==="musical-instruments"?i.data.tool?.category==="musical-instrument":g?.category===cat;});}
   function equipamento(p) {
