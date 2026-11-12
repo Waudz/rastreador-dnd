@@ -99,8 +99,15 @@ body.ficha-embutida { padding-top:0!important; padding-bottom:0!important; }
 .acoes-vez-cab select { max-width:100%; }
 .acoes-vez-botoes { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 6px; }
 #vez-res p { margin:4px 0; }
-.painel-ataque-inline { margin:0 0 12px; padding:8px 12px; border:1px solid var(--line); border-radius:12px; }
-.painel-ataque-inline > summary { cursor:pointer; font-weight:700; }
+.vez-avancado { margin:8px 0 6px; padding:10px 0 2px; border-top:1px dashed var(--line); }
+.vez-avancado[hidden] { display:none; }
+.vez-avancado .row { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 10px; }
+.vez-avancado label { display:block; min-width:0; }
+.vez-avancado label.inline { display:inline-flex; align-items:center; gap:6px; }
+.vez-avancado select, .vez-avancado input:not([type=checkbox]) { max-width:100%; }
+.vez-treino { font-size:13px; }
+#vez-res:empty { display:none; }
+#vez-res { margin-top:6px; }
 
 /* Iniciativa dos personagens: cartão em duas linhas (identidade em cima; campo Ini., Rolar d20 e Adicionar embaixo) com o resultado no próprio cartão */
 #ci-lista .ci-cartao.grupo-cartao.ci-cartao-ini { flex-direction:column; align-items:stretch; gap:8px; }
@@ -119,11 +126,11 @@ body.ficha-embutida { padding-top:0!important; padding-bottom:0!important; }
 
 /* Celular e telas de toque: alvos de toque de pelo menos 44 px na faixa "Vez de ...", no painel Atacar e no cartão da iniciativa */
 @media (max-width:760px), (pointer:coarse) {
-  .acoes-vez-botoes .small, #painel-ataque .row button, #painel-ataque .row .small { min-height:44px; }
+  .acoes-vez-botoes .small, #vez-avancado .row button, #vez-avancado .row .small { min-height:44px; }
   .acoes-vez-botoes .small { flex:1 1 auto; }
-  .acoes-vez select, #painel-ataque select, #painel-ataque input:not([type=checkbox]) { min-height:44px; }
-  .acoes-vez-cab label.inline, #painel-ataque label.inline { min-height:44px; align-items:center; }
-  #painel-ataque input[type=checkbox] { width:22px!important; height:22px!important; min-width:22px; }
+  .acoes-vez select, #vez-avancado select, #vez-avancado input:not([type=checkbox]) { min-height:44px; }
+  .acoes-vez-cab label.inline, #vez-avancado label.inline { min-height:44px; align-items:center; }
+  .acoes-vez input[type=checkbox] { width:22px!important; height:22px!important; min-width:22px; }
   #ci-lista .ci-cartao-ini .ci-acoes .small { min-height:44px; }
   #ci-lista .ci-cartao-ini .ci-ini input { height:44px; }
 }

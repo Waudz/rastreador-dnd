@@ -196,7 +196,7 @@
     $("#add-form").addEventListener("submit", () => { limparPrevia(); });
     window.__ini.acoesDe = (key) => {
       const m = ALL.find((x) => x.key === key); if (!m) return [];
-      return (m.actions || []).map((a) => { const r = rollInfo(a); return r ? { nome: nmA(a), hit: r.hit, dmg: r.dmg } : null; }).filter(Boolean);
+      return (m.actions || []).map((a) => { const r = rollInfo(a); return r ? { nome: nmA(a), hit: r.hit, dmg: r.dmg.map((x) => ({ ...x, t: x.t ? trW(x.t.toLowerCase()) : "" })) } : null; }).filter(Boolean);
     };
     function addMon(m, botao) {
       const nome = uniq(pt(m) || m.name);

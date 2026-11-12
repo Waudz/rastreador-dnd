@@ -99,11 +99,11 @@
 
   window.ATAQUE_INI = { parseExpressao, rolarAtaque, rolarSalvaguarda, rolarDano, descreverDano, textoAtaque: textoD20, ROTULO, analisarMagia, danoSugerido, estatisticasMagia, conjuraveis, NOME_ATR };
 
-  /* ---------------- interface ---------------- */
-  const raiz = typeof document !== "undefined" && document.getElementById("painel-ataque");
-  if (!raiz || !window.__ini) return;
-  const $ = (s) => raiz.querySelector(s), esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  let fontes = [], ultimo = null, gastando = false, msgVez = "";
+  /* ---------------- interface única: faixa "Vez de ..." (com "Outras opções" para ataque manual, magias e controles avançados) ---------------- */
+  const faixa = typeof document !== "undefined" && document.getElementById("acoes-da-vez");
+  if (!faixa || !window.__ini) return;
+  const $ = (s) => faixa.querySelector(s), esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  let fontes = [], ultimo = null, gastando = false;
   const lista = () => window.__ini.list();
   const estado = () => window.__ini.__atk || (window.__ini.__atk = {});
   const papel = () => (window.__ini.papel ? window.__ini.papel() : "sem-campanha");
@@ -121,15 +121,30 @@
   }
   const rotuloFonte = (a) => a.tipo === "magia" ? `Magia: ${a.nome} (${Number(a.m.l) ? a.m.l + "º círculo" : "truque"})` : `${a.nome}${a.hit != null ? " (" + (a.hit >= 0 ? "+" : "") + a.hit + ")" : ""}`;
   function circulosDe(a) { const l = Number(a.m.l), out = []; for (let c = Math.max(1, l); c <= 9; c++) out.push(c); return l === 0 ? [] : out; }
-  function desenhar() {
-    const l = lista(), corpo = $("#atk-corpo");
-    if (l.length < 1) { corpo.innerHTML = '<p class="muted">Adicione combatentes para usar os ataques.</p>'; return; }
+  /* quem ataca: a escolha manual (botão Atacar do cartão ou seletor) ou, sem escolha, quem está na vez */
+  function atacanteAtual() {
+    const l = lista(), sel = estado(), cur = window.__ini.atual?.();
+    if (sel.manualAtacante && l.some((c) => c.id === sel.atacante)) return l.find((c) => c.id === sel.atacante);
+    return l.find((c) => c.id === cur) || null;
+  }
+  const alvoPadrao = (l, atk) => { const grupo = (c) => (c.kind === "Personagem" ? "p" : "m"); return (l.find((c) => c.id !== atk.id && grupo(c) !== grupo(atk) && num(c.hp) > 0) || l.find((c) => c.id !== atk.id && num(c.hp) > 0) || l.find((c) => c.id !== atk.id) || atk); };
+
+  function desenharVez() {
+    const l = lista(), atk = atacanteAtual();
+    if (!atk || l.length < 2) { faixa.hidden = true; $("#vez-topo").innerHTML = ""; $("#vez-avancado").hidden = true; $("#vez-res").innerHTML = ""; return; }
     const sel = estado(), cur = window.__ini.atual?.();
-    if (!sel.manualAtacante && cur && l.some((c) => c.id === cur)) sel.atacante = cur;          // sem escolha manual, quem ataca é quem está na vez
-    if (!l.some((c) => c.id === sel.atacante)) sel.atacante = cur && l.some((c) => c.id === cur) ? cur : l[0].id;
-    if (!l.some((c) => c.id === sel.alvo) || (sel.alvo === sel.atacante && l.length > 1)) sel.alvo = (l.find((c) => c.id !== sel.atacante) || l[0]).id;
-    const atacante = l.find((c) => c.id === sel.atacante);
-    fontes = fontesDe(atacante); if (sel.idx == null || (sel.idx !== "manual" && sel.idx >= fontes.length)) sel.idx = fontes.length ? 0 : "manual";
+    sel.atacante = atk.id; fontes = fontesDe(atk);
+    if (!l.some((c) => c.id === sel.alvo) || sel.alvo === atk.id) sel.alvo = alvoPadrao(l, atk).id;
+    faixa.hidden = false;
+    $("#vez-topo").innerHTML = `<div class="acoes-vez-cab"><label class="inline"><b>${cur === atk.id ? "Vez de" : "Ataque de"}</b><select id="vez-atacante" aria-label="Quem ataca">${l.map((c) => `<option value="${esc(c.id)}" ${c.id === atk.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Alvo<select id="vez-alvo" aria-label="Em quem atacar">${l.filter((c) => c.id !== atk.id).map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvo ? "selected" : ""}>${esc(c.name)} (CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)})</option>`).join("")}</select></label><label class="inline">Jogada<select id="vez-modo" aria-label="Vantagem ou desvantagem"><option value="normal" ${sel.modo !== "vantagem" && sel.modo !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modo === "vantagem" ? "selected" : ""}>Vantagem</option><option value="desvantagem" ${sel.modo === "desvantagem" ? "selected" : ""}>Desvantagem</option></select></label><label class="inline vez-treino"><input type="checkbox" id="vez-treino" ${emTreino() ? "checked" : ""} ${treinoTravado() ? "disabled" : ""}> Treino${treinoTravado() ? "" : ": não gasta nada"}</label></div>
+      <div class="row acoes-vez-botoes">${fontes.length ? fontes.map((a, i) => `<button type="button" class="small primary" data-vez="${i}" title="Rola o ataque contra a CA do alvo e o dano">${esc(a.tipo === "magia" ? a.nome + " (magia)" : a.nome)}${a.tipo !== "magia" && a.hit != null ? " " + (a.hit >= 0 ? "+" : "") + a.hit : ""}</button>`).join("") : '<span class="muted">Sem ataques cadastrados: use Outras opções para um ataque manual.</span>'}<button type="button" class="small subtle" data-vez-avancado aria-expanded="${sel.avancado ? "true" : "false"}">Outras opções</button></div>`;
+    $("#vez-avancado").hidden = !sel.avancado;
+    if (sel.avancado) desenharAvancado();
+  }
+  /* Outras opções: ataque personalizado, magias, só ataque, só dano, metade do dano */
+  function desenharAvancado() {
+    const sel = estado();
+    if (sel.idx == null || (sel.idx !== "manual" && sel.idx >= fontes.length)) sel.idx = fontes.length ? 0 : "manual";
     const manual = sel.idx === "manual", fonte = manual ? null : fontes[sel.idx], magia = fonte && fonte.tipo === "magia";
     let extra = "";
     if (manual) extra = `<div class="row"><label>Bônus de ataque<input id="atk-bonus" class="num" type="number" step="1" value="${num(sel.bonus, 0)}"></label><label>Dano (ex.: 1d8+3)<input id="atk-dano" maxlength="40" value="${esc(sel.dano || "1d6")}"></label></div>`;
@@ -139,35 +154,25 @@
       const regra = an.tipo === "ataque" ? `Ataque de magia <b>${fonte.st.ataque >= 0 ? "+" : ""}${fonte.st.ataque}</b>` : an.tipo === "salvaguarda" ? `CD <b>${fonte.st.cd}</b> (salvaguarda de ${NOME_ATR[an.atributoSalva]})${an.metadeNaSalva ? ", metade do dano se passar" : ""}` : "Sem jogada de ataque nem salvaguarda: só o dano sugerido";
       extra = `<div class="row">${circulos.length ? `<label>Espaço de magia<select id="atk-circulo">${circulos.map((c) => `<option value="${c}" ${c === circ ? "selected" : ""}>${c}º círculo</option>`).join("")}</select></label>` : ""}<label>Dano (sugerido pelo texto, edite se precisar)<input id="atk-dano-magia" maxlength="40" value="${esc(valor)}"></label>${an.tipo === "salvaguarda" ? `<label>Bônus de salvaguarda do alvo<input id="atk-salva-bonus" class="num" type="number" step="1" value="${num(sel.salvaBonus, 0)}"></label>` : ""}</div><p class="muted">${regra}. ${an.tipoDano ? "Dano " + esc(an.tipoDano) + ". " : ""}${emTreino() ? "Modo treino: nenhum espaço é gasto." : Number(fonte.m.l) ? "Conjurar gasta um espaço de magia da ficha." : ""}</p>`;
     }
-    corpo.innerHTML = `<div class="grade2">
-      <label>Quem ataca<select id="atk-atacante">${l.map((c) => `<option value="${esc(c.id)}" ${c.id === sel.atacante ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label>
-      <label>Contra<select id="atk-alvo">${l.map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvo ? "selected" : ""}>${esc(c.name)} (CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)})</option>`).join("")}</select></label>
-      <label>Ataque ou magia<select id="atk-ataque">${fontes.map((a, i) => `<option value="${i}" ${sel.idx === i ? "selected" : ""}>${esc(rotuloFonte(a))}</option>`).join("")}<option value="manual" ${manual ? "selected" : ""}>Manual…</option></select></label>
-      <label>Jogada<select id="atk-modo"><option value="normal" ${sel.modo !== "vantagem" && sel.modo !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modo === "vantagem" ? "selected" : ""}>Com vantagem</option><option value="desvantagem" ${sel.modo === "desvantagem" ? "selected" : ""}>Com desvantagem</option></select></label>
-    </div>
-    <label class="inline" style="margin:4px 0"><input type="checkbox" id="atk-treino" style="width:auto;height:auto" ${emTreino() ? "checked" : ""} ${treinoTravado() ? "disabled" : ""}> Modo treino: não gasta nada${treinoTravado() ? " (sempre ligado fora da campanha como mestre)" : ""}</label>
-    ${extra}
-    <div class="row"><button type="button" id="atk-rolar" class="primary">${magia ? "Conjurar e rolar" : "Rolar ataque e dano"}</button>${magia ? "" : '<button type="button" id="atk-so-ataque" class="small">Só o ataque</button>'}<button type="button" id="atk-so-dano" class="small">Só o dano</button><label class="inline"><input type="checkbox" id="atk-metade" style="width:auto;height:auto"> Metade do dano</label></div>
-    <div id="atk-res" role="status" aria-live="polite"></div>`;
+    $("#vez-avancado-corpo").innerHTML = `<label>Ataque ou magia<select id="atk-ataque">${fontes.map((a, i) => `<option value="${i}" ${sel.idx === i ? "selected" : ""}>${esc(rotuloFonte(a))}</option>`).join("")}<option value="manual" ${manual ? "selected" : ""}>Manual…</option></select></label>${extra}
+      <div class="row"><button type="button" id="atk-rolar" class="primary">${magia ? "Conjurar e rolar" : "Rolar ataque e dano"}</button>${magia ? "" : '<button type="button" id="atk-so-ataque" class="small">Só o ataque</button>'}<button type="button" id="atk-so-dano" class="small">Só o dano</button><label class="inline"><input type="checkbox" id="atk-metade" ${sel.metade ? "checked" : ""}> Metade do dano</label></div>`;
   }
   function escolhido(opts = {}) {
-    const sel = estado(), l = lista(), atacante = l.find((c) => c.id === sel.atacante), alvo = l.find((c) => c.id === sel.alvo), manual = sel.idx === "manual";
-    const base = { atacante, alvo, modo: opts.rapido ? (opts.modo || "normal") : ($("#atk-modo")?.value || "normal"), metade: opts.rapido ? false : !!$("#atk-metade")?.checked };
-    if (manual) { const partes = parseExpressao($("#atk-dano")?.value || sel.dano); sel.dano = $("#atk-dano")?.value ?? sel.dano; sel.bonus = num($("#atk-bonus")?.value, num(sel.bonus, 0)); return { ...base, a: { nome: "Ataque manual", tipo: "ataque", hit: sel.bonus, dmg: partes } }; }
+    const sel = estado(), l = lista(), atacante = atacanteAtual(), alvo = l.find((c) => c.id === sel.alvo), modo = sel.modo === "vantagem" || sel.modo === "desvantagem" ? sel.modo : "normal";
+    const base = { atacante, alvo, modo, metade: opts.rapido ? false : !!$("#atk-metade")?.checked };
+    if (opts.rapido) return { ...base, a: fontes[opts.idx] };
+    if (sel.idx === "manual") { const partes = parseExpressao($("#atk-dano")?.value || sel.dano); sel.dano = $("#atk-dano")?.value ?? sel.dano; sel.bonus = num($("#atk-bonus")?.value, num(sel.bonus, 0)); return { ...base, a: { nome: "Ataque manual", tipo: "ataque", hit: sel.bonus, dmg: partes } }; }
     return { ...base, a: fontes[sel.idx] };
   }
   async function gastarEspacoSeNecessario(atacante, a, circulo) {
     if (emTreino() || a.tipo !== "magia" || !Number(a.m.l) || !atacante.pid || !window.__ini.gastarEspaco) return { ok: true, msg: "" };
     return window.__ini.gastarEspaco(atacante.pid, circulo);
   }
+  /* único caminho de rolagem: ataque rápido (opts.rapido, um clique no botão do ataque) ou pelas Outras opções */
   async function rolar(parte, opts = {}) {
     if (gastando) return; gastando = true;
     try {
-      if (opts.rapido) {                                    // ataque rápido da vez: atacante = quem está na vez, alvo e ataque escolhidos na faixa "Vez de ..."
-        const sel = estado(), cur = window.__ini.atual?.(), atk = lista().find((c) => c.id === cur); if (!atk) return;
-        sel.atacante = cur; sel.manualAtacante = false; sel.alvo = opts.alvo || sel.alvo; fontes = fontesDe(atk); sel.idx = opts.idx; sel.circulo = null;
-      }
-      const { atacante, alvo, a, modo, metade } = escolhido(opts), res = opts.destino ? document.querySelector(opts.destino) : $("#atk-res");
+      const { atacante, alvo, a, modo, metade } = escolhido(opts), res = $("#vez-res");
       if (!atacante || !alvo || !a) return;
       let atq = null, dano = null, salva = null, linhas = [], partes = a.dmg, critico = false, metadeFinal = metade;
       if (a.tipo === "magia") {
@@ -182,7 +187,7 @@
         }
         if (parte !== "dano" && a.an.tipo === "ataque") { atq = rolarAtaque({ bonus: a.st.ataque, modo, ca: num(alvo.ac) }); critico = atq.resultado === "critico"; linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}:</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`); }
         else if (parte !== "dano" && a.an.tipo === "salvaguarda") {
-          salva = rolarSalvaguarda({ bonus: sel.salvaBonus, cd: a.st.cd, modo: "normal" });
+          salva = rolarSalvaguarda({ bonus: estado().salvaBonus || 0, cd: a.st.cd, modo: "normal" });
           linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}</b> (CD ${a.st.cd}, ${esc(NOME_ATR[a.an.atributoSalva])}). Salvaguarda de ${esc(alvo.name)}: ${esc(textoD20(salva))} → <b>${salva.passou ? "passou" : "falhou"}</b></p>`);
           if (salva.passou) metadeFinal = a.an.metadeNaSalva ? true : "nada";
         } else if (parte !== "dano") linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}.</b></p>`);
@@ -192,7 +197,7 @@
         else if (partes && partes.length && metadeFinal === "nada") linhas.push("<p class=\"muted\">Passou na salvaguarda: sem dano.</p>");
       } else {
         if (parte !== "dano") {
-          if (a.hit == null) { res.innerHTML = '<span class="err">Este ataque não tem bônus de acerto; use "Só o dano".</span>'; return; }
+          if (a.hit == null) { res.innerHTML = '<span class="err">Este ataque não tem bônus de acerto; use "Só o dano" em Outras opções.</span>'; return; }
           atq = rolarAtaque({ bonus: a.hit, modo, ca: num(alvo.ac) }); critico = atq.resultado === "critico";
           linhas.push(`<p><b>Ataque de ${esc(atacante.name)} (${esc(a.nome)}):</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`);
         }
@@ -205,58 +210,39 @@
       ultimo = { dano, alvoId: alvo.id, atacanteId: atacante.id };
       if (dano && dano.total >= 0) linhas.push(`<div class="row"><button type="button" id="atk-aplicar" class="danger">Aplicar ${dano.total} de dano em ${esc(alvo.name)}</button><span class="muted">PV ${num(alvo.hp)} → ${Math.max(0, num(alvo.hp) - dano.total)}</span></div>`);
       res.innerHTML = linhas.join("");
-      if (opts.destino) msgVez = linhas.join("");
     } finally { gastando = false; }
   }
-  /* ---- faixa "Vez de ...": quem está na vez, em quem ataca e qual ataque usar, com a rolagem de ataque e dano num clique ---- */
-  const faixa = document.getElementById("acoes-da-vez");
-  const alvoPadrao = (l, atk) => { const grupo = (c) => (c.kind === "Personagem" ? "p" : "m"); return (l.find((c) => c.id !== atk.id && grupo(c) !== grupo(atk) && num(c.hp) > 0) || l.find((c) => c.id !== atk.id && num(c.hp) > 0) || l.find((c) => c.id !== atk.id) || atk); };
-  function desenharVez() {
-    if (!faixa) return;
-    const cur = window.__ini.atual?.(), l = lista(), atk = l.find((c) => c.id === cur);
-    if (!atk || l.length < 2) { faixa.hidden = true; faixa.innerHTML = ""; return; }
-    const sel = estado(), fx = fontesDe(atk);
-    if (!sel.alvoVez || !l.some((c) => c.id === sel.alvoVez) || sel.alvoVez === atk.id) sel.alvoVez = alvoPadrao(l, atk).id;
-    faixa.hidden = false;
-    faixa.innerHTML = `<div class="acoes-vez-cab"><b>Vez de ${esc(atk.name)}</b><label class="inline">Atacar<select id="vez-alvo" aria-label="Em quem atacar">${l.filter((c) => c.id !== atk.id).map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvoVez ? "selected" : ""}>${esc(c.name)} (CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)})</option>`).join("")}</select></label><label class="inline">Jogada<select id="vez-modo" aria-label="Vantagem ou desvantagem"><option value="normal" ${sel.modoVez !== "vantagem" && sel.modoVez !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modoVez === "vantagem" ? "selected" : ""}>Vantagem</option><option value="desvantagem" ${sel.modoVez === "desvantagem" ? "selected" : ""}>Desvantagem</option></select></label></div>
-      <div class="row acoes-vez-botoes">${fx.length ? fx.map((a, i) => `<button type="button" class="small primary" data-vez="${i}" title="Rola o ataque contra a CA do alvo e o dano">${esc(a.tipo === "magia" ? a.nome + " (magia)" : a.nome)}${a.tipo !== "magia" && a.hit != null ? " " + (a.hit >= 0 ? "+" : "") + a.hit : ""}</button>`).join("") : '<span class="muted">Sem ataques cadastrados: use o painel Atacar abaixo para um ataque manual.</span>'}<button type="button" class="small" data-vez-painel>Outras opções…</button></div>
-      <div id="vez-res" role="status" aria-live="polite">${msgVez}</div>`;
-  }
-  faixa?.addEventListener("change", (e) => { const sel = estado(); if (e.target.id === "vez-alvo") sel.alvoVez = e.target.value; else if (e.target.id === "vez-modo") sel.modoVez = e.target.value; });
-  faixa?.addEventListener("click", (e) => {
-    const b = e.target.closest("button"); if (!b) return;
-    if (b.dataset.vez !== undefined) { const sel = estado(); rolar("tudo", { rapido: true, idx: +b.dataset.vez, alvo: $("#vez-alvo")?.value || sel.alvoVez, modo: $("#vez-modo")?.value || "normal", destino: "#vez-res" }); }
-    else if (b.dataset.vezPainel !== undefined) { raiz.open = true; const sel = estado(); sel.atacante = window.__ini.atual?.() || sel.atacante; sel.manualAtacante = false; sel.alvo = sel.alvoVez || sel.alvo; sel.idx = null; desenhar(); raiz.scrollIntoView?.({ block: "nearest", behavior: "smooth" }); }
-    else if (b.id === "atk-aplicar" && ultimo && ultimo.dano) aplicarUltimo(b, "#vez-res");
-  });
-  function aplicarUltimo(b, destino) {
+  function aplicarUltimo(b) {
     const U = ultimo; ultimo = null;                                   // um clique aplica uma vez só
     window.__ini.aplicarDano(U.alvoId, U.dano.total, U.atacanteId);
-    const alvo = lista().find((c) => c.id === U.alvoId), nota = `<p><b>Dano aplicado.</b> ${esc(alvo ? alvo.name : "Alvo")}: PV ${alvo ? num(alvo.hp) : "?"}/${alvo ? num(alvo.maxHp) : "?"}.</p>`;
-    if (destino === "#vez-res") { msgVez = msgVez.replace(/<div class="row"><button type="button" id="atk-aplicar"[\s\S]*?<\/div>/, "") + nota; const r = document.querySelector("#vez-res"); if (r) r.innerHTML = msgVez; }
-    else $("#atk-res")?.insertAdjacentHTML("beforeend", nota);
+    const alvo = lista().find((c) => c.id === U.alvoId), res = $("#vez-res");
+    const nota = `<p><b>Dano aplicado.</b> ${esc(alvo ? alvo.name : "Alvo")}: PV ${alvo ? num(alvo.hp) : "?"}/${alvo ? num(alvo.maxHp) : "?"}.</p>`;
+    res.innerHTML = res.innerHTML.replace(/<div class="row"><button type="button" id="atk-aplicar"[\s\S]*?<\/div>/, "") + nota;
     if (b) b.disabled = true;
   }
-  raiz.addEventListener("change", (e) => {
-    const sel = estado();
-    if (e.target.id === "atk-atacante") { sel.atacante = e.target.value; sel.manualAtacante = true; sel.idx = null; sel.circulo = null; desenhar(); }
-    else if (e.target.id === "atk-alvo") sel.alvo = e.target.value;
-    else if (e.target.id === "atk-ataque") { sel.idx = e.target.value === "manual" ? "manual" : +e.target.value; sel.circulo = null; desenhar(); }
-    else if (e.target.id === "atk-modo") sel.modo = e.target.value;
-    else if (e.target.id === "atk-circulo") { sel.circulo = +e.target.value; sel.danoMagia = null; desenhar(); }
-    else if (e.target.id === "atk-treino") { sel.treino = e.target.checked; desenhar(); }
+  faixa.addEventListener("change", (e) => {
+    const sel = estado(), id = e.target.id;
+    if (id === "vez-atacante") { sel.atacante = e.target.value; sel.manualAtacante = true; sel.idx = null; sel.circulo = null; ultimo = null; $("#vez-res").innerHTML = ""; desenharVez(); }
+    else if (id === "vez-alvo") sel.alvo = e.target.value;
+    else if (id === "vez-modo") sel.modo = e.target.value;
+    else if (id === "vez-treino") { sel.treino = e.target.checked; desenharVez(); }
+    else if (id === "atk-ataque") { sel.idx = e.target.value === "manual" ? "manual" : +e.target.value; sel.circulo = null; desenharAvancado(); }
+    else if (id === "atk-circulo") { sel.circulo = +e.target.value; sel.danoMagia = null; desenharAvancado(); }
+    else if (id === "atk-metade") sel.metade = e.target.checked;
   });
-  raiz.addEventListener("click", (e) => {
+  faixa.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
-    if (b.id === "atk-rolar") rolar("tudo"); else if (b.id === "atk-so-ataque") rolar("ataque"); else if (b.id === "atk-so-dano") rolar("dano");
-    else if (b.id === "atk-aplicar" && ultimo && ultimo.dano) aplicarUltimo(b, "#atk-res");
+    if (b.dataset.vez !== undefined) rolar("tudo", { rapido: true, idx: +b.dataset.vez });
+    else if (b.dataset.vezAvancado !== undefined) { const sel = estado(); sel.avancado = !sel.avancado; desenharVez(); }
+    else if (b.id === "atk-rolar") rolar("tudo"); else if (b.id === "atk-so-ataque") rolar("ataque"); else if (b.id === "atk-so-dano") rolar("dano");
+    else if (b.id === "atk-aplicar" && ultimo && ultimo.dano) aplicarUltimo(b);
   });
-  /* botão "Atacar" no cartão do combatente: abre o painel aqui em cima com ele como atacante */
+  /* botão "Atacar" do cartão do combatente: abre esta mesma interface com ele como atacante */
   window.addEventListener?.("ini:atacar", (e) => {
     const sel = estado(), id = e.detail && e.detail.id; if (!id) return;
-    sel.atacante = id; sel.manualAtacante = true; sel.idx = null; sel.circulo = null; raiz.open = true; raiz.hidden = false; desenhar();
-    raiz.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    sel.atacante = id; sel.manualAtacante = true; sel.idx = null; sel.circulo = null; ultimo = null; $("#vez-res").innerHTML = "";
+    desenharVez(); faixa.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
   });
-  window.__ini.aoAlterar?.(() => { if (!raiz.hidden && !document.activeElement?.closest?.("#painel-ataque")) desenhar(); if (!document.activeElement?.closest?.("#acoes-da-vez")) desenharVez(); });
-  desenhar(); desenharVez();
+  window.__ini.aoAlterar?.(() => { if (!document.activeElement?.closest?.("#acoes-da-vez")) desenharVez(); });
+  desenharVez();
 })();

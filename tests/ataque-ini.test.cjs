@@ -34,7 +34,7 @@ test('integração: aplicar dano usa as mesmas estatísticas do botão Dano; cri
   const ini=ler('js/iniciativa.js'),app=ler('js/app.js'),ci=ler('js/campanha-ini.js'),html=ler('iniciativa.html'),sw=ler('sw.js');
   assert.match(ini,/function aplicarDano\(id, amount, quemId\)/);assert.match(ini,/if \(button\.dataset\.damage\) aplicarDano\(id, amount\);/);assert.match(ini,/aplicarDano,\n\s+trocarContexto/);assert.match(ini,/atual: \(\) => currentId/);
   assert.match(app,/window\.__ini\.acoesDe = \(key\)/);assert.match(ci,/window\.__ini\.ataquesDe = \(pid\)/);
-  assert.match(html,/id="painel-ataque"/);assert.match(html,/js\/ataque-ini\.js/);assert.match(sw,/"js\/ataque-ini\.js"/);assert.match(ci,/'adicionar-combatente','painel-ataque'/);
+  assert.ok(!/id="painel-ataque"/.test(html),"o painel separado foi removido");assert.match(html,/js\/ataque-ini\.js/);assert.match(sw,/"js\/ataque-ini\.js"/);assert.ok(!/painel-ataque/.test(ci),'campanha-ini não depende do painel antigo');
 });
 test('cada clique em Aplicar aplica o dano uma vez só',()=>{
   const j=ler('js/ataque-ini.js');assert.match(j,/const U = ultimo; ultimo = null;/);assert.match(j,/b\.disabled = true;/);
@@ -65,31 +65,66 @@ test('modo treino: sempre ligado para quem não é mestre da campanha; só o mes
   assert.match(j,/if \(emTreino\(\) \|\| a\.tipo !== "magia"/,'em treino nada é gasto');
   assert.match(c,/window\.__ini\.papel = \(\) =>/);assert.match(c,/if \(!sincroniza\(\)\) return \{ ok: false, msg: "Só o mestre gasta espaços/);assert.match(c,/&versao=eq\./,'gravação com controle de versão');
 });
-test('faixa "Vez de ...": quem está na vez, escolher em quem atacar e qual ataque, rolando ataque e dano num clique; o painel Atacar fica dentro da ordem do combate com botão Atacar em cada cartão',()=>{
+test('interface única de ataque: faixa "Vez de ..." acima da lista, com ataques rápidos, Outras opções e resultado; sem painel separado nem controles duplicados',()=>{
   const j=ler('js/ataque-ini.js'),html=ler('iniciativa.html'),ini=ler('js/iniciativa.js');
-  assert.match(html,/id="acoes-da-vez"/);assert.ok(html.indexOf('id="acoes-da-vez"')<html.indexOf('id="combatants"')&&html.indexOf('id="painel-ataque"')<html.indexOf('id="combatants"'),'painel e faixa ficam acima da lista, não no fim da página');
-  assert.ok(html.indexOf('id="painel-ataque"')>html.indexOf('id="iniciativa-atual"')&&html.indexOf('id="painel-ataque"')<html.indexOf('id="camp-ini"'),'o painel está dentro da seção da ordem do combate');
-  assert.match(j,/<b>Vez de \$\{esc\(atk\.name\)\}<\/b>/);assert.match(j,/id="vez-alvo"/);assert.match(j,/data-vez="\$\{i\}"/);assert.match(j,/rolar\("tudo", \{ rapido: true/);assert.match(j,/const cur = window\.__ini\.atual\?\.\(\), l = lista\(\), atk = l\.find/);
-  assert.match(j,/if \(!sel\.manualAtacante && cur/,'sem escolha manual, o atacante acompanha a vez');assert.match(ini,/data-atacar="\$\{c\.id\}"/);assert.match(ini,/new CustomEvent\("ini:atacar"/);
+  assert.ok(html.indexOf('id="acoes-da-vez"')>html.indexOf('id="iniciativa-atual"')&&html.indexOf('id="acoes-da-vez"')<html.indexOf('id="combatants"'),'a faixa fica dentro da ordem do combate, acima da lista');
+  for(const id of ['vez-topo','vez-avancado','vez-avancado-corpo','vez-res'])assert.match(html,new RegExp('id="'+id+'"'));assert.ok(!/id="atk-(corpo|res|modo|alvo|atacante)"/.test(html+j),'sem controles duplicados do painel antigo');
+  assert.match(j,/id="vez-atacante"/);assert.match(j,/id="vez-alvo"/);assert.match(j,/id="vez-modo"/);assert.match(j,/data-vez="\$\{i\}"/);assert.match(j,/data-vez-avancado/);assert.match(j,/Outras opções/);assert.match(j,/id="atk-so-ataque"/);assert.match(j,/id="atk-so-dano"/);assert.match(j,/id="atk-metade"/);assert.match(j,/id="atk-rolar"/);
+  assert.match(ini,/data-atacar="\$\{c\.id\}"/);assert.match(ini,/new CustomEvent\("ini:atacar"/);assert.match(j,/window\.addEventListener\?\.\("ini:atacar"/);
 });
-test('faixa da vez roda de verdade: lista ataques de quem está na vez, rola no clique e o botão Aplicar reduz os PV uma vez só',async()=>{
-  const el=()=>{const o={innerHTML:'',hidden:false,open:false,value:'',listeners:{},dataset:{},style:{},addEventListener(n,f){(o.listeners[n]??=[]).push(f);},querySelector:s=>caches.get(s)||(caches.set(s,el()),caches.get(s)),insertAdjacentHTML(_,h){o.innerHTML+=h;},scrollIntoView(){},closest:()=>null};return o;},caches=new Map();
-  const faixa=el(),raiz=el(),res=el(),docEls={'painel-ataque':raiz,'acoes-da-vez':faixa};
-  const document={getElementById:id=>docEls[id],querySelector:s=>s==='#vez-res'?res:null,activeElement:null};
-  const lista=[{id:'a',name:'Goblin',kind:'Monstro',hp:7,maxHp:7,ac:13,key:'gob'},{id:'b',name:'Herói',kind:'Personagem',hp:20,maxHp:20,ac:15}],aplicados=[];
-  const ini={list:()=>lista,atual:()=>'a',papel:()=>'jogador',acoesDe:k=>k==='gob'?[{nome:'Cimitarra',hit:4,dmg:[{n:1,f:6,b:2,t:'cortante'}]}]:[],aoAlterar(){},aplicarDano:(id,n,q)=>{aplicados.push([id,n,q]);lista.find(c=>c.id===id).hp-=n;return true;}};
-  const w={__ini:ini,addEventListener(){},crypto:{getRandomValues:a=>{a[0]=0xFFFFFFFF;return a;}}};   // d20 = 20: crítico
-  const c=vm.createContext({window:w,document,crypto:w.crypto,Event:function(){}});vm.runInContext(ler("js/ataque-ini.js"),c);
-  assert.equal(faixa.hidden,false);assert.match(faixa.innerHTML,/Vez de Goblin/);assert.match(faixa.innerHTML,/Cimitarra \+4/);assert.match(faixa.innerHTML,/<option value="b" selected>Herói/,'o alvo padrão é o adversário');
-  const clique=sel=>faixa.listeners.click.forEach(f=>f({target:{closest:()=>sel}}));
-  clique({dataset:{vez:'0'},id:''});await new Promise(r=>setTimeout(r,5));
-  assert.match(res.innerHTML,/CRÍTICO/);assert.match(res.innerHTML,/Aplicar \d+ de dano em Herói/);
-  clique({dataset:{},id:'atk-aplicar',disabled:false});assert.equal(aplicados.length,1);assert.equal(aplicados[0][0],'b');assert.equal(aplicados[0][2],'a');
-  clique({dataset:{},id:'atk-aplicar',disabled:false});assert.equal(aplicados.length,1,'o segundo clique não aplica de novo');assert.ok(!/id="atk-aplicar"/.test(res.innerHTML),'o botão some depois de aplicar');
+function ambiente({papelAtual='jogador',fichaConj=null}={}){
+  const caches=new Map(),el=()=>{const o={innerHTML:'',hidden:false,listeners:{},dataset:{},style:{},addEventListener(n,f){(o.listeners[n]??=[]).push(f);},querySelector:q=>{if(!caches.has(q))caches.set(q,el());return caches.get(q);},scrollIntoView(){},closest:()=>null,insertAdjacentHTML(_,h){o.innerHTML+=h;}};return o;};
+  const faixa=el(),docEls={'acoes-da-vez':faixa},document={getElementById:id=>docEls[id],activeElement:null};
+  const lista=[{id:'a',name:'Goblin',kind:'Monstro',hp:7,maxHp:7,ac:13,key:'gob'},{id:'b',name:'Herói',kind:'Personagem',hp:20,maxHp:20,ac:15,pid:'p'}],aplicados=[],espacos=[];let vez='a';
+  const ini={list:()=>lista,atual:()=>vez,papel:()=>papelAtual,aoAlterar(){},aplicarDano:(id,n,q)=>{aplicados.push([id,n,q]);lista.find(c=>c.id===id).hp-=n;return true;},
+   acoesDe:k=>k==='gob'?[{nome:'Cimitarra',hit:4,dmg:[{n:1,f:6,b:2,t:'cortante'}]},{nome:'Sopro',hit:null,dmg:[{n:2,f:6,b:0,t:'fogo'}]}]:[],ataquesDe:()=>[{nome:'Espada longa',hit:5,dmg:[{n:1,f:8,b:3,t:'cortante'}]}],
+   fichaDe:()=>fichaConj,gastarEspaco:async(pid,c)=>{espacos.push([pid,c]);return {ok:true,msg:'Gastou 1 espaço de '+c+'º círculo.'};}};
+  const w={__ini:ini,addEventListener(n,f){(w.ev??={})[n]=f;},crypto:{getRandomValues:a=>{a[0]=w.valorDado===undefined?0xFFFFFFFF:Math.floor(w.valorDado*4294967295);return a;}}};
+  const c=vm.createContext({window:w,document,crypto:w.crypto,Event:function(){}});for(const n of ['origens','regras','magias-jogo','ataque-ini'])vm.runInContext(ler('js/'+n+'.js'),c);
+  const q=s=>faixa.querySelector(s),dispara=(tipo,alvo)=>(faixa.listeners[tipo]||[]).forEach(f=>f({target:{closest:()=>alvo,...alvo}}));
+  return {faixa,q,lista,aplicados,espacos,w,ini,setVez:id=>{vez=id;ini.atual=()=>id;},clique:(dataset,id='')=>dispara('click',{dataset,id}),muda:(id,value,checked)=>dispara('change',{id,value,checked}),espera:()=>new Promise(r=>setTimeout(r,5)),
+    texto:()=>q('#vez-topo').innerHTML,res:()=>q('#vez-res').innerHTML,avanc:()=>q('#vez-avancado-corpo').innerHTML};
+}
+test('faixa unificada: aparece com atacante e alvo; resultado e Aplicar só depois de um ataque; Aplicar atua uma vez só',async()=>{
+  const t=ambiente();assert.equal(t.faixa.hidden,false);assert.match(t.texto(),/Vez de[\s\S]*Goblin/);assert.match(t.texto(),/Cimitarra \+4/);assert.match(t.texto(),/<option value="b" selected>Herói/);
+  assert.equal(t.res(),'','sem ataque, sem resultado nem botão aplicar');assert.equal(t.q('#vez-avancado').hidden,true,'Outras opções começa recolhido');
+  t.clique({vez:'0'});await t.espera();assert.match(t.res(),/CRÍTICO/);assert.match(t.res(),/Aplicar \d+ de dano em Herói/);
+  t.clique({},'atk-aplicar');assert.equal(t.aplicados.length,1);assert.equal(t.aplicados[0][0],'b');assert.equal(t.aplicados[0][2],'a');
+  t.clique({},'atk-aplicar');assert.equal(t.aplicados.length,1);assert.ok(!/id="atk-aplicar"/.test(t.res()));
+});
+test('ataque rápido com vantagem e desvantagem usa dois d20; ataque sem bônus de acerto pede Só o dano em Outras opções',async()=>{
+  const t=ambiente();t.muda('vez-modo','vantagem');t.clique({vez:'0'});await t.espera();assert.match(t.res(),/vantagem/);
+  t.muda('vez-modo','desvantagem');t.clique({vez:'0'});await t.espera();assert.match(t.res(),/desvantagem/);
+  t.muda('vez-modo','normal');t.clique({vez:'1'});await t.espera();assert.match(t.res(),/não tem bônus de acerto/);
+});
+test('Outras opções: ataque manual, só ataque, só dano e metade do dano com o mesmo motor e a mesma confirmação',async()=>{
+  const t=ambiente();t.clique({vezAvancado:''});assert.equal(t.q('#vez-avancado').hidden,false);assert.match(t.avanc(),/id="atk-so-ataque"/);assert.match(t.avanc(),/id="atk-so-dano"/);assert.match(t.avanc(),/Metade do dano/);assert.match(t.avanc(),/Manual…/);
+  t.w.valorDado=0.55;
+  t.clique({},'atk-so-ataque');await t.espera();assert.match(t.res(),/<b>Acertou/);assert.ok(!/Dano:/.test(t.res()),'só o ataque não rola dano');assert.ok(!/atk-aplicar/.test(t.res()));
+  t.clique({},'atk-so-dano');await t.espera();assert.match(t.res(),/<b>Dano:<\/b> \d+/);assert.match(t.res(),/atk-aplicar/);
+  t.muda('atk-ataque','manual');assert.match(t.avanc(),/id="atk-bonus"/);assert.match(t.avanc(),/id="atk-dano"/);
+  t.q('#atk-dano').value='2d8+2';t.q('#atk-bonus').value='6';t.q('#atk-metade').checked=true;t.clique({},'atk-so-dano');await t.espera();assert.match(t.res(),/\(de \d+\)/,'metade do dano mostra o bruto');assert.match(t.res(),/\(metade\)/);
+  t.q('#atk-dano').value='lixo';t.clique({},'atk-so-dano');await t.espera();assert.match(t.res(),/Dano inválido/);
+});
+test('magias em Outras opções e nos botões rápidos: ataque de magia e salvaguarda com a CD; treino não gasta espaço e o mestre fora do treino gasta',async()=>{
+  const f={classes:[{c:'Wizard',n:5,sub:''}],atributos:{int:16,des:12,con:12,for:10,sab:10,car:10},magias:[
+    {n:'Bola de Fogo',en:'Fireball',l:3,prep:true,classeConj:'Wizard',d:'Cada criatura faz uma salvaguarda de Destreza. Se falhar, sofre 8d6 pontos de dano ígneo, ou metade do dano se passar. Em Círculos Superiores o dano aumenta em 1d6 para cada círculo acima do 3º.'},
+    {n:'Raio de Fogo',en:'Fire Bolt',l:0,prep:true,classeConj:'Wizard',d:'Faça um ataque mágico. Se acertar, sofre 1d10 pontos de dano ígneo. O dano aumenta em 1d10 no 5º nível (2d10).'}]};
+  const t=ambiente({papelAtual:'jogador',fichaConj:f});t.muda('vez-atacante','b');
+  assert.match(t.texto(),/Bola de Fogo \(magia\)/);assert.match(t.texto(),/Raio de Fogo \(magia\)/);assert.match(t.texto(),/id="vez-treino" checked disabled/,'jogador: treino sempre ligado e travado');
+  t.w.valorDado=0.999;t.clique({vez:'2'});await t.espera();assert.match(t.res(),/conjura Raio de Fogo/);assert.match(t.res(),/CRÍTICO/);assert.match(t.res(),/\[\d+\+\d+\+\d+\+\d+\]/,'2d10 do truque no 5º nível, em dobro no crítico');
+  t.clique({vez:'1'});await t.espera();assert.match(t.res(),/CD 14, Destreza/);assert.match(t.res(),/Salvaguarda de Goblin/);assert.equal(t.espacos.length,0,'em treino nada é gasto');
+  t.clique({vezAvancado:''});t.muda('atk-ataque','1');assert.match(t.avanc(),/id="atk-circulo"/);assert.match(t.avanc(),/value="8d6"/);t.muda('atk-circulo','5');assert.match(t.avanc(),/value="8d6\+2d6"/,'espaço de 5º círculo');
+  const m=ambiente({papelAtual:'mestre',fichaConj:f});m.muda('vez-atacante','b');assert.ok(!/id="vez-treino" checked/.test(m.texto()),'mestre: treino desligado por padrão');
+  m.clique({vez:'1'});await m.espera();assert.equal(m.espacos.length,1);assert.deepEqual(m.espacos[0],['p',3]);assert.match(m.res(),/Gastou 1 espaço de 3º círculo/);
+  m.muda('vez-treino','',true);m.clique({vez:'1'});await m.espera();assert.equal(m.espacos.length,1,'com o treino ligado não gasta mais');
+});
+test('botão Atacar do cartão abre a interface unificada com o combatente como atacante, mesmo fora da vez',()=>{
+  const t=ambiente();t.setVez(null);t.w.ev['ini:atacar']({detail:{id:'b'}});assert.equal(t.faixa.hidden,false);assert.match(t.texto(),/Ataque de[\s\S]*Herói/);assert.match(t.texto(),/Espada longa \+5/);assert.match(t.texto(),/<option value="a" selected>Goblin/);
 });
 test('celular: a faixa da vez, o painel Atacar e o cartão da iniciativa têm alvos de toque de 44 px e ficam só no bloco de telas pequenas/toque',()=>{
   const css=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','css','fluxos.css'),'utf8'),i=css.indexOf('/* Celular e telas de toque');
   assert.ok(i>0);const bloco=css.slice(i);assert.match(bloco,/@media \(max-width:760px\), \(pointer:coarse\)/);
-  for(const parte of ['.acoes-vez-botoes .small','#painel-ataque select','#ci-lista .ci-cartao-ini .ci-acoes .small','#ci-lista .ci-cartao-ini .ci-ini input','input[type=checkbox]'])assert.ok(bloco.includes(parte),parte);
+  for(const parte of ['.acoes-vez-botoes .small','#vez-avancado select','#ci-lista .ci-cartao-ini .ci-acoes .small','#ci-lista .ci-cartao-ini .ci-ini input','input[type=checkbox]'])assert.ok(bloco.includes(parte),parte);
   assert.equal((bloco.match(/min-height:44px/g)||[]).length>=4,true);assert.ok(!/^\.grupo-cartao|^\.personagem-card/m.test(bloco),'não mexe nos outros cartões');
 });

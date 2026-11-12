@@ -95,12 +95,11 @@
       </div>
 
       <p id="inicio-aviso" class="muted" role="status"></p>
-      <div id="acoes-da-vez" class="acoes-vez" hidden></div>
-      <details class="painel-ataque-inline" id="painel-ataque">
-        <summary class="panel-title"><i data-i="swords"></i>Atacar e causar dano</summary>
-        <p class="muted">Escolha quem ataca, o ataque e o alvo. O app rola o d20 contra a CA do alvo e o dano (em dobro nos dados se for crítico). Aplique o dano com um clique.</p>
-        <div id="atk-corpo"></div>
-      </details>
+      <section id="acoes-da-vez" class="acoes-vez" hidden aria-label="Ataque">
+        <div id="vez-topo"></div>
+        <div id="vez-avancado" class="vez-avancado" hidden><div id="vez-avancado-corpo"></div></div>
+        <div id="vez-res" role="status" aria-live="polite"></div>
+      </section>
       <div id="combatants" class="combatants">
         <div class="empty">
           <strong>O campo de batalha está vazio.</strong>

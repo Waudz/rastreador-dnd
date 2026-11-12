@@ -1,6 +1,20 @@
 # Pendências e próxima tarefa
 
-Atualizado em 12/11/2026. Decisões permanentes: `docs/DECISOES.md`. Histórico antigo: `docs/HISTORICO.md` (não ler por rotina).
+Atualizado em 12/11/2026 (fim de sessão, para continuar em outro computador só com o GitHub). Decisões permanentes: `docs/DECISOES.md`. Histórico antigo: `docs/HISTORICO.md` (não ler por rotina).
+
+## RETOMAR DAQUI (estado real, tudo publicado em `origin/main`, cache `rastreador-v126`)
+- Tudo o que está neste repositório está publicado; suíte: `node --test tests/*.cjs` (432 testes, 431 passam, 1 pula por depender de arquivo privado). Seções antigas abaixo descrevem commits "locais" que **já foram publicados**; vale o que está aqui.
+- **Supabase:** migrações aplicadas pelo William: imagens/enquadramento de campanhas, proteção de campos do mestre, `20261112210000_grupo_basico.sql` e `20261112230000_grupo_fichas.sql` (aba Grupo dos jogadores). Nenhuma migração pendente. Nada de banco sem o William pedir.
+- **Iniciativa (últimas entregas, todas validadas no navegador local em 320, 360, 768 e 1200 px):**
+  - Adicionar combatente (`iniciativa.html`, `js/app.js`, `js/iniciativa.js`): prévia do monstro (foto ou inicial, CA, PV, modificador), botão d20 (`ROLAGENS.rolar`) que preenche o campo **Iniciativa** (resultado final = d20 + mod.; editável; em branco = pendente) e mostra a conta; combatentes improvisados continuam.
+  - Meus personagens (`js/campanha-ini.js`): cartão em duas linhas (identidade em cima; campo Ini., Rolar d20 e Adicionar embaixo), resultado no cartão e bloco "Iniciativa" com as rolagens do lote.
+  - **Interface única de ataque** (`js/ataque-ini.js`, faixa `#acoes-da-vez` em `iniciativa.html`): o painel separado "Atacar e causar dano" foi removido. A faixa "Vez de ..." (ou "Ataque de ..." quando escolhido pelo botão **Atacar** do cartão) tem atacante, alvo, vantagem/desvantagem, treino, ataques rápidos (criaturas via `__ini.acoesDe`, personagens via `__ini.ataquesDe`, magias) e **Outras opções** (ataque manual, magias com espaço e dano editável, só ataque, só dano, metade do dano). Resultado e **Aplicar dano** só aparecem depois de um ataque; aplicar atua uma vez (`__ini.aplicarDano`). Modo treino: sempre ligado para jogador/sem campanha; o mestre liga/desliga; fora do treino o mestre gasta espaço de magia na ficha (`__ini.gastarEspaco`, com controle de versão).
+- **Jogador na iniciativa:** usa o rastreador no próprio aparelho com os próprios personagens; PV da ficha acompanham o combate (botão "Atualizar personagens" força).
+- **Aba Grupo (jogadores):** cartões com mestre e jogadores; clicar abre a ficha em leitura (sem inventário, dinheiro e notas) via `grupo_fichas`.
+- **Fases do roteiro:** 1 a 5 entregues; pendências obrigatórias de magias resolvidas (Paladino, Arcanum Místico, multiclasse revisada). Abertas: reduzir nível pela interface; restrições de escola do Cavaleiro Místico/Trapaceiro Arcano; auditoria das listas de classe do catálogo (ex.: Comando aparece para Bruxo); salvaguarda automática do alvo, resistências e multiataque na faixa de ataque; re-rolar a iniciativa.
+- **Ainda falta validar com contas reais (Supabase/Android):** aba Grupo, iniciativa do jogador, gasto de espaço pelo mestre, Adicionar combatente no celular físico. Os testes automáticos usam interface simulada; as medidas de layout foram feitas no navegador local, sem login.
+- **Funcionalidades futuras (não implementar sem pedido):** privacidade dos grimórios, visibilidade de monstros por permissão (quem joga sem mestre sempre vê tudo), encontros preparados, instâncias individuais de criaturas, saques próprios, lojas/baús/Enciclopédia.
+- **Como continuar em outro computador:** `git clone https://github.com/Waudz/rastreador-dnd`, ler este arquivo e `docs/DECISOES.md`, rodar `node --test tests/*.cjs`. Servidor local para testar no navegador: `node ferramentas/servidor-local.cjs` (porta 8766). Nunca fazer push nem mexer no Supabase sem o William pedir; ao publicar mudança visível, aumentar `CACHE` em `sw.js`.
 
 ## Estado atual
 - Remoto `origin/main` em `32dd13d` (cache v91). Commits locais não publicados: `aca3f57`, `603be7f`, `5889cbc`, `8d670da`, `10829ee`, `daa9f1e`, `0618597`, `4016af9`, `b3e0b17`, `dfbcfd8` e a preparação de publicação em `754371a` (v102), seguida da revisão técnica local (cache `rastreador-v103`). **Nada publicado. Fase 4 conferida na prévia local do navegador; permissões SQL validadas em produção; login/navegador real e Android continuam pendentes.**
@@ -60,9 +74,8 @@ Resolvidas nesta integração: auditoria das oito listas padrão contra as pági
 - Interface: aba "Grupo" (só jogadores) com Mestre e Jogadores (foto, nome, raça, classe, nível, jogador, PV, CA); tocar abre a ficha em modo leitura (`soLeitura` em `js/personagem.js`: nada grava; sem abas Inventário e Notas; controles desativados). O leitor lateral (`js/leitor-fichas.js`) repassa `grupo`.
 - Feedback de jogador atendido: CD pronta nas características (Ki, Canalizar Divindade, manobras etc.), com fórmula.
 
-## Iniciativa: painel Atacar (entregue localmente)
-- `js/ataque-ini.js` + painel em `iniciativa.html`: escolher quem ataca, o ataque (criaturas do bestiário via `__ini.acoesDe`, personagens via `__ini.ataquesDe`, ou manual com expressão de dano), o alvo e vantagem/desvantagem; rola d20 contra a CA (20 natural acerta e é crítico, 1 natural erra), dano com dados em dobro no crítico, "metade do dano", e aplica ao alvo (`__ini.aplicarDano`, mesmas estatísticas do botão Dano). Funciona para mestre e jogador.
-- Limites: sem salvaguardas do alvo contra CD (use "Só o dano" + "Metade do dano"), sem resistências/vulnerabilidades automáticas, sem multiataque em sequência, sem PV temporários do alvo, ataques de criaturas sem bônus de acerto só rolam dano.
+## Iniciativa: ataque (ver "RETOMAR DAQUI")
+O painel separado foi unificado na faixa "Vez de ..." (`js/ataque-ini.js`). Limites: sem salvaguarda automática do alvo, sem resistências/vulnerabilidades automáticas, sem multiataque em sequência, sem PV temporários do alvo; ataques de criaturas sem bônus de acerto só rolam dano (em Outras opções).
 
 ## Próxima tarefa
 Aguardar revisão e autorização do plano de publicação/segurança. Não aplicar SQL, acessar o Supabase real, fazer push ou deploy por conta própria.

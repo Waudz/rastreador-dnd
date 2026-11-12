@@ -142,7 +142,7 @@
     finally { if(atual===campanhaConsultada&&geracaoConsultada===geracaoContexto)buscando = false; }
   }
   function contextoVisual(ativa){
-    for(const id of ['iniciativa-atual','adicionar-combatente','painel-ataque']){const el=$('#'+id);if(el)el.hidden=!ativa;}
+    for(const id of ['iniciativa-atual','adicionar-combatente']){const el=$('#'+id);if(el)el.hidden=!ativa;}
     box.hidden=!ativa;const vazio=$('#ini-sem-campanha');if(vazio)vazio.hidden=ativa;
   }
   let geracaoContexto=0,pararConsulta=null;
