@@ -203,7 +203,7 @@ test('botão de treino só aparece para o mestre; todos os botões que rolam dad
   const jog=ambiente({papelAtual:'jogador'}),mes=ambiente({papelAtual:'mestre'}),sem=ambiente({papelAtual:'sem-campanha'});
   assert.ok(!/vez-treino/.test(jog.texto())&&!/vez-treino/.test(sem.texto()),'jogador e quem está fora de campanha não veem o botão');assert.match(mes.texto(),/id="vez-treino"/);assert.ok(!/id="vez-treino" checked/.test(mes.texto()));
   jog.clique({vezAvancado:''});assert.ok(!/Modo treino/.test(jog.avanc()),'sem aviso de treino para o jogador');
-  assert.match(j,/\$\{D20\(\)\}\$\{esc\(a\.tipo === "magia"/);assert.match(j,/id="atk-rolar" class="primary">\$\{manualDados \? "" : D20\(\)\}/);assert.match(j,/id="atk-so-ataque" class="small">\$\{D20\(\)\}Só o ataque/);assert.match(j,/id="atk-so-dano" class="small">\$\{manualDados \? "Registrar só o dano" : D20\(\) \+ "Só o dano"\}/);
+  assert.match(j,/\$\{D20\(\)\}\$\{esc\(a\.criatura \? [^\n]*a\.tipo === "magia"/);assert.match(j,/id="atk-rolar" class="primary">\$\{manualDados \? "" : D20\(\)\}/);assert.match(j,/id="atk-so-ataque" class="small">\$\{D20\(\)\}Só o ataque/);assert.match(j,/id="atk-so-dano" class="small">\$\{manualDados \? "Registrar só o dano" : D20\(\) \+ "Só o dano"\}/);
   assert.match(ci,/window\.ico\('d20'\)\:''\)\+'Rolar d20/);assert.match(gp,/window\.ico\('d20'\)\:''\)\+'Rolar iniciativa/);
 });
 

@@ -249,9 +249,26 @@
       return (m.traits || []).some((t) => /Undead Fortitude/i.test(t.name)) ? [{ id: "fortitude-morta-viva", nome: "Fortitude dos Mortos-Vivos", tipo: "salva", cdBase: 5, cdPorDano: true, excecoes: true, usado: 0, limite: null }] : [];
     };
     window.__ini.bonusIniciativaDe = (c) => { const m = c && c.key && ALL.find((x) => x.key === c.key); return m ? iniBonus(m) : undefined; };
+    /* salvaguarda exigida pela ação: ficha própria (a.save) ou texto do catálogo ("DC 13 Constitution saving throw") */
+    const SV_ATR = { strength: "for", dexterity: "des", constitution: "con", intelligence: "int", wisdom: "sab", charisma: "car" };
+    function saveDe(a) {
+      if (a.save && a.save.dc && SV_ATR[a.save.ability]) return { cd: +a.save.dc, atr: SV_ATR[a.save.ability] };
+      const x = String(a.desc || "").match(/DC\s*(\d+)\s*(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s*saving throw/i);
+      return x ? { cd: +x[1], atr: SV_ATR[x[2].toLowerCase()] } : null;
+    }
+    /* Ataque Múltiplo / Multiattack: "dois ataques com garras" -> a ação Garra vale 2 ataques (só quando o texto diz um número e não separa por "um ... e um ...") */
+    const semAc = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    const NUM_AT = { two: 2, three: 3, four: 4, dois: 2, duas: 2, tres: 3, quatro: 4 };
+    function vezesDe(m, acoes) {
+      const mm = (m.actions || []).find((a) => /^(multiattack|ataque multiplo)/.test(semAc(a.name))); if (!mm) return;
+      const d = semAc(mm.desc), x = d.match(/\b(two|three|four|dois|duas|tres|quatro)\b[^.]*?\b(attacks?|ataques?)\b/); if (!x || /\b(one|um|uma)\b/.test(d.slice(x.index + x[0].length))) return;
+      const cand = acoes.filter((a) => a.hit != null && d.includes(semAc(a._n).slice(0, Math.max(3, semAc(a._n).length - 1))));
+      if (cand.length === 1) cand[0].vezes = NUM_AT[x[1]];
+    }
     window.__ini.acoesDe = (key) => {
       const m = ALL.find((x) => x.key === key); if (!m) return [];
-      return (m.actions || []).map((a) => { const r = rollInfo(a); return r ? { nome: nmA(a), hit: r.hit, dmg: r.dmg.map((x) => ({ ...x, t: x.t ? trW(x.t.toLowerCase()) : "" })) } : null; }).filter(Boolean);
+      const lista = (m.actions || []).map((a) => { const r = rollInfo(a); return r ? { nome: nmA(a), hit: r.hit, dmg: r.dmg.map((x) => ({ ...x, t: x.t ? trW(x.t.toLowerCase()) : "" })), save: saveDe(a), metade: /half as much|half damage|metade/i.test(String(a.desc || "")), vezes: 1, _n: a.name } : null; }).filter(Boolean);
+      vezesDe(m, lista); return lista;
     };
     function addMon(m, botao) {
       const nome = uniq(pt(m) || m.name);

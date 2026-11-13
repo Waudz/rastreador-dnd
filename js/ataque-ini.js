@@ -127,9 +127,14 @@
   const D20 = () => (window.ico ? window.ico("d20") : "");               // ícone do d20 em todos os botões que rolam dados
   const auto = () => (window.__ini.rolagemAuto ? window.__ini.rolagemAuto() : true);
   const emTreino = () => treinoTravado() || !!estado().treino;
+  /* ação de criatura que exige salvaguarda do alvo (ex.: Olhar Podre, sopros): usa o mesmo caminho da magia de salvaguarda, com a CD e o dano da própria ficha */
+  const acaoDeSalva = (a) => ({ tipo: "magia", criatura: true, nome: a.nome, m: { n: a.nome, l: 0, en: "criatura|" + a.nome }, an: { tipo: "salvaguarda", atributoSalva: a.save.atr, metadeNaSalva: !!a.metade, dado: null, tipoDano: "" }, st: { cd: a.save.cd, nivelTotal: 1 }, f: null, dmg: a.dmg || [] });
+  const danoTextoDe = (dmg) => (dmg || []).map((x) => x.n + "d" + x.f + (x.b ? (x.b > 0 ? "+" : "") + x.b : "")).join("+");
+  /* Ataque Múltiplo: se só um ataque da ficha é repetido, o campo Ataques já começa com a quantidade */
+  const vezesPadrao = (fx) => { const v = fx.filter((a) => a.tipo === "ataque" && a.vezes > 1); return v.length === 1 && fx.filter((a) => a.tipo === "ataque" && a.hit != null).length >= 1 ? v[0].vezes : 1; };
   function fontesDe(c) {
     const fx = [];
-    if (c && c.key && window.__ini.acoesDe) fx.push(...window.__ini.acoesDe(c.key).map((a) => ({ ...a, tipo: "ataque" })));
+    if (c && c.key && window.__ini.acoesDe) fx.push(...window.__ini.acoesDe(c.key).map((a) => a.save && a.hit == null ? acaoDeSalva(a) : { ...a, tipo: "ataque" }));
     if (c && c.pid && window.__ini.ataquesDe) fx.push(...window.__ini.ataquesDe(c.pid).map((a) => ({ ...a, tipo: "ataque" })));
     if (c && c.pid && window.__ini.fichaDe) {
       const f = window.__ini.fichaDe(c.pid);
@@ -137,7 +142,7 @@
     }
     return fx;
   }
-  const rotuloFonte = (a) => a.tipo === "magia" ? `Magia: ${a.nome} (${Number(a.m.l) ? a.m.l + "º círculo" : "truque"})` : `${a.nome}${a.hit != null ? " (" + (a.hit >= 0 ? "+" : "") + a.hit + ")" : ""}`;
+  const rotuloFonte = (a) => a.criatura ? `${a.nome} (CD ${a.st.cd}, salvaguarda)` : a.tipo === "magia" ? `Magia: ${a.nome} (${Number(a.m.l) ? a.m.l + "º círculo" : "truque"})` : `${a.nome}${a.hit != null ? " (" + (a.hit >= 0 ? "+" : "") + a.hit + ")" : ""}`;
   function circulosDe(a) { const l = Number(a.m.l), out = []; for (let c = Math.max(1, l); c <= 9; c++) out.push(c); return l === 0 ? [] : out; }
   /* quem ataca: a escolha manual (botão Atacar do cartão ou seletor) ou, sem escolha, quem está na vez */
   function atacanteAtual() {
@@ -159,11 +164,11 @@
     if (!atk || l.length < 2) { faixa.hidden = true; $("#vez-topo").innerHTML = ""; $("#vez-avancado").hidden = true; $("#vez-res").innerHTML = ""; return; }
     const sel = estado(), cur = window.__ini.atual?.() ?? null;
     if ((sel.vezDe ?? null) !== cur) { sel.vezDe = cur; sel.manualAtacante = false; sel.idx = null; sel.circulo = null; sel.alvo = null; limparResultados(); $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null; }   // mudou o turno: a faixa acompanha quem está na vez e limpa o resultado anterior
-    sel.atacante = atk.id; fontes = fontesDe(atk);
+    sel.atacante = atk.id; fontes = fontesDe(atk); if (sel.vezesPara !== atk.id) { sel.vezesPara = atk.id; sel.vezes = vezesPadrao(fontes); }
     if (!l.some((c) => c.id === sel.alvo) || sel.alvo === atk.id) sel.alvo = alvoPadrao(l, atk).id;
     faixa.hidden = false;
     $("#vez-topo").innerHTML = `<div class="acoes-vez-cab"><button type="button" class="small subtle vez-fechar" data-vez-fechar aria-label="Fechar o formulário de ataque" title="Fechar">${window.ico ? window.ico("x") : "x"}</button><label class="inline"><b>${cur === atk.id ? "Vez de" : "Ataque de"}</b><select id="vez-atacante" aria-label="Quem ataca">${l.map((c) => `<option value="${esc(c.id)}" ${c.id === atk.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Alvo<select id="vez-alvo" aria-label="Em quem atacar">${l.filter((c) => c.id !== atk.id).map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvo ? "selected" : ""}title="${esc(c.name)}: CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)}">${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Jogada<select id="vez-modo" aria-label="Vantagem ou desvantagem"><option value="normal" ${sel.modo !== "vantagem" && sel.modo !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modo === "vantagem" ? "selected" : ""}>Vantagem</option><option value="desvantagem" ${sel.modo === "desvantagem" ? "selected" : ""}>Desvantagem</option></select></label><label class="inline vez-vezes">Ataques<input type="number" id="vez-vezes" class="num" min="1" max="8" step="1" value="${Math.max(1, Math.min(8, Math.round(num(sel.vezes, 1))))}" aria-label="Quantas vezes repetir o ataque (multiataque)" title="Repete o ataque escolhido, cada um com seu d20 e dano; o dano total vai num só Aplicar"></label>${treinoTravado() ? "" : `<label class="inline vez-treino"><input type="checkbox" id="vez-treino" ${emTreino() ? "checked" : ""}> Treino: não gasta nada</label>`}</div>
-      <div class="row acoes-vez-botoes">${fontes.length ? fontes.map((a, i) => `<button type="button" class="small primary" data-vez="${i}" title="Rola o ataque contra a CA do alvo e o dano">${D20()}${esc(a.tipo === "magia" ? a.nome + " (magia)" : a.nome)}${a.tipo !== "magia" && a.hit != null ? " " + (a.hit >= 0 ? "+" : "") + a.hit : ""}</button>`).join("") : '<span class="muted">Sem ataques cadastrados: use Outras opções para um ataque manual.</span>'}<button type="button" class="small subtle" data-vez-avancado aria-expanded="${sel.avancado ? "true" : "false"}">Outras opções</button></div>`;
+      <div class="row acoes-vez-botoes">${fontes.length ? fontes.map((a, i) => `<button type="button" class="small primary" data-vez="${i}" title="${a.criatura ? "O alvo faz a salvaguarda contra a CD; se falhar, sofre o dano" : "Rola o ataque contra a CA do alvo e o dano"}">${D20()}${esc(a.criatura ? a.nome + " CD " + a.st.cd : a.tipo === "magia" ? a.nome + " (magia)" : a.nome)}${a.tipo !== "magia" && a.hit != null ? " " + (a.hit >= 0 ? "+" : "") + a.hit : ""}</button>`).join("") : '<span class="muted">Sem ataques cadastrados: use Outras opções para um ataque manual.</span>'}<button type="button" class="small subtle" data-vez-avancado aria-expanded="${sel.avancado ? "true" : "false"}">Outras opções</button></div>`;
     const bloq = window.__ini.incapaz ? window.__ini.incapaz(atk) : "";
     if (bloq) { const bt = $("#vez-topo").querySelector?.(".acoes-vez-botoes"); if (bt) bt.innerHTML = `<p class="muted aviso-incapaz" role="status">${esc(atk.name)} está ${esc(bloq)} e não pode atacar. Escolha outro atacante acima, se houver reação ou exceção.</p>`; $("#vez-avancado").hidden = true; return; }
     $("#vez-avancado").hidden = !sel.avancado;
@@ -178,7 +183,7 @@
     if (manual) extra = `<div class="row"><label>Bônus de ataque<input id="atk-bonus" class="num" type="number" step="1" value="${num(sel.bonus, 0)}"></label>${auto() ? `<label>Dano (ex.: 1d8+3)<input id="atk-dano" maxlength="40" value="${esc(sel.dano || "1d6")}"></label>` : `<input id="atk-dano" type="hidden" value="${esc(sel.dano || "1d6")}">`}</div>`;
     if (magia) {
       const an = fonte.an, circ = sel.circulo && sel.circulo >= Number(fonte.m.l) ? sel.circulo : (Number(fonte.m.l) || null), circulos = circulosDe(fonte);
-      const sugestao = danoSugerido(fonte.m, an, { circulo: circ, nivelTotal: fonte.st.nivelTotal }), valor = sel.danoMagia != null && sel.danoMagiaDe === fonte.m.en + "|" + circ ? sel.danoMagia : sugestao;
+      const sugestao = fonte.criatura ? danoTextoDe(fonte.dmg) : danoSugerido(fonte.m, an, { circulo: circ, nivelTotal: fonte.st.nivelTotal }), valor = sel.danoMagia != null && sel.danoMagiaDe === fonte.m.en + "|" + circ ? sel.danoMagia : sugestao;
       const regra = an.tipo === "ataque" ? `Ataque de magia <b>${fonte.st.ataque >= 0 ? "+" : ""}${fonte.st.ataque}</b>` : an.tipo === "salvaguarda" ? `CD <b>${fonte.st.cd}</b> (salvaguarda de ${NOME_ATR[an.atributoSalva]})${an.metadeNaSalva ? ", metade do dano se passar" : ""}` : "Sem jogada de ataque nem salvaguarda: só o dano sugerido";
       extra = `<div class="row">${circulos.length ? `<label>Espaço de magia<select id="atk-circulo">${circulos.map((c) => `<option value="${c}" ${c === circ ? "selected" : ""}>${c}º círculo</option>`).join("")}</select></label>` : ""}<label>Dano (sugerido pelo texto, edite se precisar)<input id="atk-dano-magia" maxlength="40" value="${esc(valor)}"></label>${an.tipo === "salvaguarda" ? `<label>Bônus de salvaguarda do alvo${salvaDo(lista().find((c) => c.id === sel.alvo), an.atributoSalva) !== null && !sel.salvaManual ? " (automático)" : ""}<input id="atk-salva-bonus" class="num" type="number" step="1" value="${sel.salvaManual ? num(sel.salvaBonus, 0) : num(salvaDo(lista().find((c) => c.id === sel.alvo), an.atributoSalva), 0)}"></label>` : ""}</div><p class="muted">${regra}. ${an.tipoDano ? "Dano " + esc(an.tipoDano) + ". " : ""}${treinoTravado() ? "" : emTreino() ? "Modo treino: nenhum espaço é gasto." : Number(fonte.m.l) ? "Conjurar gasta um espaço de magia da ficha." : ""}</p>`;
     }
@@ -213,9 +218,9 @@
       let atq = null, dano = null, salva = null, linhas = [], partes = a.dmg, critico = !!(opts.acertos && opts.acertos[0] && opts.acertos[0].critico), metadeFinal = metade; const acertosAqui = [];   // acertosAqui: acertos desta rolagem (para pedir o dano depois, no modo manual)
       const man = opts.manual || null, rngK = (k) => (man && man.d20 && man.d20[k] ? rngDe(man.d20[k]) : aleatorioPadrao);
       if (a.tipo === "magia") {
-        const sel = estado(), circulo = opts.rapido ? (Number(a.m.l) || null) : (Number($("#atk-circulo")?.value) || Number(a.m.l) || null), expr = opts.rapido ? danoSugerido(a.m, a.an, { circulo, nivelTotal: a.st.nivelTotal }) : ($("#atk-dano-magia")?.value || "");
+        const sel = estado(), circulo = opts.rapido ? (Number(a.m.l) || null) : (Number($("#atk-circulo")?.value) || Number(a.m.l) || null), expr = a.criatura ? (opts.rapido ? danoTextoDe(a.dmg) : ($("#atk-dano-magia")?.value || danoTextoDe(a.dmg))) : opts.rapido ? danoSugerido(a.m, a.an, { circulo, nivelTotal: a.st.nivelTotal }) : ($("#atk-dano-magia")?.value || "");
         if (!opts.rapido) { sel.circulo = circulo; sel.danoMagia = expr; sel.danoMagiaDe = a.m.en + "|" + circulo; if (sel.salvaManual) sel.salvaBonus = num($("#atk-salva-bonus")?.value, 0); }
-        partes = expr.trim() ? parseExpressao(expr) : null;
+        partes = a.criatura && (opts.rapido || expr === danoTextoDe(a.dmg)) ? (a.dmg.length ? a.dmg : null) : expr.trim() ? parseExpressao(expr) : null;   // criatura: mantém os tipos de dano da ficha
         if (parte !== "dano") {
           if (expr.trim() && !partes) { res.innerHTML = '<span class="err">Dano inválido. Use algo como 8d6.</span>'; return; }
           const g = await gastarEspacoSeNecessario(atacante, a, circulo);
@@ -223,13 +228,13 @@
           if (g.msg) linhas.push(`<p class="muted">${esc(g.msg)}</p>`);
         }
         if (opts.acertos) linhas.push(`<p><b>Dano de ${esc(atacante.name)} (${esc(a.nome)}):</b></p>`);
-        if (parte !== "dano" && a.an.tipo === "ataque") { atq = rolarAtaque({ bonus: a.st.ataque, modo, ca: num(alvo.ac), rng: rngK(0) }); critico = atq.resultado === "critico"; if (atq.acertou) acertosAqui.push({ critico }); linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}:</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`); }
+        if (parte !== "dano" && a.an.tipo === "ataque") { atq = rolarAtaque({ bonus: a.st.ataque, modo, ca: num(alvo.ac), rng: rngK(0) }); critico = atq.resultado === "critico"; if (atq.acertou) acertosAqui.push({ critico }); linhas.push(`<p><b>${esc(atacante.name)} ${a.criatura ? "usa" : "conjura"} ${esc(a.nome)}:</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`); }
         else if (parte !== "dano" && a.an.tipo === "salvaguarda") {
           if (man && Number.isFinite(man.salva)) salva = { dados: [man.salva], nat: man.salva, bonus: 0, total: man.salva, cd: a.st.cd, modo: "normal", passou: man.salva >= a.st.cd };
           else { const autoSalva = salvaDo(alvo, a.an.atributoSalva); salva = rolarSalvaguarda({ bonus: estado().salvaManual ? num(estado().salvaBonus, 0) : (autoSalva ?? 0), cd: a.st.cd, modo: "normal" }); }
-          linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}</b> (CD ${a.st.cd}, ${esc(NOME_ATR[a.an.atributoSalva])}). Salvaguarda de ${esc(alvo.name)}: ${esc(textoD20(salva))} → <b>${salva.passou ? "passou" : "falhou"}</b></p>`);
+          linhas.push(`<p><b>${esc(atacante.name)} ${a.criatura ? "usa" : "conjura"} ${esc(a.nome)}</b> (CD ${a.st.cd}, ${esc(NOME_ATR[a.an.atributoSalva])}). Salvaguarda de ${esc(alvo.name)}: ${esc(textoD20(salva))} → <b>${salva.passou ? "passou" : "falhou"}</b></p>`);
           if (salva.passou) metadeFinal = a.an.metadeNaSalva ? true : "nada";
-        } else if (parte !== "dano") linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}.</b></p>`);
+        } else if (parte !== "dano") linhas.push(`<p><b>${esc(atacante.name)} ${a.criatura ? "usa" : "conjura"} ${esc(a.nome)}.</b></p>`);
         const acertou = parte === "dano" || !atq || atq.acertou;
         if (partes && partes.length && acertou && metadeFinal !== "nada") { dano = man && Number.isFinite(man.dano && man.dano[0]) ? danoManual(man.dano[0], critico) : rolarDano(partes, { critico, metade: metadeFinal === true, defesas: defesasDo(alvo) }); linhas.push(`<p><b>Dano:</b> ${dano.total}${dano.metade ? " (de " + dano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(dano))}${a.an.tipoDano ? " " + esc(a.an.tipoDano) : ""}</span></p>`); }
         else if (partes && partes.length && !acertou) linhas.push('<p class="muted">Errou: sem dano.</p>');
