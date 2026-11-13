@@ -196,3 +196,6 @@ body.rolagem-manual [data-reroll][disabled], body.rolagem-manual [data-ci-rolar]
 .recursos-combate { margin:6px 0; font-size:13px; } .recursos-combate summary { cursor:pointer; }
 .rec-linha { display:flex; flex-wrap:wrap; gap:6px 14px; margin:6px 0; } .rec-item { display:inline-flex; align-items:center; gap:6px; }
 @media (max-width:760px), (pointer:coarse) { .tipo-dano, .morte-linha .num, .rec-item .small { min-height:44px; } }
+/* cartão com linhas extras (selo de gravação, fúria, concentração, recursos, salvaguarda contra a morte): essas linhas e os botões de ação ocupam a largura toda, sem cair numa coluna estreita */
+.combatant:not(.editing) > .sync-linha, .combatant:not(.editing) > .conc-linha, .combatant:not(.editing) > .recursos-combate, .combatant:not(.editing) > .morte-linha, .combatant:not(.editing) > .derrotado-linha { grid-column:1 / -1; }
+.combatant:not(.editing):has(> .sync-linha, > .conc-linha, > .recursos-combate, > .morte-linha, > .derrotado-linha) > .row-actions { grid-column:1 / -1; justify-content:flex-end; }
