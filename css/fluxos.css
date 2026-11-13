@@ -255,3 +255,19 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
 .combatant.defeated { opacity:1; }
 .combatant.defeated > .id-bloco, .combatant.defeated > .stats-linha, .combatant.defeated > .hp-block, .combatant.defeated > .initiative { opacity:.6; }
 @media (max-width:699px) { .combatant:not(.editing) { grid-template-columns:44px minmax(0,1fr) 52px; } .combatant:not(.editing) > .stats-linha { grid-column:3; grid-row:1; } .combatant:not(.editing) > .hp-block, .combatant:not(.editing) > .row-actions { grid-column:1 / -1; } }
+/* ---- ajuste tela larga: barra e controles de PV lado a lado; linha de morte horizontal e alinhada à esquerda ---- */
+@media (min-width:700px) {
+  .morte-linha.morte-ativa { flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:flex-start; gap:8px 18px; }
+  .morte-ativa .morte-estado, .morte-ativa .morte-reg, .morte-ativa .morte-acoes { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
+  .morte-reg label { flex-direction:row; align-items:center; gap:8px; }
+  .morte-reg .num { width:78px; }
+  .morte-linha { justify-content:flex-start; }
+}
+@media (min-width:1400px) {
+  .combatant:not(.editing) { grid-template-columns:48px minmax(170px,1fr) 56px minmax(470px,2fr) auto; }
+  .combatant:not(.editing) > .hp-block { flex-wrap:nowrap; align-items:center; }
+  .combatant:not(.editing) > .hp-block .hp-barra { flex:1 1 140px; min-width:120px; }
+}
+.combatant:not(.editing) > .row-actions .small { white-space:nowrap; }
+@media (min-width:700px) { .combatant:not(.editing) { grid-template-columns:48px minmax(130px,1fr) 56px max-content; } }
+@media (min-width:1400px) { .combatant:not(.editing) { grid-template-columns:48px minmax(170px,1fr) 56px minmax(430px,2fr) max-content; } }
