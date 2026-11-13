@@ -422,3 +422,50 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
   .combatant:not(.editing) [data-ficha] { grid-column:8 / span 6; grid-row:4; }
   .combatant:not(.editing) > .row-actions [data-atacar] { grid-column:14 / span 7; grid-row:4; }
 }
+
+/* ================= celular: estados Morto, Derrotado, Inconsciente (teste de morte) e Estável ================= */
+@media (max-width:700px) {
+  /* MORTO (monstro, NPC ou personagem): linha 1 de identificação e linha 2 com chip, Reviver e Ficha; sem controles de dano nem barra */
+  .combatant.estado-morto:not(.editing) { opacity:1; }
+  .combatant.estado-morto:not(.editing) .hp-barra, .combatant.estado-morto:not(.editing) [data-damage], .combatant.estado-morto:not(.editing) input[data-amount], .combatant.estado-morto:not(.editing) [data-heal], .combatant.estado-morto:not(.editing) [data-fxopen], .combatant.estado-morto:not(.editing) [data-atacar] { display:none; }
+  .combatant.estado-morto:not(.editing) > .morte-linha { grid-column:1 / span 17; grid-row:2; margin:0; flex-wrap:nowrap; gap:8px; }
+  .combatant.estado-morto:not(.editing) [data-ficha] { grid-column:18 / span 3; grid-row:2; }
+  .combatant.estado-morto:not(.editing) > .id-bloco .nome-texto { color:var(--muted); }
+  .combatant.estado-morto:not(.editing) > .morte-linha .estado-chip { white-space:nowrap; }
+  .combatant.estado-morto:not(.editing) > .morte-linha button { min-height:44px; white-space:nowrap; }
+  /* DERROTADO (monstro ou NPC a 0 PV, ainda não morto) */
+  .combatant:not(.editing):has(> .morte-linha.derrotado) > .morte-linha { grid-column:1 / span 17; grid-row:2; margin:0; flex-wrap:nowrap; gap:8px; }
+  .combatant:not(.editing):has(> .morte-linha.derrotado) > .morte-linha .muted { display:none; }
+  .combatant:not(.editing):has(> .morte-linha.derrotado) > .morte-linha .estado-chip { white-space:nowrap; }
+  .combatant:not(.editing):has(> .morte-linha.derrotado) > .morte-linha button { min-height:44px; white-space:nowrap; }
+  .combatant:not(.editing):has(> .morte-linha.derrotado) .hp-barra, .combatant:not(.editing):has(> .morte-linha.derrotado) [data-damage], .combatant:not(.editing):has(> .morte-linha.derrotado) [data-fxopen], .combatant:not(.editing):has(> .morte-linha.derrotado) [data-atacar] { display:none; }
+  .combatant:not(.editing):has(> .morte-linha.derrotado) [data-ficha] { grid-column:18 / span 3; grid-row:2; }
+  .combatant:not(.editing):has(> .morte-linha.derrotado) input[data-amount] { grid-column:1 / span 6; grid-row:3; }
+  .combatant:not(.editing):has(> .morte-linha.derrotado) [data-heal] { grid-column:7 / span 8; grid-row:3; }
+  /* INCONSCIENTE (personagem fazendo teste de morte) e ESTÁVEL: blocos baixos, sem espaços vazios */
+  .combatant:not(.editing) > .morte-linha { margin:0; font-size:12px; gap:6px 8px; }
+  .combatant:not(.editing) > .morte-ativa { gap:6px; padding:6px 0 0; border-top:1px dashed var(--line); }
+  .morte-ativa .morte-estado { gap:6px 8px; justify-content:flex-start; }
+  .morte-ativa .trilha-rot { font-size:11px; }
+  .morte-ativa .pip { width:16px; height:16px; }
+  .morte-ativa .morte-reg { gap:6px; flex-wrap:nowrap; align-items:center; }
+  .morte-ativa .morte-reg label { flex-direction:column; align-items:flex-start; font-size:11px; gap:2px; }
+  .morte-ativa .morte-reg .num { width:70px; height:44px; min-height:44px; }
+  .morte-ativa .morte-reg .small, .morte-ativa .morte-acoes .small { min-height:44px; padding:0 10px; white-space:nowrap; }
+  .morte-ativa .morte-acoes { gap:6px; flex-wrap:wrap; }
+  .morte-ativa .morte-manual summary { min-height:44px; display:flex; align-items:center; }
+  .combatant:not(.editing) > .estavel-linha { flex-wrap:wrap; gap:6px; }
+  .combatant:not(.editing) > .estavel-linha .muted { display:none; }
+  .combatant:not(.editing) > .estavel-linha button { min-height:44px; }
+}
+
+@media (max-width:700px) {
+  .conc-chip .chip-longo { display:none; }
+  .combatant:not(.editing) > .conc-linha { margin:0; gap:6px 8px; min-height:0; }
+  .combatant:not(.editing) > .conc-linha .small { min-height:44px; }
+  .morte-ativa .trilha-rot { display:none; }
+  .morte-ativa .morte-estado { flex-wrap:nowrap; }
+  .morte-ativa .morte-reg label { font-size:0; gap:0; }
+  .morte-ativa .morte-reg .num { margin:0; }
+}
+@media (max-width:700px) { .morte-ativa .morte-reg .num { font-size:14px; } .morte-ativa .morte-reg .num::placeholder { font-size:12px; } }

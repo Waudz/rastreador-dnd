@@ -92,8 +92,8 @@
       /* salvaguardas contra a morte (personagem a 0 PV): 3 sucessos estabilizam, 3 falhas matam; cura a partir de 0 PV zera tudo */
       function moreTpl(c) {
         const m = c.morte || { s: 0, f: 0 }, pips = (n, cls, rot) => `<span class="trilha ${cls}" role="img" aria-label="${n} de 3 ${rot}">${[0, 1, 2].map((k) => `<i class="pip${k < n ? " cheio" : ""}"></i>`).join("")}</span>`;
-        if (c.morto) return `<div class="morte-linha"><span class="estado-chip morto">Morto</span><button class="small" type="button" data-morto="${c.id}|0">Reviver (1 PV)</button></div>`;
-        if (c.estavel) return `<div class="morte-linha"><span class="estado-chip estavel">Estável</span><span class="muted">inconsciente, a 0 PV, sem salvaguardas</span><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
+        if (c.morto) return `<div class="morte-linha vivo-morto"><span class="estado-chip morto">Morto · 0 PV</span><button class="small" type="button" data-morto="${c.id}|0">Reviver (1 PV)</button></div>`;
+        if (c.estavel) return `<div class="morte-linha estavel-linha"><span class="estado-chip estavel">Estável</span><span class="muted">inconsciente, a 0 PV, sem salvaguardas</span><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
         return `<div class="morte-linha morte-ativa"><div class="morte-estado"><span class="estado-chip inconsciente">Inconsciente</span><span class="trilha-rot">Sucessos</span>${pips(m.s, "ok", "sucessos")}<span class="trilha-rot">Falhas</span>${pips(m.f, "ko", "falhas")}</div>
           <div class="morte-reg"><label class="inline">Resultado do d20<input type="number" min="1" max="20" step="1" class="num" data-morte-d20="${c.id}" placeholder="1 a 20" aria-label="Resultado natural do d20 da salvaguarda contra a morte de ${escapeText(c.name)}"></label><button class="small primary" type="button" data-morte-reg="${c.id}" title="10 a 19 sucesso; 2 a 9 falha; 1 duas falhas; 20 volta a 1 PV">Registrar</button>${rolagemAuto() ? `<button class="small" type="button" data-morte-rolar="${c.id}" aria-label="Rolar o d20 da salvaguarda contra a morte">${ico("d20")}Rolar</button>` : ""}</div>
           <div class="morte-acoes"><button class="small" type="button" data-estab="${c.id}" title="Estabilizar (Medicina CD 10 ou Poupar os Moribundos)">Estabilizar</button><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button>
@@ -101,7 +101,7 @@
       }
       /* monstro ou NPC a 0 PV: inconsciente/derrotado até ser marcado morto (o turno pula os dois; só o morto não recebe cura) */
       function derrotadoTpl(c) {
-        return c.morto ? `<div class="morte-linha"><span class="estado-chip morto">Morto</span><button class="small" type="button" data-morto="${c.id}|0">Reviver (1 PV)</button></div>` : `<div class="morte-linha"><span class="estado-chip inconsciente">Inconsciente</span><span class="muted">derrotado, fora do turno</span><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
+        return c.morto ? `<div class="morte-linha vivo-morto"><span class="estado-chip morto">Morto · 0 PV</span><button class="small" type="button" data-morto="${c.id}|0">Reviver (1 PV)</button></div>` : `<div class="morte-linha derrotado"><span class="estado-chip inconsciente">Derrotado</span><span class="muted">0 PV, fora do turno</span><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
       }
       /* recursos de classe e espaços de magia (ficha vinculada): o consumo é contado no combate e só vai para a ficha se o combatente grava */
       function recursosTpl(c) {
@@ -542,7 +542,7 @@
                 <button class="small subtle btn-mais" type="button" data-mais="${c.id}" aria-expanded="${abertos.has(c.id) ? "true" : "false"}" aria-label="Mais opções de ${escapeText(c.name)}" title="Mais opções deste combatente">${ico("chevdown")}<span class="rot">Mais opções</span></button>
               </div>
               ${danoAtivo(c) ? `<div class="conc-linha"><span class="conc-chip dano-chip" title="Vale só para o próximo dano e depois é limpo">Próximo dano: ${escapeText(danoAtivo(c))}</span><button class="small subtle" type="button" data-dano-limpar="${c.id}">Limpar</button></div>` : ""}
-              ${c.furia ? `<div class="conc-linha"><span class="conc-chip">Em fúria: resistência a contundente, perfurante e cortante</span></div>` : ""}
+              ${c.furia ? `<div class="conc-linha"><span class="conc-chip" title="Em fúria: resistência a contundente, perfurante e cortante">Em fúria<span class="chip-longo">: resistência a contundente, perfurante e cortante</span></span></div>` : ""}
               ${c.conc ? `<div class="conc-linha"><span class="conc-chip">Concentrando: ${escapeText(c.conc)}</span><button class="small subtle" type="button" data-conc-fim="${c.id}">Encerrar</button></div>` : ""}
               ${(Number(c.hp) <= 0 || c.morto) ? (c.kind === "Personagem" ? moreTpl(c) : derrotadoTpl(c)) : ""}
               ${abertos.has(c.id) ? maisTpl(c, isActive) : ""}
