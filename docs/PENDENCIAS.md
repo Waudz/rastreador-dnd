@@ -1,5 +1,7 @@
 # Pendências e próxima tarefa
 
+
+**ESTADO MAIS RECENTE (13/11/2026): tudo publicado em `origin/main` (commit 458fc0e, cache `rastreador-v177`), suíte com 510 testes passando. As seções abaixo sobre v131/v141 são antigas. PRÓXIMAS TAREFAS, em ordem:** (1) testar a aba Itens e o inventário no celular e ajustar; (2) descrições textuais dos itens (o SRD local não as tem; exige o William autorizar baixar o texto do SRD 5.1 e a tradução); (3) SQL do Supabase para Transferir item e notas secretas (propostas na seção abaixo; só o William roda); (4) gerar `private.catalogo_itens_mestre` com o catálogo completo para automatizar raridade, sintonia e efeitos; (5) adicionar item a um personagem direto da aba Itens; (6) sincronizar itens personalizados entre aparelhos; (7) migrar a criação de personagem para `dados/itens-srd2014.json`. Detalhes de cada item em "Aba Itens e catalogo" e "Pendencias do catalogo" abaixo.
 Atualizado em 12/11/2026 (fim de sessão, para continuar em outro computador só com o GitHub). Decisões permanentes: `docs/DECISOES.md`. Histórico antigo: `docs/HISTORICO.md` (não ler por rotina).
 
 ## RETOMAR DAQUI (estado real, tudo publicado em `origin/main`, cache `rastreador-v131` publicado; v141 local)
