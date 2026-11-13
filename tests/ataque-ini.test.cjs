@@ -32,7 +32,7 @@ test('dano: soma dados e modificador; crítico dobra os dados mas não o modific
 });
 test('integração: aplicar dano usa as mesmas estatísticas do botão Dano; criaturas e fichas alimentam o painel; o painel existe na página e no cache',()=>{
   const ini=ler('js/iniciativa.js'),app=ler('js/app.js'),ci=ler('js/campanha-ini.js'),html=ler('iniciativa.html'),sw=ler('sw.js');
-  assert.match(ini,/function aplicarDano\(id, amount, quemId, opcoes = \{\}\)/);assert.match(ini,/if \(button\.dataset\.damage\) aplicarDano\(id, amount, undefined, \{ critico: crit, tipo \}\);/);assert.match(ini,/aplicarDano, curar, darTemp, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo,/);assert.match(ini,/atual: \(\) => currentId/);
+  assert.match(ini,/function aplicarDano\(id, amount, quemId, opcoes = \{\}\)/);assert.match(ini,/if \(button\.dataset\.damage\) aplicarDano\(id, amount, undefined, \{ critico: crit, tipo \}\);/);assert.match(ini,/aplicarDano, curar, darTemp, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo,/);assert.match(ini,/atual: \(\) => currentId/);
   assert.match(app,/window\.__ini\.acoesDe = \(key\)/);assert.match(ci,/window\.__ini\.ataquesDe = \(pid\)/);
   assert.ok(!/id="painel-ataque"/.test(html),"o painel separado foi removido");assert.match(html,/js\/ataque-ini\.js/);assert.match(sw,/"js\/ataque-ini\.js"/);assert.ok(!/painel-ataque/.test(ci),'campanha-ini não depende do painel antigo');
 });
@@ -212,4 +212,10 @@ test('ataques contra alvos diferentes: cada resultado fica na tela com o própri
   t.clique({aplicar:n2});t.clique({aplicar:n2});assert.equal(t.aplicados.length,1);assert.equal(t.aplicados[0][0],'c');
   t.clique({aplicar:n1});assert.equal(t.aplicados.length,2);assert.equal(t.aplicados[1][0],'b');t.clique({aplicar:n1});assert.equal(t.aplicados.length,2);
   t.setVez('b');assert.equal(t.res(),'','mudou o turno: os resultados antigos somem');
+});
+test('combatente inconsciente, estável ou morto não ataca na faixa; outro combatente ataca fora do turno; o bloqueio some ao curar',async()=>{
+  const t=ambiente();const bloq=c=>(c.hp<=0?'inconsciente':'');t.ini.incapaz=bloq;
+  t.lista[0].hp=0;t.setVez('a');t.clique({vez:'0'});await t.espera();assert.match(t.res(),/Goblin está inconsciente e não pode atacar/);assert.equal(t.aplicados.length,0);
+  t.w.ev['ini:atacar']({detail:{id:'b'}});t.clique({vez:'0'});await t.espera();assert.doesNotMatch(t.res(),/não pode atacar/,'o herói ataca fora do turno do Goblin');
+  t.lista[0].hp=3;t.setVez('a');t.clique({vez:'0'});await t.espera();assert.doesNotMatch(t.res(),/não pode atacar/,'curado volta a poder atacar');
 });

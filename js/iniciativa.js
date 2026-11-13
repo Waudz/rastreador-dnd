@@ -59,6 +59,15 @@
         }
       }
 
+      /* quem não pode atacar nem agir (2014): a 0 PV (inconsciente/derrotado), estável, morto ou com condição que incapacita. Devolve o motivo ou "" */
+      const CONDICOES_INCAPACITANTES = ["unconscious", "paralyzed", "stunned"];
+      function incapaz(c) {
+        if (!c) return "";
+        if (c.morto) return "morto";
+        if (Number(c.hp) <= 0) return c.estavel ? "estável, inconsciente" : "inconsciente";
+        const e = (c.effects || []).find((x) => CONDICOES_INCAPACITANTES.includes(x.type));
+        return e ? e.name.toLowerCase() + " (incapacitado)" : "";
+      }
       const pendente = c => c.initiative == null || c.initiative === "" || !Number.isFinite(Number(c.initiative));
       function sorted() {
         return [...combatants].sort((a, b) =>
@@ -74,14 +83,17 @@
 
       /* salvaguardas contra a morte (personagem a 0 PV): 3 sucessos estabilizam, 3 falhas matam; cura a partir de 0 PV zera tudo */
       function moreTpl(c) {
-        const m = c.morte || { s: 0, f: 0 }, bol = (n) => "●".repeat(n) + "○".repeat(3 - n);
-        if (c.morto) return `<div class="morte-linha"><b>Morto</b><button class="small" type="button" data-morto="${c.id}|0">Reviver (1 PV)</button></div>`;
-        if (c.estavel) return `<div class="morte-linha"><b>Estabilizado</b> (inconsciente, a 0 PV)<button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
-        return `<div class="morte-linha"><span>Contra a morte: sucessos ${bol(m.s)} falhas ${bol(m.f)}</span><button class="small" type="button" data-morte="${c.id}|s">Sucesso</button><label class="inline">d20<input type="number" min="1" max="20" step="1" class="num" data-morte-d20="${c.id}" aria-label="Resultado do d20 da salvaguarda contra a morte de ${escapeText(c.name)}"></label><button class="small primary" type="button" data-morte-reg="${c.id}" title="10 a 19 sucesso; 2 a 9 falha; 1 duas falhas; 20 volta a 1 PV">Registrar d20</button>${rolagemAuto() ? `<button class="small" type="button" data-morte-rolar="${c.id}" aria-label="Rolar o d20 da salvaguarda contra a morte">${ico("d20")}Rolar</button>` : ""}<button class="small" type="button" data-morte="${c.id}|s">Sucesso</button><button class="small danger" type="button" data-morte="${c.id}|f">Falha</button><button class="small danger" type="button" data-morte="${c.id}|f2" title="Natural 1: duas falhas">Nat. 1</button><button class="small" type="button" data-morte="${c.id}|n20" title="Natural 20: volta a 1 PV">Nat. 20</button><button class="small" type="button" data-estab="${c.id}" title="Estabilizar (Medicina CD 10 ou Poupar os Moribundos)">Estabilizar</button><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
+        const m = c.morte || { s: 0, f: 0 }, pips = (n, cls, rot) => `<span class="trilha ${cls}" role="img" aria-label="${n} de 3 ${rot}">${[0, 1, 2].map((k) => `<i class="pip${k < n ? " cheio" : ""}"></i>`).join("")}</span>`;
+        if (c.morto) return `<div class="morte-linha"><span class="estado-chip morto">Morto</span><button class="small" type="button" data-morto="${c.id}|0">Reviver (1 PV)</button></div>`;
+        if (c.estavel) return `<div class="morte-linha"><span class="estado-chip estavel">Estável</span><span class="muted">inconsciente, a 0 PV, sem salvaguardas</span><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
+        return `<div class="morte-linha morte-ativa"><div class="morte-estado"><span class="estado-chip inconsciente">Inconsciente</span><span class="trilha-rot">Sucessos</span>${pips(m.s, "ok", "sucessos")}<span class="trilha-rot">Falhas</span>${pips(m.f, "ko", "falhas")}</div>
+          <div class="morte-reg"><label class="inline">Resultado do d20<input type="number" min="1" max="20" step="1" class="num" data-morte-d20="${c.id}" placeholder="1 a 20" aria-label="Resultado natural do d20 da salvaguarda contra a morte de ${escapeText(c.name)}"></label><button class="small primary" type="button" data-morte-reg="${c.id}" title="10 a 19 sucesso; 2 a 9 falha; 1 duas falhas; 20 volta a 1 PV">Registrar</button>${rolagemAuto() ? `<button class="small" type="button" data-morte-rolar="${c.id}" aria-label="Rolar o d20 da salvaguarda contra a morte">${ico("d20")}Rolar</button>` : ""}</div>
+          <div class="morte-acoes"><button class="small" type="button" data-estab="${c.id}" title="Estabilizar (Medicina CD 10 ou Poupar os Moribundos)">Estabilizar</button><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button>
+            <details class="morte-manual"><summary>Registrar sem d20</summary><span class="morte-manual-botoes"><button class="small" type="button" data-morte="${c.id}|s">Sucesso</button><button class="small danger" type="button" data-morte="${c.id}|f">Falha</button><button class="small danger" type="button" data-morte="${c.id}|f2" title="Natural 1: duas falhas">Nat. 1</button><button class="small" type="button" data-morte="${c.id}|n20" title="Natural 20: volta a 1 PV">Nat. 20</button></span></details></div></div>`;
       }
       /* monstro ou NPC a 0 PV: inconsciente/derrotado até ser marcado morto (o turno pula os dois; só o morto não recebe cura) */
       function derrotadoTpl(c) {
-        return c.morto ? `<div class="morte-linha"><b>Morto</b><button class="small" type="button" data-morto="${c.id}|0">Reviver (1 PV)</button></div>` : `<div class="morte-linha"><b>Inconsciente/derrotado</b><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
+        return c.morto ? `<div class="morte-linha"><span class="estado-chip morto">Morto</span><button class="small" type="button" data-morto="${c.id}|0">Reviver (1 PV)</button></div>` : `<div class="morte-linha"><span class="estado-chip inconsciente">Inconsciente</span><span class="muted">derrotado, fora do turno</span><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
       }
       /* recursos de classe e espaços de magia (ficha vinculada): o consumo é contado no combate e só vai para a ficha se o combatente grava */
       function recursosTpl(c) {
@@ -308,6 +320,7 @@
       /* salvaguarda contra a morte registrada à mão (dado físico): sucesso, falha, natural 1 (2 falhas) ou natural 20 (volta a 1 PV) */
       function salvaMorte(id, tipo) {
         const p = combatants.find((c) => c.id === id); if (!p || p.morto || Number(p.hp) > 0) return false;
+        if (p.estavel) { aviso(`${p.name} está estável e não faz salvaguarda contra a morte (só volta a fazer se sofrer dano).`); return false; }
         guardarDesfazer(`${p.name} contra a morte`, [p.id]);
         p.morte = p.morte || { s: 0, f: 0 }; p.estavel = false;
         if (tipo === "n20") { p.hp = 1; p.morte = null; aviso(`${p.name}: 20 natural, volta a 1 PV.`); sincronizarMorte(p); render(); return true; }
@@ -418,7 +431,7 @@
           const pct = Math.max(0, Math.min(100, (Number(c.hp) / Number(c.maxHp)) * 100));
           const hpClass = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
           return `
-            <article class="combatant ${isActive ? "active" : ""} ${currentId && posicao === 1 ? "proximo" : ""} ${isDefeated ? "defeated" : ""}" aria-current="${isActive?'step':'false'}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
+            <article class="combatant ${isActive ? "active" : ""} ${currentId && posicao === 1 ? "proximo" : ""} ${isDefeated ? "defeated" : ""} ${c.morto ? "estado-morto" : c.estavel ? "estado-estavel" : Number(c.hp) <= 0 ? "estado-inconsciente" : ""}" aria-current="${isActive?'step':'false'}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
               <input class="initiative iniciativa-valor" type="number" step="1" data-iniciativa="${c.id}" value="${pendente(c) ? "" : Number(c.initiative)}" placeholder=" " aria-label="Iniciativa de ${escapeText(c.name)}" title="Iniciativa pendente: informe o resultado da rolagem, já com o modificador">
               <div class="id-bloco">
                 <span class="avfx">${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 40, c.foto) : ""}</span>
@@ -437,13 +450,15 @@
                 <div class="hp-top"><span>Pontos de vida</span><strong>${Number(c.hp)} / ${Number(c.maxHp)}${Number(c.temp) > 0 ? ` <span class="pv-temp">+${Number(c.temp)} temp.</span>` : ""}</strong></div>
                 <div class="hp-track"><div class="hp-fill ${hpClass}" style="width:${pct}%"></div></div>
                 <div class="hp-controls">
-                  <input type="number" min="1" step="1" inputmode="numeric" value="${escapeText(quantidades[c.id] ?? "")}" placeholder="PV" aria-label="Quantidade de PV para alterar" data-amount="${c.id}">
-                  <button class="small danger" type="button" data-damage="${c.id}">${ico("minus")}Dano</button>
-                  <button class="small" type="button" data-heal="${c.id}">${ico("plus")}Cura</button>
-                  <select class="tipo-dano" data-tipo="${c.id}" aria-label="Tipo de dano (opcional; aplica resistências e imunidades)" title="Tipo de dano (opcional)"><option value="">Tipo?</option>${TIPOS_DANO.map((t) => `<option value="${t[1]}">${t[0]}</option>`).join("")}</select>
-                  <button class="small" type="button" data-temp="${c.id}" title="PV temporários (não se acumulam)">Temp.</button>
-                  <label class="inline crit-rotulo" title="Dano de acerto crítico: a 0 PV vale 2 falhas na salvaguarda contra a morte"><input type="checkbox" data-crit="${c.id}" style="width:auto;height:auto"> Crítico</label>
-                  <button class="small primary" type="button" data-atacar="${c.id}">${ico("swords")}Atacar</button>
+                  <label class="pv-qtd"><span>Quantidade</span><input type="number" min="1" step="1" inputmode="numeric" value="${escapeText(quantidades[c.id] ?? "")}" placeholder="ex.: 8" aria-label="Quantidade de PV a tirar ou devolver" data-amount="${c.id}"></label>
+                  <button class="small danger" type="button" data-damage="${c.id}" title="Tira a quantidade digitada dos PV">${ico("minus")}Dano</button>
+                  <button class="small" type="button" data-heal="${c.id}" title="Devolve a quantidade digitada aos PV">${ico("plus")}Cura</button>
+                  <label class="pv-tipo"><span>Tipo de dano (opcional)</span><select class="tipo-dano" data-tipo="${c.id}" aria-label="Tipo de dano (opcional). Afeta só o Dano, não a Cura" title="Afeta só o Dano (resistências, imunidades, vulnerabilidades); a Cura ignora"><option value="">Sem tipo</option>${TIPOS_DANO.map((t) => `<option value="${t[1]}">${t[0]}</option>`).join("")}</select></label>
+                  <span class="pv-extra">
+                    <label class="inline crit-rotulo" title="Só no Dano: acerto crítico (a 0 PV vale 2 falhas na salvaguarda contra a morte)"><input type="checkbox" data-crit="${c.id}" style="width:auto;height:auto"> Crítico</label>
+                    <button class="small subtle" type="button" data-temp="${c.id}" title="Soma a quantidade digitada como PV temporários (não se acumulam, vale o maior)">PV temp.</button>
+                  </span>
+                  <button class="small primary" type="button" data-atacar="${c.id}" ${incapaz(c) ? `disabled title="${escapeText(c.name)} está ${escapeText(incapaz(c))} e não pode atacar"` : `title="Abre os ataques de ${escapeText(c.name)}"`}>${ico("swords")}Atacar</button>
                   <button class="small" type="button" data-reroll="${c.id}" ${rolagemAuto() ? "" : "disabled"} title="${rolagemAuto() ? "Rolar a iniciativa de novo (d20 + modificador)" : "Rolagem automática desligada: digite a iniciativa no campo"}" aria-label="Rolar a iniciativa de ${escapeText(c.name)} de novo">${ico("d20")}</button>
                 </div>
               </div>
@@ -533,7 +548,8 @@
           return;
         }
 
-        if (button.dataset.atacar) { window.dispatchEvent?.(new CustomEvent("ini:atacar", { detail: { id: button.dataset.atacar } })); return; }
+        if (button.dataset.atacar) { const q = combatants.find((c) => c.id === button.dataset.atacar), m = incapaz(q); if (m) { aviso(`${q.name} está ${m} e não pode atacar.`); return; }
+           window.dispatchEvent?.(new CustomEvent("ini:atacar", { detail: { id: button.dataset.atacar } })); return; }
 
         if (button.dataset.damage || button.dataset.heal || button.dataset.temp) {
           const id = button.dataset.damage || button.dataset.heal || button.dataset.temp;
@@ -713,7 +729,7 @@
         rolagemAuto,
         list: () => combatants,
         atual: () => currentId,
-        aplicarDano, curar, darTemp, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
+        aplicarDano, curar, darTemp, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
         trocarContexto,
         contexto: () => contexto,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }

@@ -206,3 +206,27 @@ body.rolagem-manual [data-reroll][disabled], body.rolagem-manual [data-ci-rolar]
   .combatant:not(.editing) > .row-actions { grid-column:6 / -1 !important; grid-row:1; align-self:start; }   /* botões na linha da identidade, à direita */
   .combatant:not(.editing) > .hp-block { grid-column:1 / -1; grid-row:2; }                                  /* controles de PV numa linha só, na largura toda */
 }
+
+/* controles de PV: quantidade identificada, Dano/Cura diretos, tipo de dano rotulado, crítico e PV temporário discretos */
+.hp-controls { align-items:flex-end; }
+.pv-qtd, .pv-tipo { display:flex; flex-direction:column; gap:2px; margin:0; font-size:11px; color:var(--muted, inherit); }
+.pv-qtd input { width:72px; }
+.pv-tipo select { min-height:36px; max-width:150px; }
+.pv-extra { display:inline-flex; align-items:center; gap:6px; align-self:flex-end; }
+.hp-controls .tipo-dano { max-width:150px; }
+@media (max-width:760px), (pointer:coarse) { .pv-tipo select { min-height:44px; } .hp-controls .pv-qtd input { min-height:44px; } }
+/* estados e salvaguarda contra a morte */
+.combatant.estado-inconsciente { border-color:#6c7bd6; } .combatant.estado-estavel { border-color:#5fa97a; } .combatant.estado-morto { border-color:#c0564d; opacity:.85; }
+.estado-chip { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid currentColor; }
+.estado-chip.inconsciente { color:#9aa8ff; } .estado-chip.estavel { color:#6fd19a; } .estado-chip.morto { color:#ff7d72; }
+.morte-ativa { display:flex; flex-direction:column; gap:8px; }
+.morte-estado { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
+.trilha-rot { font-size:12px; color:var(--muted, inherit); } .trilha { display:inline-flex; gap:5px; }
+.pip { width:18px; height:18px; border-radius:50%; border:2px solid currentColor; display:inline-block; }
+.trilha.ok { color:#6fd19a; } .trilha.ko { color:#ff7d72; } .trilha .pip.cheio { background:currentColor; }
+.morte-reg { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; } .morte-reg label { display:flex; flex-direction:column; gap:2px; font-size:12px; margin:0; } .morte-reg .num { width:84px; }
+.morte-acoes { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.morte-manual summary { cursor:pointer; font-size:12px; color:var(--muted, inherit); } .morte-manual-botoes { display:inline-flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.aviso-incapaz { margin:6px 0; }
+button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
+@media (max-width:760px), (pointer:coarse) { .morte-reg .small, .morte-acoes .small, .morte-manual-botoes .small { min-height:44px; } .morte-reg .num { min-height:44px; } .pip { width:22px; height:22px; } }

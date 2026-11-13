@@ -111,3 +111,21 @@ test('recursos e espaços no combate: gasto contado uma vez, limitado ao total, 
   assert.equal((await I.usarEspaco(b.id,1)).ok,true);assert.equal((await I.usarEspaco(b.id,1)).ok,true);assert.equal((await I.usarEspaco(b.id,1)).ok,false,'só 2 espaços');assert.equal(esp.length,2);
   I.desfazerUltimo();assert.equal(b.slots[1],1,'desfazer devolve o espaço');
 });
+test('incapaz de agir: 0 PV, estável, morto ou condição que incapacita; botão Atacar do cartão desabilitado e interface de PV/morte reorganizada',()=>{
+  const I=novo([['H',10,10,'Personagem'],['M',9,5]]),[h,m]=I.list();h.maxHp=10;
+  assert.equal(I.incapaz(h),'');I.aplicarDano(h.id,10);assert.equal(I.incapaz(h),'inconsciente');
+  h.estavel=true;assert.match(I.incapaz(h),/estável/);h.estavel=false;h.morto=true;assert.equal(I.incapaz(m),'');assert.equal(I.incapaz(h),'morto');h.morto=false;
+  I.curar(h.id,5);assert.equal(I.incapaz(h),'');h.effects=[{id:'x',type:'paralyzed',name:'Paralisado'}];assert.match(I.incapaz(h),/paralisado/);h.effects=[];
+  I.aplicarDano(h.id,5);const html=I.__doc.el('combatants').innerHTML;
+  assert.match(html,/<button class="small primary" type="button" data-atacar="[^"]+" disabled/,'0 PV: Atacar desabilitado');
+  assert.match(html,/Tipo de dano \(opcional\)/);assert.match(html,/Quantidade/);assert.match(html,/estado-chip inconsciente/);assert.match(html,/data-morte-reg/);assert.match(html,/Registrar sem d20/);
+  assert.equal((html.match(/data-morte="[^"]+\|s"/g)||[]).length,1,'um único botão manual de Sucesso (dentro das opções secundárias)');assert.match(html,/data-estab/);assert.match(html,/Marcar morto/);
+});
+test('fluxo completo: cai a 0 PV, dois sucessos, dano (falha), estabiliza, dano desestabiliza, cura devolve a consciência e zera contadores',()=>{
+  const I=novo([['H',10,10,'Personagem']]),[h]=I.list();h.maxHp=10;const mo=()=>JSON.parse(JSON.stringify(h.morte));
+  I.aplicarDano(h.id,10);assert.equal(h.hp,0);I.salvaMorteD20(h.id,15);I.salvaMorteD20(h.id,11);assert.deepEqual(mo(),{s:2,f:0});
+  I.aplicarDano(h.id,3);assert.deepEqual(mo(),{s:2,f:1},'dano a 0 PV = uma falha, sucessos mantidos');
+  I.estabilizar(h.id);assert.equal(h.estavel,true);assert.equal(I.salvaMorteD20(h.id,5),false,'estável não faz salvaguarda');
+  I.aplicarDano(h.id,2);assert.equal(h.estavel,false,'dano desestabiliza');assert.equal(h.morte.f,1);
+  I.curar(h.id,4);assert.equal(h.hp,4);assert.ok(!h.morte||(h.morte.s===0&&h.morte.f===0),'cura zera os contadores');assert.equal(I.incapaz(h),'');
+});
