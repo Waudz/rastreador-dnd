@@ -41,3 +41,9 @@ test('equipamento inicial: armas mostram dano e tipo entre parênteses (e duas m
  assert.match(h,/\(1d8 cortante; duas mãos 1d10\)/,'Espada longa é versátil: 1d8 e 1d10 com as duas mãos');
  assert.match(h,/\(\d+d\d+ (cortante|perfurante|contundente)/);
 });
+test('marcar uma opção redesenha a etapa mas preserva o texto do filtro e o foco da opção marcada',()=>{
+  const j=ler('js/criador.js');
+  assert.match(j,/function filtrarEscolhas\(campo\)/);assert.match(j,/if\(e\.target\.hasAttribute\('data-busca-escolhas'\)\)filtrarEscolhas\(e\.target\);/);
+  assert.match(j,/filtros=campos\.map\(c=>c\.value\)/);assert.match(j,/if\(filtros\[n\]\)\{c\.value=filtros\[n\];filtrarEscolhas\(c\);\}/,'o filtro digitado volta e é reaplicado depois do redesenho');
+  assert.match(j,/alvo\.focus\(\{preventScroll:true\}\)/,'o foco volta para a opção marcada');
+});
