@@ -360,3 +360,11 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .inv-det-dados{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;margin:8px 0}.inv-det-dados>div{border-top:1px solid var(--line,#3a3548);padding-top:4px}.inv-det-dados dt{font-size:.74rem;font-weight:800;color:var(--muted)}.inv-det-dados dd{margin:0;overflow-wrap:anywhere}
 .inv-det-acoes{margin-top:10px;justify-content:flex-end}
 @media(max-width:520px){.inv-det-img{width:88px;height:88px}.inv-qtd-ctl button{min-width:40px;min-height:40px}.inv-qtd-ctl input{min-height:40px}.inv-mais>summary{min-width:40px;min-height:40px}}
+
+/* Adicionar item: botão compacto no título; painel abre só com a opção escolhida */
+.inv-cab{gap:8px}.inv-cab .inv-tit{flex:1 1 auto}
+#inv-add-abrir{min-height:36px}
+.inv-add{margin:0 0 12px}.inv-add-cab{display:flex;align-items:center;justify-content:space-between;gap:8px}.inv-add-cab .inv-tit{margin:0}
+.inv-add-tipos{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.inv-add-tipos button{min-height:40px}.inv-add-tipos button[aria-pressed=true]{background:var(--gold-dark,#9f7940);color:#fff;border-color:var(--gold,#c9a76a)}
+.inv-add-linha[hidden]{display:none}
+@media(max-width:520px){.inv-cab .inv-tit{flex-basis:100%}.inv-add-tipos button{flex:1 1 calc(50% - 6px)}}

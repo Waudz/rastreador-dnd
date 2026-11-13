@@ -337,7 +337,10 @@
   /* exibição do inventário: lista (padrão) ou grade de cartões; a escolha fica neste aparelho */
   const invAbertos = new Set();
   let vistaInv = "lista"; try { vistaInv = localStorage.getItem("dnd5e_inv_vista") === "grade" ? "grade" : "lista"; } catch (_) { /* sem armazenamento: lista */ }
-  const cabecalhoInv = () => `<div class="inv-cab"><h3 class="sub inv-tit">Itens que você carrega</h3><div class="inv-vista" role="group" aria-label="Modo de exibição do inventário">${[["lista", "Lista"], ["grade", "Grade"]].map(([k, n]) => `<button type="button" class="small${vistaInv === k ? " ativo" : ""}" data-inv-vista="${k}" aria-pressed="${vistaInv === k}">${n}</button>`).join("")}</div></div>`;
+  const cabecalhoInv = () => `<div class="inv-cab"><h3 class="sub inv-tit">Itens que você carrega</h3><button type="button" class="small primary" id="inv-add-abrir" aria-expanded="false" aria-controls="inv-add">+ Adicionar item</button><div class="inv-vista" role="group" aria-label="Modo de exibição do inventário">${[["lista", "Lista"], ["grade", "Grade"]].map(([k, n]) => `<button type="button" class="small${vistaInv === k ? " ativo" : ""}" data-inv-vista="${k}" aria-pressed="${vistaInv === k}">${n}</button>`).join("")}</div></div>`;
+  function fecharAdd() { const p = document.getElementById("inv-add"); if (!p) return; p.hidden = true; p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = true; }); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", "false")); p.querySelectorAll("select").forEach((x) => { x.selectedIndex = 0; }); const n = document.getElementById("pg-nota"); if (n) n.value = ""; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "false"); b.textContent = "+ Adicionar item"; } }
+  function abrirAdd() { const p = document.getElementById("inv-add"); if (!p) return; p.hidden = false; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "true"); b.textContent = "Fechar"; } p.querySelector("[data-inv-add-tipo]")?.focus(); }
+  function escolherAdd(tipo) { const p = document.getElementById("inv-add"); if (!p) return; p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.invAddTipo === tipo))); p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = x.dataset.addLinha !== tipo; }); const f = p.querySelector('[data-add-linha="' + tipo + '"] select, [data-add-linha="' + tipo + '"] button'); if (f) f.focus(); }
   function atualizarCartao(card, it) {
     if (!card || !it) return; const n = card.querySelector(".inv-nome-txt"), q = card.querySelector(".inv-qtd-badge"), p = card.querySelector(".inv-peso-txt");
     if (n) n.textContent = (it.nome || "").trim() || "Item sem nome"; if (q) q.textContent = "×" + num(it.qtd, 1); if (p) p.textContent = kg(num(it.peso, 0)) + " kg cada";
@@ -617,7 +620,7 @@
     const en = $("#pg-mag").value; if (!en || !magiasCat) return;
     const m = magiasCat.find((x) => x.en === en); if (!m) return;
     IV.adicionar(cont(), IV.criarPergaminho(m, { origem: { tipo: souMestre ? "mestre" : "jogo", nota: $("#pg-nota").value.trim().slice(0, 80) } }), { nota: $("#pg-nota").value.trim().slice(0, 80) });
-    $("#pg-nota").value = ""; salvarInv(); redesenharInv();
+    $("#pg-nota").value = ""; salvarInv(); redesenharInv(); fecharAdd();
   }
   /* ---------- grimório: copiar magia (Mago) ---------- */
   async function carregarCat() { if (!magiasCat) magiasCat = await fetch("dados/magias.json").then((r) => r.json()); return magiasCat; }
@@ -715,15 +718,15 @@
         ${wizard() ? '<div class="sub">Grimório</div><button type="button" class="small" id="cp-abrir">Copiar magia para o grimório</button><div id="copia-box" class="panel" hidden></div>' : ""}
         ${souMestre ? '<div class="sub">Mestre</div><button type="button" class="small" id="ms-abrir">Conceder magia ao personagem</button><div id="mestre-box" class="panel" hidden></div>' : ""}</div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia. Magias de raça, talento ou item aparecem aqui quando o personagem as tiver.</span></div>`}
       </section><section id="secao-inventario" role="tabpanel" aria-labelledby="aba-inventario" data-ficha-secao="inventario" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
-        ${cabecalhoInv()}<div id="inv" class="${vistaInv === "grade" ? "inv-grade" : ""}">${INV().map(linhaInv).join("")}</div>
+        ${cabecalhoInv()}<div class="inv-add panel" id="inv-add" hidden><div class="inv-add-cab"><h3 class="sub inv-tit">Adicionar ao inventário</h3><button type="button" class="small subtle" id="inv-add-fechar">Cancelar</button></div>
+          <div class="inv-add-tipos" role="group" aria-label="Tipo de item a adicionar"><button type="button" class="small" data-inv-add-tipo="pre" aria-pressed="false">Equipamento comum</button><button type="button" class="small" data-inv-add-tipo="cat" aria-pressed="false">Poção ou item mágico</button><button type="button" class="small" data-inv-add-tipo="perg" aria-pressed="false">Pergaminho de magia</button><button type="button" class="small" data-inv-add-tipo="livre" aria-pressed="false">Outro item</button></div>
+          <div class="inv-add-linha" data-add-linha="pre" hidden><label for="eq-pre">Equipamento comum</label><div class="row"><select id="eq-pre" style="flex:1 1 180px">${opt("", "Escolher equipamento…", true)}${presets().map((p, i) => opt(i, `${p[0]} (${p[1]} kg)`)).join("")}</select><button type="button" class="small" id="add-pre">Adicionar</button></div></div>
+          <div class="inv-add-linha" data-add-linha="cat" hidden><label for="it-cat">Poção ou item mágico</label><div class="row"><select id="it-cat" style="flex:1 1 200px">${opt("", "Escolher poção ou item mágico…", true)}${Object.entries(IE.CATALOGO).map(([k, m]) => opt(k, m.nome, false)).join("")}</select><button type="button" class="small" id="it-cat-add">Adicionar</button></div></div>
+          <div class="inv-add-linha" data-add-linha="perg" hidden><label for="pg-mag">Pergaminho de magia</label><div class="row"><select id="pg-mag" style="flex:1 1 200px" aria-label="Magia do pergaminho">${opt("", "Escolher a magia…", true)}</select><input id="pg-nota" style="flex:1 1 140px" maxlength="80" placeholder="Onde foi encontrado (opcional)"><button type="button" class="small" id="pg-add">Adicionar pergaminho</button></div></div>
+          <div class="inv-add-linha" data-add-linha="livre" hidden><label>Outro item (personalizado)</label><div class="row"><button type="button" class="small" id="add-item">Adicionar item em branco</button><span class="muted">Cria uma linha vazia na lista acima para você preencher nome, quantidade e peso.</span></div></div>
+        </div><div id="inv" class="${vistaInv === "grade" ? "inv-grade" : ""}">${INV().map(linhaInv).join("")}</div>
         <div id="bloco-carga">${blocoCarga()}</div>
         <div id="uso-box" class="panel" hidden></div><div id="ef-box" class="panel" hidden></div>
-        <div class="inv-add panel"><h3 class="sub inv-tit">Adicionar ao inventário</h3>
-          <div class="inv-add-linha"><label for="eq-pre">Equipamento comum</label><div class="row"><select id="eq-pre" style="flex:1 1 180px">${opt("", "Escolher equipamento…", true)}${presets().map((p, i) => opt(i, `${p[0]} (${p[1]} kg)`)).join("")}</select><button type="button" class="small" id="add-pre">Adicionar</button></div></div>
-          <div class="inv-add-linha"><label for="it-cat">Poção ou item mágico</label><div class="row"><select id="it-cat" style="flex:1 1 200px">${opt("", "Escolher poção ou item mágico…", true)}${Object.entries(IE.CATALOGO).map(([k, m]) => opt(k, m.nome, false)).join("")}</select><button type="button" class="small" id="it-cat-add">Adicionar</button></div></div>
-          <div class="inv-add-linha"><label for="pg-mag">Pergaminho de magia</label><div class="row"><select id="pg-mag" style="flex:1 1 200px" aria-label="Magia do pergaminho">${opt("", "Escolher a magia…", true)}</select><input id="pg-nota" style="flex:1 1 140px" maxlength="80" placeholder="Onde foi encontrado (opcional)"><button type="button" class="small" id="pg-add">Adicionar pergaminho</button></div></div>
-          <div class="inv-add-linha"><label>Outro item</label><div class="row"><button type="button" class="small" id="add-item">Adicionar item em branco</button><span class="muted">Cria uma linha vazia na lista acima para você preencher nome, quantidade e peso.</span></div></div>
-        </div>
 <h3 class="sub inv-tit">Dinheiro</h3>
         <div class="moedas">${MOEDAS.map(([k, r]) => `<div class="moeda-controle"><label>${r}</label><input class="num" type="number" min="0" step="1" data-din="${k}" value="${moeda(DIN()[k])}"><div class="inline"><button type="button" data-moeda="${k}" data-sinal="-1" aria-label="Diminuir ${r}">−</button><input class="num" type="number" min="1" step="1" id="ajuste-${k}" placeholder="1" aria-label="Quantidade de ${r}"><button type="button" data-moeda="${k}" data-sinal="1" aria-label="Somar ${r}">+</button></div></div>`).join("")}<div><label>Total em PO</label><div style="height:39px;display:flex;align-items:center;font-weight:800;color:var(--gold)" id="total-po">${totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div></div>
         <details class="historico-inv"><summary>Histórico de movimentações</summary><div id="inv-hist">${histInv()}</div></details>
@@ -930,9 +933,12 @@
     if (c("#ms-abrir")) { abrirMestre(); return; }
     if (c("#ms-fechar")) { $("#mestre-box").hidden = true; return; }
     if (c("#ms-ok")) { concederMagia(); return; }
-    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0 })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector("input").focus(); agendar({ inventario: P.inventario }); return; }
-    if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; IV.adicionar(cont(), IV.novoItem({ nome: p[0], qtd: 1, peso: p[1], origem: { tipo: "jogo" } })); redesenharInv(); salvarInv(); return; }
+    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0 })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector("input").focus(); agendar({ inventario: P.inventario }); fecharAdd(); return; }
+    if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; IV.adicionar(cont(), IV.novoItem({ nome: p[0], qtd: 1, peso: p[1], origem: { tipo: "jogo" } })); redesenharInv(); salvarInv(); fecharAdd(); return; }
     if ((b = c("[data-rm-item]"))) { const it = itemPor(+b.dataset.rmItem); if (!it) return; if (num(it.qtd, 0) >= 1) IV.retirar(cont(), it.uid, null, { tipo: "descarte" }); else INV().splice(+b.dataset.rmItem, 1); salvarInv(); redesenharInv(); return; }
+    if (c("#inv-add-abrir")) { const p = $("#inv-add"); if (p && !p.hidden) fecharAdd(); else abrirAdd(); return; }
+    if (c("#inv-add-fechar")) { fecharAdd(); return; }
+    if ((b = c("[data-inv-add-tipo]"))) { escolherAdd(b.dataset.invAddTipo); return; }
     if ((b = c("[data-inv-qtd-mais]"))) { ajustarQtd(+b.dataset.invQtdMais, 1); return; }
     if ((b = c("[data-inv-qtd-menos]"))) { ajustarQtd(+b.dataset.invQtdMenos, -1); return; }
     if ((b = c("[data-inv-detalhes]"))) { abrirDetalhes(+b.dataset.invDetalhes); return; }
@@ -947,7 +953,7 @@
     if (c("#uso-cancel")) { uso = null; $("#uso-box").hidden = true; return; }
     if ((b = c("[data-uso-rolar]"))) { const k = +b.dataset.usoRolar, it = INV().find((x) => x.uid === uso.uid), p = it && IE.plano(it).find((x) => x.i === k); if (!p) return; const r = IE.rolar(p.dados, window.crypto && crypto.getRandomValues ? () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296 : Math.random); uso.rolagens[k] = r.total; uso.textoRolagem[k] = "rolou " + r.rolls.join(" + ") + (r.bonus ? (r.bonus > 0 ? " + " : " - ") + Math.abs(r.bonus) : "") + " = " + r.total; renderUso(); return; }
     if ((b = c("[data-enc-efeito]"))) { try { IE.encerrarEfeito(P, b.dataset.encEfeito); } catch (e) { aviso(e.message, true); return; } agendar({ ficha: P.ficha }); refrescar(); return; }
-    if (c("#it-cat-add")) { const k = $("#it-cat").value; if (!k) return; IV.adicionar(cont(), IE.itemDoCatalogo(k, { tipo: souMestre ? "mestre" : "jogo" })); salvarInv(); redesenharInv(); return; }
+    if (c("#it-cat-add")) { const k = $("#it-cat").value; if (!k) return; IV.adicionar(cont(), IE.itemDoCatalogo(k, { tipo: souMestre ? "mestre" : "jogo" })); salvarInv(); redesenharInv(); fecharAdd(); return; }
     if (c("#pg-add")) { adicionarPergaminho(); return; }
     if ((b = c("[data-inv-editar]"))) { abrirEditor(+b.dataset.invEditar); return; }
     if (c("#ef-add")) { addEfeito(); return; }
