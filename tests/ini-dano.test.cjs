@@ -111,16 +111,6 @@ test('recursos e espaços no combate: gasto contado uma vez, limitado ao total, 
   assert.equal((await I.usarEspaco(b.id,1)).ok,true);assert.equal((await I.usarEspaco(b.id,1)).ok,true);assert.equal((await I.usarEspaco(b.id,1)).ok,false,'só 2 espaços');assert.equal(esp.length,2);
   I.desfazerUltimo();assert.equal(b.slots[1],1,'desfazer devolve o espaço');
 });
-test('incapaz de agir: 0 PV, estável, morto ou condição que incapacita; botão Atacar do cartão desabilitado e interface de PV/morte reorganizada',()=>{
-  const I=novo([['H',10,10,'Personagem'],['M',9,5]]),[h,m]=I.list();h.maxHp=10;
-  assert.equal(I.incapaz(h),'');I.aplicarDano(h.id,10);assert.equal(I.incapaz(h),'inconsciente');
-  h.estavel=true;assert.match(I.incapaz(h),/estável/);h.estavel=false;h.morto=true;assert.equal(I.incapaz(m),'');assert.equal(I.incapaz(h),'morto');h.morto=false;
-  I.curar(h.id,5);assert.equal(I.incapaz(h),'');h.effects=[{id:'x',type:'paralyzed',name:'Paralisado'}];assert.match(I.incapaz(h),/paralisado/);h.effects=[];
-  I.aplicarDano(h.id,5);const html=I.__doc.el('combatants').innerHTML;
-  assert.match(html,/<button class="small primary" type="button" data-atacar="[^"]+" disabled/,'0 PV: Atacar desabilitado');
-  assert.match(html,/Tipo de dano \(opcional\)/);assert.match(html,/Quantidade/);assert.match(html,/estado-chip inconsciente/);assert.match(html,/data-morte-reg/);assert.match(html,/Registrar sem d20/);
-  assert.equal((html.match(/data-morte="[^"]+\|s"/g)||[]).length,1,'um único botão manual de Sucesso (dentro das opções secundárias)');assert.match(html,/data-estab/);assert.match(html,/Marcar morto/);
-});
 test('fluxo completo: cai a 0 PV, dois sucessos, dano (falha), estabiliza, dano desestabiliza, cura devolve a consciência e zera contadores',()=>{
   const I=novo([['H',10,10,'Personagem']]),[h]=I.list();h.maxHp=10;const mo=()=>JSON.parse(JSON.stringify(h.morte));
   I.aplicarDano(h.id,10);assert.equal(h.hp,0);I.salvaMorteD20(h.id,15);I.salvaMorteD20(h.id,11);assert.deepEqual(mo(),{s:2,f:0});
@@ -129,14 +119,38 @@ test('fluxo completo: cai a 0 PV, dois sucessos, dano (falha), estabiliza, dano 
   I.aplicarDano(h.id,2);assert.equal(h.estavel,false,'dano desestabiliza');assert.equal(h.morte.f,1);
   I.curar(h.id,4);assert.equal(h.hp,4);assert.ok(!h.morte||(h.morte.s===0&&h.morte.f===0),'cura zera os contadores');assert.equal(I.incapaz(h),'');
 });
-test('quantidade com sinal: -N + Enter = dano, +N + Enter = cura; sem sinal o Enter não aplica nada; botões usam o número digitado',()=>{
-  const I=novo([['A',10,10]]),[a]=I.list(),doc=I.__doc,campo=doc.el('[data-amount="'+a.id+'"]');
-  const L=I.lerQuantidade;assert.deepEqual(JSON.parse(JSON.stringify([L('-5'),L('+8'),L('8'),L(' 12 '),L('abc'),L(''),L('-0'),L('5-')])),[{sinal:'-',n:5},{sinal:'+',n:8},{sinal:'',n:8},{sinal:'',n:12},{sinal:'',n:0},{sinal:'',n:0},{sinal:'-',n:0},{sinal:'',n:0}]);
-  const poe=v=>{campo.value=v;};
-  poe('-4');assert.equal(I.enterQuantidade(a.id,'-4'),true);assert.equal(a.hp,6);
-  poe('+3');assert.equal(I.enterQuantidade(a.id,'+3'),true);assert.equal(a.hp,9);
-  poe('5');assert.equal(I.enterQuantidade(a.id,'5'),false);assert.equal(a.hp,9,'sem sinal não aplica');
-  poe('-0');assert.equal(I.enterQuantidade(a.id,'-0'),false);poe('');assert.equal(I.enterQuantidade(a.id,''),false);assert.equal(a.hp,9);
-  poe('2');assert.equal(I.aplicarPV(a.id,'dano'),true);assert.equal(a.hp,7,'botão Dano usa o número sem sinal');
-  poe('-2');assert.equal(I.aplicarPV(a.id,'cura'),true);assert.equal(a.hp,9,'o botão clicado decide, o sinal é ignorado');
+test('quantidade: padrão 1, só inteiros positivos, o botão decide dano ou cura e a quantidade volta a 1; tipo, crítico e responsável valem só para o próximo dano',()=>{
+  const I=novo([['A',20,10],['B',10,10]]),[a,b]=I.list(),doc=I.__doc,campo=id=>doc.el('[data-amount="'+id+'"]'),L=I.lerQuantidade;
+  assert.deepEqual([L('8'),L(' 12 '),L('-5'),L('+8'),L('0'),L(''),L('abc'),L('1.5')],[8,12,0,0,0,0,0,0].map((v,i)=>i===4?0:v));
+  campo(a.id).value='4';assert.equal(I.aplicarPV(a.id,'dano'),true);assert.equal(a.hp,6);
+  campo(a.id).value='3';assert.equal(I.aplicarPV(a.id,'cura'),true);assert.equal(a.hp,9);
+  campo(a.id).value='0';assert.equal(I.aplicarPV(a.id,'dano'),false);assert.equal(a.hp,9,'zero ou inválido não aplica');
+  campo(a.id).value='-3';assert.equal(I.aplicarPV(a.id,'dano'),false);assert.equal(a.hp,9);
+  const h=doc.el('combatants').innerHTML;assert.match(h,/data-amount="[^"]+"[^>]*value="1"|value="1"[^>]*data-amount/,'a quantidade volta a 1 depois de aplicar');
+});
+test('Dano causado por: padrão é quem está na vez; outro responsável ou sem responsável só para o próximo dano; relatório preservado',()=>{
+  const I=novo([['A',20,20],['B',10,20],['C',5,20]],{vez:'iA'}),[a,b,c]=I.list(),E=()=>JSON.parse(JSON.stringify(I.estatisticas()));
+  I.aplicarDano(c.id,3);assert.equal(E().iA.dealt,3,'padrão: quem está na vez');
+  I.aplicarDano(c.id,2,b.id);assert.equal(E().iB.dealt,2,'outro responsável');
+  I.aplicarDano(c.id,4,'__nenhum');assert.equal(E().iA.dealt,3);assert.equal(E().iB.dealt,2);assert.equal(E().iC.taken,9,'sem responsável: ninguém recebe o crédito, mas o alvo registra o dano sofrido');
+  const d=I.__doc;d.el('[data-amount="'+c.id+'"]').value='1';I.maisOpcoes(c.id,true);
+});
+test('incapaz de agir: 0 PV, estável, morto ou condição que incapacita; Atacar só no cartão da vez e em Mais opções nos demais, desabilitado se incapaz',()=>{
+  const I=novo([['H',10,10,'Personagem'],['M',9,5]],{vez:'iH'}),[h,m]=I.list();h.maxHp=10;
+  assert.equal(I.incapaz(h),'');I.aplicarDano(h.id,10);assert.equal(I.incapaz(h),'inconsciente');
+  h.estavel=true;assert.match(I.incapaz(h),/estável/);h.estavel=false;h.morto=true;assert.equal(I.incapaz(m),'');assert.equal(I.incapaz(h),'morto');h.morto=false;
+  I.curar(h.id,5);assert.equal(I.incapaz(h),'');h.effects=[{id:'x',type:'paralyzed',name:'Paralisado'}];assert.match(I.incapaz(h),/paralisado/);h.effects=[];
+  I.aplicarDano(h.id,5);let html=I.__doc.el('combatants').innerHTML;
+  assert.match(html,/<button class="small primary" type="button" data-atacar="[^"]+" disabled/,'cartão da vez a 0 PV: Atacar visível e desabilitado');
+  assert.equal((html.match(/data-atacar=/g)||[]).length,1,'só o cartão da vez mostra Atacar; o outro fica em Mais opções recolhido');
+  I.maisOpcoes(m.id,true);html=I.__doc.el('combatants').innerHTML;assert.equal((html.match(/data-atacar=/g)||[]).length,2,'em Mais opções o outro combatente também pode atacar (fora do turno)');
+  assert.match(html,/Tipo de dano \(opcional\)/);assert.match(html,/Dano causado por/);assert.match(html,/Sem responsável/);
+  assert.match(html,/estado-chip inconsciente/);assert.match(html,/data-morte-reg/);assert.match(html,/Registrar sem d20/);
+  assert.equal((html.match(/data-morte="[^"]+\|s"/g)||[]).length,1);assert.match(html,/data-estab/);assert.match(html,/Marcar morto/);
+});
+test('cabeçalho sem "Dano causado por"; painel segue o turno desligado por padrão; Expandir tudo e Recolher tudo existem',()=>{
+  const html=ler('iniciativa.html'),js=ler('js/iniciativa.js');
+  assert.ok(!/id="dmg-by"|class="dmgby"/.test(html),'o seletor saiu do cabeçalho');assert.match(html,/id="expandir-tudo"/);assert.match(html,/id="recolher-tudo"/);
+  assert.match(html,/<input type="checkbox" id="seguir-turno">/,'sem atributo checked: desligado por padrão');assert.match(js,/localStorage\.getItem\("ini_seguir_turno"\) === "1"/);
+  assert.match(js,/abertos\.has\(c\.id\) \? maisTpl\(c, isActive\)/,'Mais opções preserva o estado por combatente');
 });

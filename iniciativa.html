@@ -87,7 +87,7 @@
           <div class="turn-label" id="current-turn" role="status" aria-live="polite">Adicione os combatentes para começar.</div>
         </div>
         <div class="turn-actions">
-          <div class="dmgby"><label for="dmg-by">Dano causado por</label><select id="dmg-by"><option value="">Quem está na vez</option></select></div>
+
           <button id="start" class="primary" type="button">Começar combate</button>
           <button id="previous" type="button" disabled><i data-i="left"></i>Anterior</button>
           <button id="next" type="button" disabled title="Próximo turno (atalho: N, fora dos campos de texto)" aria-keyshortcuts="N">Próximo<i data-i="right"></i></button>
@@ -107,6 +107,7 @@
         <div id="vez-avancado" class="vez-avancado" hidden><div id="vez-avancado-corpo"></div></div>
         <div id="vez-res" role="status" aria-live="polite"></div>
       </section>
+      <div class="lista-ferramentas" id="lista-ferramentas"><button type="button" class="small subtle" id="expandir-tudo">Expandir tudo</button><button type="button" class="small subtle" id="recolher-tudo">Recolher tudo</button><label class="inline seguir-turno" title="Ao avançar o turno, abre a ficha de quem está na vez no painel lateral (desligado por padrão)"><input type="checkbox" id="seguir-turno"> Painel segue o turno</label></div>
       <div id="aviso-gravacao" class="aviso-gravacao" role="status" hidden></div>
       <div id="combatants" class="combatants">
         <div class="empty">

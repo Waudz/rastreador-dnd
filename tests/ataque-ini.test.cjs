@@ -32,7 +32,7 @@ test('dano: soma dados e modificador; crítico dobra os dados mas não o modific
 });
 test('integração: aplicar dano usa as mesmas estatísticas do botão Dano; criaturas e fichas alimentam o painel; o painel existe na página e no cache',()=>{
   const ini=ler('js/iniciativa.js'),app=ler('js/app.js'),ci=ler('js/campanha-ini.js'),html=ler('iniciativa.html'),sw=ler('sw.js');
-  assert.match(ini,/function aplicarDano\(id, amount, quemId, opcoes = \{\}\)/);assert.match(ini,/return aplicarDano\(id, q\.n, undefined, \{ critico: crit, tipo \}\)/);assert.match(ini,/aplicarDano, curar, darTemp, aplicarPV, enterQuantidade, lerQuantidade, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo,/);assert.match(ini,/atual: \(\) => currentId/);
+  assert.match(ini,/function aplicarDano\(id, amount, quemId, opcoes = \{\}\)/);assert.match(ini,/return aplicarDano\(id, n, o\.quem \|\| undefined, \{ critico: !!o\.crit, tipo: o\.tipo \|\| undefined \}\)/);assert.match(ini,/aplicarDano, curar, darTemp, aplicarPV, lerQuantidade, maisOpcoes, estatisticas: \(\) => stats, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo,/);assert.match(ini,/atual: \(\) => currentId/);
   assert.match(app,/window\.__ini\.acoesDe = \(key\)/);assert.match(ci,/window\.__ini\.ataquesDe = \(pid\)/);
   assert.ok(!/id="painel-ataque"/.test(html),"o painel separado foi removido");assert.match(html,/js\/ataque-ini\.js/);assert.match(sw,/"js\/ataque-ini\.js"/);assert.ok(!/painel-ataque/.test(ci),'campanha-ini não depende do painel antigo');
 });

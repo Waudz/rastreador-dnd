@@ -200,13 +200,6 @@ body.rolagem-manual [data-reroll][disabled], body.rolagem-manual [data-ci-rolar]
 .combatant:not(.editing) > .sync-linha, .combatant:not(.editing) > .conc-linha, .combatant:not(.editing) > .recursos-combate, .combatant:not(.editing) > .morte-linha, .combatant:not(.editing) > .derrotado-linha { grid-column:1 / -1; }
 .combatant:not(.editing):has(> .sync-linha, > .conc-linha, > .recursos-combate, > .morte-linha, > .derrotado-linha) > .row-actions { grid-column:1 / -1; justify-content:flex-end; }
 .aviso-gravacao { margin:0 0 10px; padding:8px 12px; border:1px solid var(--line); border-radius:10px; font-size:13px; color:var(--muted, inherit); background:rgba(255,255,255,.03); }
-/* tela larga: os botões de ação vão para uma linha própria sob o cartão (não ocupam uma coluna ao lado) e os controles de PV usam o espaço que sobrou */
-.combatant:not(.editing) > .row-actions { grid-column:1 / -1; justify-content:flex-end; }
-@media (min-width:1000px) {
-  .combatant:not(.editing) > .row-actions { grid-column:6 / -1 !important; grid-row:1; align-self:start; }   /* botões na linha da identidade, à direita */
-  .combatant:not(.editing) > .hp-block { grid-column:1 / -1; grid-row:2; }                                  /* controles de PV numa linha só, na largura toda */
-}
-
 /* controles de PV: quantidade identificada, Dano/Cura diretos, tipo de dano rotulado, crítico e PV temporário discretos */
 .hp-controls { align-items:flex-end; }
 .pv-qtd, .pv-tipo { display:flex; flex-direction:column; gap:2px; margin:0; font-size:11px; color:var(--muted, inherit); }
@@ -230,3 +223,35 @@ body.rolagem-manual [data-reroll][disabled], body.rolagem-manual [data-ci-rolar]
 .aviso-incapaz { margin:6px 0; }
 button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
 @media (max-width:760px), (pointer:coarse) { .morte-reg .small, .morte-acoes .small, .morte-manual-botoes .small { min-height:44px; } .morte-reg .num { min-height:44px; } .pip { width:22px; height:22px; } }
+/* ---- cartão compacto: controles principais Dano - quantidade - Cura e Mais opções (um nível) ---- */
+.hp-block { display:flex; flex-wrap:wrap; align-items:flex-end; gap:6px 14px; }
+.hp-barra { flex:1 1 180px; min-width:150px; }
+.pv-ctl { display:flex; flex-wrap:nowrap; align-items:center; gap:6px; margin:0; }
+.pv-ctl input[data-amount] { width:64px; text-align:center; }
+.mais-opcoes { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 10px; padding:8px 10px; border:1px dashed var(--line); border-radius:10px; }
+.mais-opcoes .recursos-combate { flex:1 1 100%; margin:0; }
+.combatant:not(.editing) > .mais-opcoes, .combatant:not(.editing) > .conc-linha { grid-column:1 / -1; }
+.dano-chip { border-color:var(--gold); color:var(--gold); }
+.lista-ferramentas { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px 12px; margin:0 0 8px; }
+.seguir-turno { font-size:12px; margin:0; min-height:36px; display:inline-flex; align-items:center; gap:6px; }
+@media (max-width:760px), (pointer:coarse) { .pv-ctl input[data-amount] { min-height:44px; width:72px; } .pv-ctl .small, .mais-opcoes .small, .row-actions .small, .lista-ferramentas .small, .seguir-turno { min-height:44px; } }
+
+/* ---- grade do cartão: linha 1 = iniciativa, nome, CA e ações; linha 2 = barra de vida e Dano - quantidade - Cura ---- */
+.combatant:not(.editing) .stats-linha .stat:nth-child(n+2) { display:none; }          /* PV e PV máx. já aparecem na barra (20 / 20) */
+@media (min-width:700px) {
+  .combatant:not(.editing) { grid-template-columns:48px minmax(130px,1fr) 56px auto; align-items:center; }
+  .combatant:not(.editing) > .stats-linha { grid-column:3; grid-row:1; display:block; }
+  .combatant:not(.editing) > .row-actions { grid-column:4 !important; grid-row:1; flex-wrap:nowrap; justify-content:flex-end; align-self:center; }
+  .combatant:not(.editing) > .hp-block { grid-column:1 / -1; grid-row:2; }
+}
+@media (min-width:1400px) {                                                          /* tela larga: tudo numa linha só */
+  .combatant:not(.editing) { grid-template-columns:48px minmax(150px,1fr) 56px minmax(380px,1.6fr) auto; }
+  .combatant:not(.editing) > .hp-block { grid-column:4; grid-row:1; }
+  .combatant:not(.editing) > .row-actions { grid-column:5 !important; }
+}
+.seguir-turno input { width:auto; height:auto; min-height:0; margin:0; }
+@media (max-width:699px) { .combatant:not(.editing) .stats-linha { grid-template-columns:minmax(0,1fr) !important; } }
+/* derrotado: só a identidade e a vida ficam esmaecidas; testes de morte e botões continuam com contraste total */
+.combatant.defeated { opacity:1; }
+.combatant.defeated > .id-bloco, .combatant.defeated > .stats-linha, .combatant.defeated > .hp-block, .combatant.defeated > .initiative { opacity:.6; }
+@media (max-width:699px) { .combatant:not(.editing) { grid-template-columns:44px minmax(0,1fr) 52px; } .combatant:not(.editing) > .stats-linha { grid-column:3; grid-row:1; } .combatant:not(.editing) > .hp-block, .combatant:not(.editing) > .row-actions { grid-column:1 / -1; } }

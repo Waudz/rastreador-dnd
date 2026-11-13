@@ -102,7 +102,7 @@
         const rec = (d.recursos || []).filter((r) => r.max != null && r.id !== "furia").map((r) => { const u = usado(r.id, r.usados), resta = Math.max(0, r.max - u); return `<span class="rec-item">${escapeText(r.nome.replace(/ \(.*$/, ""))} <b>${resta}/${r.max}</b> <button class="small subtle" type="button" data-rec="${c.id}|${r.id}" ${resta <= 0 ? "disabled" : ""} aria-label="Usar ${escapeText(r.nome)}">Usar</button></span>`; });
         const esp = (d.slots || []).map((total, i) => { if (!total) return ""; const u = Math.max(Number((d.usadosSlots || [])[i]) || 0, Number((c.slots || {})[i + 1]) || 0), resta = Math.max(0, total - u); return `<span class="rec-item">${i + 1}º <b>${resta}/${total}</b> <button class="small subtle" type="button" data-esp="${c.id}|${i + 1}" ${resta <= 0 ? "disabled" : ""} aria-label="Gastar espaço de ${i + 1}º círculo">−1</button></span>`; }).filter(Boolean);
         if (!rec.length && !esp.length) return "";
-        return `<details class="recursos-combate"><summary>Recursos e espaços${c.sync ? " (grava na ficha)" : " (teste)"}</summary>${rec.length ? `<div class="rec-linha">${rec.join("")}</div>` : ""}${esp.length ? `<div class="rec-linha"><span class="muted">Espaços de magia:</span>${esp.join("")}</div>` : ""}</details>`;
+        return `<div class="recursos-combate"><b>Recursos e espaços${c.sync ? " (grava na ficha)" : " (teste)"}</b>${rec.length ? `<div class="rec-linha">${rec.join("")}</div>` : ""}${esp.length ? `<div class="rec-linha"><span class="muted">Espaços de magia:</span>${esp.join("")}</div>` : ""}</div>`;
       }
       function usarRecurso(id, rid) {
         const p = combatants.find((c) => c.id === id), d = p && window.__ini.recursosDe ? window.__ini.recursosDe(p) : null, r = d && (d.recursos || []).find((x) => x.id === rid); if (!p || !r || r.max == null) return false;
@@ -120,6 +120,35 @@
         if (p.sync && window.__ini.gastarEspaco) { const r = await window.__ini.gastarEspaco(p.pid, circ); if (!r.ok) texto += ` Não gravou na ficha: ${r.msg}`; else texto += " Gravado na ficha."; }
         render(); return { ok: true, msg: texto };
       }
+      /* texto do que está ativo para o próximo dano (tipo, crítico, responsável); vazio = padrão */
+      function danoAtivo(c) {
+        const o = opcoesDano[c.id]; if (!o) return "";
+        const t = o.tipo && (TIPOS_DANO.find((x) => x[1] === o.tipo) || [o.tipo])[0], r = o.quem === "__nenhum" ? "sem responsável" : o.quem && (combatants.find((x) => x.id === o.quem) || {}).name;
+        return [t, o.crit ? "crítico" : "", r ? "por " + r : ""].filter(Boolean).join(" · ");
+      }
+      function atacarBtn(c, vez) {
+        const m = incapaz(c);
+        return `<button class="small ${vez ? "primary" : ""}" type="button" data-atacar="${c.id}" ${m ? `disabled title="${escapeText(c.name)} está ${escapeText(m)} e não pode atacar"` : `title="Abre os ataques de ${escapeText(c.name)}${vez ? "" : " (fora do turno: ataque de oportunidade, reação ou ataque preparado)"}"`}>${ico("swords")}Atacar</button>`;
+      }
+      /* Mais opções (um único nível): o que se usa menos durante o combate */
+      function maisTpl(c, vez) {
+        const o = opcoesDano[c.id] || {}, outros = combatants.filter((x) => x.id !== c.id);
+        return `<div class="mais-opcoes" role="group" aria-label="Mais opções de ${escapeText(c.name)}">
+          <label class="pv-tipo"><span>Tipo de dano (opcional)</span><select data-tipo="${c.id}" aria-label="Tipo de dano do próximo dano. Afeta só o Dano" title="Aplica resistências, imunidades e vulnerabilidades; limpo depois de aplicar"><option value="">Sem tipo</option>${TIPOS_DANO.map((t) => `<option value="${t[1]}" ${o.tipo === t[1] ? "selected" : ""}>${t[0]}</option>`).join("")}</select></label>
+          <label class="pv-tipo"><span>Dano causado por</span><select data-quem="${c.id}" aria-label="Quem causou o próximo dano (para o relatório do combate)" title="Padrão: quem está na vez. Vale só para o próximo dano"><option value="">${currentId ? "Quem está na vez (padrão)" : "Ninguém (combate não iniciado)"}</option><option value="__nenhum" ${o.quem === "__nenhum" ? "selected" : ""}>Sem responsável (ambiente)</option>${outros.map((x) => `<option value="${x.id}" ${o.quem === x.id ? "selected" : ""}>${escapeText(x.name)}</option>`).join("")}</select></label>
+          <label class="inline crit-rotulo" title="Só no Dano: acerto crítico (a 0 PV vale 2 falhas na salvaguarda contra a morte)"><input type="checkbox" data-crit="${c.id}" ${o.crit ? "checked" : ""} style="width:auto;height:auto"> Crítico</label>
+          <button class="small" type="button" data-temp="${c.id}" title="Soma a quantidade como PV temporários (não se acumulam, vale o maior)">PV temp.</button>
+          ${vez ? "" : atacarBtn(c, false)}
+          ${window.__ini && window.__ini.temFuria && window.__ini.temFuria(c) ? `<button class="small" type="button" data-furia="${c.id}" aria-pressed="${c.furia ? "true" : "false"}">${c.furia ? "Encerrar fúria" : "Fúria"}</button>` : ""}
+          <button class="small" type="button" data-conc="${c.id}">Concentração</button>
+          ${c.pid && window.__ini && window.__ini.papel && window.__ini.papel() === "mestre" ? `<button class="small" type="button" data-sync="${c.id}" aria-pressed="${c.sync ? "true" : "false"}">${c.sync ? "Parar de gravar na ficha" : "Gravar na ficha"}</button>` : ""}
+          <button class="small" type="button" data-reroll="${c.id}" ${rolagemAuto() ? "" : "disabled"} title="${rolagemAuto() ? "Rolar a iniciativa de novo (d20 + modificador)" : "Rolagem automática desligada: digite a iniciativa no campo"}">${ico("d20")}Rolar iniciativa de novo</button>
+          <button class="small" type="button" data-edit="${c.id}">Editar</button>
+          <button class="small danger" type="button" data-remove="${c.id}" aria-label="Remover ${escapeText(c.name)}">Remover</button>
+          ${recursosTpl(c)}
+        </div>`;
+      }
+      function maisOpcoes(id, aberto) { if (aberto) abertos.add(id); else abertos.delete(id); render(); }
       function editTpl(c) {
         const f = (k, l, t, v) => `<div><label>${l}</label><input data-f="${k}" type="${t}" value="${escapeText(v)}"></div>`;
         return `<article class="combatant editing">${f("name", "Nome", "text", c.name)}${f("initiative", "Iniciativa", "number", pendente(c) ? "" : Number(c.initiative))}${f("ac", "CA", "number", Number(c.ac))}${f("hp", "PV", "number", Number(c.hp))}${f("maxHp", "PV máx.", "number", Number(c.maxHp))}<div class="row-actions" style="align-self:end"><button class="small primary" type="button" data-save="${c.id}">Salvar</button><button class="small subtle" type="button" data-cancel="1">Cancelar</button></div></article>`;
@@ -217,7 +246,7 @@
       });
       /* PV rápidos: registrar dano/cura sem simular ataque. Cada alteração guarda um estado para "Desfazer" (só o que ela mexeu). */
       const sincronizarMorte = (c) => { if (c && c.sync && c.pid && window.__ini.registrarMorte) window.__ini.registrarMorte(c); };   // só combatentes marcados para gravar
-      const desfazer = [], quantidades = {};   // quantidades: o que foi digitado em cada cartão (o redesenho não apaga)
+      const desfazer = [], quantidades = {}, abertos = new Set(), opcoesDano = {}; let ultimaVez = currentId;   // abertos: cartões com Mais opções abertas (sobrevive ao redesenho e ao avanço do turno); opcoesDano: tipo, responsável e crítico escolhidos (limpos após aplicar)   // quantidades: o que foi digitado em cada cartão (o redesenho não apaga)
       const copiaEstado = (c) => ({ slots: c.slots ? JSON.parse(JSON.stringify(c.slots)) : null, usos: c.usos ? { ...c.usos } : null, furia: !!c.furia, hp: c.hp, temp: c.temp || 0, morte: c.morte ? { ...c.morte } : null, estavel: !!c.estavel, morto: !!c.morto, conc: c.conc || null });
       function guardarDesfazer(rotulo, ids) {
         const estados = {}; for (const id of ids) { const c = combatants.find((x) => x.id === id); if (c) estados[id] = copiaEstado(c); }
@@ -236,6 +265,7 @@
         render(); if (window.FEEDBACK) window.FEEDBACK.mostrar("Desfeito: " + u.rotulo); return true;
       }
       const aviso = (t) => { if (window.FEEDBACK) window.FEEDBACK.mostrar(t); };
+      const avisoPV = (t) => { if (window.FEEDBACK) window.FEEDBACK.mostrar(t, { acao: { rotulo: "Desfazer", fn: () => desfazerUltimo() } }); };   // resultado + Desfazer na hora, sem confirmação prévia
       /* tipo de dano é opcional no cartão (registro rápido continua sem escolher nada); quando informado, aplica resistência, imunidade e vulnerabilidade, inclusive a da Fúria */
       const TIPOS_DANO = [["cortante", "slashing"], ["perfurante", "piercing"], ["contundente", "bludgeoning"], ["fogo", "fire"], ["frio", "cold"], ["ácido", "acid"], ["elétrico", "lightning"], ["trovejante", "thunder"], ["necrótico", "necrotic"], ["psíquico", "psychic"], ["radiante", "radiant"], ["venenoso", "poison"], ["energia", "force"]];
       function defesasDoCombatente(c) {
@@ -280,12 +310,11 @@
         if (alvo.morto) { aviso(`${alvo.name} já está morto. Use Reviver se for preciso corrigir.`); return false; }
         let ajuste = ""; if (opcoes.tipo && !opcoes.jaAjustado) { const a = ajustarPorDefesas(alvo, n, opcoes.tipo); if (a.motivo) { ajuste = `${a.motivo} a ${(TIPOS_DANO.find((t) => t[1] === opcoes.tipo) || [opcoes.tipo])[0]}: ${n} → ${a.valor}. `; n = a.valor; } }
         if (!n) { aviso(`${alvo.name}: ${ajuste || "nenhum dano"}sem dano.`); return false; }
-        const antes = Number(alvo.hp), c = quemId && combatants.find((x) => x.id === quemId), quem = c ? { id: c.id, name: c.name } : attacker();
+        const antes = Number(alvo.hp), c = quemId && combatants.find((x) => x.id === quemId), semResp = quemId === "__nenhum", quem = c ? { id: c.id, name: c.name } : attacker();
         guardarDesfazer(`${alvo.name} −${n} PV`, [alvo.id]);
         const absorvido = Math.min(Number(alvo.temp) || 0, n), resto = n - absorvido; alvo.temp = (Number(alvo.temp) || 0) - absorvido;
         alvo.hp = Math.max(0, antes - resto);
-        const a = statOf(quem.id, quem.name); a.dealt += n;
-        if (antes > 0 && alvo.hp === 0) a.kills++;
+        if (!semResp) { const a = statOf(quem.id, quem.name); a.dealt += n; if (antes > 0 && alvo.hp === 0) a.kills++; }   // "sem responsável" (dano ambiental) não entra nas estatísticas de quem causou
         statOf(alvo.id, alvo.name).taken += n;
         let msg = (ajuste || "") + (absorvido ? `${absorvido} absorvido pelos PV temporários. ` : "");
         if (antes > 0 && alvo.hp === 0) { const sobraQueda = resto - antes; if (!(alvo.kind === "Personagem" && sobraQueda >= Number(alvo.maxHp))) msg += tentarQueda(alvo, resto, opcoes); }   // habilidades que deixam 1 PV (se sobreviver, hp > 0 e o ramo de 0 PV abaixo não roda)
@@ -305,7 +334,7 @@
         }
         else if (alvo.conc && resto > 0 && alvo.hp > 0) msg += `Concentração de ${alvo.name} (${alvo.conc}): salvaguarda de Constituição, CD ${Math.max(10, Math.floor(resto / 2))}. `;
         if (antes <= 0 || alvo.hp <= 0) sincronizarMorte(alvo);
-        render(); if (msg) aviso(msg.trim());
+        render(); avisoPV(`${alvo.name}: −${n} PV (${antes} → ${alvo.hp}). ${msg}`.trim());
         return true;
       }
       function curar(id, amount) {
@@ -315,25 +344,19 @@
         const antes = Number(alvo.hp); alvo.hp = Math.min(Number(alvo.maxHp), antes + n);
         const quem = attacker(); if (alvo.hp > antes) statOf(quem.id, quem.name).healed += alvo.hp - antes;
         if (antes === 0 && alvo.hp > 0) { alvo.morte = null; alvo.estavel = false; sincronizarMorte(alvo); }
-        render(); return true;
+        render(); avisoPV(`${alvo.name}: +${alvo.hp - antes} PV (${antes} → ${alvo.hp}).`); return true;
       }
       /* salvaguarda contra a morte registrada à mão (dado físico): sucesso, falha, natural 1 (2 falhas) ou natural 20 (volta a 1 PV) */
-      /* quantidade digitada ("8", "-8", "+8"): o botão clicado decide a ação; o sinal só vale no atalho do Enter */
-      const lerQuantidade = (txt) => { const m = String(txt == null ? "" : txt).trim().match(/^([+-]?)(\d{1,5})$/); return m ? { sinal: m[1], n: Number(m[2]) } : { sinal: "", n: 0 }; };
-      function aplicarPV(id, acao, sinalEnter) {
+      /* quantidade de PV (inteiro positivo, padrão 1); o botão clicado decide se é dano, cura ou PV temporário */
+      const lerQuantidade = (txt) => { const m = String(txt == null ? "" : txt).trim().match(/^(\d{1,5})$/); return m ? Number(m[1]) : 0; };
+      function aplicarPV(id, acao) {
         const person = combatants.find((c) => c.id === id); if (!person) return false;
-        const amountInput = document.querySelector(`[data-amount="${id}"]`), q = lerQuantidade(amountInput && amountInput.value);
-        if (!(q.n >= 1)) { aviso("Digite a quantidade de PV primeiro."); if (amountInput && amountInput.focus) amountInput.focus(); return false; }   // sem quantidade não altera nada
-        delete quantidades[id];                                          // limpa para o clique duplo não aplicar duas vezes
-        const crit = !!(document.querySelector(`[data-crit="${id}"]`) || {}).checked, tipoSel = document.querySelector(`[data-tipo="${id}"]`), tipo = (tipoSel && tipoSel.value) || undefined;
-        if (tipoSel) tipoSel.value = "";                                   // o tipo vale só para este dano; o registro rápido segue sem escolher nada
-        if (acao === "dano") return aplicarDano(id, q.n, undefined, { critico: crit, tipo }); if (acao === "cura") return curar(id, q.n); return darTemp(id, q.n);
-      }
-      /* Enter no campo de quantidade: só com sinal (-8 dano, +8 cura); sem sinal não aplica nada, os botões continuam valendo */
-      function enterQuantidade(id, texto) {
-        const q = lerQuantidade(texto); if (!q.n) return false;
-        if (!q.sinal) { aviso("Sem sinal, use os botões Dano ou Cura (ou digite -8 para dano e +8 para cura e Enter)."); return false; }
-        return aplicarPV(id, q.sinal === "-" ? "dano" : "cura");
+        const amountInput = document.querySelector(`[data-amount="${id}"]`), n = lerQuantidade(amountInput ? amountInput.value : quantidades[id] ?? 1);
+        if (!(n >= 1)) { aviso("Digite uma quantidade de PV maior que zero."); if (amountInput && amountInput.focus) amountInput.focus(); return false; }
+        delete quantidades[id];                                          // a quantidade volta a 1 depois de cada aplicação (evita repetir por engano)
+        const o = opcoesDano[id] || {}; delete opcoesDano[id];           // tipo, responsável e crítico valem só para este dano
+        if (acao === "dano") return aplicarDano(id, n, o.quem || undefined, { critico: !!o.crit, tipo: o.tipo || undefined });
+        if (acao === "cura") return curar(id, n); return darTemp(id, n);
       }
       function salvaMorte(id, tipo) {
         const p = combatants.find((c) => c.id === id); if (!p || p.morto || Number(p.hp) > 0) return false;
@@ -373,14 +396,8 @@
         return (stats[id] = stats[id] || { name, dealt: 0, taken: 0, healed: 0, kills: 0 });
       }
 
-      function renderDmgBy(ordered) {
-        const sel = $("dmg-by"), cur = sel.value;
-        sel.innerHTML = '<option value="">Quem está na vez</option>' + ordered.map((c) => `<option value="${c.id}">${escapeText(c.name)}</option>`).join("");
-        sel.value = ordered.some((c) => c.id === cur) ? cur : "";
-      }
-
       function attacker() {
-        const id = $("dmg-by").value || currentId;
+        const id = currentId;
         const c = combatants.find((x) => x.id === id);
         return c ? { id: c.id, name: c.name } : { id: "_none", name: "Sem atribuição" };
       }
@@ -403,7 +420,7 @@
             <tr><th>Combatente</th><th>Dano causado</th><th>Dano sofrido</th><th>Cura feita</th><th>Abates</th></tr>
             ${rows.map((r, i) => `<tr class="${i === 0 && r.dealt > 0 ? "top" : ""}"><td>${escapeText(r.name)}</td><td>${r.dealt}</td><td>${r.taken}</td><td>${r.healed}</td><td>${r.kills}</td></tr>`).join("")}
           </table></div>
-          <p class="muted" style="font-size:11px;margin:8px 0 0">O dano é atribuído a quem estava na vez, ou a quem você escolher em “Dano causado por”.</p>`;
+          <p class="muted" style="font-size:11px;margin:8px 0 0">O dano é atribuído a quem estava na vez, ou ao responsável escolhido em “Mais opções” do combatente que recebeu o dano.</p>`;
       }
 
       function buildReport() {
@@ -422,7 +439,6 @@
         const exibicao = posVez > 0 ? [...ordered.slice(posVez), ...ordered.slice(0, posVez)] : ordered;   // lista rotacionada: vez primeiro, quem acabou de jogar por último
         $("round").textContent = round;
         document.querySelector(".round-box").hidden = !currentId;
-        renderDmgBy(ordered);
         renderReport();
 
         const active = combatants.find((c) => c.id === currentId);
@@ -464,38 +480,33 @@
                 <div class="stat">Máx. PV<strong>${Number(c.maxHp)}</strong></div>
               </div>
               <div class="hp-block">
-                <div class="hp-top"><span>Pontos de vida</span><strong>${Number(c.hp)} / ${Number(c.maxHp)}${Number(c.temp) > 0 ? ` <span class="pv-temp">+${Number(c.temp)} temp.</span>` : ""}</strong></div>
-                <div class="hp-track"><div class="hp-fill ${hpClass}" style="width:${pct}%"></div></div>
-                <div class="hp-controls">
-                  <label class="pv-qtd"><span>Quantidade</span><input type="text" inputmode="numeric" autocomplete="off" pattern="[+\-]?[0-9]*" maxlength="5" value="${escapeText(quantidades[c.id] ?? "")}" placeholder="8, -8 ou +8" title="Digite a quantidade e clique em Dano ou Cura. Atalho: -8 + Enter = dano; +8 + Enter = cura" aria-label="Quantidade de PV a tirar ou devolver. Com Enter: menos antes do número é dano, mais é cura" data-amount="${c.id}"></label>
-                  <button class="small danger" type="button" data-damage="${c.id}" title="Tira a quantidade digitada dos PV">${ico("minus")}Dano</button>
-                  <button class="small" type="button" data-heal="${c.id}" title="Devolve a quantidade digitada aos PV">${ico("plus")}Cura</button>
-                  <label class="pv-tipo"><span>Tipo de dano (opcional)</span><select class="tipo-dano" data-tipo="${c.id}" aria-label="Tipo de dano (opcional). Afeta só o Dano, não a Cura" title="Afeta só o Dano (resistências, imunidades, vulnerabilidades); a Cura ignora"><option value="">Sem tipo</option>${TIPOS_DANO.map((t) => `<option value="${t[1]}">${t[0]}</option>`).join("")}</select></label>
-                  <span class="pv-extra">
-                    <label class="inline crit-rotulo" title="Só no Dano: acerto crítico (a 0 PV vale 2 falhas na salvaguarda contra a morte)"><input type="checkbox" data-crit="${c.id}" style="width:auto;height:auto"> Crítico</label>
-                    <button class="small subtle" type="button" data-temp="${c.id}" title="Soma a quantidade digitada como PV temporários (não se acumulam, vale o maior)">PV temp.</button>
-                  </span>
-                  <button class="small primary" type="button" data-atacar="${c.id}" ${incapaz(c) ? `disabled title="${escapeText(c.name)} está ${escapeText(incapaz(c))} e não pode atacar"` : `title="Abre os ataques de ${escapeText(c.name)}"`}>${ico("swords")}Atacar</button>
-                  <button class="small" type="button" data-reroll="${c.id}" ${rolagemAuto() ? "" : "disabled"} title="${rolagemAuto() ? "Rolar a iniciativa de novo (d20 + modificador)" : "Rolagem automática desligada: digite a iniciativa no campo"}" aria-label="Rolar a iniciativa de ${escapeText(c.name)} de novo">${ico("d20")}</button>
+                <div class="hp-barra">
+                  <div class="hp-top"><span>Pontos de vida</span><strong>${Number(c.hp)} / ${Number(c.maxHp)}${Number(c.temp) > 0 ? ` <span class="pv-temp">+${Number(c.temp)} temp.</span>` : ""}</strong></div>
+                  <div class="hp-track"><div class="hp-fill ${hpClass}" style="width:${pct}%"></div></div>
+                </div>
+                <div class="hp-controls pv-ctl">
+                  <button class="small danger" type="button" data-damage="${c.id}" title="Tira a quantidade dos PV${danoAtivo(c) ? " (" + danoAtivo(c) + ")" : ""}">${ico("minus")}Dano</button>
+                  <input type="number" min="1" max="99999" step="1" inputmode="numeric" value="${escapeText(quantidades[c.id] ?? 1)}" aria-label="Quantidade de PV de ${escapeText(c.name)}" title="Quantidade (volta a 1 depois de aplicar)" data-amount="${c.id}">
+                  <button class="small" type="button" data-heal="${c.id}" title="Devolve a quantidade aos PV">${ico("plus")}Cura</button>
                 </div>
               </div>
+              <div class="row-actions">
+                <button class="small subtle" type="button" data-fxopen="${c.id}">${ico("sparkles")}Efeitos</button>
+                <button class="small subtle" type="button" data-ficha="${c.id}" ${c.key || c.pid ? `title="Abre a ficha de ${escapeText(c.name)} no painel lateral"` : `disabled title="Sem ficha vinculada"`}>Ficha</button>
+                ${isActive ? atacarBtn(c, true) : ""}
+                <button class="small subtle" type="button" data-mais="${c.id}" aria-expanded="${abertos.has(c.id) ? "true" : "false"}">Mais opções</button>
+              </div>
+              ${danoAtivo(c) ? `<div class="conc-linha"><span class="conc-chip dano-chip" title="Vale só para o próximo dano e depois é limpo">Próximo dano: ${escapeText(danoAtivo(c))}</span><button class="small subtle" type="button" data-dano-limpar="${c.id}">Limpar</button></div>` : ""}
               ${c.furia ? `<div class="conc-linha"><span class="conc-chip">Em fúria: resistência a contundente, perfurante e cortante</span></div>` : ""}
-              ${recursosTpl(c)}
               ${c.conc ? `<div class="conc-linha"><span class="conc-chip">Concentrando: ${escapeText(c.conc)}</span><button class="small subtle" type="button" data-conc-fim="${c.id}">Encerrar</button></div>` : ""}
               ${(Number(c.hp) <= 0 || c.morto) ? (c.kind === "Personagem" ? moreTpl(c) : derrotadoTpl(c)) : ""}
-              <div class="row-actions">
-                ${window.__ini && window.__ini.temFuria && window.__ini.temFuria(c) ? `<button class="small subtle" type="button" data-furia="${c.id}" aria-pressed="${c.furia ? "true" : "false"}">${c.furia ? "Encerrar fúria" : "Fúria"}</button>` : ""}
-                ${c.pid && window.__ini && window.__ini.papel && window.__ini.papel() === "mestre" ? `<button class="small subtle" type="button" data-sync="${c.id}" aria-pressed="${c.sync ? "true" : "false"}">${c.sync ? "Parar de gravar na ficha" : "Gravar na ficha"}</button>` : ""}
-                <button class="small subtle" type="button" data-conc="${c.id}">Concentração</button>
-                <button class="small subtle" type="button" data-fxopen="${c.id}">${ico("sparkles")}Efeito</button>
-                <button class="small subtle" type="button" data-edit="${c.id}">Editar</button>
-                <button class="small subtle" type="button" data-remove="${c.id}" aria-label="Remover ${escapeText(c.name)}">Remover</button>
-              </div>
+              ${abertos.has(c.id) ? maisTpl(c, isActive) : ""}
               ${fxFor === c.id ? fxFormTpl(c) : ""}
             </article>`;
         }).join("");
 
         save();notificar();
+        seguirTurno();
       }
 
       $("add-form").addEventListener("submit", (event) => {
@@ -568,6 +579,9 @@
         if (button.dataset.atacar) { const q = combatants.find((c) => c.id === button.dataset.atacar), m = incapaz(q); if (m) { aviso(`${q.name} está ${m} e não pode atacar.`); return; }
            window.dispatchEvent?.(new CustomEvent("ini:atacar", { detail: { id: button.dataset.atacar } })); return; }
 
+        if (button.dataset.mais) { maisOpcoes(button.dataset.mais, !abertos.has(button.dataset.mais)); return; }
+        if (button.dataset.ficha) { abrirFichaDe(button.dataset.ficha); return; }
+        if (button.dataset.danoLimpar) { delete opcoesDano[button.dataset.danoLimpar]; render(); return; }
         if (button.dataset.damage || button.dataset.heal || button.dataset.temp) { aplicarPV(button.dataset.damage || button.dataset.heal || button.dataset.temp, button.dataset.damage ? "dano" : button.dataset.heal ? "cura" : "temp"); return; }
 
         if (button.dataset.sync) {                       // escolha explícita de gravar (ou parar de gravar) PV na ficha real
@@ -615,6 +629,13 @@
         }
       });
 
+      /* opções do próximo dano (tipo, responsável, crítico): guardadas por combatente, evidentes no cartão e limpas depois de aplicar */
+      $("combatants").addEventListener("change", (e) => {
+        const t = e.target, d = (t && t.dataset) || {}, id = d.tipo || d.quem || d.crit; if (!id) return;
+        const o = (opcoesDano[id] = opcoesDano[id] || {});
+        if (d.tipo) o.tipo = t.value || undefined; else if (d.quem) o.quem = t.value || undefined; else o.crit = !!t.checked;
+        if (!o.tipo && !o.quem && !o.crit) delete opcoesDano[id]; render();
+      });
       $("combatants").addEventListener("change", (e) => {
         const id = e.target.dataset && e.target.dataset.fxsel;
         if (!id) return;
@@ -636,7 +657,6 @@
         c.initiative=valor===""?null:Number(valor);edicaoIniciativa=null;render(true);
       });
       $("combatants").addEventListener("keydown",e=>{
-        if(e.key==="Enter"&&e.target.dataset&&e.target.dataset.amount&&!e.isComposing){e.preventDefault();enterQuantidade(e.target.dataset.amount,e.target.value);return;}
         const id=e.target.dataset.iniciativa;if(!id)return;
         if(e.key==="Escape"){e.preventDefault();e.stopPropagation?.();const c=combatants.find(c=>c.id===id);e.target.value=c?.initiative==null?"":String(c.initiative);if(edicaoIniciativa)edicaoIniciativa.cancelar=true;e.target.blur();edicaoIniciativa=null;render(true);}
         else if(e.key==="Enter"){e.preventDefault();e.target.blur();}
@@ -661,6 +681,14 @@
       if ($("desfazer")) $("desfazer").addEventListener("click", () => desfazerUltimo());
       document.addEventListener("input", (e) => { const t = e.target; if (t && t.dataset && t.dataset.amount) quantidades[t.dataset.amount] = t.value; });
       $("next").addEventListener("click", () => moveTurn(1));
+      $("expandir-tudo").addEventListener("click", () => { combatants.forEach((c) => abertos.add(c.id)); render(); });
+      $("recolher-tudo").addEventListener("click", () => { abertos.clear(); render(); });
+      /* Ficha: usa o mesmo caminho do clique no cartão, que já abre o painel lateral (criatura do bestiário ou personagem da campanha) */
+      function abrirFichaDe(id) { const b = document.querySelector(`[data-ficha="${id}"]`), art = b && b.closest && b.closest(".combatant"), alvo = art && art.querySelector && art.querySelector(".nome-texto"); if (alvo && alvo.click) alvo.click(); }
+      /* opção: o painel lateral acompanha o turno (desligada por padrão; guardada neste aparelho) */
+      const lerSeguir = () => { try { return localStorage.getItem("ini_seguir_turno") === "1"; } catch (e) { return false; } };
+      { const cx = $("seguir-turno"); if (cx) { cx.checked = lerSeguir(); cx.addEventListener("change", () => { try { localStorage.setItem("ini_seguir_turno", cx.checked ? "1" : "0"); } catch (e) {} }); } }
+      function seguirTurno() { if (currentId === ultimaVez) return; ultimaVez = currentId; if (!currentId || !lerSeguir()) return; if (document.body && document.body.dataset && document.body.dataset.painel === "empilhado") return; abrirFichaDe(currentId); }
       /* atalho N = próximo turno; nunca dentro de campos de texto, listas, editores nem com Ctrl/Alt/Meta, e só quando o botão está habilitado */
       document.addEventListener("keydown", (e) => {
         if ((e.key !== "n" && e.key !== "N") || e.ctrlKey || e.altKey || e.metaKey || e.repeat || e.defaultPrevented) return;
@@ -742,7 +770,7 @@
         rolagemAuto,
         list: () => combatants,
         atual: () => currentId,
-        aplicarDano, curar, darTemp, aplicarPV, enterQuantidade, lerQuantidade, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
+        aplicarDano, curar, darTemp, aplicarPV, lerQuantidade, maisOpcoes, estatisticas: () => stats, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
         trocarContexto,
         contexto: () => contexto,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }
