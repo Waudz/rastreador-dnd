@@ -111,7 +111,7 @@ test('magias em Outras opções e nos botões rápidos: ataque de magia e salvag
     {n:'Bola de Fogo',en:'Fireball',l:3,prep:true,classeConj:'Wizard',d:'Cada criatura faz uma salvaguarda de Destreza. Se falhar, sofre 8d6 pontos de dano ígneo, ou metade do dano se passar. Em Círculos Superiores o dano aumenta em 1d6 para cada círculo acima do 3º.'},
     {n:'Raio de Fogo',en:'Fire Bolt',l:0,prep:true,classeConj:'Wizard',d:'Faça um ataque mágico. Se acertar, sofre 1d10 pontos de dano ígneo. O dano aumenta em 1d10 no 5º nível (2d10).'}]};
   const t=ambiente({papelAtual:'jogador',fichaConj:f});t.muda('vez-atacante','b');
-  assert.match(t.texto(),/Bola de Fogo \(magia\)/);assert.match(t.texto(),/Raio de Fogo \(magia\)/);assert.match(t.texto(),/id="vez-treino" checked disabled/,'jogador: treino sempre ligado e travado');
+  assert.match(t.texto(),/Bola de Fogo \(magia\)/);assert.match(t.texto(),/Raio de Fogo \(magia\)/);assert.ok(!/vez-treino/.test(t.texto()),'jogador não vê o botão de treino (é sempre treino)');
   t.w.valorDado=0.999;t.clique({vez:'2'});await t.espera();assert.match(t.res(),/conjura Raio de Fogo/);assert.match(t.res(),/CRÍTICO/);assert.match(t.res(),/\[\d+\+\d+\+\d+\+\d+\]/,'2d10 do truque no 5º nível, em dobro no crítico');
   t.clique({vez:'1'});await t.espera();assert.match(t.res(),/CD 14, Destreza/);assert.match(t.res(),/Salvaguarda de Goblin/);assert.equal(t.espacos.length,0,'em treino nada é gasto');
   t.clique({vezAvancado:''});t.muda('atk-ataque','1');assert.match(t.avanc(),/id="atk-circulo"/);assert.match(t.avanc(),/value="8d6"/);t.muda('atk-circulo','5');assert.match(t.avanc(),/value="8d6\+2d6"/,'espaço de 5º círculo');
@@ -192,4 +192,13 @@ test('chave "Rolagem automática": guardada no aparelho, desativa os botões d20
   assert.match(html,/id="rolagem-auto"[^>]*checked/);assert.match(html,/Rolagem automática de dados: <b id="rolagem-auto-estado">ligada/);
   assert.match(ini,/localStorage\.getItem\(CHAVE_ROLAGEM\) !== "0"/);assert.match(ini,/new CustomEvent\("ini:rolagem"\)/);assert.match(ini,/rolagemAuto,[\s\S]{0,12}list:/);assert.match(ini,/data-reroll="\$\{c\.id\}" \$\{rolagemAuto\(\) \? "" : "disabled"\}/);assert.match(ini,/!alvo \|\| !rolagemAuto\(\)/);
   assert.match(app,/b\.disabled = !on/);assert.match(app,/Rolagem automática desligada: digite a iniciativa\./);assert.match(ci,/Adicionar \(\$1\)/);assert.match(ci,/rolagem automática desligada: digite o valor na ordem do combate/);assert.match(j,/const dispara = \(parte, opts\) => \(auto\(\) \? rolar\(parte, opts\) : pedirManual\(parte, opts\)\)/);
+});
+
+test('botão de treino só aparece para o mestre; todos os botões que rolam dados mostram o ícone do d20',async()=>{
+  const j=ler('js/ataque-ini.js'),ci=ler('js/campanha-ini.js'),gp=ler('js/grupo-personagens.js');
+  const jog=ambiente({papelAtual:'jogador'}),mes=ambiente({papelAtual:'mestre'}),sem=ambiente({papelAtual:'sem-campanha'});
+  assert.ok(!/vez-treino/.test(jog.texto())&&!/vez-treino/.test(sem.texto()),'jogador e quem está fora de campanha não veem o botão');assert.match(mes.texto(),/id="vez-treino"/);assert.ok(!/id="vez-treino" checked/.test(mes.texto()));
+  jog.clique({vezAvancado:''});assert.ok(!/Modo treino/.test(jog.avanc()),'sem aviso de treino para o jogador');
+  assert.match(j,/\$\{D20\(\)\}\$\{esc\(a\.tipo === "magia"/);assert.match(j,/id="atk-rolar" class="primary">\$\{D20\(\)\}/);assert.match(j,/id="atk-so-ataque" class="small">\$\{D20\(\)\}Só o ataque/);assert.match(j,/id="atk-so-dano" class="small">\$\{D20\(\)\}Só o dano/);
+  assert.match(ci,/window\.ico\('d20'\)\:''\)\+'Rolar d20/);assert.match(gp,/window\.ico\('d20'\)\:''\)\+'Rolar iniciativa/);
 });
