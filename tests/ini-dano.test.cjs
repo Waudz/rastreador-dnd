@@ -85,3 +85,29 @@ test('Fúria Implacável (bárbaro 11) e Fortitude dos Mortos-Vivos: pedem a sal
   I.aplicarDano(z.id,8);assert.equal(z.hp,1,'Fortitude: salvaguarda CD 5 + dano (13) passou');
   I.aplicarDano(z.id,1,undefined,{critico:true});assert.equal(z.hp,0,'dano de acerto crítico ignora a Fortitude dos Mortos-Vivos');
 });
+test('tipo de dano opcional aplica defesas (inclusive Fúria); sem tipo o dano entra inteiro; radiante ignora a Fortitude dos Mortos-Vivos',()=>{
+  const I=novo([['B',10,20,'Personagem'],['Z',9,6]]),[b,z]=I.list();b.maxHp=20;
+  I.aplicarDano(b.id,10,undefined,{tipo:'slashing'});assert.equal(b.hp,10,'sem fúria o cortante entra inteiro');
+  b.furia=true;I.aplicarDano(b.id,6,undefined,{tipo:'slashing'});assert.equal(b.hp,7,'fúria: resistência a cortante (6 vira 3)');
+  I.aplicarDano(b.id,4,undefined,{tipo:'fire'});assert.equal(b.hp,3,'fogo não é reduzido pela fúria');
+  I.aplicarDano(b.id,2);assert.equal(b.hp,1,'sem tipo informado: dano inteiro (registro rápido)');
+  I.habilidadesQueda=c=>c.id===z.id?[{id:'fortitude-morta-viva',nome:'F',tipo:'salva',cdBase:5,cdPorDano:true,excecoes:true,usado:0,limite:null}]:[];
+  I.aplicarDano(z.id,6,undefined,{tipo:'radiant'});assert.equal(z.hp,0,'dano radiante ignora a Fortitude');
+});
+test('salvaguarda contra a morte pelo d20: 10-19 sucesso, 2-9 falha, 1 = duas falhas, 20 = 1 PV; três sucessos estabilizam e três falhas matam',()=>{
+  const I=novo([['H',10,0,'Personagem']]),[h]=I.list();h.maxHp=10;
+  assert.equal(I.salvaMorteD20(h.id,0),false);assert.equal(I.salvaMorteD20(h.id,21),false);
+  I.salvaMorteD20(h.id,12);I.salvaMorteD20(h.id,5);assert.deepEqual(JSON.parse(JSON.stringify(h.morte)),{s:1,f:1});
+  I.salvaMorteD20(h.id,1);assert.equal(h.morto,true,'1 natural = duas falhas: 3 no total, morre');
+  const J=novo([['H',10,0,'Personagem']]),[j]=J.list();j.maxHp=10;J.salvaMorteD20(j.id,10);J.salvaMorteD20(j.id,19);J.salvaMorteD20(j.id,11);assert.equal(j.estavel,true);
+  const K=novo([['H',10,0,'Personagem']]),[k]=K.list();k.maxHp=10;K.salvaMorteD20(k.id,20);assert.equal(k.hp,1);assert.ok(!k.morte||k.morte.f===0);
+});
+test('recursos e espaços no combate: gasto contado uma vez, limitado ao total, só vai para a ficha com sync e Desfazer devolve',async()=>{
+  const I=novo([['B',10,10,'Personagem']]),[b]=I.list();b.pid='p';const reg=[],esp=[];
+  I.recursosDe=()=>({recursos:[{id:'furia',nome:'Fúria',max:2,usados:0},{id:'ki',nome:'Pontos de Ki',max:3,usados:0}],slots:[2],usadosSlots:[0]});
+  I.registrarUso=(c,id,v)=>reg.push([id,v]);I.gastarEspaco=async(pid,c)=>{esp.push([pid,c]);return{ok:true,msg:''};};
+  assert.equal(I.usarRecurso(b.id,'ki'),true);assert.equal(b.usos.ki,1);assert.equal(reg.length,0,'sem sync nada vai para a ficha');
+  b.sync=true;I.usarRecurso(b.id,'ki');assert.deepEqual(reg,[['ki',2]]);
+  assert.equal((await I.usarEspaco(b.id,1)).ok,true);assert.equal((await I.usarEspaco(b.id,1)).ok,true);assert.equal((await I.usarEspaco(b.id,1)).ok,false,'só 2 espaços');assert.equal(esp.length,2);
+  I.desfazerUltimo();assert.equal(b.slots[1],1,'desfazer devolve o espaço');
+});

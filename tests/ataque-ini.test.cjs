@@ -32,7 +32,7 @@ test('dano: soma dados e modificador; crítico dobra os dados mas não o modific
 });
 test('integração: aplicar dano usa as mesmas estatísticas do botão Dano; criaturas e fichas alimentam o painel; o painel existe na página e no cache',()=>{
   const ini=ler('js/iniciativa.js'),app=ler('js/app.js'),ci=ler('js/campanha-ini.js'),html=ler('iniciativa.html'),sw=ler('sw.js');
-  assert.match(ini,/function aplicarDano\(id, amount, quemId, opcoes = \{\}\)/);assert.match(ini,/if \(button\.dataset\.damage\) aplicarDano\(id, amount, undefined, \{ critico: crit \}\);/);assert.match(ini,/aplicarDano, curar, darTemp, salvaMorte, estabilizar, marcarMorto, desfazerUltimo,/);assert.match(ini,/atual: \(\) => currentId/);
+  assert.match(ini,/function aplicarDano\(id, amount, quemId, opcoes = \{\}\)/);assert.match(ini,/if \(button\.dataset\.damage\) aplicarDano\(id, amount, undefined, \{ critico: crit, tipo \}\);/);assert.match(ini,/aplicarDano, curar, darTemp, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo,/);assert.match(ini,/atual: \(\) => currentId/);
   assert.match(app,/window\.__ini\.acoesDe = \(key\)/);assert.match(ci,/window\.__ini\.ataquesDe = \(pid\)/);
   assert.ok(!/id="painel-ataque"/.test(html),"o painel separado foi removido");assert.match(html,/js\/ataque-ini\.js/);assert.match(sw,/"js\/ataque-ini\.js"/);assert.ok(!/painel-ataque/.test(ci),'campanha-ini não depende do painel antigo');
 });
@@ -117,7 +117,7 @@ test('magias em Outras opções e nos botões rápidos: ataque de magia e salvag
   t.clique({vez:'1'});await t.espera();assert.match(t.res(),/CD 14, Destreza/);assert.match(t.res(),/Salvaguarda de Goblin/);assert.equal(t.espacos.length,0,'em treino nada é gasto');
   t.clique({vezAvancado:''});t.muda('atk-ataque','1');assert.match(t.avanc(),/id="atk-circulo"/);assert.match(t.avanc(),/value="8d6"/);t.muda('atk-circulo','5');assert.match(t.avanc(),/value="8d6\+2d6"/,'espaço de 5º círculo');
   const m=ambiente({papelAtual:'mestre',fichaConj:f});m.muda('vez-atacante','b');assert.ok(!/id="vez-treino" checked/.test(m.texto()),'mestre: treino desligado por padrão');
-  m.clique({vez:'1'});await m.espera();assert.equal(m.espacos.length,1);assert.deepEqual(m.espacos[0],['p',3]);assert.match(m.res(),/Gastou 1 espaço de 3º círculo/);
+  m.clique({vez:'1'});await m.espera();assert.equal(m.espacos.length,0,'combate de teste: sem gravar na ficha o espaço não é gasto nela');m.lista[1].sync=true;m.clique({vez:'1'});await m.espera();assert.equal(m.espacos.length,1);assert.deepEqual(m.espacos[0],['p',3]);assert.match(m.res(),/Gastou 1 espaço de 3º círculo/);
   m.muda('vez-treino','',true);m.clique({vez:'1'});await m.espera();assert.equal(m.espacos.length,1,'com o treino ligado não gasta mais');
 });
 test('botão Atacar do cartão abre a interface unificada com o combatente como atacante, mesmo fora da vez',()=>{

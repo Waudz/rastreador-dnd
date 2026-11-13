@@ -191,3 +191,8 @@ body.rolagem-manual [data-reroll][disabled], body.rolagem-manual [data-ci-rolar]
 #ci-gravar-rotulo { margin-left:auto; min-height:44px; display:inline-flex; align-items:center; gap:6px; }
 .crit-rotulo { display:inline-flex; align-items:center; gap:4px; font-size:12px; min-height:36px; margin:0; }
 @media (max-width:760px), (pointer:coarse) { .crit-rotulo { min-height:44px; } .crit-rotulo input { width:22px!important; height:22px!important; } }
+.tipo-dano { min-height:36px; max-width:110px; }
+.morte-linha .num { width:64px; text-align:center; }
+.recursos-combate { margin:6px 0; font-size:13px; } .recursos-combate summary { cursor:pointer; }
+.rec-linha { display:flex; flex-wrap:wrap; gap:6px 14px; margin:6px 0; } .rec-item { display:inline-flex; align-items:center; gap:6px; }
+@media (max-width:760px), (pointer:coarse) { .tipo-dano, .morte-linha .num, .rec-item .small { min-height:44px; } }

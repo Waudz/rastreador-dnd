@@ -45,6 +45,26 @@
       const p = pers.find((x) => x.id === c.pid); if (p) p.ficha = f;
     } catch (e) { msg("Não foi possível registrar o uso na ficha: " + e.message, true); }
   };
+  /* recursos de classe e espaços da ficha (para o painel de recursos do cartão); o consumo só vai para a ficha se o combatente grava */
+  window.__ini.recursosDe = (c) => {
+    const f = c && c.pid ? window.__ini.fichaDe(c.pid) : null, RC = window.RECURSOS, R = window.REGRAS; if (!f || !RC || !R) return null;
+    const cj = R.conjuracao ? R.conjuracao(f.classes || []) : { slots: [] };
+    return { recursos: RC.calcular(f), slots: cj.slots || [], usadosSlots: Array.isArray(f.slotsUsados) ? f.slotsUsados : [] };
+  };
+  window.__ini.usosRecurso = (c, id) => { const f = c && c.pid ? window.__ini.fichaDe(c.pid) : null, RC = window.RECURSOS, r = f && RC && RC.achar(f, id); return r ? { max: r.max, usados: r.usados } : null; };
+  /* estado de morte (sucessos, falhas, estável, morto) na ficha, com controle de versão; só para quem grava e só o mestre */
+  window.__ini.registrarMorte = async (c) => {
+    if (!sincroniza() || !c || !c.pid || c.sync !== true) return;
+    try {
+      if (await nuvem.rpc("eh_mestre", { c: atual }) !== true) return;
+      const r = await nuvem.get("personagens?select=versao,ficha&id=eq." + encodeURIComponent(c.pid) + "&campanha_id=eq." + encodeURIComponent(atual)), reg = r[0]; if (!reg) return;
+      const f = reg.ficha || {}, m = c.morte || { s: 0, f: 0 };
+      f.morte = { sucessos: m.s || 0, falhas: m.f || 0, estavel: !!c.estavel, morto: !!c.morto };
+      const salvo = await nuvem.patch("personagens?id=eq." + encodeURIComponent(c.pid) + "&versao=eq." + encodeURIComponent(reg.versao), { ficha: f });
+      if (!salvo || !salvo[0]) throw new Error("a ficha mudou durante o registro");
+      const p = pers.find((x) => x.id === c.pid); if (p) p.ficha = f;
+    } catch (e) { msg("Não foi possível registrar a salvaguarda contra a morte na ficha: " + e.message, true); }
+  };
   window.__ini.papel = () => (!conta ? "visitante" : atual ? (jogador ? "jogador" : "mestre") : "sem-campanha");
   window.__ini.fichaDe = (pid) => (pers.find((x) => x.id === pid) || {}).ficha || null;
   /* Fora do modo treino (só mestre): conjurar com um personagem da campanha gasta um espaço na ficha dele, com controle de versão (nunca sobrescreve uma edição simultânea). */
