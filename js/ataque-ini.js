@@ -162,7 +162,7 @@
     sel.atacante = atk.id; fontes = fontesDe(atk);
     if (!l.some((c) => c.id === sel.alvo) || sel.alvo === atk.id) sel.alvo = alvoPadrao(l, atk).id;
     faixa.hidden = false;
-    $("#vez-topo").innerHTML = `<div class="acoes-vez-cab"><label class="inline"><b>${cur === atk.id ? "Vez de" : "Ataque de"}</b><select id="vez-atacante" aria-label="Quem ataca">${l.map((c) => `<option value="${esc(c.id)}" ${c.id === atk.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Alvo<select id="vez-alvo" aria-label="Em quem atacar">${l.filter((c) => c.id !== atk.id).map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvo ? "selected" : ""}>${esc(c.name)} (CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)})</option>`).join("")}</select></label><label class="inline">Jogada<select id="vez-modo" aria-label="Vantagem ou desvantagem"><option value="normal" ${sel.modo !== "vantagem" && sel.modo !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modo === "vantagem" ? "selected" : ""}>Vantagem</option><option value="desvantagem" ${sel.modo === "desvantagem" ? "selected" : ""}>Desvantagem</option></select></label><label class="inline vez-vezes">Ataques<input type="number" id="vez-vezes" class="num" min="1" max="8" step="1" value="${Math.max(1, Math.min(8, Math.round(num(sel.vezes, 1))))}" aria-label="Quantas vezes repetir o ataque (multiataque)" title="Repete o ataque escolhido, cada um com seu d20 e dano; o dano total vai num só Aplicar"></label>${treinoTravado() ? "" : `<label class="inline vez-treino"><input type="checkbox" id="vez-treino" ${emTreino() ? "checked" : ""}> Treino: não gasta nada</label>`}</div>
+    $("#vez-topo").innerHTML = `<div class="acoes-vez-cab"><label class="inline"><b>${cur === atk.id ? "Vez de" : "Ataque de"}</b><select id="vez-atacante" aria-label="Quem ataca">${l.map((c) => `<option value="${esc(c.id)}" ${c.id === atk.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Alvo<select id="vez-alvo" aria-label="Em quem atacar">${l.filter((c) => c.id !== atk.id).map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvo ? "selected" : ""}title="${esc(c.name)}: CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)}">${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Jogada<select id="vez-modo" aria-label="Vantagem ou desvantagem"><option value="normal" ${sel.modo !== "vantagem" && sel.modo !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modo === "vantagem" ? "selected" : ""}>Vantagem</option><option value="desvantagem" ${sel.modo === "desvantagem" ? "selected" : ""}>Desvantagem</option></select></label><label class="inline vez-vezes">Ataques<input type="number" id="vez-vezes" class="num" min="1" max="8" step="1" value="${Math.max(1, Math.min(8, Math.round(num(sel.vezes, 1))))}" aria-label="Quantas vezes repetir o ataque (multiataque)" title="Repete o ataque escolhido, cada um com seu d20 e dano; o dano total vai num só Aplicar"></label>${treinoTravado() ? "" : `<label class="inline vez-treino"><input type="checkbox" id="vez-treino" ${emTreino() ? "checked" : ""}> Treino: não gasta nada</label>`}</div>
       <div class="row acoes-vez-botoes">${fontes.length ? fontes.map((a, i) => `<button type="button" class="small primary" data-vez="${i}" title="Rola o ataque contra a CA do alvo e o dano">${D20()}${esc(a.tipo === "magia" ? a.nome + " (magia)" : a.nome)}${a.tipo !== "magia" && a.hit != null ? " " + (a.hit >= 0 ? "+" : "") + a.hit : ""}</button>`).join("") : '<span class="muted">Sem ataques cadastrados: use Outras opções para um ataque manual.</span>'}<button type="button" class="small subtle" data-vez-avancado aria-expanded="${sel.avancado ? "true" : "false"}">Outras opções</button></div>`;
     const bloq = window.__ini.incapaz ? window.__ini.incapaz(atk) : "";
     if (bloq) { const bt = $("#vez-topo").querySelector?.(".acoes-vez-botoes"); if (bt) bt.innerHTML = `<p class="muted aviso-incapaz" role="status">${esc(atk.name)} está ${esc(bloq)} e não pode atacar. Escolha outro atacante acima, se houver reação ou exceção.</p>`; $("#vez-avancado").hidden = true; return; }
@@ -175,21 +175,24 @@
     if (sel.idx == null || (sel.idx !== "manual" && sel.idx >= fontes.length)) sel.idx = fontes.length ? 0 : "manual";
     const manual = sel.idx === "manual", fonte = manual ? null : fontes[sel.idx], magia = fonte && fonte.tipo === "magia";
     let extra = "";
-    if (manual) extra = `<div class="row"><label>Bônus de ataque<input id="atk-bonus" class="num" type="number" step="1" value="${num(sel.bonus, 0)}"></label><label>Dano (ex.: 1d8+3)<input id="atk-dano" maxlength="40" value="${esc(sel.dano || "1d6")}"></label></div>`;
+    if (manual) extra = `<div class="row"><label>Bônus de ataque<input id="atk-bonus" class="num" type="number" step="1" value="${num(sel.bonus, 0)}"></label>${auto() ? `<label>Dano (ex.: 1d8+3)<input id="atk-dano" maxlength="40" value="${esc(sel.dano || "1d6")}"></label>` : `<input id="atk-dano" type="hidden" value="${esc(sel.dano || "1d6")}">`}</div>`;
     if (magia) {
       const an = fonte.an, circ = sel.circulo && sel.circulo >= Number(fonte.m.l) ? sel.circulo : (Number(fonte.m.l) || null), circulos = circulosDe(fonte);
       const sugestao = danoSugerido(fonte.m, an, { circulo: circ, nivelTotal: fonte.st.nivelTotal }), valor = sel.danoMagia != null && sel.danoMagiaDe === fonte.m.en + "|" + circ ? sel.danoMagia : sugestao;
       const regra = an.tipo === "ataque" ? `Ataque de magia <b>${fonte.st.ataque >= 0 ? "+" : ""}${fonte.st.ataque}</b>` : an.tipo === "salvaguarda" ? `CD <b>${fonte.st.cd}</b> (salvaguarda de ${NOME_ATR[an.atributoSalva]})${an.metadeNaSalva ? ", metade do dano se passar" : ""}` : "Sem jogada de ataque nem salvaguarda: só o dano sugerido";
       extra = `<div class="row">${circulos.length ? `<label>Espaço de magia<select id="atk-circulo">${circulos.map((c) => `<option value="${c}" ${c === circ ? "selected" : ""}>${c}º círculo</option>`).join("")}</select></label>` : ""}<label>Dano (sugerido pelo texto, edite se precisar)<input id="atk-dano-magia" maxlength="40" value="${esc(valor)}"></label>${an.tipo === "salvaguarda" ? `<label>Bônus de salvaguarda do alvo${salvaDo(lista().find((c) => c.id === sel.alvo), an.atributoSalva) !== null && !sel.salvaManual ? " (automático)" : ""}<input id="atk-salva-bonus" class="num" type="number" step="1" value="${sel.salvaManual ? num(sel.salvaBonus, 0) : num(salvaDo(lista().find((c) => c.id === sel.alvo), an.atributoSalva), 0)}"></label>` : ""}</div><p class="muted">${regra}. ${an.tipoDano ? "Dano " + esc(an.tipoDano) + ". " : ""}${treinoTravado() ? "" : emTreino() ? "Modo treino: nenhum espaço é gasto." : Number(fonte.m.l) ? "Conjurar gasta um espaço de magia da ficha." : ""}</p>`;
     }
-    $("#vez-avancado-corpo").innerHTML = `<label>Ataque ou magia<select id="atk-ataque">${fontes.map((a, i) => `<option value="${i}" ${sel.idx === i ? "selected" : ""}>${esc(rotuloFonte(a))}</option>`).join("")}<option value="manual" ${manual ? "selected" : ""}>Manual…</option></select></label>${extra}
-      <div class="row"><button type="button" id="atk-rolar" class="primary">${D20()}${magia ? "Conjurar e rolar" : "Rolar ataque e dano"}</button>${magia ? "" : `<button type="button" id="atk-so-ataque" class="small">${D20()}Só o ataque</button>`}<button type="button" id="atk-so-dano" class="small">${D20()}Só o dano</button><label class="inline"><input type="checkbox" id="atk-metade" ${sel.metade ? "checked" : ""}> Metade do dano</label></div>`;
+    /* dados físicos (rolagem automática desligada): o d20 é digitado aqui mesmo; se acertar, o dano é pedido logo abaixo */
+    const manualDados = !auto(), inline = manualDados && num(sel.vezes, 1) === 1 && (manual || !magia || fonte.an.tipo === "ataque");
+    const campoD20 = inline ? `<div class="row"><label>d20 do ataque (resultado natural)<input id="atk-man-d20" class="num" type="number" min="1" max="20" step="1" placeholder="1 a 20" aria-label="Resultado natural do d20 do ataque"></label></div>` : "";
+    $("#vez-avancado-corpo").innerHTML = `<label>Ataque ou magia<select id="atk-ataque">${fontes.map((a, i) => `<option value="${i}" ${sel.idx === i ? "selected" : ""}>${esc(rotuloFonte(a))}</option>`).join("")}<option value="manual" ${manual ? "selected" : ""}>Manual…</option></select></label>${extra}${campoD20}
+      <div class="row"><button type="button" id="atk-rolar" class="primary">${manualDados ? "" : D20()}${manualDados ? (magia ? "Conjurar e registrar" : "Registrar ataque") : (magia ? "Conjurar e rolar" : "Rolar ataque e dano")}</button>${magia || manualDados ? "" : `<button type="button" id="atk-so-ataque" class="small">${D20()}Só o ataque</button>`}<button type="button" id="atk-so-dano" class="small">${manualDados ? "Registrar só o dano" : D20() + "Só o dano"}</button><label class="inline"><input type="checkbox" id="atk-metade" ${sel.metade ? "checked" : ""}> Metade do dano</label></div>`;
   }
   function escolhido(opts = {}) {
     const sel = estado(), l = lista(), atacante = atacanteAtual(), alvo = l.find((c) => c.id === sel.alvo), modo = sel.modo === "vantagem" || sel.modo === "desvantagem" ? sel.modo : "normal";
     const base = { atacante, alvo, modo, metade: opts.rapido ? false : !!$("#atk-metade")?.checked };
     if (opts.rapido) return { ...base, a: fontes[opts.idx] };
-    if (sel.idx === "manual") { const partes = parseExpressao($("#atk-dano")?.value || sel.dano); sel.dano = $("#atk-dano")?.value ?? sel.dano; sel.bonus = num($("#atk-bonus")?.value, num(sel.bonus, 0)); return { ...base, a: { nome: "Ataque manual", tipo: "ataque", hit: sel.bonus, dmg: partes } }; }
+    if (sel.idx === "manual") { const partes = parseExpressao($("#atk-dano")?.value || sel.dano || "1d6"); sel.dano = $("#atk-dano")?.value ?? sel.dano; sel.bonus = num($("#atk-bonus")?.value, num(sel.bonus, 0)); return { ...base, a: { nome: "Ataque manual", tipo: "ataque", hit: sel.bonus, dmg: partes } }; }
     return { ...base, a: fontes[sel.idx] };
   }
   /* dano radiante impede a Fortitude dos Mortos-Vivos (2014); o ajuste por defesas já foi feito ao rolar, por isso jaAjustado */
@@ -207,7 +210,7 @@
       const { atacante, alvo, a, modo, metade } = escolhido(opts), res = $("#vez-res");
       if (!atacante || !alvo || !a) return;
       { const bloq = window.__ini.incapaz ? window.__ini.incapaz(atacante) : ""; if (bloq) { res.innerHTML = `<span class="err">${esc(atacante.name)} está ${esc(bloq)} e não pode atacar.</span>`; return; } }
-      let atq = null, dano = null, salva = null, linhas = [], partes = a.dmg, critico = false, metadeFinal = metade;
+      let atq = null, dano = null, salva = null, linhas = [], partes = a.dmg, critico = !!(opts.acertos && opts.acertos[0] && opts.acertos[0].critico), metadeFinal = metade; const acertosAqui = [];   // acertosAqui: acertos desta rolagem (para pedir o dano depois, no modo manual)
       const man = opts.manual || null, rngK = (k) => (man && man.d20 && man.d20[k] ? rngDe(man.d20[k]) : aleatorioPadrao);
       if (a.tipo === "magia") {
         const sel = estado(), circulo = opts.rapido ? (Number(a.m.l) || null) : (Number($("#atk-circulo")?.value) || Number(a.m.l) || null), expr = opts.rapido ? danoSugerido(a.m, a.an, { circulo, nivelTotal: a.st.nivelTotal }) : ($("#atk-dano-magia")?.value || "");
@@ -219,7 +222,8 @@
           if (!g.ok) { res.innerHTML = `<span class="err">${esc(g.msg)}</span>`; return; }
           if (g.msg) linhas.push(`<p class="muted">${esc(g.msg)}</p>`);
         }
-        if (parte !== "dano" && a.an.tipo === "ataque") { atq = rolarAtaque({ bonus: a.st.ataque, modo, ca: num(alvo.ac), rng: rngK(0) }); critico = atq.resultado === "critico"; linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}:</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`); }
+        if (opts.acertos) linhas.push(`<p><b>Dano de ${esc(atacante.name)} (${esc(a.nome)}):</b></p>`);
+        if (parte !== "dano" && a.an.tipo === "ataque") { atq = rolarAtaque({ bonus: a.st.ataque, modo, ca: num(alvo.ac), rng: rngK(0) }); critico = atq.resultado === "critico"; if (atq.acertou) acertosAqui.push({ critico }); linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}:</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`); }
         else if (parte !== "dano" && a.an.tipo === "salvaguarda") {
           if (man && Number.isFinite(man.salva)) salva = { dados: [man.salva], nat: man.salva, bonus: 0, total: man.salva, cd: a.st.cd, modo: "normal", passou: man.salva >= a.st.cd };
           else { const autoSalva = salvaDo(alvo, a.an.atributoSalva); salva = rolarSalvaguarda({ bonus: estado().salvaManual ? num(estado().salvaBonus, 0) : (autoSalva ?? 0), cd: a.st.cd, modo: "normal" }); }
@@ -231,12 +235,13 @@
         else if (partes && partes.length && !acertou) linhas.push('<p class="muted">Errou: sem dano.</p>');
         else if (partes && partes.length && metadeFinal === "nada") linhas.push("<p class=\"muted\">Passou na salvaguarda: sem dano.</p>");
       } else {
-        const N = Math.max(1, Math.min(8, Math.round(num(estado().vezes, 1)))), defesas = defesasDo(alvo); let somaDano = 0, houveDano = false, ultimoDano = null; const golpes = [];
+        const N = opts.acertos ? opts.acertos.length : Math.max(1, Math.min(8, Math.round(num(estado().vezes, 1)))), defesas = defesasDo(alvo); let somaDano = 0, houveDano = false, ultimoDano = null; const golpes = [];
         for (let k = 1; k <= N; k++) {
           const rot = N > 1 ? ` ${k}/${N}` : "";
+          if (opts.acertos) critico = !!opts.acertos[k - 1].critico;
           if (parte !== "dano") {
             if (a.hit == null) { res.innerHTML = '<span class="err">Este ataque não tem bônus de acerto; use "Só o dano" em Outras opções.</span>'; return; }
-            atq = rolarAtaque({ bonus: a.hit, modo, ca: num(alvo.ac), rng: rngK(k - 1) }); critico = atq.resultado === "critico";
+            atq = rolarAtaque({ bonus: a.hit, modo, ca: num(alvo.ac), rng: rngK(k - 1) }); critico = atq.resultado === "critico"; if (atq.acertou) acertosAqui.push({ critico });
             linhas.push(`<p><b>Ataque${rot} de ${esc(atacante.name)} (${esc(a.nome)}):</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`);
             if (critico && window.__ini.temTraco && window.__ini.temTraco(atacante, /Ataques Selvagens|Savage Attacks/i)) linhas.push('<p class="muted">Ataques Selvagens: em acerto crítico com arma corpo a corpo, role mais um dado de dano da arma (some ao dano).</p>');
           }
@@ -254,6 +259,8 @@
       if (dano && dano.total >= 0) linhas.push(`<div class="row"><button type="button" class="danger atk-aplicar" data-aplicar="${n}">Aplicar ${dano.total} de dano em ${esc(alvo.name)}</button><span class="muted">PV ${num(alvo.hp)} → ${Math.max(0, num(alvo.hp) - dano.total)}</span></div>`);
       blocos.unshift(`<div class="res-ataque" data-res="${n}">${linhas.join("")}</div>`); blocos = blocos.slice(0, 5);   // os mais recentes em cima; os anteriores continuam aplicáveis uma vez
       res.innerHTML = blocos.join("");
+      /* modo manual (dados físicos): primeiro o ataque; só se acertar a faixa pede o dano, sem rolar nada sozinha */
+      if (opts.depois && acertosAqui.length && partes && partes.length) pedirManual("dano", { ...opts, manual: null, depois: false, acertos: acertosAqui });
     } finally { gastando = false; }
   }
   /* Rolagem automática desligada: em vez de rolar, a faixa pede os valores (d20 natural, salvaguarda do alvo, dano) e calcula o resultado com as mesmas regras */
@@ -261,29 +268,41 @@
   function pedirManual(parte, opts = {}) {
     const { atacante, alvo, a, modo } = escolhido(opts), area = $("#vez-manual");
     if (!atacante || !alvo || !a) return;
-    const magia = a.tipo === "magia", N = magia ? 1 : Math.max(1, Math.min(8, Math.round(num(estado().vezes, 1))));
+    const magia = a.tipo === "magia", N = opts.acertos ? opts.acertos.length : magia ? 1 : Math.max(1, Math.min(8, Math.round(num(estado().vezes, 1))));
+    const etapaAtaque = parte === "tudo" && !opts.acertos && (!magia || a.an.tipo === "ataque");   // dados físicos: 1º o d20, depois (se acertar) o dano
     const pedeD20 = parte !== "dano" && (magia ? a.an.tipo === "ataque" : true), pedeSalva = magia && parte !== "dano" && a.an.tipo === "salvaguarda";
-    const temDano = parte !== "ataque" && (magia ? !!a.an.dado || !!(estado().danoMagia) : !!(a.dmg && a.dmg.length) || a.hit == null);
+    const temDano = !etapaAtaque && parte !== "ataque" && (magia ? !!a.an.dado || !!(estado().danoMagia) : !!(a.dmg && a.dmg.length) || a.hit == null);
     if (pedeD20 && !magia && a.hit == null) { $("#vez-res").innerHTML = '<span class="err">Este ataque não tem bônus de acerto; use "Só o dano" em Outras opções.</span>'; return; }
-    manualPend = { parte, opts, N, pedeD20, pedeSalva, temDano, dois: modo !== "normal" };
+    manualPend = { parte: etapaAtaque ? "ataque" : parte, opts: etapaAtaque ? { ...opts, depois: true } : opts, N, pedeD20, pedeSalva, temDano, dois: modo !== "normal" };
     const linhas = [];
-    for (let k = 1; k <= N; k++) linhas.push(`<div class="row vez-manual-linha">${N > 1 ? `<b>Ataque ${k}/${N}</b>` : ""}${pedeD20 ? `<label>${D20()}d20${manualPend.dois ? " (1º dado)" : ""}<input type="number" class="num" min="1" max="20" step="1" data-man-d20="${k - 1}-0" aria-label="Resultado do d20 do ataque ${k}"></label>${manualPend.dois ? `<label>${D20()}d20 (2º dado)<input type="number" class="num" min="1" max="20" step="1" data-man-d20="${k - 1}-1" aria-label="Segundo d20 do ataque ${k}"></label>` : ""}` : ""}${temDano ? `<label>Dano (total)<input type="number" class="num" min="0" step="1" data-man-dano="${k - 1}" aria-label="Dano total do ataque ${k}"></label>` : ""}</div>`);
+    for (let k = 1; k <= N; k++) linhas.push(`<div class="row vez-manual-linha">${opts.acertos ? `<b>Acerto${N > 1 ? " " + k + "/" + N : ""}${opts.acertos[k - 1].critico ? " (crítico)" : ""}</b>` : N > 1 ? `<b>Ataque ${k}/${N}</b>` : ""}${pedeD20 ? `<label>${D20()}d20${manualPend.dois ? " (1º dado)" : ""}<input type="number" class="num" min="1" max="20" step="1" data-man-d20="${k - 1}-0" aria-label="Resultado do d20 do ataque ${k}"></label>${manualPend.dois ? `<label>${D20()}d20 (2º dado)<input type="number" class="num" min="1" max="20" step="1" data-man-d20="${k - 1}-1" aria-label="Segundo d20 do ataque ${k}"></label>` : ""}` : ""}${temDano ? `<label>Dano (total)<input type="number" class="num" min="0" step="1" data-man-dano="${k - 1}" aria-label="Dano total do ataque ${k}"></label>` : ""}</div>`);
     if (pedeSalva) linhas.push(`<div class="row vez-manual-linha"><label>Salvaguarda de ${esc(alvo.name)} (resultado final, CD ${a.st.cd})<input type="number" class="num" step="1" data-man-salva aria-label="Resultado final da salvaguarda do alvo"></label></div>`);
     area.hidden = false;
-    area.innerHTML = `<p class="muted"><b>${esc(atacante.name)}</b> → <b>${esc(alvo.name)}</b> (CA ${num(alvo.ac)}): rolagem automática desligada, informe os valores dos seus dados.</p>${linhas.join("")}<div class="row"><button type="button" class="primary" id="man-ok">Confirmar valores</button><button type="button" class="small subtle" id="man-cancelar">Cancelar</button></div><p class="err" id="man-erro" role="alert"></p>`;
+    area.innerHTML = `<p class="muted"><b>${esc(atacante.name)}</b> → <b>${esc(alvo.name)}</b> (CA ${num(alvo.ac)}): ${opts.acertos ? "Acertou: informe o dano total (dados mais bônus)." : etapaAtaque ? "informe o resultado natural do d20; o bônus de acerto é somado e, se acertar, peço o dano." : "informe os valores dos seus dados."}</p>${linhas.join("")}<div class="row"><button type="button" class="primary" id="man-ok">Confirmar valores</button><button type="button" class="small subtle" id="man-cancelar">Cancelar</button></div><p class="err" id="man-erro" role="alert"></p>`;
   }
   function confirmarManual() {
     if (!manualPend) return; const area = $("#vez-manual"), M = manualPend, lerN = (sel) => { const e = area.querySelector(sel); return e && e.value !== "" ? Number(e.value) : NaN; };
     const d20 = [], dano = []; let salva;
     for (let k = 0; k < M.N; k++) {
       if (M.pedeD20) { const v = [lerN(`[data-man-d20="${k}-0"]`)]; if (M.dois) v.push(lerN(`[data-man-d20="${k}-1"]`)); if (v.some((x) => !Number.isInteger(x) || x < 1 || x > 20)) { $("#man-erro").textContent = "Informe o resultado do d20 (de 1 a 20)."; return; } d20.push(v); }
-      if (M.temDano) { const x = lerN(`[data-man-dano="${k}"]`); dano.push(x); if (M.parte === "dano" && !Number.isInteger(x)) { $("#man-erro").textContent = "Informe o dano total (número inteiro)."; return; } if (Number.isFinite(x) && (!Number.isInteger(x) || x < 0)) { $("#man-erro").textContent = "O dano deve ser um número inteiro, 0 ou maior."; return; } }
+      if (M.temDano) { const x = lerN(`[data-man-dano="${k}"]`); dano.push(x); if (!Number.isInteger(x)) { $("#man-erro").textContent = "Informe o dano total (número inteiro)."; return; } if (Number.isFinite(x) && (!Number.isInteger(x) || x < 0)) { $("#man-erro").textContent = "O dano deve ser um número inteiro, 0 ou maior."; return; } }
     }
     if (M.pedeSalva) { salva = lerN("[data-man-salva]"); if (!Number.isInteger(salva)) { $("#man-erro").textContent = "Informe o resultado final da salvaguarda do alvo."; return; } }
     area.hidden = true; area.innerHTML = ""; manualPend = null;
     rolar(M.parte, { ...M.opts, manual: { d20, dano, salva } });
   }
-  const dispara = (parte, opts) => (auto() ? rolar(parte, opts) : pedirManual(parte, opts));
+  /* dados físicos: com o d20 já digitado na própria faixa, registra o ataque direto (o dano só é pedido se acertar); sem ele, abre o pedido de valores */
+  function registrarInline() {
+    const campo = $("#atk-man-d20"), v = Number(campo && campo.value);
+    if (!(Number.isInteger(v) && v >= 1 && v <= 20)) { $("#vez-res").innerHTML = '<span class="err">Digite o resultado do d20 (1 a 20).</span>'; campo && campo.focus && campo.focus(); return; }
+    $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null;
+    rolar("ataque", { manual: { d20: [[v]], dano: [], salva: undefined }, depois: true });
+  }
+  const dispara = (parte, opts) => {
+    if (auto()) return rolar(parte, opts);
+    if (parte === "tudo" && !(opts && opts.rapido) && $("#atk-man-d20") && estado().modo !== "vantagem" && estado().modo !== "desvantagem") return registrarInline();
+    return pedirManual(parte, opts);
+  };
   /* cada resultado tem o próprio Aplicar e só vale uma vez; o clique duplo ou um segundo clique não repete o dano */
   function aplicarResultado(n, b) {
     const U = resultados[n]; if (!U || U.aplicado) return; U.aplicado = true;
@@ -297,7 +316,7 @@
     const sel = estado(), id = e.target.id;
     if (id === "vez-atacante") { sel.atacante = e.target.value; sel.manualAtacante = true; sel.manualPara = window.__ini.atual?.() ?? null; sel.idx = null; sel.circulo = null; limparResultados(); desenharVez(); }
     else if (id === "vez-alvo") { sel.alvo = e.target.value; sel.salvaManual = false; }
-    else if (id === "vez-vezes") sel.vezes = Math.max(1, Math.min(8, Math.round(num(e.target.value, 1))));
+    else if (id === "vez-vezes") { sel.vezes = Math.max(1, Math.min(8, Math.round(num(e.target.value, 1)))); if (sel.avancado) desenharAvancado(); }
     else if (id === "atk-salva-bonus") { sel.salvaManual = true; sel.salvaBonus = num(e.target.value, 0); }
     else if (id === "vez-modo") sel.modo = e.target.value;
     else if (id === "vez-treino") { sel.treino = e.target.checked; desenharVez(); }

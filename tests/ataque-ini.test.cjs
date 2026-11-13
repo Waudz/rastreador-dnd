@@ -87,7 +87,7 @@ function ambiente({papelAtual='jogador',fichaConj=null}={}){
     texto:()=>q('#vez-topo').innerHTML,res:()=>q('#vez-res').innerHTML,avanc:()=>q('#vez-avancado-corpo').innerHTML};
 }
 test('faixa unificada: aparece com atacante e alvo; resultado e Aplicar só depois de um ataque; Aplicar atua uma vez só',async()=>{
-  const t=ambiente();assert.equal(t.faixa.hidden,false);assert.match(t.texto(),/Vez de[\s\S]*Goblin/);assert.match(t.texto(),/Cimitarra \+4/);assert.match(t.texto(),/<option value="b" selected>Herói/);
+  const t=ambiente();assert.equal(t.faixa.hidden,false);assert.match(t.texto(),/Vez de[\s\S]*Goblin/);assert.match(t.texto(),/Cimitarra \+4/);assert.match(t.texto(),/<option value="b" selected[^>]*>Herói/);
   assert.equal(t.res(),'','sem ataque, sem resultado nem botão aplicar');assert.equal(t.q('#vez-avancado').hidden,true,'Outras opções começa recolhido');
   t.clique({vez:'0'});await t.espera();assert.match(t.res(),/CRÍTICO/);assert.match(t.res(),/Aplicar \d+ de dano em Herói/);
   const n1=apN(t);t.clique({aplicar:n1});assert.equal(t.aplicados.length,1);assert.equal(t.aplicados[0][0],'b');assert.equal(t.aplicados[0][2],'a');
@@ -121,7 +121,7 @@ test('magias em Outras opções e nos botões rápidos: ataque de magia e salvag
   m.muda('vez-treino','',true);m.clique({vez:'1'});await m.espera();assert.equal(m.espacos.length,1,'com o treino ligado não gasta mais');
 });
 test('botão Atacar do cartão abre a interface unificada com o combatente como atacante, mesmo fora da vez',()=>{
-  const t=ambiente();t.setVez(null);t.w.ev['ini:atacar']({detail:{id:'b'}});assert.equal(t.faixa.hidden,false);assert.match(t.texto(),/Ataque de[\s\S]*Herói/);assert.match(t.texto(),/Espada longa \+5/);assert.match(t.texto(),/<option value="a" selected>Goblin/);
+  const t=ambiente();t.setVez(null);t.w.ev['ini:atacar']({detail:{id:'b'}});assert.equal(t.faixa.hidden,false);assert.match(t.texto(),/Ataque de[\s\S]*Herói/);assert.match(t.texto(),/Espada longa \+5/);assert.match(t.texto(),/<option value="a" selected[^>]*>Goblin/);
 });
 test('celular: a faixa da vez, o painel Atacar e o cartão da iniciativa têm alvos de toque de 44 px e ficam só no bloco de telas pequenas/toque',()=>{
   const css=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','css','fluxos.css'),'utf8'),i=css.indexOf('/* Celular e telas de toque');
@@ -163,27 +163,30 @@ test('re-rolar iniciativa: botão d20 em cada cartão usa o bônus do combatente
 test('o ataque é fixo em quem está na vez: ao mudar o turno a faixa acompanha o novo combatente, limpa o resultado e descarta a escolha manual do turno anterior',async()=>{
   const t=ambiente();t.clique({vez:'0'});await t.espera();assert.match(t.res(),/Ataque de Goblin/);
   t.muda('vez-atacante','b');assert.match(t.texto(),/Ataque de<\/b><select id="vez-atacante"[\s\S]*<option value="b" selected>/,'escolha manual durante o turno do Goblin (reação)');
-  t.setVez('b');assert.match(t.texto(),/Vez de<\/b><select id="vez-atacante"[\s\S]*<option value="b" selected>Herói/,'novo turno: atacante = quem está na vez');assert.equal(t.res(),'','resultado do turno anterior some');
-  t.muda('vez-atacante','a');t.setVez('a');assert.match(t.texto(),/Vez de<\/b><select id="vez-atacante"[\s\S]*<option value="a" selected>Goblin/,'a escolha manual não "gruda" no turno seguinte');
+  t.setVez('b');assert.match(t.texto(),/Vez de<\/b><select id="vez-atacante"[\s\S]*<option value="b" selected[^>]*>Herói/,'novo turno: atacante = quem está na vez');assert.equal(t.res(),'','resultado do turno anterior some');
+  t.muda('vez-atacante','a');t.setVez('a');assert.match(t.texto(),/Vez de<\/b><select id="vez-atacante"[\s\S]*<option value="a" selected[^>]*>Goblin/,'a escolha manual não "gruda" no turno seguinte');
   assert.match(t.texto(),/Cimitarra/);
 });
 
-test('rolagem automática desligada: os botões pedem os valores (d20, dano) em vez de rolar, e o resultado segue as mesmas regras',async()=>{
-  const t=ambiente();t.w.auto=false;
-  t.clique({vez:'0'});assert.equal(t.res(),'','nada é rolado');assert.equal(t.q('#vez-manual').hidden,false);assert.match(t.q('#vez-manual').innerHTML,/data-man-d20="0-0"/);assert.match(t.q('#vez-manual').innerHTML,/data-man-dano="0"/);assert.match(t.q("#vez-manual").innerHTML,/rolagem automática desligada/);
+test('rolagem automática desligada: primeiro o d20; só se acertar pede o dano; nada é rolado sozinho e o dano em branco não vale',async()=>{
+  const t=ambiente();t.w.auto=false;const man=()=>t.q('#vez-manual').innerHTML;
+  t.clique({vez:'0'});assert.equal(t.res(),'','nada é rolado');assert.equal(t.q('#vez-manual').hidden,false);assert.match(man(),/data-man-d20="0-0"/);assert.ok(!/data-man-dano/.test(man()),'a primeira etapa pede só o d20');assert.match(man(),/informe o resultado natural do d20/);
   t.clique({},'man-ok');assert.match(t.q('#man-erro').textContent,/Informe o resultado do d20/);
-  t.q('[data-man-d20="0-0"]').value='15';t.q('[data-man-dano="0"]').value='9';t.clique({},'man-ok');await t.espera();
-  assert.match(t.res(),/15 \+ 4 = 19 contra CA 15 → <b>Acertou/);assert.match(t.res(),/<b>Dano:<\/b> 9/);assert.equal(t.q('#vez-manual').hidden,true);
+  t.q('[data-man-d20="0-0"]').value='15';t.clique({},'man-ok');await t.espera();
+  assert.match(t.res(),/15 \+ 4 = 19 contra CA 15 → <b>Acertou/);assert.ok(!/Dano:/.test(t.res()),'o ataque não rola dano sozinho');assert.ok(!/data-aplicar/.test(t.res()));
+  assert.equal(t.q('#vez-manual').hidden,false);assert.match(man(),/Acertou: informe o dano total/);assert.match(man(),/data-man-dano="0"/);assert.ok(!/data-man-d20/.test(man()));
+  t.clique({},'man-ok');assert.match(t.q('#man-erro').textContent,/Informe o dano total/,'dano em branco não gera dano aleatório');assert.ok(!/Dano:/.test(t.res()));
+  t.q('[data-man-dano="0"]').value='9';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/<b>Dano:<\/b> 9/);assert.equal(t.q('#vez-manual').hidden,true);
   t.clique({aplicar:apN(t)});assert.equal(t.aplicados[0][1],9,'aplica exatamente o dano digitado');
-  t.clique({vez:'0'});t.q('[data-man-d20="0-0"]').value='20';t.q('[data-man-dano="0"]').value='14';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/CRÍTICO/);assert.match(t.res(),/<b>Dano:<\/b> 14/);
-  t.clique({vez:'0'});t.q('[data-man-d20="0-0"]').value='1';t.q('[data-man-dano="0"]').value='7';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/Falha crítica/);assert.ok(!/Dano:/.test(topo(t)),'errou: o dano digitado é ignorado');assert.ok(!/data-aplicar/.test(topo(t)));
+  t.clique({vez:'0'});t.q('[data-man-d20="0-0"]').value='20';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/CRÍTICO/);assert.match(man(),/Acerto \(crítico\)/);t.q('[data-man-dano="0"]').value='14';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/<b>Dano:<\/b> 14/);
+  t.clique({vez:'0'});t.q('[data-man-d20="0-0"]').value='1';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/Falha crítica/);assert.ok(!/Dano:/.test(topo(t)));assert.ok(!/data-aplicar/.test(topo(t)));assert.equal(t.q('#vez-manual').hidden,true,'errou: o dano nem é pedido');
   t.clique({vez:'0'});t.clique({},'man-cancelar');assert.equal(t.q('#vez-manual').hidden,true);
 });
 test('rolagem desligada: vantagem pede dois d20, multiataque pede uma linha por ataque, só dano pede só o dano e magia com salvaguarda pede o resultado do alvo',async()=>{
   const f={classes:[{c:'Wizard',n:5,sub:''}],atributos:{int:16,des:12,con:12,for:10,sab:10,car:10},magias:[{n:'Bola de Fogo',en:'Fireball',l:3,prep:true,classeConj:'Wizard',d:'Cada criatura faz uma salvaguarda de Destreza. Se falhar, sofre 8d6 pontos de dano ígneo, ou metade do dano se passar.'}]};
   const t=ambiente({papelAtual:'jogador',fichaConj:f});t.w.auto=false;
-  t.muda('vez-modo','vantagem');t.clique({vez:'0'});assert.match(t.q('#vez-manual').innerHTML,/data-man-d20="0-1"/);t.q('[data-man-d20="0-0"]').value='3';t.q('[data-man-d20="0-1"]').value='18';t.q('[data-man-dano="0"]').value='6';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/18 \(3, 18, vantagem\) \+ 4 = 22/);
-  t.muda('vez-modo','normal');t.muda('vez-vezes','2');t.clique({vez:'0'});assert.match(t.q('#vez-manual').innerHTML,/Ataque 1\/2/);assert.match(t.q('#vez-manual').innerHTML,/Ataque 2\/2/);t.q('[data-man-d20="0-0"]').value='12';t.q('[data-man-dano="0"]').value='5';t.q('[data-man-d20="1-0"]').value='9';t.q('[data-man-dano="1"]').value='5';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/Dano total:<\/b> 5/,'só o primeiro acertou (12+4=16; 9+4=13 erra)');
+  t.muda('vez-modo','vantagem');t.clique({vez:'0'});assert.match(t.q('#vez-manual').innerHTML,/data-man-d20="0-1"/);t.q('[data-man-d20="0-0"]').value='3';t.q('[data-man-d20="0-1"]').value='18';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/18 \(3, 18, vantagem\) \+ 4 = 22/);t.clique({},'man-cancelar');
+  t.muda('vez-modo','normal');t.muda('vez-vezes','2');t.clique({vez:'0'});assert.match(t.q('#vez-manual').innerHTML,/Ataque 1\/2/);assert.match(t.q('#vez-manual').innerHTML,/Ataque 2\/2/);t.q('[data-man-d20="0-0"]').value='12';t.q('[data-man-d20="1-0"]').value='9';t.clique({},'man-ok');await t.espera();assert.match(t.q('#vez-manual').innerHTML,/Acerto/);assert.ok(!/data-man-dano="1"/.test(t.q('#vez-manual').innerHTML),'só o ataque que acertou pede dano');t.q('[data-man-dano="0"]').value='5';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/<b>Dano:<\/b> 5/,'só o primeiro acertou (12+4=16; 9+4=13 erra)');
   t.muda('vez-vezes','1');t.clique({},'atk-so-dano');
   t.muda('vez-atacante','b');t.clique({vez:'1'});assert.match(t.q('#vez-manual').innerHTML,/data-man-salva/);assert.ok(!/data-man-d20/.test(t.q('#vez-manual').innerHTML),'magia de salvaguarda não pede d20');t.q('[data-man-salva]').value='9';t.q('[data-man-dano="0"]').value='20';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/falhou/);assert.match(t.res(),/<b>Dano:<\/b> 20/);
   t.clique({vez:'1'});t.q('[data-man-salva]').value='15';t.q('[data-man-dano="0"]').value='20';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/passou/);
@@ -192,7 +195,7 @@ test('chave "Rolagem automática": guardada no aparelho, desativa os botões d20
   const ini=ler('js/iniciativa.js'),html=ler('iniciativa.html'),app=ler('js/app.js'),ci=ler('js/campanha-ini.js'),j=ler('js/ataque-ini.js');
   assert.match(html,/id="rolagem-auto"[^>]*checked/);assert.match(html,/Rolagem automática de dados: <b id="rolagem-auto-estado">ligada/);
   assert.match(ini,/localStorage\.getItem\(CHAVE_ROLAGEM\) !== "0"/);assert.match(ini,/new CustomEvent\("ini:rolagem"\)/);assert.match(ini,/rolagemAuto,[\s\S]{0,12}list:/);assert.match(ini,/data-reroll="\$\{c\.id\}" \$\{rolagemAuto\(\) \? "" : "disabled"\}/);assert.match(ini,/!alvo \|\| !rolagemAuto\(\)/);
-  assert.match(app,/b\.disabled = !on/);assert.match(app,/Rolagem automática desligada: digite a iniciativa\./);assert.match(ci,/Adicionar \(\$1\)/);assert.match(ci,/rolagem automática desligada: digite o valor na ordem do combate/);assert.match(j,/const dispara = \(parte, opts\) => \(auto\(\) \? rolar\(parte, opts\) : pedirManual\(parte, opts\)\)/);
+  assert.match(app,/b\.disabled = !on/);assert.match(app,/Rolagem automática desligada: digite a iniciativa\./);assert.match(ci,/Adicionar \(\$1\)/);assert.match(ci,/rolagem automática desligada: digite o valor na ordem do combate/);assert.match(j,/if \(auto\(\)\) return rolar\(parte, opts\);[\s\S]{0,260}return pedirManual\(parte, opts\);/);
 });
 
 test('botão de treino só aparece para o mestre; todos os botões que rolam dados mostram o ícone do d20',async()=>{
@@ -200,7 +203,7 @@ test('botão de treino só aparece para o mestre; todos os botões que rolam dad
   const jog=ambiente({papelAtual:'jogador'}),mes=ambiente({papelAtual:'mestre'}),sem=ambiente({papelAtual:'sem-campanha'});
   assert.ok(!/vez-treino/.test(jog.texto())&&!/vez-treino/.test(sem.texto()),'jogador e quem está fora de campanha não veem o botão');assert.match(mes.texto(),/id="vez-treino"/);assert.ok(!/id="vez-treino" checked/.test(mes.texto()));
   jog.clique({vezAvancado:''});assert.ok(!/Modo treino/.test(jog.avanc()),'sem aviso de treino para o jogador');
-  assert.match(j,/\$\{D20\(\)\}\$\{esc\(a\.tipo === "magia"/);assert.match(j,/id="atk-rolar" class="primary">\$\{D20\(\)\}/);assert.match(j,/id="atk-so-ataque" class="small">\$\{D20\(\)\}Só o ataque/);assert.match(j,/id="atk-so-dano" class="small">\$\{D20\(\)\}Só o dano/);
+  assert.match(j,/\$\{D20\(\)\}\$\{esc\(a\.tipo === "magia"/);assert.match(j,/id="atk-rolar" class="primary">\$\{manualDados \? "" : D20\(\)\}/);assert.match(j,/id="atk-so-ataque" class="small">\$\{D20\(\)\}Só o ataque/);assert.match(j,/id="atk-so-dano" class="small">\$\{manualDados \? "Registrar só o dano" : D20\(\) \+ "Só o dano"\}/);
   assert.match(ci,/window\.ico\('d20'\)\:''\)\+'Rolar d20/);assert.match(gp,/window\.ico\('d20'\)\:''\)\+'Rolar iniciativa/);
 });
 
@@ -218,4 +221,10 @@ test('combatente inconsciente, estável ou morto não ataca na faixa; outro comb
   t.lista[0].hp=0;t.setVez('a');t.clique({vez:'0'});await t.espera();assert.match(t.res(),/Goblin está inconsciente e não pode atacar/);assert.equal(t.aplicados.length,0);
   t.w.ev['ini:atacar']({detail:{id:'b'}});t.clique({vez:'0'});await t.espera();assert.doesNotMatch(t.res(),/não pode atacar/,'o herói ataca fora do turno do Goblin');
   t.lista[0].hp=3;t.setVez('a');t.clique({vez:'0'});await t.espera();assert.doesNotMatch(t.res(),/não pode atacar/,'curado volta a poder atacar');
+});
+test('rolagem desligada em Outras opções: o d20 é digitado na própria faixa, sem expressão de dano nem segunda tela; acertou pede só o dano',async()=>{
+  const t=ambiente();t.w.auto=false;t.clique({vezAvancado:''});t.muda('atk-ataque','manual');
+  assert.match(t.avanc(),/id="atk-man-d20"/);assert.ok(!/Dano \(ex\./.test(t.avanc()),'sem expressão de dados quando os dados são físicos');assert.match(t.avanc(),/Registrar ataque/);assert.ok(!/atk-so-ataque/.test(t.avanc()));assert.match(t.avanc(),/Registrar só o dano/);
+  t.clique({},'atk-rolar');assert.match(t.res(),/Digite o resultado do d20/);assert.equal(t.q('#vez-manual').hidden,true,'não abre outra tela sem o d20');
+  t.q('#atk-man-d20').value='17';t.clique({},'atk-rolar');await t.espera();assert.match(t.res(),/Acertou/);assert.ok(!/Dano:/.test(t.res()));assert.match(t.q('#vez-manual').innerHTML,/Acertou: informe o dano total/);
 });

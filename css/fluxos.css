@@ -271,3 +271,15 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
 .combatant:not(.editing) > .row-actions .small { white-space:nowrap; }
 @media (min-width:700px) { .combatant:not(.editing) { grid-template-columns:48px minmax(130px,1fr) 56px max-content; } }
 @media (min-width:1400px) { .combatant:not(.editing) { grid-template-columns:48px minmax(170px,1fr) 56px minmax(430px,2fr) max-content; } }
+/* rolagem manual: rótulo acima do campo, sem sobrepor o número */
+.vez-manual label { display:flex; flex-direction:column; align-items:flex-start; gap:4px; margin:0; font-size:12px; }
+.vez-manual label svg { vertical-align:-3px; margin-right:4px; }
+.vez-manual input.num { width:96px; }
+/* faixa de ataque: rótulos numa linha só, sem quebrar palavras no meio; o alvo mostra só o nome */
+.acoes-vez-cab label, .acoes-vez-cab label.inline { display:inline-flex; flex-wrap:nowrap; align-items:center; gap:6px; white-space:nowrap; word-break:keep-all; overflow-wrap:normal; flex:0 0 auto; margin:0; }
+.acoes-vez-cab select { width:auto; max-width:200px; min-width:0; text-overflow:ellipsis; }
+.acoes-vez-cab .vez-vezes input { width:64px; }
+.vez-manual label, #vez-avancado label { word-break:keep-all; overflow-wrap:normal; }
+#vez-avancado .row label:not(.inline) { display:flex; flex-direction:column; align-items:flex-start; gap:4px; margin:0; font-size:12px; }
+#vez-avancado label.inline { white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
+#vez-avancado input[type=checkbox], .acoes-vez-cab input[type=checkbox] { width:auto; height:auto; min-height:0; }

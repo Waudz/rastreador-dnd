@@ -2,7 +2,7 @@
 
 Atualizado em 12/11/2026 (fim de sessão, para continuar em outro computador só com o GitHub). Decisões permanentes: `docs/DECISOES.md`. Histórico antigo: `docs/HISTORICO.md` (não ler por rotina).
 
-## RETOMAR DAQUI (estado real, tudo publicado em `origin/main`, cache `rastreador-v131` publicado; v139 local)
+## RETOMAR DAQUI (estado real, tudo publicado em `origin/main`, cache `rastreador-v131` publicado; v140 local)
 - Tudo o que está neste repositório está publicado; suíte: `node --test tests/*.cjs` (463 testes, 462 passam, 1 pula por depender de arquivo privado). Seções antigas abaixo descrevem commits "locais" que **já foram publicados**; vale o que está aqui.
 - **Supabase:** migrações aplicadas pelo William: imagens/enquadramento de campanhas, proteção de campos do mestre, `20261112210000_grupo_basico.sql` e `20261112230000_grupo_fichas.sql` (aba Grupo dos jogadores). Nenhuma migração pendente. Nada de banco sem o William pedir.
 - **Iniciativa (últimas entregas, todas validadas no navegador local em 320, 360, 768 e 1200 px):**
