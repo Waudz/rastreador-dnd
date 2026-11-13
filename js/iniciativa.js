@@ -450,6 +450,7 @@
         $("previous").disabled = ordered.length < 2 || !currentId;
         $("next").disabled = ordered.length < 2 || !currentId;
         $("reset").disabled = !currentId;
+        $("limpar-ini").disabled = !combatants.length;
 
         if (!ordered.length) {
           list.innerHTML = `<div class="empty"><strong>O campo de batalha está vazio.</strong>Cadastre os personagens e inimigos para montar a ordem de iniciativa.</div>`;
@@ -732,6 +733,17 @@
         render();
       });
 
+      /* remove todos os combatentes e deixa a iniciativa pronta para um novo encontro; não toca em fichas, bestiário, campanhas nem no relatório legado já salvo */
+      function limparIniciativa() {
+        if (!combatants.length) return false;
+        if (!window.confirm("Deseja remover todos os combatentes da iniciativa? Essa ação não excluirá as fichas dos personagens ou monstros.")) return false;
+        combatants = []; currentId = null; round = 1; nextOrder = 0; editId = null; stats = {}; report = null; edicaoIniciativa = null; fxFor = null;
+        abertos.clear(); for (const k of Object.keys(opcoesDano)) delete opcoesDano[k]; for (const k of Object.keys(quantidades)) delete quantidades[k];
+        desfazer.length = 0; { const b = $("desfazer"); if (b) { b.disabled = true; b.title = "Nada para desfazer"; } }
+        ultimaVez = null; if (fxNote) fxNote.textContent = "";
+        render(); aviso("Iniciativa limpa. Fichas, bestiário e campanhas continuam intactos."); return true;
+      }
+      $("limpar-ini").addEventListener("click", limparIniciativa);
       $("report").addEventListener("click", (e) => {
         if (e.target.id === "report-close") { report = null; render(); }
       });
@@ -770,7 +782,7 @@
         rolagemAuto,
         list: () => combatants,
         atual: () => currentId,
-        aplicarDano, curar, darTemp, aplicarPV, lerQuantidade, maisOpcoes, estatisticas: () => stats, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
+        aplicarDano, curar, darTemp, aplicarPV, lerQuantidade, maisOpcoes, limparIniciativa, estatisticas: () => stats, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
         trocarContexto,
         contexto: () => contexto,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }

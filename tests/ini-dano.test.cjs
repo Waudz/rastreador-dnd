@@ -7,7 +7,7 @@ function iniciativa(salvo){
   document.el=id=>completo(el0(id));document.getElementById=id=>document.el(id);document.querySelector=s=>document.el(s.replace(/^#/,''));document.createElement=()=>document.el('__c'+gerados.size+gerados.set(gerados.size,1).size);document.body.append=()=>{};document.addEventListener=()=>{};document.documentElement={dataset:{}};
   const w={addEventListener(){},confirm:m=>{(w.perguntas??=[]).push(m);return w.respostas&&w.respostas.length?w.respostas.shift():true;}};
   const c=vm.createContext({ico:()=>'',window:w,document,localStorage,location:{search:''},URLSearchParams,console,setTimeout,clearTimeout,setInterval(){},navigator:{}});
-  vm.runInContext(ler('js/iniciativa.js'),c);w.__ini.__doc=document;return w.__ini;
+  vm.runInContext(ler('js/iniciativa.js'),c);w.__ini.__doc=document;w.__ini.__w=w;return w.__ini;
 }
 test('aplicarDano reduz PV sem passar de 0, conta abates e aceita atacante explícito',()=>{
   const I=iniciativa();I.add({name:'Goblin',kind:'Monstro',initiative:12,hp:7,maxHp:7,ac:15});I.add({name:'Herói',kind:'Personagem',initiative:15,hp:20,maxHp:20,ac:16});
@@ -153,4 +153,12 @@ test('cabeçalho sem "Dano causado por"; painel segue o turno desligado por padr
   assert.ok(!/id="dmg-by"|class="dmgby"/.test(html),'o seletor saiu do cabeçalho');assert.match(html,/id="expandir-tudo"/);assert.match(html,/id="recolher-tudo"/);
   assert.match(html,/<input type="checkbox" id="seguir-turno">/,'sem atributo checked: desligado por padrão');assert.match(js,/localStorage\.getItem\("ini_seguir_turno"\) === "1"/);
   assert.match(js,/abertos\.has\(c\.id\) \? maisTpl\(c, isActive\)/,'Mais opções preserva o estado por combatente');
+});
+test('Limpar iniciativa: pede confirmação, remove todos os combatentes e zera turno, rodada, estatísticas e estados temporários; cancelar não muda nada; botão desabilitado sem combatentes',()=>{
+  const I=novo([['A',20,10],['B',10,10]],{vez:'iA',rodada:3}),[a,b]=I.list(),w=I.__w;
+  I.aplicarDano(b.id,3);I.maisOpcoes(a.id,true);assert.ok(Object.keys(I.estatisticas()).length>0);
+  w.respostas=[false];assert.equal(I.limparIniciativa(),false);assert.equal(I.list().length,2,'cancelar mantém tudo');assert.match(w.perguntas.at(-1),/Deseja remover todos os combatentes da iniciativa\? Essa ação não excluirá as fichas dos personagens ou monstros\./);
+  w.respostas=[true];assert.equal(I.limparIniciativa(),true);assert.equal(I.list().length,0);assert.equal(I.atual(),null);assert.equal(I.rodada(),1);assert.deepEqual(JSON.parse(JSON.stringify(I.estatisticas())),{});
+  assert.equal(I.desfazerUltimo(),false,'a pilha de desfazer do combate encerrado é limpa');assert.equal(I.limparIniciativa(),false,'sem combatentes não faz nada');
+  assert.equal(I.__doc.el('limpar-ini').disabled,true);
 });

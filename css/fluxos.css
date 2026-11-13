@@ -300,3 +300,9 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
 #vez-avancado-corpo > p { flex:1 1 100%; margin:0; }
 #vez-avancado-corpo > label, #vez-avancado-corpo label:not(.inline) { display:flex; flex-direction:column; align-items:flex-start; gap:4px; margin:0; font-size:12px; }
 .vez-manual .vez-manual-linha { align-items:flex-end; }
+/* faixa do monstro: dados à esquerda, modificador + d20 + resultado à direita (volta ao formulário em combatente manual) */
+#add-form .add-previa { flex-wrap:wrap; justify-content:space-between; }
+#add-form .add-previa-dados { display:flex; align-items:center; gap:10px; flex:1 1 220px; min-width:0; }
+#add-form .add-previa > .add-ini { flex:0 1 auto; margin-left:auto; justify-content:flex-end; flex-wrap:wrap; }
+#add-form .add-previa > .add-ini .add-conta { flex:1 1 100%; text-align:right; }
+@media (max-width:560px) { #add-form .add-previa > .add-ini { flex:1 1 100%; margin-left:0; justify-content:flex-start; } #add-form .add-previa > .add-ini .add-conta { text-align:left; } }

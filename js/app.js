@@ -177,15 +177,20 @@
     const iniBonus = (m) => m.initiative_bonus ?? Math.floor(((m.ability_scores?.dexterity ?? 10) - 10) / 2);
     const rollInit = (m) => 1 + Math.floor(Math.random() * 20) + iniBonus(m);
     const sinal = (n) => (n >= 0 ? "+" : "-") + Math.abs(n);
-    function limparPrevia() { const p = $("#add-previa"); if (p) { p.hidden = true; p.innerHTML = ""; } const c = $("#add-conta"); if (c) c.textContent = ""; }
+    /* modificador, d20 e resultado ficam na faixa do monstro selecionado; sem monstro (combatente manual), voltam para o formulário */
+    function posicionarIni(naFaixa) {
+      const ini = document.querySelector("#add-form .add-ini"), p = $("#add-previa"), wrap = document.querySelector("#add-form .add-wrap"); if (!ini || !p || !wrap) return;
+      if (naFaixa) { if (ini.parentNode !== p) p.appendChild(ini); } else if (ini.parentNode !== wrap.parentNode) wrap.parentNode.insertBefore(ini, wrap);
+    }
+    function limparPrevia() { posicionarIni(false); const p = $("#add-previa"); if (p) { p.hidden = true; const d = p.querySelector(".add-previa-dados"); if (d) d.innerHTML = ""; } const c = $("#add-conta"); if (c) c.textContent = ""; }
     function pick(k) {
       const m = ALL.find((x) => x.key === k); if (!m) return;
       $("#name").value = uniq(pt(m) || m.name); $("#kind").value = CAT[catOf(m)];
       $("#ini-mod").value = iniBonus(m); $("#initiative").value = ""; $("#add-conta").textContent = "";   // a iniciativa sai do botão d20 ou do seu dado
       $("#hp").value = $("#maxHp").value = m.hit_points; $("#ac").value = m.armor_class;
       window.__ini.pending = m.key; sug.hidden = true;
-      const p = $("#add-previa"); p.hidden = false;
-      p.innerHTML = `${av(m, 56)}<div class="add-previa-info"><b>${esc(pt(m) || m.name)}</b>${pt(m) ? `<span class="muted">${esc(m.name)}</span>` : ""}<span>CA <b>${m.armor_class}</b></span><span>PV <b>${m.hit_points}</b></span><span>Iniciativa <b>${sinal(iniBonus(m))}</b></span></div>`;
+      const p = $("#add-previa"); p.hidden = false; posicionarIni(true);
+      p.querySelector(".add-previa-dados").innerHTML = `${av(m, 56)}<div class="add-previa-info"><b>${esc(pt(m) || m.name)}</b>${pt(m) ? `<span class="muted">${esc(m.name)}</span>` : ""}<span>CA <b>${m.armor_class}</b></span><span>PV <b>${m.hit_points}</b></span></div>`;
     }
     /* d20 + modificador: usa a rolagem compartilhada (js/rolagens.js) e mostra a conta; o resultado continua editável */
     const sincRolagem = () => { const on = window.__ini.rolagemAuto ? window.__ini.rolagemAuto() : true, b = $("#add-d20"); b.disabled = !on; b.title = on ? "Rolar 1d20 + modificador" : "Rolagem automática desligada: digite a iniciativa"; };
