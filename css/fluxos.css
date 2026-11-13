@@ -283,3 +283,20 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
 #vez-avancado .row label:not(.inline) { display:flex; flex-direction:column; align-items:flex-start; gap:4px; margin:0; font-size:12px; }
 #vez-avancado label.inline { white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
 #vez-avancado input[type=checkbox], .acoes-vez-cab input[type=checkbox] { width:auto; height:auto; min-height:0; }
+/* faixa de ataque: campos do tamanho do conteúdo, mesma altura e alinhamento em todas as linhas */
+#acoes-da-vez input.num, #acoes-da-vez .vez-manual input.num, #vez-avancado input.num { width:64px; height:34px; min-height:0; padding:0 6px; font-size:14px; text-align:center; }
+#acoes-da-vez select, #vez-avancado select { height:34px; min-height:0; padding:0 8px; font-size:13px; width:auto; max-width:260px; }
+#vez-avancado #atk-ataque { max-width:340px; }
+#vez-avancado input:not([type=checkbox]):not(.num):not([type=hidden]) { height:34px; min-height:0; width:150px; padding:0 8px; font-size:13px; }
+#acoes-da-vez .row { align-items:flex-end; gap:8px 14px; }
+#acoes-da-vez .row > button, #acoes-da-vez .acoes-vez-cab button { height:34px; min-height:0; }
+#acoes-da-vez .vez-manual .row > button { height:34px; }
+@media (max-width:760px), (pointer:coarse) { #acoes-da-vez input.num, #vez-avancado input.num, #vez-avancado input:not([type=checkbox]):not([type=hidden]), #acoes-da-vez select, #vez-avancado select, #acoes-da-vez .row > button { height:44px; min-height:44px; } }
+/* uma só régua para todos os campos da faixa: mesma altura, mesma fonte, rótulo acima do campo (na linha de cabeçalho, ao lado) */
+#acoes-da-vez select, #acoes-da-vez input:not([type=checkbox]), #acoes-da-vez .row > button { font-size:13px; font-family:inherit; }
+#acoes-da-vez .acoes-vez-cab input.num { width:56px; }
+#vez-avancado-corpo { display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px 14px; }
+#vez-avancado-corpo > .row { display:contents; }
+#vez-avancado-corpo > p { flex:1 1 100%; margin:0; }
+#vez-avancado-corpo > label, #vez-avancado-corpo label:not(.inline) { display:flex; flex-direction:column; align-items:flex-start; gap:4px; margin:0; font-size:12px; }
+.vez-manual .vez-manual-linha { align-items:flex-end; }
