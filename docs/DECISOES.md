@@ -34,6 +34,9 @@ Fonte única das decisões do William. Não repetir em outros arquivos: apontar 
 - Origem e vínculo de cada magia sempre registrados.
 - **O sistema de magias só está concluído com: lista do Paladino, Arcanum Místico do Bruxo e revisão da conjuração multiclasse** (`docs/PENDENCIAS.md`).
 
+## Imagens
+- Qualquer imagem de conteúdo (retratos, monstros, itens, campanhas) deve poder ser ampliada pelo visualizador global único (`js/visualizador-imagem.js`); novas imagens usam `<img>` fora de controles, ou chamam `VISUALIZADOR.abrir`. Imagens de itens ficam na ficha (`ficha.imagensItens`), sem sistema novo de armazenamento.
+
 ## Inventário (fase 3; arquitetura já decidida)
 - Item com `uid` (instância), `ref` (catálogo ou nulo), origem, `magiaVinculada`, quantidade, peso, propriedades. Pergaminhos são itens reais ligados a uma magia; usar (conjurar) é diferente de copiar para o grimório.
 - Consumo, custos, testes e resultados atualizam todos os registros sem duplicar itens. Usar item é uma operação atômica (item, PV e efeitos juntos); poção de cura rola no app ou aceita resultado manual e nunca passa do máximo; itens do mestre têm efeitos configuráveis, inclusive manuais. Não automatizar todos os itens: suportar uma base e documentar o que falta.

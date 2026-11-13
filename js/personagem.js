@@ -329,10 +329,19 @@
   }
   /* ---------- inventário: itens, uso de consumíveis e efeitos ---------- */
   const IV = window.INVENTARIO, IE = window.ITENS_EFEITOS;
+  const II = window.INV_IMG || { ICONE: {}, obter: () => null, definir: () => ({ ok: false, erro: "Indisponível." }), remover() {}, limpar: () => false, reduzir: () => Promise.reject(new Error("indisponível")) };
   const cont = () => IV.conteinerDe(P);
   const ROT_ORIGEM = { inicial: "Inicial", criacao: "Criação", compra: "Compra", saque: "Saque", jogo: "Jogo", mestre: "Mestre", transferencia: "Transferência" };
   let uso = null, usando = false, edEf = null;
   const itemPor = (i) => INV()[i];
+  /* exibição do inventário: lista (padrão) ou grade de cartões; a escolha fica neste aparelho */
+  const invAbertos = new Set();
+  let vistaInv = "lista"; try { vistaInv = localStorage.getItem("dnd5e_inv_vista") === "grade" ? "grade" : "lista"; } catch (_) { /* sem armazenamento: lista */ }
+  const cabecalhoInv = () => `<div class="inv-cab"><h3 class="sub inv-tit">Itens que você carrega</h3><div class="inv-vista" role="group" aria-label="Modo de exibição do inventário">${[["lista", "Lista"], ["grade", "Grade"]].map(([k, n]) => `<button type="button" class="small${vistaInv === k ? " ativo" : ""}" data-inv-vista="${k}" aria-pressed="${vistaInv === k}">${n}</button>`).join("")}</div></div>`;
+  function atualizarCartao(card, it) {
+    if (!card || !it) return; const n = card.querySelector(".inv-nome-txt"), q = card.querySelector(".inv-qtd-badge"), p = card.querySelector(".inv-peso-txt");
+    if (n) n.textContent = (it.nome || "").trim() || "Item sem nome"; if (q) q.textContent = "×" + num(it.qtd, 1); if (p) p.textContent = kg(num(it.peso, 0)) + " kg cada";
+  }
   function linhaInv(it, i) {
     const t = it.tipo || "equipamento", pr = it.propriedades || {}, sint = pr.sintonia && pr.sintonia.requer, passivo = IE.efeitosDe(it).some((e) => e.passivo);
     const acoes = [];
@@ -343,9 +352,56 @@
     if (pr.cargas) acoes.push(`<span class="muted">Cargas ${num(pr.cargas.atual, 0)}/${num(pr.cargas.max, 0)}</span>`);
     if (pr.raridade) acoes.push(`<span class="muted">${esc(pr.raridade)}</span>`);
     const org = it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? ` · ${esc(ROT_ORIGEM[it.origem.tipo] || it.origem.tipo)}${it.origem.nota ? ": " + esc(it.origem.nota) : ""}` : "";
-    return `<div class="item-inv" style="margin:0 0 8px" data-i="${i}"><div class="row" style="margin:0 0 4px"><input style="flex:1 1 160px" data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"><input class="num" type="number" min="0" step="1" data-inv="qtd" value="${num(it.qtd, 1)}" aria-label="Quantidade"><input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}" aria-label="Peso de cada unidade em kg"><button type="button" class="small subtle" data-rm-item="${i}" aria-label="Remover item">${window.ico ? window.ico("x") : "x"}</button></div>
-      <div class="row" style="margin:0"><select data-inv-tipo aria-label="Tipo do item">${Object.entries(IV.TIPOS).map(([k, n]) => opt(k, n, t === k)).join("")}</select>${acoes.join(" ")}${souMestre ? `<button type="button" class="small subtle" data-inv-editar="${i}">Efeitos do item</button>` : ""}<span class="muted">${org}</span></div></div>`;
+    const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim();
+    const thumb = `<button type="button" class="inv-thumb${im ? "" : " vazio"}" data-inv-img="${i}" aria-label="${im ? "Ampliar a imagem de " : "Adicionar imagem a "}${nomeIt}" title="${im ? "Ampliar a imagem" : "Adicionar imagem"}">${im ? `<img class="inv-thumb-img" src="${esc(im.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : (window.ico ? window.ico(II.ICONE[t] || "bag") : "")}</button>`;
+    return `<div class="item-inv inv-card" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b><span class="inv-qtd-badge" title="Quantidade">×${num(it.qtd, 1)}</span></div>
+      <div class="inv-meta muted"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span>${org}</div>
+      <div class="inv-acoes">${acoes.join(" ")}${souMestre ? `<button type="button" class="small subtle" data-inv-editar="${i}">Efeitos do item</button>` : ""}</div></div>
+      <details class="inv-edit" data-inv-uid="${esc(it.uid)}"${aberto ? " open" : ""}><summary>Editar</summary><div class="inv-edit-campos">
+        <label class="inv-c-nome">Nome<input data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"></label>
+        <label>Quantidade<input class="num" type="number" min="0" step="1" data-inv="qtd" value="${num(it.qtd, 1)}"></label>
+        <label>Peso cada (kg)<input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}"></label>
+        <label>Tipo<select data-inv-tipo aria-label="Tipo do item">${Object.entries(IV.TIPOS).map(([k, n]) => opt(k, n, t === k)).join("")}</select></label>
+        <div class="inv-edit-botoes"><button type="button" class="small" data-inv-img-gerir="${i}">${im ? "Trocar ou remover imagem" : "Adicionar imagem"}</button><button type="button" class="small danger" data-rm-item="${i}" aria-label="Remover ${nomeIt}">${window.ico ? window.ico("x") : "x"} Remover item</button></div></div></details></div>`;
   }
+  /* Imagem do item: ver maior, enviar do aparelho, usar URL https, trocar ou remover (o retrato usa o mesmo recorte) */
+  function abrirImagemItem(i) {
+    const it = INV()[i]; if (!it) return; document.getElementById("inv-img-dlg")?.remove();
+    const t = it.tipo || "equipamento", ov = document.createElement("div"); ov.id = "inv-img-dlg"; ov.className = "crop-ov";
+    const pinta = () => {
+      const im = II.obter(F(), it), editar = !soLeitura;
+      ov.innerHTML = `<div class="crop-box inv-img-box" role="dialog" aria-label="Imagem do item"><h3>${esc(it.nome || "Item")}</h3>
+        <div class="inv-img-grande">${im ? `<img src="${esc(im.src)}" alt="Imagem de ${esc(it.nome || "item")}" referrerpolicy="no-referrer">` : `<span class="inv-img-padrao">${window.ico ? window.ico(II.ICONE[t] || "bag") : ""}</span>`}</div>
+        ${im && im.origem === "aparelho" ? '<p class="muted inv-img-nota">Sugestão deste aparelho (outro personagem usou esta imagem para o mesmo item). Envie ou escolha outra para guardá-la nesta ficha.</p>' : ""}
+        ${editar ? `<div class="row inv-img-acoes"><button type="button" class="small primary" data-ii="arq">${im ? "Trocar por uma imagem do aparelho" : "Enviar imagem do aparelho"}</button>${im ? '<button type="button" class="small danger" data-ii="rm">Remover imagem</button>' : ""}</div>
+        <div class="row inv-img-url"><input id="inv-img-url" type="url" inputmode="url" maxlength="500" placeholder="ou cole o endereço da imagem (https://…)" autocomplete="off" aria-label="Endereço da imagem"><button type="button" class="small" data-ii="url">Usar endereço</button></div>
+        <p class="muted inv-img-nota">Arquivos enviados são reduzidos e ficam guardados na ficha; vão junto com ela para outros aparelhos. Um endereço da internet só aparece com conexão.</p>` : ""}
+        <div class="inv-img-erro err" role="alert"></div>
+        <div class="row" style="justify-content:flex-end;margin:6px 0 0"><button type="button" class="small subtle" data-ii="fechar">Fechar</button></div></div>`;
+    };
+    const fim = () => { document.removeEventListener("keydown", esc2, true); ov.remove(); };
+    const esc2 = (e) => { if (e.key === "Escape") { e.stopPropagation(); fim(); } };
+    const erro = (m) => { const e = ov.querySelector(".inv-img-erro"); if (e) e.textContent = m || ""; };
+    const aplicado = (r) => { if (!r.ok) { erro(r.erro); return false; } salvarInv(); redesenharInv(); pinta(); return true; };
+    ov.addEventListener("click", async (e) => {
+      if (e.target === ov) return fim();
+      const b = e.target.closest("[data-ii]"); if (!b || soLeitura && b.dataset.ii !== "fechar") return;
+      const a = b.dataset.ii; erro("");
+      if (a === "fechar") return fim();
+      if (a === "rm") { II.remover(F(), it); salvarInv(); redesenharInv(); pinta(); return; }
+      if (a === "url") { aplicado(II.definir(F(), it, (ov.querySelector("#inv-img-url").value || "").trim())); return; }
+      if (a === "arq") { const f = document.createElement("input"); f.type = "file"; f.accept = "image/*"; f.onchange = async () => { const file = f.files && f.files[0]; if (!file) return; try { const rec = await window.recortarFoto(file); if (!rec) return; aplicado(II.definir(F(), it, await II.reduzir(rec))); } catch (_) { erro("Não foi possível ler essa imagem."); } }; f.click(); }
+    });
+    ov.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.id === "inv-img-url") { e.preventDefault(); ov.querySelector('[data-ii="url"]').click(); } });
+    pinta(); document.body.appendChild(ov); document.addEventListener("keydown", esc2, true); ov.querySelector("[data-ii]")?.focus();
+  }
+  /* miniatura que não carrega (URL fora do ar, sem internet): volta ao ícone do tipo */
+  document.addEventListener("error", (e) => {
+    const im = e.target; if (!im || im.tagName !== "IMG" || !im.classList.contains("inv-thumb-img")) return;
+    const b = im.closest(".inv-thumb"), it = b && INV()[+b.dataset.invImg]; if (!b) return;
+    b.classList.add("vazio"); b.innerHTML = window.ico ? window.ico((it && II.ICONE[it.tipo || "equipamento"]) || "bag") : "";
+  }, true);
+  document.addEventListener("toggle", (e) => { const d = e.target; if (!d || !d.matches || !d.matches("details.inv-edit")) return; const u = d.dataset.invUid; if (u) d.open ? invAbertos.add(u) : invAbertos.delete(u); }, true);
   function histInv() {
     const l = (F().movimentos || []).slice(-20).reverse();
     return l.length ? `<ul class="hist-inv">${l.map((m) => `<li><b>${esc(IV.ROTULO_MOV[m.tipo] || (m.tipo === "uso-efeito" ? "Uso" : m.tipo))}</b> · ${esc(m.nome || "")}${m.qtd ? " ×" + m.qtd : ""}${m.alvo && m.tipo === "uso-efeito" ? " em " + esc(m.alvo) : ""}${m.resultado && m.resultado.length ? " — " + esc(m.resultado.join("; ")) : ""}${m.nota ? " (" + esc(m.nota) + ")" : ""} <span class="muted">${esc(String(m.quando || "").slice(0, 16).replace("T", " "))}</span></li>`).join("")}</ul>` : '<span class="muted">Nenhuma movimentação registrada.</span>';
@@ -359,7 +415,7 @@
     const l = F().efeitosAtivos || [];
     return l.length ? `<h3 class="sub">Efeitos ativos</h3><ul class="efeitos-ativos">${l.map((e) => `<li><b>${esc(e.texto || e.tipo)}</b>${e.duracao && e.duracao.texto ? ` <span class="muted">· ${esc(e.duracao.texto)}</span>` : ""}${e.origem ? ` <span class="muted">· ${esc(e.origem.item)}</span>` : ""} ${e.passivo ? "" : `<button type="button" class="small subtle" data-enc-efeito="${esc(e.id)}">Encerrar</button>`}</li>`).join("")}</ul>` : "";
   }
-  function salvarInv(extra = {}) { IE.sincronizarPassivos(P); agendar({ inventario: P.inventario, ficha: P.ficha, ...extra }); }
+  function salvarInv(extra = {}) { IE.sincronizarPassivos(P); II.limpar(F(), INV()); agendar({ inventario: P.inventario, ficha: P.ficha, ...extra }); }
   /* --- usar item --- */
   function abrirUso(i) {
     const it = itemPor(i); if (!it) return;
@@ -569,7 +625,7 @@
         ${wizard() ? '<div class="sub">Grimório</div><button type="button" class="small" id="cp-abrir">Copiar magia para o grimório</button><div id="copia-box" class="panel" hidden></div>' : ""}
         ${souMestre ? '<div class="sub">Mestre</div><button type="button" class="small" id="ms-abrir">Conceder magia ao personagem</button><div id="mestre-box" class="panel" hidden></div>' : ""}</div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia. Magias de raça, talento ou item aparecem aqui quando o personagem as tiver.</span></div>`}
       </section><section id="secao-inventario" role="tabpanel" aria-labelledby="aba-inventario" data-ficha-secao="inventario" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
-        <h3 class="sub inv-tit">Itens que você carrega</h3>${cabInv}<div id="inv">${INV().map(linhaInv).join("")}</div>
+        ${cabecalhoInv()}<div id="inv" class="${vistaInv === "grade" ? "inv-grade" : ""}">${INV().map(linhaInv).join("")}</div>
         <div id="bloco-carga">${blocoCarga()}</div>
         <div id="uso-box" class="panel" hidden></div><div id="ef-box" class="panel" hidden></div>
         <div class="inv-add panel"><h3 class="sub inv-tit">Adicionar ao inventário</h3>
@@ -679,7 +735,7 @@
     if (t.dataset.bonustemp) { const k = t.dataset.bonustemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))), f = F(); f.bonusTemp = { ...(f.bonusTemp || {}) }; if (v) f.bonusTemp[k] = v; else delete f.bonusTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.modtemp) { const k = t.dataset.modtemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))); const f = F(); f.modTemp = { ...(f.modTemp || {}) }; if (v) f.modTemp[k] = v; else delete f.modTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.atr) { const k = t.dataset.atr; A()[k] = num(t.value, 10); $("#mod-" + k).textContent = fm(mod(A()[k])); refrescar(); return; }
-    if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; INV()[i][k] = k === "nome" ? t.value : num(t.value, 0); atualizarCarga(); agendar({ inventario: P.inventario }); return; }
+    if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; INV()[i][k] = k === "nome" ? t.value : num(t.value, 0); atualizarCarga(); atualizarCartao(t.closest(".item-inv"), INV()[i]); agendar({ inventario: P.inventario }); return; }
     if (t.dataset.din) { DIN()[t.dataset.din] = moeda(t.value); t.value = DIN()[t.dataset.din]; $("#total-po").textContent = totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); agendar({ dinheiro: P.dinheiro }); return; }
     if (t.dataset.cls) { const i = +t.closest("[data-ci]").dataset.ci, k = t.dataset.cls; if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; if (k === "n") CLS()[i].n = Math.max(1, Math.min(Math.max(1,20-R.nivelTotal(CLS().filter((_,j)=>j!==i))), Math.floor(num(t.value, 1)))); else if (k === "sub") { CLS()[i].sub = t.value; } else return; refrescar(); return; }
     if (t.dataset.atq && t.tagName === "INPUT" && t.type !== "checkbox") { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = ["magico", "extra"].includes(k) ? num(t.value, 0) : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
@@ -787,6 +843,9 @@
     if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0 })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector("input").focus(); agendar({ inventario: P.inventario }); return; }
     if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; IV.adicionar(cont(), IV.novoItem({ nome: p[0], qtd: 1, peso: p[1], origem: { tipo: "jogo" } })); redesenharInv(); salvarInv(); return; }
     if ((b = c("[data-rm-item]"))) { const it = itemPor(+b.dataset.rmItem); if (!it) return; if (num(it.qtd, 0) >= 1) IV.retirar(cont(), it.uid, null, { tipo: "descarte" }); else INV().splice(+b.dataset.rmItem, 1); salvarInv(); redesenharInv(); return; }
+    if ((b = c("[data-inv-img]"))) { const it = INV()[+b.dataset.invImg], im = it && II.obter(F(), it); if (im && window.VISUALIZADOR) window.VISUALIZADOR.abrir({ src: im.src, titulo: it.nome || "Item", origem: b }); else abrirImagemItem(+b.dataset.invImg); return; }
+    if ((b = c("[data-inv-img-gerir]"))) { abrirImagemItem(+b.dataset.invImgGerir); return; }
+    if ((b = c("[data-inv-vista]"))) { vistaInv = b.dataset.invVista === "grade" ? "grade" : "lista"; try { localStorage.setItem("dnd5e_inv_vista", vistaInv); } catch (_) { /* segue sem guardar */ } const inv = $("#inv"); if (inv) inv.classList.toggle("inv-grade", vistaInv === "grade"); document.querySelectorAll("[data-inv-vista]").forEach((x) => { const on = x.dataset.invVista === vistaInv; x.classList.toggle("ativo", on); x.setAttribute("aria-pressed", String(on)); }); return; }
     if ((b = c("[data-inv-usar]"))) { abrirUso(+b.dataset.invUsar); return; }
     if ((b = c("[data-inv-copiar]"))) { const it = itemPor(+b.dataset.invCopiar); if (!it || !it.magiaVinculada) return; cp.fonte = "pergaminho"; cp.en = it.magiaVinculada.en; cp.uid = it.uid; cp.arc = ""; const aba = document.querySelector('[data-ficha-aba="magias"]'); if (aba) aba.click(); abrirCopia(); return; }
     if (c("#uso-ok")) { confirmarUso(); return; }
