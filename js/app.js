@@ -277,7 +277,7 @@
       const g = {}; (m.actions || []).forEach((a) => (g[a.action_type || "ACTION"] ??= []).push(a));
       const acts = Object.entries(g).map(([t, arr]) => `<div class="grp">${esc(GRP[t] || t)}</div>` + arr.map((a) => {
         const ri = rollInfo(a);
-        return habD(nmA(a), descInfo(a.name, a.desc, m), (ri ? ` <button class="small roll" data-roll="${esc(JSON.stringify(ri))}">Rolar</button>` : "") + rmBtn(m, "a", m.actions.indexOf(a)), ri ? `<div class="ln muted">${esc(rollLine(ri))}</div><div class="rr"></div>` : "");
+        return habD(nmA(a), descInfo(a.name, a.desc, m), (ri ? ` <button class="small roll" data-roll="${esc(JSON.stringify(ri))}">${window.ico ? window.ico("d20") : ""}Rolar</button>` : "") + rmBtn(m, "a", m.actions.indexOf(a)), ri ? `<div class="ln muted">${esc(rollLine(ri))}</div><div class="rr"></div>` : "");
       }).join("")).join("");
       const spl = (m.spells || []).map((s, ix) => spRow(s.name, s.key, rmBtn(m, "s", ix))).join("");
       const p = pt(m), cat = catOf(m);

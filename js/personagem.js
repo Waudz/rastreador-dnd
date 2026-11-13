@@ -282,7 +282,7 @@
   function blocoDV() {
     const dv = dadosVida(), usados = F().dvUsados || {}, ks = Object.keys(dv).map(Number).sort((a, b) => b - a);
     if (!ks.length) return '<span class="muted">Escolha uma classe para ter dados de vida.</span>';
-    return ks.map((d) => { const tot = dv[d], us = Math.min(tot, num(usados[d], 0)); return `<div class="res"><span><b>d${d}</b> <span class="muted">· restam ${tot - us} de ${tot}</span></span><div class="dv-acoes"><button type="button" class="small" data-dv="${d}" ${tot-us<=0?"disabled":""}>Rolar no App</button><input type="number" min="1" max="${d}" data-rolagem-fisica="${d}" aria-label="Rolagem Física de d${d}, sem Constituição" placeholder="Dado Físico"><button type="button" class="small" data-dv-manual="${d}" ${tot-us<=0?"disabled":""}>Usar Rolagem Física</button><button type="button" class="small" data-dv-marcar="${d}" ${tot-us<=0?"disabled":""}>Só Marcar Uso</button></div></div>`; }).join("");
+    return ks.map((d) => { const tot = dv[d], us = Math.min(tot, num(usados[d], 0)); return `<div class="res"><span><b>d${d}</b> <span class="muted">· restam ${tot - us} de ${tot}</span></span><div class="dv-acoes"><button type="button" class="small" data-dv="${d}" ${tot-us<=0?"disabled":""}>${window.ico?window.ico("d20"):""}Rolar no App</button><input type="number" min="1" max="${d}" data-rolagem-fisica="${d}" aria-label="Rolagem Física de d${d}, sem Constituição" placeholder="Dado Físico"><button type="button" class="small" data-dv-manual="${d}" ${tot-us<=0?"disabled":""}>Usar Rolagem Física</button><button type="button" class="small" data-dv-marcar="${d}" ${tot-us<=0?"disabled":""}>Só Marcar Uso</button></div></div>`; }).join("");
   }
 
   /* ataques */
@@ -295,7 +295,7 @@
       <div><label>Dano</label><input class="num" data-atq="dado" value="${esc(a.dado || "1d6")}" maxlength="12"></div><div><label>Tipo de dano</label><select data-atq="tipo">${R.TIPOS_DANO.map((t) => opt(t, t, t === a.tipo)).join("")}</select></div>
       <div><label>Bônus mágico</label><input class="num" type="number" data-atq="magico" value="${num(a.magico, 0)}"></div><div><label>Dano extra</label><input class="num" type="number" data-atq="extra" value="${num(a.extra, 0)}" title="Somado ao dano (ex.: fúria, estilo de luta)"></div>
       <label class="inline" style="margin:14px 0 0"><input type="checkbox" style="width:auto;height:auto" data-atq="prof" ${a.prof === false ? "" : "checked"}> Proficiente</label></div>
-      </details><div class="atk-res" id="atk-res-${i}"><b>${resAtq(a)}</b></div><div class="row"><button type="button" class="small" data-rolar-atq="${i}">Rolar ataque</button><button type="button" class="small" data-rolar-dano="${i}">Rolar dano</button></div></article>`;
+      </details><div class="atk-res" id="atk-res-${i}"><b>${resAtq(a)}</b></div><div class="row"><button type="button" class="small" data-rolar-atq="${i}">${window.ico?window.ico("d20"):""}Rolar ataque</button><button type="button" class="small" data-rolar-dano="${i}">${window.ico?window.ico("d20"):""}Rolar dano</button></div></article>`;
 
   /* magias */
   function blocoSlots() {
