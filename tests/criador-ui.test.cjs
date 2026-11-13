@@ -47,3 +47,8 @@ test('marcar uma opção redesenha a etapa mas preserva o texto do filtro e o fo
   assert.match(j,/filtros=campos\.map\(c=>c\.value\)/);assert.match(j,/if\(filtros\[n\]\)\{c\.value=filtros\[n\];filtrarEscolhas\(c\);\}/,'o filtro digitado volta e é reaplicado depois do redesenho');
   assert.match(j,/alvo\.focus\(\{preventScroll:true\}\)/,'o foco volta para a opção marcada');
 });
+test('compra de pontos: a lista mostra o custo total e a variação no saldo; a explicação da regra aparece',()=>{
+  const j=ler('js/criador.js');
+  assert.match(j,/function rotulosCompra\(k\)/);assert.match(j,/seletor\(`data-base="\$\{k\}"`,rotulosCompra\(k\),st\(\)\.base\[k\]\)/);
+  assert.match(j,/do 13 para o 14 e do 14 para o 15, cada ponto custa 2 \(o 14 custa 7 no total e o 15 custa 9\)/);assert.match(j,/', faltam '\+\(d-rest\)/);
+});
