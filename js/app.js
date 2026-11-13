@@ -163,6 +163,23 @@
       abiIndex(); buildFilter(); renderBestiary(); spSearch(); if (document.activeElement === $("#name")) sugg(); window.__ini.render();
     }
     $('#exportar-criacoes').addEventListener('click',()=>{const mon=ALL.filter(m=>m.custom),spl=SP.filter(m=>m.custom),keys=new Set(mon.map(m=>m.key)),img=Object.entries(PH).filter(([k])=>keys.has(k)).map(([key,data])=>({key,data}));const url=URL.createObjectURL(new Blob([JSON.stringify({v:1,mon,spl,img},null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='minhas-criacoes.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+    /* Importar Minhas Criações: lê o JSON gerado por "Exportar" (v1); só entram criações próprias; chaves que já existem são mantidas */
+    $('#importar-criacoes').addEventListener('click',()=>$('#importar-arquivo').click());
+    $('#importar-arquivo').addEventListener('change',async(e)=>{const f=e.target.files&&e.target.files[0];e.target.value='';const st=$('#dl-status');if(!f)return;
+      if(window.nuvem&&nuvem.usuario&&!nuvem.usuario()){st.textContent='Importar criações exige uma conta (gratuita).';return;}
+      try{
+        if(f.size>20*1024*1024)throw new Error('arquivo grande demais');
+        const d=JSON.parse(await f.text());if(!d||d.v!==1||!Array.isArray(d.mon)||(d.spl!=null&&!Array.isArray(d.spl))||(d.img!=null&&!Array.isArray(d.img)))throw new Error('formato');
+        const okM=(m)=>m&&typeof m==='object'&&m.custom===true&&typeof m.key==='string'&&/^custom_/.test(m.key)&&typeof m.name==='string'&&m.name.trim();
+        const okS=(s)=>s&&typeof s==='object'&&s.custom===true&&typeof s.key==='string'&&/^custom_/.test(s.key);
+        const novosM=d.mon.filter(okM).filter(m=>!BY[m.key]),novasS=(d.spl||[]).filter(okS).filter(s=>!SP.some(x=>x.key===s.key));
+        const ignM=d.mon.length-novosM.length,ignS=(d.spl||[]).length-novasS.length,keys=new Set(novosM.map(m=>m.key));
+        const imgs=(d.img||[]).filter(x=>x&&keys.has(x.key)&&typeof x.data==='string'&&/^data:image\//.test(x.data));
+        if(novosM.length)await put('mon',novosM);if(novasS.length)await put('spl',novasS);if(imgs.length)await put('img',imgs);
+        await reload();queueSync();
+        st.textContent='Importado: '+novosM.length+' ficha'+(novosM.length===1?'':'s')+(novasS.length?' e '+novasS.length+' magia'+(novasS.length===1?'':'s'):'')+(ignM+ignS?'. '+(ignM+ignS)+' ignorada'+(ignM+ignS===1?'':'s')+' (já existiam ou não eram criações próprias).':'.');
+      }catch(err){st.textContent='Não foi possível importar: o arquivo precisa ser um "minhas-criacoes.json" exportado por aqui.';}
+    });
     /* o campo Nome de “Adicionar combatente” é a busca do bestiário */
     const match = (m, q) => nz(m.name + " " + pt(m) + " " + (m.subtitle || "")).includes(q);
     const sug = $("#sug");
