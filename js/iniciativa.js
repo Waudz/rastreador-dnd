@@ -10,7 +10,7 @@
       let nextOrder = 0;
       let editId = null;
       let stats = {};
-      let report = null, relatorioLegado = null;
+      let report = null, relatorioLegado = null, grupoPV = null, seqDesfazer = 0;
       let selecao={qtd:0,preparar:null},iniciando=false;
       let edicaoIniciativa = null;const ouvintes=[];
       const notificar=()=>ouvintes.forEach(fn=>fn());
@@ -35,7 +35,7 @@
           else localStorage.removeItem(STORAGE_KEY);
         } catch (_) {}
       }
-      function zerar() { combatants = []; currentId = null; round = 1; nextOrder = 0; editId = null; stats = {}; report = null; relatorioLegado = null; edicaoIniciativa = null; }
+      function zerar() { grupoPV = null; combatants = []; currentId = null; round = 1; nextOrder = 0; editId = null; stats = {}; report = null; relatorioLegado = null; edicaoIniciativa = null; }
       /* troca a campanha ativa: guarda o combate atual na chave da campanha antiga e carrega o da nova, sem misturar */
       function trocarContexto(novo) {
         novo = novo || "";
@@ -250,8 +250,39 @@
       const copiaEstado = (c) => ({ slots: c.slots ? JSON.parse(JSON.stringify(c.slots)) : null, usos: c.usos ? { ...c.usos } : null, furia: !!c.furia, hp: c.hp, temp: c.temp || 0, morte: c.morte ? { ...c.morte } : null, estavel: !!c.estavel, morto: !!c.morto, conc: c.conc || null });
       function guardarDesfazer(rotulo, ids) {
         const estados = {}; for (const id of ids) { const c = combatants.find((x) => x.id === id); if (c) estados[id] = copiaEstado(c); }
-        desfazer.push({ rotulo, estados, stats: JSON.parse(JSON.stringify(stats)) }); if (desfazer.length > 30) desfazer.shift();
+        const entrada = { rotulo, estados, stats: JSON.parse(JSON.stringify(stats)), seq: ++seqDesfazer, deltas: [] }; desfazer.push(entrada); if (desfazer.length > 30) desfazer.shift();
         const b = $("desfazer"); if (b) { b.disabled = false; b.title = "Desfazer: " + rotulo; }
+        return entrada;
+      }
+      /* ---- Desfazer do aviso (acumulado): alterações de PV seguidas no MESMO combatente, enquanto o aviso estiver ativo, viram um grupo.
+         O grupo guarda o estado antes da primeira alteração (snap) e depois da última (fim). Desfazer o grupo devolve o PV ao valor inicial e só
+         reverte os demais campos (morte, concentração, usos...) que continuam como estavam no fim do grupo; o que o mestre mudou nesse meio tempo é mantido. ---- */
+      const GRUPO_PV_MS = 7000;
+      const igualJSON = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
+      function registrarPV(alvo, entrada, extra) {
+        const agora = Date.now();
+        if (!(grupoPV && grupoPV.id === alvo.id && agora < grupoPV.expira)) grupoPV = { id: alvo.id, snap: entrada.estados[alvo.id], entradas: [] };
+        grupoPV.entradas.push(entrada); grupoPV.fim = copiaEstado(alvo); grupoPV.expira = agora + GRUPO_PV_MS;
+        mostrarGrupo(alvo, extra);
+      }
+      const resumoGrupo = (alvo) => { const l = Number(grupoPV.snap.hp) - Number(alvo.hp); return `${alvo.name}: ${l > 0 ? "−" + l : l < 0 ? "+" + (-l) : "±0"} PV (${grupoPV.snap.hp} → ${alvo.hp}).`; };
+      function mostrarGrupo(alvo, extra) { if (window.FEEDBACK) window.FEEDBACK.mostrar(`${resumoGrupo(alvo)} ${extra || ""}`.trim(), { acao: { rotulo: "Desfazer", fn: () => desfazerGrupoPV() } }); }
+      function desfazerGrupoPV() {
+        const g = grupoPV; grupoPV = null; if (!g) return false;
+        const c = combatants.find((x) => x.id === g.id); if (!c) return false;
+        if (Number(c.hp) !== Number(g.fim.hp)) { aviso(`O PV de ${c.name} mudou depois do aviso; use o botão Desfazer geral.`); return false; }
+        const primeira = Math.min(...g.entradas.map((e) => e.seq)), deltas = g.entradas.flatMap((e) => e.deltas || []);
+        for (const e of g.entradas) { const i = desfazer.indexOf(e); if (i >= 0) desfazer.splice(i, 1); }          // o histórico geral não guarda mais esses passos
+        for (const d of deltas) { const st = stats[d.id]; if (st) st[d.campo] = Math.max(0, (st[d.campo] || 0) - d.valor); }     // estatísticas do relatório voltam junto
+        for (const e of desfazer) if (e.seq > primeira) for (const d of deltas) { const st = e.stats && e.stats[d.id]; if (st) st[d.campo] = Math.max(0, (st[d.campo] || 0) - d.valor); }
+        const antesUsos = c.usos || {}, atual = copiaEstado(c);
+        c.hp = g.snap.hp;
+        for (const k of ["temp", "morte", "estavel", "morto", "conc", "usos", "slots", "furia"]) if (igualJSON(atual[k], g.fim[k])) c[k] = g.snap[k] === null || g.snap[k] === undefined ? (k === "temp" ? 0 : null) : JSON.parse(JSON.stringify(g.snap[k]));   // só o que o grupo mexeu e ninguém mais
+        if (Number(c.hp) > 0) { c.morte = null; c.estavel = false; }                                                      // com PV acima de 0 não há salvaguarda contra a morte em andamento
+        if (c.sync && window.__ini.registrarUso) for (const k of new Set([...Object.keys(antesUsos), ...Object.keys(c.usos || {})])) { const novo = (c.usos || {})[k] || 0; if ((antesUsos[k] || 0) !== novo) window.__ini.registrarUso(c, k, novo); }
+        sincronizarMorte(c);
+        { const b = $("desfazer"); if (b) { b.disabled = !desfazer.length; b.title = desfazer.length ? "Desfazer: " + desfazer[desfazer.length - 1].rotulo : "Nada para desfazer"; } }
+        render(); if (window.FEEDBACK) window.FEEDBACK.mostrar(`${c.name}: voltou a ${c.hp} PV.`); return true;
       }
       function desfazerUltimo() {
         const u = desfazer.pop(); if (!u) return false;
@@ -262,10 +293,10 @@
           sincronizarMorte(c);
         }
         stats = u.stats; const b = $("desfazer"); if (b) { b.disabled = !desfazer.length; b.title = desfazer.length ? "Desfazer: " + desfazer[desfazer.length - 1].rotulo : "Nada para desfazer"; }
-        render(); if (window.FEEDBACK) window.FEEDBACK.mostrar("Desfeito: " + u.rotulo); return true;
+        grupoPV = null; render(); if (window.FEEDBACK) window.FEEDBACK.mostrar("Desfeito: " + u.rotulo); return true;
       }
-      const aviso = (t) => { if (window.FEEDBACK) window.FEEDBACK.mostrar(t); };
-      const avisoPV = (t) => { if (window.FEEDBACK) window.FEEDBACK.mostrar(t, { acao: { rotulo: "Desfazer", fn: () => desfazerUltimo() } }); };   // resultado + Desfazer na hora, sem confirmação prévia
+      const aviso = (t) => { grupoPV = null; if (window.FEEDBACK) window.FEEDBACK.mostrar(t); };   // outro aviso substitui o do PV: o grupo acaba
+
       /* tipo de dano é opcional no cartão (registro rápido continua sem escolher nada); quando informado, aplica resistência, imunidade e vulnerabilidade, inclusive a da Fúria */
       const TIPOS_DANO = [["cortante", "slashing"], ["perfurante", "piercing"], ["contundente", "bludgeoning"], ["fogo", "fire"], ["frio", "cold"], ["ácido", "acid"], ["elétrico", "lightning"], ["trovejante", "thunder"], ["necrótico", "necrotic"], ["psíquico", "psychic"], ["radiante", "radiant"], ["venenoso", "poison"], ["energia", "force"]];
       function defesasDoCombatente(c) {
@@ -309,13 +340,16 @@
         if (!alvo || !n) return false;
         if (alvo.morto) { aviso(`${alvo.name} já está morto. Use Reviver se for preciso corrigir.`); return false; }
         let ajuste = ""; if (opcoes.tipo && !opcoes.jaAjustado) { const a = ajustarPorDefesas(alvo, n, opcoes.tipo); if (a.motivo) { ajuste = `${a.motivo} a ${(TIPOS_DANO.find((t) => t[1] === opcoes.tipo) || [opcoes.tipo])[0]}: ${n} → ${a.valor}. `; n = a.valor; } }
-        if (!n) { aviso(`${alvo.name}: ${ajuste || "nenhum dano"}sem dano.`); return false; }
+        if (!n) {                                                          // imunidade: nada muda; se há um grupo ativo no mesmo combatente, ele continua com o Desfazer
+          if (grupoPV && grupoPV.id === alvo.id && Date.now() < grupoPV.expira) { grupoPV.expira = Date.now() + GRUPO_PV_MS; mostrarGrupo(alvo, `${ajuste || ""}sem dano.`); } else aviso(`${alvo.name}: ${ajuste || "nenhum dano"}sem dano.`);
+          return false;
+        }
         const antes = Number(alvo.hp), c = quemId && combatants.find((x) => x.id === quemId), semResp = quemId === "__nenhum", quem = c ? { id: c.id, name: c.name } : attacker();
-        guardarDesfazer(`${alvo.name} −${n} PV`, [alvo.id]);
+        const entrada = guardarDesfazer(`${alvo.name} −${n} PV`, [alvo.id]);
         const absorvido = Math.min(Number(alvo.temp) || 0, n), resto = n - absorvido; alvo.temp = (Number(alvo.temp) || 0) - absorvido;
         alvo.hp = Math.max(0, antes - resto);
-        if (!semResp) { const a = statOf(quem.id, quem.name); a.dealt += n; if (antes > 0 && alvo.hp === 0) a.kills++; }   // "sem responsável" (dano ambiental) não entra nas estatísticas de quem causou
-        statOf(alvo.id, alvo.name).taken += n;
+        if (!semResp) { const a = statOf(quem.id, quem.name); a.dealt += n; entrada.deltas.push({ id: quem.id, campo: "dealt", valor: n }); if (antes > 0 && alvo.hp === 0) { a.kills++; entrada.deltas.push({ id: quem.id, campo: "kills", valor: 1 }); } }   // "sem responsável" (dano ambiental) não entra nas estatísticas de quem causou
+        statOf(alvo.id, alvo.name).taken += n; entrada.deltas.push({ id: alvo.id, campo: "taken", valor: n });
         let msg = (ajuste || "") + (absorvido ? `${absorvido} absorvido pelos PV temporários. ` : "");
         if (antes > 0 && alvo.hp === 0) { const sobraQueda = resto - antes; if (!(alvo.kind === "Personagem" && sobraQueda >= Number(alvo.maxHp))) msg += tentarQueda(alvo, resto, opcoes); }   // habilidades que deixam 1 PV (se sobreviver, hp > 0 e o ramo de 0 PV abaixo não roda)
         if (antes > 0 && alvo.hp === 0) {
@@ -334,17 +368,17 @@
         }
         else if (alvo.conc && resto > 0 && alvo.hp > 0) msg += `Concentração de ${alvo.name} (${alvo.conc}): salvaguarda de Constituição, CD ${Math.max(10, Math.floor(resto / 2))}. `;
         if (antes <= 0 || alvo.hp <= 0) sincronizarMorte(alvo);
-        render(); avisoPV(`${alvo.name}: −${n} PV (${antes} → ${alvo.hp}). ${msg}`.trim());
+        render(); registrarPV(alvo, entrada, msg);
         return true;
       }
       function curar(id, amount) {
         const alvo = combatants.find((c) => c.id === id), n = Math.max(0, Math.floor(Number(amount) || 0)); if (!alvo || !n) return false;
         if (alvo.morto) { aviso(`${alvo.name} está morto: cura comum não revive. Use Reviver.`); return false; }
-        guardarDesfazer(`${alvo.name} +${n} PV`, [alvo.id]);
+        const entrada = guardarDesfazer(`${alvo.name} +${n} PV`, [alvo.id]);
         const antes = Number(alvo.hp); alvo.hp = Math.min(Number(alvo.maxHp), antes + n);
-        const quem = attacker(); if (alvo.hp > antes) statOf(quem.id, quem.name).healed += alvo.hp - antes;
+        const quem = attacker(); if (alvo.hp > antes) { statOf(quem.id, quem.name).healed += alvo.hp - antes; entrada.deltas.push({ id: quem.id, campo: "healed", valor: alvo.hp - antes }); }
         if (antes === 0 && alvo.hp > 0) { alvo.morte = null; alvo.estavel = false; sincronizarMorte(alvo); }
-        render(); avisoPV(`${alvo.name}: +${alvo.hp - antes} PV (${antes} → ${alvo.hp}).`); return true;
+        render(); registrarPV(alvo, entrada, ""); return true;
       }
       /* salvaguarda contra a morte registrada à mão (dado físico): sucesso, falha, natural 1 (2 falhas) ou natural 20 (volta a 1 PV) */
       /* quantidade de PV (inteiro positivo, padrão 1); o botão clicado decide se é dano, cura ou PV temporário */
@@ -737,7 +771,7 @@
       function limparIniciativa() {
         if (!combatants.length) return false;
         if (!window.confirm("Deseja remover todos os combatentes da iniciativa? Essa ação não excluirá as fichas dos personagens ou monstros.")) return false;
-        combatants = []; currentId = null; round = 1; nextOrder = 0; editId = null; stats = {}; report = null; edicaoIniciativa = null; fxFor = null;
+        grupoPV = null; combatants = []; currentId = null; round = 1; nextOrder = 0; editId = null; stats = {}; report = null; edicaoIniciativa = null; fxFor = null;
         abertos.clear(); for (const k of Object.keys(opcoesDano)) delete opcoesDano[k]; for (const k of Object.keys(quantidades)) delete quantidades[k];
         desfazer.length = 0; { const b = $("desfazer"); if (b) { b.disabled = true; b.title = "Nada para desfazer"; } }
         ultimaVez = null; if (fxNote) fxNote.textContent = "";
@@ -782,7 +816,7 @@
         rolagemAuto,
         list: () => combatants,
         atual: () => currentId,
-        aplicarDano, curar, darTemp, aplicarPV, lerQuantidade, maisOpcoes, limparIniciativa, estatisticas: () => stats, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
+        aplicarDano, curar, darTemp, aplicarPV, lerQuantidade, maisOpcoes, limparIniciativa, desfazerGrupoPV, estatisticas: () => stats, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
         trocarContexto,
         contexto: () => contexto,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }

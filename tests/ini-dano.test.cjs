@@ -162,3 +162,25 @@ test('Limpar iniciativa: pede confirmação, remove todos os combatentes e zera 
   assert.equal(I.desfazerUltimo(),false,'a pilha de desfazer do combate encerrado é limpa');assert.equal(I.limparIniciativa(),false,'sem combatentes não faz nada');
   assert.equal(I.__doc.el('limpar-ini').disabled,true);
 });
+test('Desfazer acumulado do aviso: danos, curas e misturas seguidas no mesmo combatente voltam de uma vez; combatentes diferentes não se misturam',()=>{
+  const textos=[];const I=novo([['G',20,20],['H',10,20]]),[g,h]=I.list();g.maxHp=20;h.maxHp=20;I.__w.FEEDBACK={mostrar:(t,o)=>textos.push([t,!!(o&&o.acao)])};
+  I.aplicarDano(g.id,5);I.aplicarDano(g.id,5);I.aplicarDano(g.id,5);assert.equal(g.hp,5);assert.match(textos.at(-1)[0],/G: −15 PV \(20 → 5\)/,'aviso acumulado');assert.equal(textos.at(-1)[1],true,'o aviso tem o botão Desfazer');
+  assert.equal(I.desfazerGrupoPV(),true);assert.equal(g.hp,20,'um Desfazer volta direto aos 20 PV');assert.equal(I.desfazerGrupoPV(),false,'grupo consumido');
+  I.curar(g.id,0);I.aplicarDano(g.id,10);I.curar(g.id,4);I.aplicarDano(g.id,2);assert.equal(g.hp,12);assert.match(textos.at(-1)[0],/G: −8 PV \(20 → 12\)/,'dano e cura combinados');I.desfazerGrupoPV();assert.equal(g.hp,20);
+  I.curar(g.id,3);I.aplicarDano(g.id,6);I.aplicarDano(g.id,6);I.curar(g.id,2);assert.equal(g.hp,10);I.desfazerGrupoPV();assert.equal(g.hp,20);
+  I.aplicarDano(g.id,4);I.aplicarDano(h.id,7);I.aplicarDano(g.id,4);assert.match(textos.at(-1)[0],/G: −4 PV \(16 → 12\)/,'H no meio encerra o grupo de G');I.desfazerGrupoPV();assert.equal(g.hp,16);assert.equal(h.hp,13,'H não foi afetado');
+});
+test('Desfazer acumulado: usa os PV realmente alterados (resistência, PV temporários), preserva estados intermediários e convive com o Desfazer geral',()=>{
+  const textos=[];const I=novo([['G',20,20,'Personagem'],['H',10,20]]),[g,h]=I.list();g.maxHp=20;h.maxHp=20;I.__w.FEEDBACK={mostrar:(t)=>textos.push(t)};
+  I.defesasPersonagem=()=>({resistencias:['fire'],imunidades:['poison'],vulnerabilidades:['cold'],naoMagico:false});
+  g.pid='p';I.aplicarDano(g.id,10,undefined,{tipo:'fire'});assert.equal(g.hp,15,'resistência: 10 vira 5');I.aplicarDano(g.id,3,undefined,{tipo:'cold'});assert.equal(g.hp,9,'vulnerabilidade: 3 vira 6');I.aplicarDano(g.id,8,undefined,{tipo:'poison'});assert.equal(g.hp,9,'imunidade: nada muda');
+  assert.match(textos.at(-1),/G: −11 PV \(20 → 9\)\. .*sem dano/,'imunidade mantém o grupo e o Desfazer');I.desfazerGrupoPV();assert.equal(g.hp,20);
+  g.temp=5;I.aplicarDano(g.id,8);assert.equal(g.temp,0);assert.equal(g.hp,17);I.desfazerGrupoPV();assert.equal(g.hp,20);assert.equal(g.temp,5,'os PV temporários voltam junto');g.temp=0;
+  // cai a 0 PV, o mestre registra uma salvaguarda e depois desfaz o dano: PV volta e a salvaguarda deixa de valer (PV acima de 0)
+  I.aplicarDano(g.id,20);assert.equal(g.hp,0);I.salvaMorteD20(g.id,15);assert.deepEqual(JSON.parse(JSON.stringify(g.morte)),{s:1,f:0});I.desfazerGrupoPV();assert.equal(g.hp,20);assert.ok(!g.morte||(g.morte.s===0&&g.morte.f===0));assert.equal(g.estavel,false);
+  // condição intermediária (efeito) e concentração marcada no meio são mantidas
+  h.conc='Bênção';I.aplicarDano(h.id,4);h.effects=[{id:'e',type:'prone',name:'Caído'}];I.aplicarDano(h.id,3);I.desfazerGrupoPV();assert.equal(h.hp,20);assert.equal(h.effects.length,1,'condição aplicada no meio não é apagada');assert.equal(h.conc,'Bênção');
+  // Desfazer geral: desfaz só o último passo e encerra o grupo
+  I.aplicarDano(h.id,2);I.aplicarDano(h.id,2);I.desfazerUltimo();assert.equal(h.hp,18);assert.equal(I.desfazerGrupoPV(),false,'depois do Desfazer geral o aviso não acumula mais');
+  I.aplicarDano(h.id,2);I.aplicarDano(h.id,2);I.desfazerGrupoPV();assert.equal(h.hp,18,'o grupo desfaz só o que ele aplicou');I.desfazerUltimo();assert.equal(h.hp,20,'o histórico geral continua íntegro (último passo anterior)');
+});

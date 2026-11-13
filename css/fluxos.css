@@ -306,3 +306,9 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
 #add-form .add-previa > .add-ini { flex:0 1 auto; margin-left:auto; justify-content:flex-end; flex-wrap:wrap; }
 #add-form .add-previa > .add-ini .add-conta { flex:1 1 100%; text-align:right; }
 @media (max-width:560px) { #add-form .add-previa > .add-ini { flex:1 1 100%; margin-left:0; justify-content:flex-start; } #add-form .add-previa > .add-ini .add-conta { text-align:left; } }
+/* aviso de PV: texto e Desfazer na mesma caixa; no desktop fica no canto inferior esquerdo, estreito, e só o botão Desfazer captura cliques (o resto deixa passar para os controles) */
+.app-feedback { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; }
+@media (min-width:760px) {
+  .app-feedback { left:16px; bottom:16px; transform:none; max-width:300px; padding:10px 14px; font-size:13px; pointer-events:none; }
+  .app-feedback button { pointer-events:auto; }
+}
