@@ -1,4 +1,5 @@
     (() => {
+      const perguntar = (m, o) => (typeof CONFIRMAR === "function" ? CONFIRMAR(m, o) : Promise.resolve(window.confirm(m)));
       const STORAGE_KEY = "dnd5e_initiative_tracker_v1";   // chave antiga (sem campanha); cada campanha ativa usa a sua: STORAGE_KEY + ":" + id
       const $ = (id) => document.getElementById(id);
       let contexto = "";                                   // id da campanha ativa; "" = rastreador avulso
@@ -69,10 +70,17 @@
         return e ? e.name.toLowerCase() + " (incapacitado)" : "";
       }
       const pendente = c => c.initiative == null || c.initiative === "" || !Number.isFinite(Number(c.initiative));
+      /* empate de iniciativa entre personagens: quem tem mais Destreza (ficha) fica acima; sem Destreza conhecida, ou se ainda empatar, vale a ordem de adição */
+      const agilidade = (c) => { const h = window.__ini && window.__ini.agilidadeDe; const v = c.kind === "Personagem" && h ? h(c) : null; return Number.isFinite(v) ? v : null; };
       function sorted() {
-        return [...combatants].sort((a, b) =>
-          Number(pendente(a)) - Number(pendente(b)) || (pendente(a) ? 0 : Number(b.initiative) - Number(a.initiative)) || a.order - b.order
-        );
+        const base = [...combatants].sort((a, b) => Number(pendente(a)) - Number(pendente(b)) || (pendente(a) ? 0 : Number(b.initiative) - Number(a.initiative)) || a.order - b.order);
+        /* em cada grupo empatado, só os personagens com Destreza conhecida trocam de lugar entre si (nas posições que já ocupavam); o resto mantém a ordem de adição */
+        for (let i = 0; i < base.length;) {
+          let j = i + 1; while (j < base.length && !pendente(base[i]) && !pendente(base[j]) && Number(base[j].initiative) === Number(base[i].initiative)) j++;
+          if (j - i > 1) { const pos = []; for (let k = i; k < j; k++) if (agilidade(base[k]) !== null) pos.push(k); const ord = pos.map((k) => base[k]).sort((x, y) => agilidade(y) - agilidade(x) || x.order - y.order); pos.forEach((k, n) => { base[k] = ord[n]; }); }
+          i = j;
+        }
+        return base;
       }
 
       function escapeText(value) {
@@ -237,6 +245,7 @@
       function aplicarRolagemAuto() {
         const on = rolagemAuto(), caixa = $("rolagem-auto"), est = $("rolagem-auto-estado");
         if (caixa) caixa.checked = on; if (est) est.textContent = on ? "ligada" : "desligada";
+        const dica = $("rolagem-auto-dica"); if (dica) dica.textContent = on ? "Ligada: os botões d20 e de ataque rolam os dados." : "Desligada: você digita todos os valores (iniciativa, d20 e dano).";   // mostra só a explicação do estado atual
         if (document.body && document.body.classList && document.body.classList.toggle) document.body.classList.toggle("rolagem-manual", !on);
       }
       if ($("rolagem-auto")) $("rolagem-auto").addEventListener("change", () => {
@@ -570,7 +579,7 @@
         render();
       });
 
-      $("combatants").addEventListener("click", (event) => {
+      $("combatants").addEventListener("click", async (event) => {
         const button = event.target.closest("button");
         if (!button) return;
 
@@ -621,7 +630,7 @@
 
         if (button.dataset.sync) {                       // escolha explícita de gravar (ou parar de gravar) PV na ficha real
           const p = combatants.find((c) => c.id === button.dataset.sync); if (!p) return;
-          if (!p.sync && !window.confirm(`Passar a gravar os PV e PV temporários de ${p.name} na ficha real?`)) return;
+          if (!p.sync && !(await perguntar(`Passar a gravar os PV e PV temporários de ${p.name} na ficha real?`, { titulo: "Gravar na ficha", ok: "Gravar" }))) return;
           p.sync = !p.sync; render(); aviso(p.sync ? `${p.name}: PV gravados na ficha.` : `${p.name}: modo teste, a ficha não muda.`); return;
         }
         if (button.dataset.morte) { const [id, tipo] = button.dataset.morte.split("|"); salvaMorte(id, tipo); return; }
@@ -640,7 +649,7 @@
           const p = combatants.find((c) => c.id === button.dataset.furia); if (!p) return;
           if (!p.furia) {                                                  // entrar em fúria gasta um uso (contado no combate e, se grava, na ficha)
             const info = window.__ini.usosRecurso && window.__ini.usosRecurso(p, "furia"), usado = Math.max(info ? info.usados : 0, (p.usos && p.usos.furia) || 0);
-            if (info && info.max != null && usado >= info.max && !window.confirm(`${p.name} já usou todas as ${info.max} fúrias desde o último descanso. Entrar em fúria mesmo assim?`)) return;
+            if (info && info.max != null && usado >= info.max && !(await perguntar(`${p.name} já usou todas as ${info.max} fúrias desde o último descanso. Entrar em fúria mesmo assim?`, { titulo: "Fúrias esgotadas", ok: "Entrar em fúria" }))) return;
             guardarDesfazer(`${p.name} fúria`, [p.id]); p.usos = p.usos || {}; p.usos.furia = usado + 1; p.furia = true;
             if (p.sync && window.__ini.registrarUso) window.__ini.registrarUso(p, "furia", usado + 1);
             aviso(`${p.name} entrou em fúria (uso ${usado + 1}${info && info.max != null ? " de " + info.max : ""}).`);
@@ -758,8 +767,8 @@
         render();
       }
 
-      $("reset").addEventListener("click", () => {
-        if (round > 1 && !confirm("Encerrar o combate na rodada " + round + "?")) return;
+      $("reset").addEventListener("click", async () => {
+        if (round > 1 && !(await perguntar("Encerrar o combate na rodada " + round + "?", { titulo: "Encerrar combate", ok: "Encerrar" }))) return;
         report = null;
         currentId = null;
         round = 1;
@@ -768,9 +777,9 @@
       });
 
       /* remove todos os combatentes e deixa a iniciativa pronta para um novo encontro; não toca em fichas, bestiário, campanhas nem no relatório legado já salvo */
-      function limparIniciativa() {
+      async function limparIniciativa() {
         if (!combatants.length) return false;
-        if (!window.confirm("Deseja remover todos os combatentes da iniciativa? Essa ação não excluirá as fichas dos personagens ou monstros.")) return false;
+        if (!(await perguntar("Deseja remover todos os combatentes da iniciativa? Essa ação não excluirá as fichas dos personagens ou monstros.", { titulo: "Limpar iniciativa", ok: "Limpar", perigo: true }))) return false;
         grupoPV = null; combatants = []; currentId = null; round = 1; nextOrder = 0; editId = null; stats = {}; report = null; edicaoIniciativa = null; fxFor = null;
         abertos.clear(); for (const k of Object.keys(opcoesDano)) delete opcoesDano[k]; for (const k of Object.keys(quantidades)) delete quantidades[k];
         desfazer.length = 0; { const b = $("desfazer"); if (b) { b.disabled = true; b.title = "Nada para desfazer"; } }

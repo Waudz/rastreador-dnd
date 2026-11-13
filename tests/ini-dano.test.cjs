@@ -154,12 +154,12 @@ test('cabeçalho sem "Dano causado por"; painel segue o turno desligado por padr
   assert.match(html,/<input type="checkbox" id="seguir-turno">/,'sem atributo checked: desligado por padrão');assert.match(js,/localStorage\.getItem\("ini_seguir_turno"\) === "1"/);
   assert.match(js,/abertos\.has\(c\.id\) \? maisTpl\(c, isActive\)/,'Mais opções preserva o estado por combatente');
 });
-test('Limpar iniciativa: pede confirmação, remove todos os combatentes e zera turno, rodada, estatísticas e estados temporários; cancelar não muda nada; botão desabilitado sem combatentes',()=>{
+test('Limpar iniciativa: pede confirmação, remove todos os combatentes e zera turno, rodada, estatísticas e estados temporários; cancelar não muda nada; botão desabilitado sem combatentes',async()=>{
   const I=novo([['A',20,10],['B',10,10]],{vez:'iA',rodada:3}),[a,b]=I.list(),w=I.__w;
   I.aplicarDano(b.id,3);I.maisOpcoes(a.id,true);assert.ok(Object.keys(I.estatisticas()).length>0);
-  w.respostas=[false];assert.equal(I.limparIniciativa(),false);assert.equal(I.list().length,2,'cancelar mantém tudo');assert.match(w.perguntas.at(-1),/Deseja remover todos os combatentes da iniciativa\? Essa ação não excluirá as fichas dos personagens ou monstros\./);
-  w.respostas=[true];assert.equal(I.limparIniciativa(),true);assert.equal(I.list().length,0);assert.equal(I.atual(),null);assert.equal(I.rodada(),1);assert.deepEqual(JSON.parse(JSON.stringify(I.estatisticas())),{});
-  assert.equal(I.desfazerUltimo(),false,'a pilha de desfazer do combate encerrado é limpa');assert.equal(I.limparIniciativa(),false,'sem combatentes não faz nada');
+  w.respostas=[false];assert.equal(await I.limparIniciativa(),false);assert.equal(I.list().length,2,'cancelar mantém tudo');assert.match(w.perguntas.at(-1),/Deseja remover todos os combatentes da iniciativa\? Essa ação não excluirá as fichas dos personagens ou monstros\./);
+  w.respostas=[true];assert.equal(await I.limparIniciativa(),true);assert.equal(I.list().length,0);assert.equal(I.atual(),null);assert.equal(I.rodada(),1);assert.deepEqual(JSON.parse(JSON.stringify(I.estatisticas())),{});
+  assert.equal(I.desfazerUltimo(),false,'a pilha de desfazer do combate encerrado é limpa');assert.equal(await I.limparIniciativa(),false,'sem combatentes não faz nada');
   assert.equal(I.__doc.el('limpar-ini').disabled,true);
 });
 test('Desfazer acumulado do aviso: danos, curas e misturas seguidas no mesmo combatente voltam de uma vez; combatentes diferentes não se misturam',()=>{
@@ -183,4 +183,11 @@ test('Desfazer acumulado: usa os PV realmente alterados (resistência, PV tempor
   // Desfazer geral: desfaz só o último passo e encerra o grupo
   I.aplicarDano(h.id,2);I.aplicarDano(h.id,2);I.desfazerUltimo();assert.equal(h.hp,18);assert.equal(I.desfazerGrupoPV(),false,'depois do Desfazer geral o aviso não acumula mais');
   I.aplicarDano(h.id,2);I.aplicarDano(h.id,2);I.desfazerGrupoPV();assert.equal(h.hp,18,'o grupo desfaz só o que ele aplicou');I.desfazerUltimo();assert.equal(h.hp,20,'o histórico geral continua íntegro (último passo anterior)');
+});
+test('desempate de iniciativa: entre personagens vence a maior Destreza; mesma Destreza, monstros ou sem ficha seguem a ordem de adição',()=>{
+  const I=novo([['A',15,10,'Personagem'],['B',15,10,'Personagem'],['C',15,10,'Personagem'],['M',15,10],['N',15,10]]);
+  I.agilidadeDe=c=>({iA:12,iB:16,iC:16}[c.id]??null);
+  const nomes=()=>I.__doc.el('combatants').innerHTML.match(/class="nome-texto">(\w)</g).map(x=>x[x.length-2]).sort().join('');
+  I.render();const ordem=[...I.__doc.el('combatants').innerHTML.matchAll(/class="nome-texto">(\w)<\/span>/g)].map(m=>m[1]).join('');
+  assert.equal(ordem,'BCAMN','B e C (Destreza 16, ordem de adição) à frente de A (12); monstros no fim pela ordem de adição');
 });

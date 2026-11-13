@@ -312,3 +312,15 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
   .app-feedback { left:16px; bottom:16px; transform:none; max-width:300px; padding:10px 14px; font-size:13px; pointer-events:none; }
   .app-feedback button { pointer-events:auto; }
 }
+/* Meus personagens: cada personagem numa faixa como a do monstro (retrato e dados à esquerda; Ini., dado e Adicionar à direita) */
+#ci-lista.ci-grade { display:flex; flex-direction:column; gap:8px; }
+#ci-lista .ci-cartao.grupo-cartao.ci-cartao-ini { flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 14px; padding:8px 10px; }
+#ci-lista .ci-cartao-ini .ci-topo { flex:1 1 260px; }
+#ci-lista .ci-cartao-ini .ci-acoes { flex:0 1 auto; margin-left:auto; justify-content:flex-end; align-items:flex-end; flex-wrap:nowrap; }
+#ci-lista .ci-cartao-ini .ci-ini { flex-direction:column; align-items:flex-start; gap:2px; }
+#ci-lista .ci-cartao-ini .ci-ini input { width:72px; height:44px; font-size:14px; }
+#ci-lista .ci-cartao-ini .d20-btn { width:44px; height:44px; min-height:44px; padding:0; display:inline-flex; align-items:center; justify-content:center; flex:0 0 44px; font-size:0; }
+#ci-lista .ci-cartao-ini .d20-btn svg, #ci-lista .ci-cartao-ini .d20-btn .ico { width:24px; height:24px; margin:0; }
+#ci-lista .ci-cartao-ini .ci-acoes .primary { min-height:44px; padding:0 16px; }
+#ci-lista .ci-cartao-ini .ci-ini-res { flex:1 1 100%; text-align:right; }
+@media (max-width:560px) { #ci-lista .ci-cartao-ini .ci-acoes { flex:1 1 100%; margin-left:0; justify-content:flex-start; flex-wrap:wrap; } #ci-lista .ci-cartao-ini .ci-ini-res { text-align:left; } }

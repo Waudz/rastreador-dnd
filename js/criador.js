@@ -2,6 +2,7 @@
 let cancelar=()=>{};   // vigia de lentidão do esqueleto (js/esqueleto.js)
 (async()=>{
  'use strict';
+ const perguntar = (m, o) => (typeof CONFIRMAR === "function" ? CONFIRMAR(m, o) : Promise.resolve(confirm(m)));
  const $=s=>document.querySelector(s),C=CRIADOR,R=REGRAS,esc=nuvem.esc,params=new URLSearchParams(location.search),id=params.get('id'),evolucao=params.get('modo')==='nivel',editar=params.get('modo')==='editar';
  const etapas=['Classe e Nível','Raça','Origem','Atributos','Perícias','Magias','Equipamento','Revisão'];
  /* Criação e subida de nível são fluxos diferentes: nível não muda raça, origem nem equipamento inicial. */
@@ -157,7 +158,7 @@ let cancelar=()=>{};   // vigia de lentidão do esqueleto (js/esqueleto.js)
   salvando=true;$('#salvar').disabled=true;$('#aviso').textContent='Salvando…';
   try{
    const s=C.salvamento(q,{modo:evolucao?'nivel':editar?'editar':'criacao',original});
-   if(editar&&s.pv.mudou&&!confirm('Os PV máximos mudam de '+original.pv_max+' para '+s.pv.max+' e os PV atuais de '+original.pv_atual+' para '+s.pv.atual+'. Confirmar a alteração?')){salvando=false;$('#salvar').disabled=false;$('#aviso').textContent='';return;}
+   if(editar&&s.pv.mudou&&!(await perguntar('Os PV máximos mudam de '+original.pv_max+' para '+s.pv.max+' e os PV atuais de '+original.pv_atual+' para '+s.pv.atual+'. Confirmar a alteração?', { titulo: "Alterar PV", ok: "Confirmar" }))){salvando=false;$('#salvar').disabled=false;$('#aviso').textContent='';return;}
    const dados=s.dados;
    const rows=await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}&versao=eq.${original.versao}`,dados);
    if(!rows?.length)throw Error('Esta ficha mudou em outro aparelho. Abra a ficha atual antes de aplicar o rascunho.');

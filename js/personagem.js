@@ -3,6 +3,7 @@
    O dono e o mestre da campanha podem editar; o banco de dados garante isso (regras de acesso). */
 (() => {
   "use strict";
+  const perguntar = (m, o) => (typeof CONFIRMAR === "function" ? CONFIRMAR(m, o) : Promise.resolve(confirm(m)));
   const $ = (s) => document.querySelector(s), esc = nuvem.esc, R = window.REGRAS, C = window.FICHA_COMPONENTES;
   const J = window.JOGO, JU = window.JOGO_UI;
   const id = new URLSearchParams(location.search).get("id");
@@ -499,10 +500,10 @@
     try { await carregarCat(); } catch (_) { box.hidden = false; box.innerHTML = '<span class="err">Não consegui carregar as magias.</span>'; return; }
     box.hidden = false; box.innerHTML = htmlCopia(); atualizaCopia();
   }
-  function confirmarCopia() {
+  async function confirmarCopia() {
     const m = (magiasCat || []).find((x) => x.en === cp.en); if (!m || !copiaPronta()) return;
     const v = MJ.validarCopia(P, m, parCopia());
-    if (!confirm(`Copiar “${m.n}” para o grimório?\n\nCusto: ${v.custo.po} PO e ${v.custo.horas} h.${cp.fonte === "pergaminho" ? `\nTeste: Arcanismo ${cp.arc} contra CD ${v.cd}. O pergaminho será destruído em qualquer resultado.` : ""}`)) return;
+    if (!(await perguntar(`Copiar “${m.n}” para o grimório?\n\nCusto: ${v.custo.po} PO e ${v.custo.horas} h.${cp.fonte === "pergaminho" ? `\nTeste: Arcanismo ${cp.arc} contra CD ${v.cd}. O pergaminho será destruído em qualquer resultado.` : ""}`, { titulo: "Copiar magia", ok: "Copiar" }))) return;
     const r = MJ.copiarParaGrimorio(P, m, { ...parCopia(), arcanismo: cp.arc === "" ? undefined : Number(cp.arc) });
     if (!r.ok) { $("#cp-res").textContent = r.motivos.join(" "); return; }
     agendar({ ficha: P.ficha, dinheiro: P.dinheiro, inventario: P.inventario });
@@ -657,8 +658,8 @@
     const rolou=modo==='marcar'?null:modo==='fisico'?Number($('[data-rolagem-fisica="'+d+'"]').value):1+Math.floor(Math.random()*d);
     try{const r=J.gastarDadoVida(P,d,rolou);salvarJogo();aviso(rolou===null?'Uso registrado, sem cura.':'Dado d'+d+': '+rolou+'; recuperou '+r.recuperado+' PV.');}catch(e){aviso(e.message,true);}
   }
-  function descansoLongo() {
-    if(!confirm('Concluir descanso longo (com comida e bebida)? Recupera PV, espaços e recursos, metade dos dados de vida e reduz exaustão em 1.'))return;
+  async function descansoLongo() {
+    if(!(await perguntar('Concluir descanso longo (com comida e bebida)? Recupera PV, espaços e recursos, metade dos dados de vida e reduz exaustão em 1.', { titulo: "Descanso longo", ok: "Concluir" })))return;
     const r=J.descansoLongo(P);if(!r.ok){aviso(r.motivo,true);return;}salvarJogo();aviso('Descanso longo concluído.');
   }
 
@@ -768,11 +769,11 @@
     if ((b = c("[data-rm-idi]"))) { IDX().splice(+b.dataset.rmIdi, 1); desenhar(); agendar({ ficha: P.ficha }); return; }
     if (c("#add-idi")) { const v = ($("#idi-txt").value.trim() || $("#idi-sel").value); if (v && !IDI().includes(v) && !IDX().includes(v)) { IDX().push(v); desenhar(); agendar({ ficha: P.ficha }); } return; }
     if(c("#editar-ficha")){location.href="criar-personagem.html?id="+encodeURIComponent(id)+"&modo=editar";return;}
-    if(c("#excluir-personagem")){if(!confirm("Excluir "+P.nome+" e sua ficha?"))return;try{await nuvem.apagar("personagens?id=eq."+encodeURIComponent(id));location.href="campanha.html?id="+encodeURIComponent(P.campanha_id);}catch(e){aviso(e.message,true);}return;}
+    if(c("#excluir-personagem")){if(!(await perguntar("Excluir "+P.nome+" e sua ficha?", { titulo: "Excluir personagem", ok: "Excluir", perigo: true })))return;try{await nuvem.apagar("personagens?id=eq."+encodeURIComponent(id));location.href="campanha.html?id="+encodeURIComponent(P.campanha_id);}catch(e){aviso(e.message,true);}return;}
     if (c("#add-atq")) { ATQ().push({ nome: "Personalizado", atr: "for", dado: "1d6", tipo: "cortante", magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); agendar({ ficha: P.ficha }); return; }
     if (c("#add-atq-arma")) { const v = $("#atq-arma").value; if (v === "") return; const a = R.ARMAS[+v]; ATQ().push({ nome: a[0], atr: a[3], dado: a[1], tipo: a[2], magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); $("#atq-arma").value = ""; agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-atq]"))) { ATQ().splice(+b.dataset.rmAtq, 1); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'; agendar({ ficha: P.ficha }); return; }
-    if ((b = c("[data-rm-mag]"))) { const i = +b.dataset.rmMag, m = MAG()[i]; if (!m || m.fonte !== "mestre" || !souMestre) return; if (!confirm(`Retirar a concessão de “${m.n}”?`)) return; F().magiasMestre = (F().magiasMestre || []).filter((x) => x.en !== m.en); MAG().splice(i, 1); $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
+    if ((b = c("[data-rm-mag]"))) { const i = +b.dataset.rmMag, m = MAG()[i]; if (!m || m.fonte !== "mestre" || !souMestre) return; if (!(await perguntar(`Retirar a concessão de “${m.n}”?`, { titulo: "Retirar concessão", ok: "Retirar", perigo: true }))) return; F().magiasMestre = (F().magiasMestre || []).filter((x) => x.en !== m.en); MAG().splice(i, 1); $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-usar-concedida]"))) { const m = MAG()[+b.dataset.usarConcedida]; try { MJ.usarConcedida(F(), m); } catch (e) { aviso(e.message, true); return; } $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
     if (c("#cp-abrir")) { abrirCopia(); return; }
     if (c("#cp-fechar")) { $("#copia-box").hidden = true; return; }
@@ -796,7 +797,7 @@
     if (c("#ef-salvar-props")) { salvarProps(); return; }
     if (c("#ef-fechar")) { $("#ef-box").hidden = true; edEf = null; return; }
     if ((b = c("[data-ef-rm]"))) { const it = edEf && INV().find((x) => x.uid === edEf.uid); if (!it) return; it.propriedades.efeitos.splice(+b.dataset.efRm, 1); salvarInv(); redesenharInv(); $("#ef-box").innerHTML = htmlEditorEfeitos(it); return; }
-    if ((b = c("[data-rm-car]"))) { const i = +b.dataset.rmCar; if(CAR()[i].auto)return; if (!confirm(`Remover “${CAR()[i].nome}” da ficha?`)) return; CAR().splice(i, 1); $("#lista-car").innerHTML = CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>';atualizarRecursos(); agendar({ ficha: P.ficha }); return; }
+    if ((b = c("[data-rm-car]"))) { const i = +b.dataset.rmCar; if(CAR()[i].auto)return; if (!(await perguntar(`Remover “${CAR()[i].nome}” da ficha?`, { titulo: "Remover característica", ok: "Remover", perigo: true }))) return; CAR().splice(i, 1); $("#lista-car").innerHTML = CAR().length ? CAR().map(itemCar).join("") : '<span class="muted">Nenhuma habilidade ainda.</span>';atualizarRecursos(); agendar({ ficha: P.ficha }); return; }
     if (c("#add-car")) { const nome = $("#car-nome").value.trim(); if (!nome) return; adicionarCar({ nome, desc: $("#car-desc").value }); $("#car-nome").value = ""; $("#car-desc").value = ""; return; }
     if ((b = c("[data-cat]"))) { const r = (catalogo || {}).achados[+b.dataset.cat]; if (r) { adicionarCar({ nome: r.titulo, desc: r.desc, cf: r.chave }); $("#cat-q").value = ""; $("#cat-res").innerHTML = ""; } return; }
   });

@@ -228,3 +228,8 @@ test('rolagem desligada em Outras opções: o d20 é digitado na própria faixa,
   t.clique({},'atk-rolar');assert.match(t.res(),/Digite o resultado do d20/);assert.equal(t.q('#vez-manual').hidden,true,'não abre outra tela sem o d20');
   t.q('#atk-man-d20').value='17';t.clique({},'atk-rolar');await t.espera();assert.match(t.res(),/Acertou/);assert.ok(!/Dano:/.test(t.res()));assert.match(t.q('#vez-manual').innerHTML,/Acertou: informe o dano total/);
 });
+test('texto de ajuda da rolagem automática muda com o estado da chave',()=>{
+  const html=ler('iniciativa.html'),ini=ler('js/iniciativa.js');
+  assert.match(html,/id="rolagem-auto-dica">Ligada: os botões d20 e de ataque rolam os dados\.<\/p>/);assert.ok(!/Desligada: você digita/.test(html),'o HTML não mostra os dois textos ao mesmo tempo');
+  assert.match(ini,/on \? "Ligada: os botões d20 e de ataque rolam os dados\." : "Desligada: você digita todos os valores \(iniciativa, d20 e dano\)\."/);
+});

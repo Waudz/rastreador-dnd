@@ -1,4 +1,5 @@
   (async () => {
+    const perguntar = (m, o) => (typeof CONFIRMAR === "function" ? CONFIRMAR(m, o) : Promise.resolve(confirm(m)));
     const contaInicial=window.nuvem&&nuvem.usuario()?.id;
     if(window.nuvem)nuvem.aoMudar(u=>{if(u?.id!==contaInicial)location.reload();});
     const $ = (s) => document.querySelector(s);
@@ -516,12 +517,12 @@
       if (d.tr) { const m = ALL.find((x) => x.key === d.tr), v = prompt("Nome em português para “" + m.name + "” (vazio remove):", pt(m) || m.name); if (v === null) return; v.trim() ? (TR[m.name.toLowerCase()] = v.trim()) : delete TR[m.name.toLowerCase()]; saveTR();if(!m.custom)try{await CATALOGO.atualizar({registros:ALL,magias:SP,nomes:{[m.name.toLowerCase()]:v.trim()}});}catch(e){status(esc(e.message));}return renderBestiary(); }
       if (d.del) {
         const m = ALL.find((x) => x.key === d.del); if (!m || !m.custom) return;   // monstros padrão do SRD não se excluem
-        if (!confirm(m.custom ? `Excluir “${m.name}” definitivamente?` : `Remover “${m.name}” do seu bestiário local? Você pode baixar de novo depois.`)) return;
+        if (!(await perguntar(m.custom ? `Excluir “${m.name}” definitivamente?` : `Remover “${m.name}” do seu bestiário local? Você pode baixar de novo depois.`, { titulo: "Remover do bestiário", ok: "Remover", perigo: true }))) return;
         await del("mon", d.del); if (m.custom) { await del("img", d.del); TOMB[d.del] = Date.now(); saveTomb(); } if (editKey === d.del) resetForm(); await reload(); return queueSync();
       }
       if (d.delcol) {
         const k = d.delcol, nmc = [...ALL, ...SP].find((x) => !x.custom && (x.document?.key || "?") === k); if (!nmc) return;
-        if (!confirm(`Excluir a coleção “${srcOf(nmc)}” (monstros e magias) do seu computador? Você pode baixá-la de novo depois. Suas criações não são afetadas.`)) return;
+        if (!(await perguntar(`Excluir a coleção “${srcOf(nmc)}” (monstros e magias) do seu computador? Você pode baixá-la de novo depois. Suas criações não são afetadas.`, { titulo: "Excluir coleção", ok: "Excluir", perigo: true }))) return;
         for (const [store, arr] of [["mon", ALL], ["spl", SP]]) { const keys = arr.filter((x) => !x.custom && (x.document?.key || "?") === k).map((x) => x.key), tx = db.transaction(store, "readwrite"); keys.forEach((x) => tx.objectStore(store).delete(x)); await done(tx); }
         return reload();
       }

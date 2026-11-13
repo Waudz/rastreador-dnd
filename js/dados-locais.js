@@ -1,6 +1,7 @@
 /* Dados deste aparelho (iniciativa): backup e restauração do combate e das criações de visitante. Nada sai do aparelho. */
 (() => {
   "use strict";
+  const perguntar = (m, o) => (typeof CONFIRMAR === "function" ? CONFIRMAR(m, o) : Promise.resolve(confirm(m)));
   const $ = (s) => document.querySelector(s);
   if (!$("#dados-locais") || !window.__ini) return;
   const msg = (t, erro) => { const e = $("#dl-msg"); e.textContent = t || ""; e.classList.toggle("err", !!erro); };
@@ -18,7 +19,7 @@
       let d; try { d = JSON.parse(await f.text()); } catch (_) { throw new Error("O arquivo não é um backup de combate válido."); }
       if (!d || d.tipo !== "backup-combate" || !Array.isArray(d.combatants)) throw new Error("O arquivo não é um backup de combate.");
       const atual = window.__ini.list().length;
-      if (!confirm("Substituir o combate atual" + (atual ? " (" + atual + " combatentes)" : "") + " pelo do arquivo (" + d.combatants.length + " combatentes)? O combate atual será perdido.")) return;
+      if (!(await perguntar("Substituir o combate atual" + (atual ? " (" + atual + " combatentes)" : "") + " pelo do arquivo (" + d.combatants.length + " combatentes)? O combate atual será perdido.", { titulo: "Substituir combate", ok: "Substituir" }))) return;
       window.__ini.importarCombate(d); msg("Combate restaurado.");
     } catch (err) { msg(err.message, true); }
   };

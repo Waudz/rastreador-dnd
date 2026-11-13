@@ -1,6 +1,7 @@
 /* Página da campanha: personagens, diário (anotações), documentos e membros */
 (() => {
   "use strict";
+  const perguntar = (m, o) => (typeof CONFIRMAR === "function" ? CONFIRMAR(m, o) : Promise.resolve(confirm(m)));
   const $ = (s) => document.querySelector(s), esc = nuvem.esc;
   let id = new URLSearchParams(location.search).get("id");
   let geracaoCampanha=0;
@@ -337,7 +338,7 @@
       if(c('#grupo-rolar')){if(!mestre()||!selecionados.size)return;location.href=window.GRUPO_PERSONAGENS.destino(id,pers.filter(p=>selecionados.has(p.id)).map(p=>p.id));return;}
 
       if ((b = c("[data-aba]"))) { if(!$("#aparencia-painel").hidden&&!window.CAMPANHA_VISUAL?.sair())return;fecharAparencia(); aba = b.dataset.aba; editandoDoc = null; formAberto = false; anexosForm = []; return desenhar(); }
-      if ((b = c("[data-excluir-pers]"))) {const p=pers.find(p=>p.id===b.dataset.excluirPers);if(!p||!confirm("Excluir "+p.nome+"? Esta ação remove a ficha da campanha."))return;await nuvem.apagar("personagens?id=eq."+encodeURIComponent(p.id));return recarregar();}
+      if ((b = c("[data-excluir-pers]"))) {const p=pers.find(p=>p.id===b.dataset.excluirPers);if(!p||!(await perguntar("Excluir "+p.nome+"? Esta ação remove a ficha da campanha.", { titulo: "Excluir personagem", ok: "Excluir", perigo: true })))return;await nuvem.apagar("personagens?id=eq."+encodeURIComponent(p.id));return recarregar();}
       if ((b = c("[data-dano]"))) return mudarPV(c(".card"), true);
       if ((b = c("[data-cura]"))) return mudarPV(c(".card"), false);
       if (c("#abre-imp")) return painelImportar();
@@ -352,7 +353,7 @@
       if ((b = c("[data-vis]"))) { const d = docs.find((x) => x.id === b.dataset.vis); await nuvem.patch(`documentos?id=eq.${encodeURIComponent(d.id)}`, { visivel: !d.visivel }); return recarregar(); }
       if ((b = c("[data-apagar-doc]"))) {
         const d = docs.find((x) => x.id === b.dataset.apagarDoc);
-        if (!confirm(`Excluir “${nomeDoc(d)}”?`)) return;
+        if (!(await perguntar(`Excluir “${nomeDoc(d)}”?`, { titulo: "Excluir documento", ok: "Excluir", perigo: true }))) return;
         if (d.arquivo_path) { try { await nuvem.apagarArquivos([d.arquivo_path]); } catch (_) {} }
         await nuvem.apagar(`documentos?id=eq.${encodeURIComponent(d.id)}`); return recarregar();
       }
@@ -364,7 +365,7 @@
       if ((b = c("[data-tirar]"))) { anexosForm = anexosForm.filter((x) => x !== b.dataset.tirar); atualizarAnexosForm(); return; }
       if (c("#r-anexar")) return $("#r-anexo").click();
       if ((b = c("[data-remover]"))) {
-        if (!confirm(`Remover ${nomes[b.dataset.remover] || "este jogador"} da campanha?`)) return;
+        if (!(await perguntar(`Remover ${nomes[b.dataset.remover] || "este jogador"} da campanha?`, { titulo: "Remover jogador", ok: "Remover", perigo: true }))) return;
         await nuvem.apagar(`membros?campanha_id=eq.${encodeURIComponent(id)}&usuario_id=eq.${encodeURIComponent(b.dataset.remover)}`); return recarregar();
       }
       if (c("#copiar-cod")) {
@@ -374,7 +375,7 @@
         clearTimeout(window.__conviteTimer); window.__conviteTimer = setTimeout(() => { const i2 = $("#copiar-cod .convite-icone"), a2 = $("#convite-aviso"); if (i2 && window.ico) i2.innerHTML = window.ico("copy"); if (a2) a2.textContent = ""; }, 2200);
         return;
       }
-      if (c("#novo-cod")) { if (!confirm("Gerar um novo código? O código antigo deixa de valer para novos jogadores.")) return; await nuvem.rpc("novo_codigo_da_campanha", { p_campanha: id }); return mostrarConvite(); }
+      if (c("#novo-cod")) { if (!(await perguntar("Gerar um novo código? O código antigo deixa de valer para novos jogadores.", { titulo: "Novo código da campanha", ok: "Gerar código" }))) return; await nuvem.rpc("novo_codigo_da_campanha", { p_campanha: id }); return mostrarConvite(); }
     } catch (err) { aviso(err.message, true); }
   });
 

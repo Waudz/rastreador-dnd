@@ -44,7 +44,7 @@ test('combate: exportar e importar passam por validação',()=>{
 });
 test('dados deste aparelho: restaurar o combate pede confirmação e criações de visitante têm backup próprio',()=>{
   const d=ler('js/dados-locais.js');
-  assert.match(d,/confirm\(/);assert.match(d,/exportarVisitante/);
+  assert.match(d,/perguntar\(/);assert.match(d,/exportarVisitante/);
   const a=ler('js/acervo.js');assert.match(a,/lerPublico/);assert.match(a,/lerLocais/);
   assert.match(ler('js/backup.js'),/lerLocais/);assert.match(ler('sw.js'),/js\/dados-locais\.js/);
 });
@@ -66,7 +66,7 @@ test('ficha: ações principais no topo e exclusão no menu secundário sob conf
   const h=ler('personagem.html'),j=ler('js/personagem.js');
   assert.match(h,/id="usar-iniciativa"/);assert.match(h,/class="ficha-menu"[^>]*id="ficha-mais"[\s\S]*?class="ficha-menu-opcoes"><button[^>]*id="excluir-personagem"/);
   assert.ok(!/class="ficha-acoes"/.test(j),'sem os botões antigos');assert.equal((h+j).split('id="excluir-personagem"').length-1,1);
-  assert.match(j,/confirm\("Excluir "/);assert.match(ler('css/fichas.css'),/\.ficha-menu-opcoes \{ position:absolute/);
+  assert.match(j,/perguntar\("Excluir "/);assert.match(ler('css/fichas.css'),/\.ficha-menu-opcoes \{ position:absolute/);
 });
 
 test('abertura da PWA: sem passar por licenças nem pela tela de campanhas; destino decidido antes da pintura',()=>{

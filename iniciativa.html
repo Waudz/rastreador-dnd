@@ -99,7 +99,7 @@
 
       <div class="rolagem-auto-bar">
         <label class="rolagem-auto"><input type="checkbox" id="rolagem-auto" checked><span class="rolagem-auto-chave" aria-hidden="true"></span><span class="rolagem-auto-texto">Rolagem automática de dados: <b id="rolagem-auto-estado">ligada</b></span></label>
-        <p class="muted rolagem-auto-dica">Ligada: os botões d20 e de ataque rolam os dados. Desligada: você digita todos os valores (iniciativa, d20 e dano).</p>
+        <p class="muted rolagem-auto-dica" id="rolagem-auto-dica">Ligada: os botões d20 e de ataque rolam os dados.</p>
       </div>
       <p id="inicio-aviso" class="muted" role="status"></p>
       <section id="acoes-da-vez" class="acoes-vez" hidden aria-label="Ataque">
@@ -117,7 +117,7 @@
         </div>
       </div>
       <div id="report" class="report" hidden></div>
-      <p class="footer">A iniciativa é ordenada do maior para o menor. Em caso de empate, quem foi adicionado primeiro fica acima.</p>
+      <p class="footer">A iniciativa é ordenada do maior para o menor. Em caso de empate entre personagens, quem tem mais Destreza fica acima; se ainda empatar, quem foi adicionado primeiro.</p>
     </section>
     <details class="vista-iniciativa panel" id="camp-ini" hidden>
       <summary class="panel-title" style="cursor:pointer">Personagens</summary>

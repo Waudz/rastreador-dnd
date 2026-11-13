@@ -54,7 +54,7 @@ test('subir de nível é guiado, nível por nível, com etapas dinâmicas e vár
 test('Editar personagem: criador completo, PV por delta do histórico e impacto confirmado antes de salvar',()=>{
   const j=ler('js/criador.js'),r=ler('js/criador-regras.js');
   assert.match(j,/editar=params\.get\('modo'\)==='editar'/);assert.match(j,/const pvEdicao=q=>C\.salvamento\(q,\{modo:'editar',original\}\)\.pv/);assert.match(j,/function diffEdicao\(q\)/);
-  assert.match(j,/Alterações que serão aplicadas/);assert.match(j,/Salvar alterações/);assert.match(j,/confirm\('Os PV máximos mudam de /);
+  assert.match(j,/Alterações que serão aplicadas/);assert.match(j,/Salvar alterações/);assert.match(j,/perguntar\('Os PV máximos mudam de /);
   assert.match(j,/const s=C\.salvamento\(q,\{modo:evolucao\?'nivel':editar\?'editar':'criacao',original\}\)/);
   assert.match(r,/function salvamento\(qDerivado,\{modo,original\}/);assert.match(r,/function construirProgressao\(f\)/);assert.match(r,/f\.progressao=construirProgressao\(f\)/);
 });

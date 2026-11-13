@@ -552,3 +552,12 @@ html.conta-verificando #conta-abrindo { display:block; }
 html[data-conta-aba=campanhas] [data-esq-aba]:not([data-esq-aba=campanhas]), html[data-conta-aba=personagens] [data-esq-aba]:not([data-esq-aba=personagens]), html[data-conta-aba=conta] [data-esq-aba]:not([data-esq-aba=conta]) { display:none; }
 html[data-conta-aba] main.tracker { min-height:70vh; }
 @keyframes entrada-ok { to { visibility:visible; } }
+
+/* Caixa de confirmação do site (js/feedback.js, CONFIRMAR) */
+.dialogo-fundo { position:fixed; inset:0; z-index:3000; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(8,12,18,.72); }
+.dialogo { width:min(440px,100%); padding:20px 22px; border:1px solid var(--gold); border-radius:12px; background:var(--panel); color:var(--text); box-shadow:0 16px 48px #000a; }
+.dialogo h2 { margin:0 0 10px; font-size:16px; letter-spacing:.04em; text-transform:uppercase; color:var(--gold); }
+.dialogo p { margin:0 0 18px; line-height:1.45; white-space:pre-line; overflow-wrap:anywhere; }
+.dialogo-acoes { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; }
+.dialogo-acoes button { min-height:40px; padding:0 18px; }
+@media (max-width:520px) { .dialogo-acoes button { flex:1 1 100%; min-height:46px; } .dialogo-acoes .dialogo-ok { order:-1; } }

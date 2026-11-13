@@ -1,6 +1,7 @@
 /* Minha conta: login, campanhas e personagens do usuário */
 (() => {
   "use strict";
+  const perguntar = (m, o) => (typeof CONFIRMAR === "function" ? CONFIRMAR(m, o) : Promise.resolve(confirm(m)));
   const $ = (s) => document.querySelector(s), esc = nuvem.esc, C=window.FICHA_COMPONENTES;
   const msg = (el, t, erro) => { el.innerHTML = t ? (erro ? `<span class="err">${esc(t)}</span>` : esc(t)) : ""; };
   let personagensConta=[],podeCriarPersonagem=false;
@@ -87,7 +88,7 @@
 
   $("#btn-sair").onclick = async () => { await nuvem.sair(); mostrarLogin(true); };     // sai só deste aparelho; seus dados locais continuam aqui
   $("#btn-sair-todos").onclick = async () => {
-    if (!confirm("Sair da conta em todos os aparelhos? Você precisará entrar de novo em cada um. Seus dados locais não são apagados.")) return;
+    if (!(await perguntar("Sair da conta em todos os aparelhos? Você precisará entrar de novo em cada um. Seus dados locais não são apagados.", { titulo: "Sair em todos os aparelhos", ok: "Sair" }))) return;
     await nuvem.sairDeTodos(); mostrarLogin(true);
   };
   $("#abre-camp").onclick = () => { $("#form-entrar").hidden = true; alterna("#form-camp"); };
