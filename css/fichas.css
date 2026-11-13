@@ -300,3 +300,6 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 #estado-jogo { grid-column:1 / -1; }
 #estado-jogo .grade2 { align-items:start; }
 #estado-jogo .grade2 > div { min-width:0; }
+
+/* Inventário: lista, adicionar e dinheiro em blocos separados */
+.inv-tit{margin:18px 0 8px}.inv-add{margin:14px 0}.inv-add-linha{margin:0 0 12px}.inv-add-linha>label{display:block;margin:0 0 4px;font-size:.8rem;font-weight:800;color:var(--muted)}.inv-add-linha .row{margin:0;align-items:center}.inv-add-linha .muted{font-size:.82rem}
