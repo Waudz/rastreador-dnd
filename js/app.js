@@ -337,7 +337,7 @@
     };
     const edOf = (doc) => (/2014/.test(String(doc?.key || "")) ? "2014" : "");
     function spSearch() {
-      const q = nz($("#sq").value.trim()), box = $("#spells"); if (!q) { box.innerHTML = ""; return; }
+      const q = nz($("#sq").value.trim()), box = $("#spells"), cont = $("#scount"); if (!q) { box.innerHTML = ""; if (cont) cont.textContent = ""; return; }
       const tipo = $("#sf-type").value, src = "2014", lv = $("#sf-lvl").value, sch = $("#sf-sch").value, ex = $("#sf-ex").value;
       const soMagia = tipo === "spell" || !!(lv || sch || ex); // círculo, escola e ritual só existem em magias
       const kOf = (s) => s.key.startsWith("ds:") ? s.key.slice(3) : s.name.toLowerCase();
@@ -350,6 +350,7 @@
         const k = kOf(s), d = D.S[k];
         return window.MAGIAS_UI.resultado({chave:s.key,nome:d?d[0]:s.name,original:s.name,nivel:s.level,escola:SCH[s.school?.name],tempo:s.casting_time?cap(tr(s.casting_time)):undefined,alcance:s.range_text?tr(s.range_text):undefined,ritual:s.ritual,concentracao:s.concentration,fonte:srcOf(s),alias:''});
       }).join("") + (soMagia || (tipo && tipo !== "monster") ? "" : abilityRows(q, src)) + (soMagia || (tipo && tipo !== "class") ? "" : classRows(q, src)) || '<span class="muted">Nada encontrado.</span>';
+      if (cont) { const n = box.querySelectorAll(".res").length; cont.textContent = n ? `${n} ${n === 1 ? "resultado" : "resultados"}` : ""; }   // contagem, como "N fichas" no bestiário
     }
     function abilityRows(q, src = "") {
       return [...ABI.entries()].map(([l, v]) => [l, v, src ? v.items.filter((x) => edOf(x.m.document) === src) : v.items]).filter(([l, v, its]) => its.length && nz(v.name + " " + nm(v.name)).includes(q)).slice(0, 15).map(([l, v, its]) => `<div class="res" data-abopen="${esc(l)}"><span><b>${esc(nm(v.name))}</b> <span class="muted">(${esc(v.name)})</span><br><span class="muted">Habilidade de monstro · ${its.length} ${its.length > 1 ? "monstros" : "monstro"}: ${esc(its.slice(0, 3).map((x) => pt(x.m) || x.m.name).join(", "))}${its.length > 3 ? "…" : ""}</span></span></div>`).join("");

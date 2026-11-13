@@ -221,9 +221,9 @@
     <section class="vista-magias panel catalogo-magias">
       <h2 class="panel-title"><i data-i="sparkles"></i>Consultar magias e habilidades</h2>
       <p class="muted" id="spinfo"></p>
-      <div class="clearable"><input id="sq" placeholder="Magia ou habilidade de monstro (português ou inglês)" autocomplete="off"><button type="button" class="xbtn" id="sq-x" hidden aria-label="Limpar pesquisa" title="Limpar pesquisa"><i data-i="x"></i></button></div>
-      <div class="row magias-busca-controles" style="margin-bottom:8px">
-        <select id="sf-type" style="flex:1 1 200px" aria-label="Tipo"><option value="">Tudo</option><option value="spell">Só magias</option><option value="class">Só habilidades de classe</option><option value="monster">Só habilidades de monstro</option></select>
+      <div class="row magias-busca-controles">
+        <div class="clearable" style="flex:1 1 240px"><input id="sq" type="search" name="busca-magias" data-lpignore="true" data-1p-ignore placeholder="Pesquisar: nome da magia ou habilidade (português ou inglês)" autocomplete="off"><button type="button" class="xbtn" id="sq-x" hidden aria-label="Limpar pesquisa" title="Limpar pesquisa"><i data-i="x"></i></button></div>
+        <select id="sf-type" style="flex:0 1 260px" aria-label="Tipo"><option value="">Tudo</option><option value="spell">Só magias</option><option value="class">Só habilidades de classe</option><option value="monster">Só habilidades de monstro</option></select>
         <button type="button" class="small" id="sf-more" aria-expanded="false" aria-controls="sf-adv"><i data-i="filter"></i>Filtros</button>
       </div>
       <div class="row magias-filtros" id="sf-adv" style="margin-bottom:8px" hidden>
@@ -231,6 +231,7 @@
         <select id="sf-sch" style="flex:1 1 130px" aria-label="Escola"><option value="">Qualquer escola</option><option>Abjuração</option><option>Adivinhação</option><option>Conjuração</option><option>Encantamento</option><option>Evocação</option><option>Ilusão</option><option>Necromancia</option><option>Transmutação</option></select>
         <select id="sf-ex" style="flex:1 1 130px" aria-label="Característica"><option value="">Ritual ou não</option><option value="ritual">Só rituais</option><option value="conc">Só concentração</option></select>
       </div>
+      <div class="muted" id="scount" role="status"></div>
       <div id="spells" class="magias-resultados"></div>
     </section>
 

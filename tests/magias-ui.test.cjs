@@ -29,3 +29,8 @@ test('ficha da magia no padrão das fichas: identidade com emblema do círculo, 
  assert.match(h,/<section class="panel "><h3 class="panel-title">Efeito da magia<\/h3>/);assert.match(h,/<section class="panel magia-materiais"><h3 class="panel-title">Materiais<\/h3>/);assert.match(h,/<footer class="magia-fonte">5e 2014 Rules<\/footer>/);assert.doesNotMatch(h,/undefined|null/);
  const t=M.detalhes({nome:'Luz',meta:[['Círculo','Truque']],descricao:'x'});assert.match(t,/magia-selo-circulo"[^>]*>T<\/span>/);assert.ok(!/ficha-destaques/.test(t),'sem dados, sem cartões vazios');
 });
+test('filtro da pesquisa de magias na mesma disposição do bestiário: pesquisa, tipo e Filtros numa linha, contagem e filtros avançados recolhidos',()=>{
+ const h=ler('iniciativa.html'),m=ler('css/magias.css'),a=ler('js/app.js');
+ assert.match(h,/<div class="row magias-busca-controles">\s*<div class="clearable" style="flex:1 1 240px"><input id="sq" type="search"/);assert.match(h,/<select id="sf-type" style="flex:0 1 260px"/);assert.match(h,/id="sf-more"/);
+ assert.match(h,/<div class="muted" id="scount" role="status"><\/div>/);assert.match(h,/id="sf-adv"[^>]*hidden/);assert.match(m,/#sf-type \{ flex:0 1 260px!important;/);assert.match(a,/\$\{n\} \$\{n === 1 \? "resultado" : "resultados"\}/);
+});

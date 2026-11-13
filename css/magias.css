@@ -25,10 +25,13 @@
 .catalogo-magias { container-type:inline-size; }
 .catalogo-magias #spinfo { font-size:12px; margin:0 0 14px; }
 .catalogo-magias .clearable { margin-bottom:10px; }
-.catalogo-magias #sq { min-height:46px; padding:10px 42px 10px 14px; font-size:14px; border-radius:10px; background:#15212C; }
-.catalogo-magias .magias-busca-controles { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-.catalogo-magias #sf-type { flex:1 1 180px!important; min-width:0; width:auto; font-size:12px; }
-.catalogo-magias #sf-more { min-height:40px; white-space:nowrap; }
+.catalogo-magias #sq { padding-right:36px; }   /* mesmo campo de pesquisa do bestiário */
+.catalogo-magias .magias-busca-controles { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }   /* uma linha: pesquisa, tipo e Filtros, como o bestiário */
+.catalogo-magias .magias-busca-controles .clearable { margin-bottom:0; }
+.catalogo-magias #scount { margin:0 0 8px; }
+.catalogo-magias #scount:empty { display:none; }
+.catalogo-magias #sf-type { flex:0 1 260px!important; min-width:0; width:auto; }
+.catalogo-magias #sf-more { white-space:nowrap; }
 .catalogo-magias .magias-filtros { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:12px; margin-bottom:10px; background:#10182050; border:1px solid var(--line); border-radius:10px; }
 .catalogo-magias .magias-filtros select { flex:none!important; min-width:0; width:100%; font-size:12px; }
 .magias-resultados-status { font-size:11px; color:var(--muted); margin:10px 0; min-height:18px; }
