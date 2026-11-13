@@ -356,18 +356,18 @@
     if (pr.raridade) acoes.push(`<span class="muted">${esc(pr.raridade)}</span>`);
     const org = it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? ` · ${esc(ROT_ORIGEM[it.origem.tipo] || it.origem.tipo)}${it.origem.nota ? ": " + esc(it.origem.nota) : ""}` : "";
     const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim(), qn = Math.max(0, num(it.qtd, 1));
-    const thumb = `<button type="button" class="inv-thumb${im ? "" : " vazio"}" data-inv-img="${i}" aria-label="${im ? "Ampliar a imagem de " : "Adicionar imagem a "}${nomeIt}" title="${im ? "Ampliar a imagem" : "Adicionar imagem"}">${im ? `<img class="inv-thumb-img" src="${esc(im.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : (window.ico ? window.ico(II.ICONE[t] || "bag") : "")}</button>`;
+    const thumb = `<button type="button" class="inv-thumb${im ? "" : " vazio"}" data-inv-detalhes="${i}" aria-label="Abrir os detalhes de ${nomeIt}" title="Ver detalhes">${im ? `<img class="inv-thumb-img" src="${esc(im.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : (window.ico ? window.ico(II.ICONE[t] || "bag") : "")}</button>`;
     const qtdCtl = `<span class="inv-qtd-ctl" role="group" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-menos="${i}" aria-label="Diminuir a quantidade de ${nomeIt}"${qn <= 0 ? " disabled" : ""}>−</button><input class="num" type="number" min="0" step="1" inputmode="numeric" data-inv="qtd" value="${qn}" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-mais="${i}" aria-label="Aumentar a quantidade de ${nomeIt}">+</button></span>`;
-    const mais = `<details class="inv-mais"><summary class="small" aria-label="Mais ações de ${nomeIt}" title="Mais ações">${window.ico ? window.ico("more") : "…"}</summary><div class="inv-mais-menu"><button type="button" data-inv-descartar="${i}">Descartar…</button><button type="button" class="danger" data-inv-excluir="${i}">Excluir item…</button></div></details>`;
-    return `<div class="item-inv inv-card${qn <= 0 ? " zerado" : ""}" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></div>
+    const mais = `<details class="inv-mais"><summary class="small" aria-label="Mais ações de ${nomeIt}" title="Mais ações">${window.ico ? window.ico("more") : "…"}</summary><div class="inv-mais-menu"><button type="button" data-inv-editar-abrir="${i}">Editar…</button><button type="button" data-inv-descartar="${i}">Descartar…</button><button type="button" class="danger" data-inv-excluir="${i}">Excluir item…</button></div></details>`;
+    return `<div class="item-inv inv-card${qn <= 0 ? " zerado" : ""}" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-inv-detalhes="${i}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></button></div>
       <div class="inv-meta muted"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span>${org}</div>
       <div class="inv-acoes">${qtdCtl}${acoes.join(" ")}<button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</div></div>
-      <details class="inv-edit" data-inv-uid="${esc(it.uid)}"${aberto ? " open" : ""}><summary>Editar</summary><div class="inv-edit-campos">
+      <div class="inv-edit" data-inv-uid="${esc(it.uid)}"${aberto ? "" : " hidden"}><div class="inv-edit-campos">
         <label class="inv-c-nome">Nome<input data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"></label>
         <label>Peso cada (kg)<input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}"></label>
         <label>Tipo<select data-inv-tipo aria-label="Tipo do item">${Object.entries(IV.TIPOS).map(([k, n]) => opt(k, n, t === k)).join("")}</select></label>
         <label class="inv-c-nome">Descrição<textarea data-inv="desc" rows="3" maxlength="1500" placeholder="Aparência, história, funcionamento conhecido…">${esc(it.desc || "")}</textarea></label>
-        <div class="inv-edit-botoes"><button type="button" class="small" data-inv-img-gerir="${i}">${im ? "Trocar ou remover imagem" : "Adicionar imagem"}</button></div></div></details></div>`;
+        <div class="inv-edit-botoes"><button type="button" class="small" data-inv-img-gerir="${i}">${im ? "Trocar ou remover imagem" : "Adicionar imagem"}</button><button type="button" class="small subtle" data-inv-editar-abrir="${i}">Concluir edição</button></div></div></div></div>`;
   }
   /* Imagem do item: ver maior, enviar do aparelho, usar URL https, trocar ou remover (o retrato usa o mesmo recorte) */
   function abrirImagemItem(i) {
@@ -933,12 +933,13 @@
     if (c("#ms-abrir")) { abrirMestre(); return; }
     if (c("#ms-fechar")) { $("#mestre-box").hidden = true; return; }
     if (c("#ms-ok")) { concederMagia(); return; }
-    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0 })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector("input").focus(); agendar({ inventario: P.inventario }); fecharAdd(); return; }
+    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0 })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector('input[data-inv="nome"]').focus(); agendar({ inventario: P.inventario }); fecharAdd(); return; }
     if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; IV.adicionar(cont(), IV.novoItem({ nome: p[0], qtd: 1, peso: p[1], origem: { tipo: "jogo" } })); redesenharInv(); salvarInv(); fecharAdd(); return; }
     if ((b = c("[data-rm-item]"))) { const it = itemPor(+b.dataset.rmItem); if (!it) return; if (num(it.qtd, 0) >= 1) IV.retirar(cont(), it.uid, null, { tipo: "descarte" }); else INV().splice(+b.dataset.rmItem, 1); salvarInv(); redesenharInv(); return; }
     if (c("#inv-add-abrir")) { const p = $("#inv-add"); if (p && !p.hidden) fecharAdd(); else abrirAdd(); return; }
     if (c("#inv-add-fechar")) { fecharAdd(); return; }
     if ((b = c("[data-inv-add-tipo]"))) { escolherAdd(b.dataset.invAddTipo); return; }
+    if ((b = c("[data-inv-editar-abrir]"))) { const card = b.closest(".item-inv"), p = card && card.querySelector(".inv-edit"), it = INV()[+b.dataset.invEditarAbrir]; if (p && it) { const abre = p.hidden; p.hidden = !abre; abre ? invAbertos.add(it.uid) : invAbertos.delete(it.uid); card.querySelector(".inv-mais")?.removeAttribute("open"); if (abre) p.querySelector('input[data-inv="nome"]')?.focus(); } return; }
     if ((b = c("[data-inv-qtd-mais]"))) { ajustarQtd(+b.dataset.invQtdMais, 1); return; }
     if ((b = c("[data-inv-qtd-menos]"))) { ajustarQtd(+b.dataset.invQtdMenos, -1); return; }
     if ((b = c("[data-inv-detalhes]"))) { abrirDetalhes(+b.dataset.invDetalhes); return; }

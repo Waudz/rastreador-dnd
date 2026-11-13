@@ -368,3 +368,9 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .inv-add-tipos{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.inv-add-tipos button{min-height:40px}.inv-add-tipos button[aria-pressed=true]{background:var(--gold-dark,#9f7940);color:#fff;border-color:var(--gold,#c9a76a)}
 .inv-add-linha[hidden]{display:none}
 @media(max-width:520px){.inv-cab .inv-tit{flex-basis:100%}.inv-add-tipos button{flex:1 1 calc(50% - 6px)}}
+
+/* Cartão: imagem e nome abrem os detalhes; Editar fica no menu … */
+.inv-thumb{cursor:pointer}
+.inv-titulo .inv-nome-btn{min-height:0;width:auto;max-width:100%;padding:0;border:0;background:none;box-shadow:none;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.inv-titulo .inv-nome-btn:hover .inv-nome-txt{text-decoration:underline;text-decoration-color:var(--gold,#c9a76a)}
+.inv-card .inv-edit{margin-top:8px}
