@@ -106,9 +106,9 @@ button.danger:hover { border-color:var(--red); background:#C74B4B25; }
 .cards, .row, .bar { min-width:0; }
 .card, .panel { overflow-wrap:anywhere; }
 .res .av { border-radius:10px; }
-#blist .res { flex-wrap:wrap; min-width:0; }
-#blist .res > .lft { flex:1 1 180px; min-width:0; }
-#blist .res .acts { flex:0 1 auto; flex-wrap:wrap; max-width:100%; min-width:0; }
+#blist .res, #spells .res { flex-wrap:wrap; min-width:0; }
+#blist .res > .lft, #spells .res > .lft { flex:1 1 180px; min-width:0; }
+#blist .res .acts, #spells .res .acts { flex:0 1 auto; flex-wrap:wrap; max-width:100%; min-width:0; }
 .combatant .av { border-radius:9px; }
 @media(max-width:560px) {
   body { padding:12px; }

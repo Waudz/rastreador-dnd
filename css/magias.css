@@ -32,7 +32,7 @@
 .catalogo-magias .magias-filtros { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:12px; margin-bottom:10px; background:#10182050; border:1px solid var(--line); border-radius:10px; }
 .catalogo-magias .magias-filtros select { flex:none!important; min-width:0; width:100%; font-size:12px; }
 .magias-resultados-status { font-size:11px; color:var(--muted); margin:10px 0; min-height:18px; }
-#spells.magias-resultados { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:10px; min-width:0; }
+#spells.magias-resultados { display:block; min-width:0; }   /* lista de linhas, igual à pesquisa de monstros */
 .magia-resultado { display:flex; flex-direction:column; gap:8px; width:100%; min-width:0; padding:14px; border:1px solid var(--line); border-radius:11px; background:var(--panel); text-align:left; color:var(--text); font-weight:400; cursor:pointer; margin:0; box-shadow:none; }
 .magia-resultado:hover { border-color:var(--gold); background:#2B3C4B; transform:none; }
 .magia-resultado-topo { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; min-width:0; width:100%; }

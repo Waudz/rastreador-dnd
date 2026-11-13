@@ -516,3 +516,5 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 /* atributo: módulo grande em cima e valor pequeno embaixo, como na ficha do monstro (o valor do jogador usa a classe atr-valor) */
 .attr .atr-valor { order:2; justify-content:center; font:400 12px/1.3 ui-sans-serif,system-ui,sans-serif; color:var(--muted); height:20px; }
 .attr .atr-valor small { font-size:10px; }
+/* pesquisa de magias: botão Ver com alvo de toque confortável no celular */
+@media (max-width:700px) { #spells .res .small { min-height:44px; min-width:52px; } }

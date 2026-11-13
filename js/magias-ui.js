@@ -20,8 +20,11 @@
   function conjurador({classe,atributo,cd,ataque,preparar}){
     return `<section class="magia-conjurador"><h3>${esc(classe)}</h3>${propriedades([['Atributo',atributo],['CD de magia',cd],['Ataque mágico',ataque],...(preparar==null?[]:[['Preparar até',preparar+' magias']])])}</section>`;
   }
+  /* resultado da pesquisa de magias: a mesma linha compacta da pesquisa de monstros (.res: círculo no lugar do retrato, nome, uma linha de dados e o botão Ver) */
   function resultado({chave,nome,original,nivel,escola,tempo,alcance,ritual,concentracao,fonte,alias}){
-    return `<button type="button" class="magia-resultado" data-spopen="${esc(chave)}"><span class="magia-resultado-topo"><span class="magia-resultado-nome"><strong>${esc(nome)}</strong>${original&&original!==nome?`<small>${esc(original)}</small>`:''}</span><span class="magia-circulo">${esc(circulo(nivel)||'Magia')}</span></span><span class="magia-resultado-escola">${esc(escola||fonte||'')}</span>${tempo||alcance?`<span class="magia-resultado-propriedades">${tempo?`<span><small>Conjuração</small>${esc(tempo)}</span>`:''}${alcance?`<span><small>Alcance</small>${esc(alcance)}</span>`:''}</span>`:''}<span class="magia-selos">${selos({ritual,concentracao})}</span>${alias?`<span class="magia-resultado-alias">No LDJ: ${esc(alias)}</span>`:''}<span class="magia-resultado-abrir">Ver detalhes <span aria-hidden="true">›</span></span></button>`;
+    const circ=circulo(nivel),selo=nivel===0?'T':nivel==null?'M':nivel+'º';
+    const dados=['Magia',circ,escola,tempo,alcance,ritual?'Ritual':'',concentracao?'Concentração':'',fonte,alias?'No LDJ: '+alias:''].filter(Boolean);
+    return `<div class="res res-magia" data-spopen="${esc(chave)}"><span class="lft"><span class="av av0 magia-selo-circulo" style="width:40px;height:40px" aria-hidden="true">${esc(selo)}</span><span><b>${esc(nome)}</b>${original&&original!==nome?` <span class="muted">(${esc(original)})</span>`:''}<br><span class="muted">${dados.map(esc).join(' · ')}</span></span></span><span class="acts"><button type="button" class="small" data-spopen="${esc(chave)}" aria-label="Ver ${esc(nome)}">Ver</button></span></div>`;
   }
   function detalhes({nome,original,meta,descricao,materiais,nota,originalTexto,concentracao}){
     const valor=k=>(meta.find(([n])=>n===k)||[])[1]||'';
