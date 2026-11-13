@@ -318,6 +318,23 @@
         render(); return true;
       }
       /* salvaguarda contra a morte registrada à mão (dado físico): sucesso, falha, natural 1 (2 falhas) ou natural 20 (volta a 1 PV) */
+      /* quantidade digitada ("8", "-8", "+8"): o botão clicado decide a ação; o sinal só vale no atalho do Enter */
+      const lerQuantidade = (txt) => { const m = String(txt == null ? "" : txt).trim().match(/^([+-]?)(\d{1,5})$/); return m ? { sinal: m[1], n: Number(m[2]) } : { sinal: "", n: 0 }; };
+      function aplicarPV(id, acao, sinalEnter) {
+        const person = combatants.find((c) => c.id === id); if (!person) return false;
+        const amountInput = document.querySelector(`[data-amount="${id}"]`), q = lerQuantidade(amountInput && amountInput.value);
+        if (!(q.n >= 1)) { aviso("Digite a quantidade de PV primeiro."); if (amountInput && amountInput.focus) amountInput.focus(); return false; }   // sem quantidade não altera nada
+        delete quantidades[id];                                          // limpa para o clique duplo não aplicar duas vezes
+        const crit = !!(document.querySelector(`[data-crit="${id}"]`) || {}).checked, tipoSel = document.querySelector(`[data-tipo="${id}"]`), tipo = (tipoSel && tipoSel.value) || undefined;
+        if (tipoSel) tipoSel.value = "";                                   // o tipo vale só para este dano; o registro rápido segue sem escolher nada
+        if (acao === "dano") return aplicarDano(id, q.n, undefined, { critico: crit, tipo }); if (acao === "cura") return curar(id, q.n); return darTemp(id, q.n);
+      }
+      /* Enter no campo de quantidade: só com sinal (-8 dano, +8 cura); sem sinal não aplica nada, os botões continuam valendo */
+      function enterQuantidade(id, texto) {
+        const q = lerQuantidade(texto); if (!q.n) return false;
+        if (!q.sinal) { aviso("Sem sinal, use os botões Dano ou Cura (ou digite -8 para dano e +8 para cura e Enter)."); return false; }
+        return aplicarPV(id, q.sinal === "-" ? "dano" : "cura");
+      }
       function salvaMorte(id, tipo) {
         const p = combatants.find((c) => c.id === id); if (!p || p.morto || Number(p.hp) > 0) return false;
         if (p.estavel) { aviso(`${p.name} está estável e não faz salvaguarda contra a morte (só volta a fazer se sofrer dano).`); return false; }
@@ -450,7 +467,7 @@
                 <div class="hp-top"><span>Pontos de vida</span><strong>${Number(c.hp)} / ${Number(c.maxHp)}${Number(c.temp) > 0 ? ` <span class="pv-temp">+${Number(c.temp)} temp.</span>` : ""}</strong></div>
                 <div class="hp-track"><div class="hp-fill ${hpClass}" style="width:${pct}%"></div></div>
                 <div class="hp-controls">
-                  <label class="pv-qtd"><span>Quantidade</span><input type="number" min="1" step="1" inputmode="numeric" value="${escapeText(quantidades[c.id] ?? "")}" placeholder="ex.: 8" aria-label="Quantidade de PV a tirar ou devolver" data-amount="${c.id}"></label>
+                  <label class="pv-qtd"><span>Quantidade</span><input type="text" inputmode="numeric" autocomplete="off" pattern="[+\-]?[0-9]*" maxlength="5" value="${escapeText(quantidades[c.id] ?? "")}" placeholder="8, -8 ou +8" title="Digite a quantidade e clique em Dano ou Cura. Atalho: -8 + Enter = dano; +8 + Enter = cura" aria-label="Quantidade de PV a tirar ou devolver. Com Enter: menos antes do número é dano, mais é cura" data-amount="${c.id}"></label>
                   <button class="small danger" type="button" data-damage="${c.id}" title="Tira a quantidade digitada dos PV">${ico("minus")}Dano</button>
                   <button class="small" type="button" data-heal="${c.id}" title="Devolve a quantidade digitada aos PV">${ico("plus")}Cura</button>
                   <label class="pv-tipo"><span>Tipo de dano (opcional)</span><select class="tipo-dano" data-tipo="${c.id}" aria-label="Tipo de dano (opcional). Afeta só o Dano, não a Cura" title="Afeta só o Dano (resistências, imunidades, vulnerabilidades); a Cura ignora"><option value="">Sem tipo</option>${TIPOS_DANO.map((t) => `<option value="${t[1]}">${t[0]}</option>`).join("")}</select></label>
@@ -551,19 +568,7 @@
         if (button.dataset.atacar) { const q = combatants.find((c) => c.id === button.dataset.atacar), m = incapaz(q); if (m) { aviso(`${q.name} está ${m} e não pode atacar.`); return; }
            window.dispatchEvent?.(new CustomEvent("ini:atacar", { detail: { id: button.dataset.atacar } })); return; }
 
-        if (button.dataset.damage || button.dataset.heal || button.dataset.temp) {
-          const id = button.dataset.damage || button.dataset.heal || button.dataset.temp;
-          const person = combatants.find((c) => c.id === id);
-          const amountInput = document.querySelector(`[data-amount="${id}"]`);
-          const amount = Math.floor(Number(amountInput && amountInput.value));
-          if (!person) return;
-          if (!(amount >= 1)) { aviso("Digite a quantidade de PV primeiro."); if (amountInput && amountInput.focus) amountInput.focus(); return; }   // sem quantidade não altera nada (antes valia 1 sem querer)
-          delete quantidades[id];                                          // limpa para o clique duplo não aplicar duas vezes
-          const crit = !!(document.querySelector(`[data-crit="${id}"]`) || {}).checked, tipoSel = document.querySelector(`[data-tipo="${id}"]`), tipo = (tipoSel && tipoSel.value) || undefined;
-          if (tipoSel) tipoSel.value = "";                                   // o tipo vale só para este dano; o registro rápido segue sem escolher nada
-          if (button.dataset.damage) aplicarDano(id, amount, undefined, { critico: crit, tipo }); else if (button.dataset.heal) curar(id, amount); else darTemp(id, amount);
-          return;
-        }
+        if (button.dataset.damage || button.dataset.heal || button.dataset.temp) { aplicarPV(button.dataset.damage || button.dataset.heal || button.dataset.temp, button.dataset.damage ? "dano" : button.dataset.heal ? "cura" : "temp"); return; }
 
         if (button.dataset.sync) {                       // escolha explícita de gravar (ou parar de gravar) PV na ficha real
           const p = combatants.find((c) => c.id === button.dataset.sync); if (!p) return;
@@ -631,6 +636,7 @@
         c.initiative=valor===""?null:Number(valor);edicaoIniciativa=null;render(true);
       });
       $("combatants").addEventListener("keydown",e=>{
+        if(e.key==="Enter"&&e.target.dataset&&e.target.dataset.amount&&!e.isComposing){e.preventDefault();enterQuantidade(e.target.dataset.amount,e.target.value);return;}
         const id=e.target.dataset.iniciativa;if(!id)return;
         if(e.key==="Escape"){e.preventDefault();e.stopPropagation?.();const c=combatants.find(c=>c.id===id);e.target.value=c?.initiative==null?"":String(c.initiative);if(edicaoIniciativa)edicaoIniciativa.cancelar=true;e.target.blur();edicaoIniciativa=null;render(true);}
         else if(e.key==="Enter"){e.preventDefault();e.target.blur();}
@@ -655,6 +661,13 @@
       if ($("desfazer")) $("desfazer").addEventListener("click", () => desfazerUltimo());
       document.addEventListener("input", (e) => { const t = e.target; if (t && t.dataset && t.dataset.amount) quantidades[t.dataset.amount] = t.value; });
       $("next").addEventListener("click", () => moveTurn(1));
+      /* atalho N = próximo turno; nunca dentro de campos de texto, listas, editores nem com Ctrl/Alt/Meta, e só quando o botão está habilitado */
+      document.addEventListener("keydown", (e) => {
+        if ((e.key !== "n" && e.key !== "N") || e.ctrlKey || e.altKey || e.metaKey || e.repeat || e.defaultPrevented) return;
+        const t = e.target || {}, tag = String(t.tagName || "").toUpperCase();
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t.isContentEditable || (t.closest && t.closest("[role=dialog],dialog"))) return;
+        if ($("next").disabled) return; e.preventDefault(); moveTurn(1);
+      });
       $("previous").addEventListener("click", () => moveTurn(-1));
 
       function moveTurn(direction) {
@@ -729,7 +742,7 @@
         rolagemAuto,
         list: () => combatants,
         atual: () => currentId,
-        aplicarDano, curar, darTemp, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
+        aplicarDano, curar, darTemp, aplicarPV, enterQuantidade, lerQuantidade, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
         trocarContexto,
         contexto: () => contexto,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }

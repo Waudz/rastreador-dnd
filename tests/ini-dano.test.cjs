@@ -129,3 +129,14 @@ test('fluxo completo: cai a 0 PV, dois sucessos, dano (falha), estabiliza, dano 
   I.aplicarDano(h.id,2);assert.equal(h.estavel,false,'dano desestabiliza');assert.equal(h.morte.f,1);
   I.curar(h.id,4);assert.equal(h.hp,4);assert.ok(!h.morte||(h.morte.s===0&&h.morte.f===0),'cura zera os contadores');assert.equal(I.incapaz(h),'');
 });
+test('quantidade com sinal: -N + Enter = dano, +N + Enter = cura; sem sinal o Enter não aplica nada; botões usam o número digitado',()=>{
+  const I=novo([['A',10,10]]),[a]=I.list(),doc=I.__doc,campo=doc.el('[data-amount="'+a.id+'"]');
+  const L=I.lerQuantidade;assert.deepEqual(JSON.parse(JSON.stringify([L('-5'),L('+8'),L('8'),L(' 12 '),L('abc'),L(''),L('-0'),L('5-')])),[{sinal:'-',n:5},{sinal:'+',n:8},{sinal:'',n:8},{sinal:'',n:12},{sinal:'',n:0},{sinal:'',n:0},{sinal:'-',n:0},{sinal:'',n:0}]);
+  const poe=v=>{campo.value=v;};
+  poe('-4');assert.equal(I.enterQuantidade(a.id,'-4'),true);assert.equal(a.hp,6);
+  poe('+3');assert.equal(I.enterQuantidade(a.id,'+3'),true);assert.equal(a.hp,9);
+  poe('5');assert.equal(I.enterQuantidade(a.id,'5'),false);assert.equal(a.hp,9,'sem sinal não aplica');
+  poe('-0');assert.equal(I.enterQuantidade(a.id,'-0'),false);poe('');assert.equal(I.enterQuantidade(a.id,''),false);assert.equal(a.hp,9);
+  poe('2');assert.equal(I.aplicarPV(a.id,'dano'),true);assert.equal(a.hp,7,'botão Dano usa o número sem sinal');
+  poe('-2');assert.equal(I.aplicarPV(a.id,'cura'),true);assert.equal(a.hp,9,'o botão clicado decide, o sinal é ignorado');
+});
