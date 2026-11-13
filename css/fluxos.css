@@ -367,3 +367,12 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
   #iniciativa-atual .footer { font-size:11px; margin:6px 0 0; }
 }
 @media (min-width:701px) { .aviso-gravacao .c { display:none; } }
+
+/* celular: formulário de ataque recolhido até tocar em Atacar; fechar no próprio formulário */
+.vez-fechar { display:none; }
+@media (max-width:700px) {
+  #acoes-da-vez:not(.aberta) { display:none; }
+  #acoes-da-vez { margin:0 0 8px; padding:8px; scroll-margin-top:120px; }
+  .acoes-vez-cab .vez-fechar { display:inline-flex; align-items:center; justify-content:center; order:99; margin-left:auto; min-width:44px; min-height:44px; padding:0; }
+  .acoes-vez-cab .vez-fechar .ico { margin:0; }
+}

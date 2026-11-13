@@ -162,7 +162,7 @@
     sel.atacante = atk.id; fontes = fontesDe(atk);
     if (!l.some((c) => c.id === sel.alvo) || sel.alvo === atk.id) sel.alvo = alvoPadrao(l, atk).id;
     faixa.hidden = false;
-    $("#vez-topo").innerHTML = `<div class="acoes-vez-cab"><label class="inline"><b>${cur === atk.id ? "Vez de" : "Ataque de"}</b><select id="vez-atacante" aria-label="Quem ataca">${l.map((c) => `<option value="${esc(c.id)}" ${c.id === atk.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Alvo<select id="vez-alvo" aria-label="Em quem atacar">${l.filter((c) => c.id !== atk.id).map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvo ? "selected" : ""}title="${esc(c.name)}: CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)}">${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Jogada<select id="vez-modo" aria-label="Vantagem ou desvantagem"><option value="normal" ${sel.modo !== "vantagem" && sel.modo !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modo === "vantagem" ? "selected" : ""}>Vantagem</option><option value="desvantagem" ${sel.modo === "desvantagem" ? "selected" : ""}>Desvantagem</option></select></label><label class="inline vez-vezes">Ataques<input type="number" id="vez-vezes" class="num" min="1" max="8" step="1" value="${Math.max(1, Math.min(8, Math.round(num(sel.vezes, 1))))}" aria-label="Quantas vezes repetir o ataque (multiataque)" title="Repete o ataque escolhido, cada um com seu d20 e dano; o dano total vai num só Aplicar"></label>${treinoTravado() ? "" : `<label class="inline vez-treino"><input type="checkbox" id="vez-treino" ${emTreino() ? "checked" : ""}> Treino: não gasta nada</label>`}</div>
+    $("#vez-topo").innerHTML = `<div class="acoes-vez-cab"><button type="button" class="small subtle vez-fechar" data-vez-fechar aria-label="Fechar o formulário de ataque" title="Fechar">${window.ico ? window.ico("x") : "x"}</button><label class="inline"><b>${cur === atk.id ? "Vez de" : "Ataque de"}</b><select id="vez-atacante" aria-label="Quem ataca">${l.map((c) => `<option value="${esc(c.id)}" ${c.id === atk.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Alvo<select id="vez-alvo" aria-label="Em quem atacar">${l.filter((c) => c.id !== atk.id).map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvo ? "selected" : ""}title="${esc(c.name)}: CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)}">${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Jogada<select id="vez-modo" aria-label="Vantagem ou desvantagem"><option value="normal" ${sel.modo !== "vantagem" && sel.modo !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modo === "vantagem" ? "selected" : ""}>Vantagem</option><option value="desvantagem" ${sel.modo === "desvantagem" ? "selected" : ""}>Desvantagem</option></select></label><label class="inline vez-vezes">Ataques<input type="number" id="vez-vezes" class="num" min="1" max="8" step="1" value="${Math.max(1, Math.min(8, Math.round(num(sel.vezes, 1))))}" aria-label="Quantas vezes repetir o ataque (multiataque)" title="Repete o ataque escolhido, cada um com seu d20 e dano; o dano total vai num só Aplicar"></label>${treinoTravado() ? "" : `<label class="inline vez-treino"><input type="checkbox" id="vez-treino" ${emTreino() ? "checked" : ""}> Treino: não gasta nada</label>`}</div>
       <div class="row acoes-vez-botoes">${fontes.length ? fontes.map((a, i) => `<button type="button" class="small primary" data-vez="${i}" title="Rola o ataque contra a CA do alvo e o dano">${D20()}${esc(a.tipo === "magia" ? a.nome + " (magia)" : a.nome)}${a.tipo !== "magia" && a.hit != null ? " " + (a.hit >= 0 ? "+" : "") + a.hit : ""}</button>`).join("") : '<span class="muted">Sem ataques cadastrados: use Outras opções para um ataque manual.</span>'}<button type="button" class="small subtle" data-vez-avancado aria-expanded="${sel.avancado ? "true" : "false"}">Outras opções</button></div>`;
     const bloq = window.__ini.incapaz ? window.__ini.incapaz(atk) : "";
     if (bloq) { const bt = $("#vez-topo").querySelector?.(".acoes-vez-botoes"); if (bt) bt.innerHTML = `<p class="muted aviso-incapaz" role="status">${esc(atk.name)} está ${esc(bloq)} e não pode atacar. Escolha outro atacante acima, se houver reação ou exceção.</p>`; $("#vez-avancado").hidden = true; return; }
@@ -329,6 +329,7 @@
     if (b.id === "man-ok") confirmarManual();
     else if (b.id === "man-cancelar") { $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null; }
     else if (b.dataset.vez !== undefined) dispara("tudo", { rapido: true, idx: +b.dataset.vez });
+    else if (b.dataset.vezFechar !== undefined) fecharCelular();
     else if (b.dataset.vezAvancado !== undefined) { const sel = estado(); sel.avancado = !sel.avancado; desenharVez(); }
     else if (b.id === "atk-rolar") dispara("tudo"); else if (b.id === "atk-so-ataque") dispara("ataque"); else if (b.id === "atk-so-dano") dispara("dano");
     else if (b.dataset.aplicar !== undefined) aplicarResultado(+b.dataset.aplicar, b);
@@ -337,8 +338,16 @@
   window.addEventListener?.("ini:atacar", (e) => {
     const sel = estado(), id = e.detail && e.detail.id; if (!id) return;
     sel.atacante = id; sel.manualAtacante = true; sel.manualPara = window.__ini.atual?.() ?? null; sel.idx = null; sel.circulo = null; limparResultados();
-    desenharVez(); faixa.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    origemAtaque = id; faixa.classList?.add?.("aberta");                    // no celular o formulário fica recolhido até alguém tocar em Atacar
+    desenharVez(); if (window.__ini.rolarAte) window.__ini.rolarAte(faixa, true); else faixa.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
   });
+  /* celular: fechar volta ao cartão de origem (se ele estiver fora da vista); o formulário continua aberto até ser fechado, para vários ataques */
+  let origemAtaque = null;
+  function fecharCelular() {
+    faixa.classList?.remove?.("aberta");
+    const alvo = origemAtaque && document.querySelector(`[data-atacar="${origemAtaque}"]`), card = alvo && alvo.closest && alvo.closest(".combatant");
+    if (card && window.__ini.rolarAte) window.__ini.rolarAte(card, false);
+  }
   window.addEventListener?.("ini:rolagem", () => { $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null; desenharVez(); });
   window.__ini.aoAlterar?.(() => { if (!document.activeElement?.closest?.("#acoes-da-vez")) desenharVez(); });
   desenharVez();

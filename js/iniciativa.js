@@ -740,12 +740,12 @@
       if (mqCelular) { if (mqCelular.addEventListener) mqCelular.addEventListener("change", layoutCelular); window.addEventListener("resize", layoutCelular); layoutCelular(); setTimeout(layoutCelular, 600); }
       { const caixa = $("menu-combate-itens"); if (caixa) caixa.addEventListener("click", (e) => { if (e.target.closest && e.target.closest("button") && window.MENUS && window.MENUS.fecharTodos) window.MENUS.fecharTodos(); }); }
       /* ao avançar o turno, a página só rola até o combatente atual se ele estiver fora da área visível (entre as barras fixas) */
-      function mostrarAtual(forcar) {
-        if (!mqCelular || !mqCelular.matches) return;
-        const el = document.querySelector("#combatants .combatant.active"); if (!el || !el.getBoundingClientRect) return;
+      function rolarAte(el, forcar) {
+        if (!mqCelular || !mqCelular.matches || !el || !el.getBoundingClientRect) return;
         const cab = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--appheader-h")) || 56, barra = document.querySelector(".combat-bar"), topo = cab + (barra ? barra.getBoundingClientRect().height : 48) + 8, base = window.innerHeight - 66 - 8, r = el.getBoundingClientRect();
-        if (forcar || r.top < topo || r.top > base - 60) window.scrollTo({ top: window.scrollY + r.top - topo, behavior: "smooth" });
+        if (forcar || r.top < topo || r.top > base - 60) window.scrollTo(0, window.scrollY + r.top - topo);        // salto direto (confiável com a rolagem ancorada do navegador)
       }
+      const mostrarAtual = (forcar) => rolarAte(document.querySelector("#combatants .combatant.active"), forcar);
       $("current-turn").addEventListener("click", () => mostrarAtual(true));
       $("expandir-tudo").addEventListener("click", () => { combatants.forEach((c) => abertos.add(c.id)); render(); });
       $("recolher-tudo").addEventListener("click", () => { abertos.clear(); render(); });
@@ -847,7 +847,7 @@
         rolagemAuto,
         list: () => combatants,
         atual: () => currentId,
-        aplicarDano, curar, darTemp, aplicarPV, lerQuantidade, maisOpcoes, limparIniciativa, desfazerGrupoPV, estatisticas: () => stats, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
+        aplicarDano, curar, darTemp, aplicarPV, lerQuantidade, maisOpcoes, limparIniciativa, rolarAte, desfazerGrupoPV, estatisticas: () => stats, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
         trocarContexto,
         contexto: () => contexto,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }
