@@ -68,3 +68,19 @@ test('condições: o seletor começa em "Selecionar…" (nunca em Agarrado) e ap
   assert.match(pj,/<select id="ef-cond">\$\{opt\("", "Selecionar…", true\)\}/);
   const {J}=motor(),P=pers([{c:'Fighter',n:3}]);assert.throws(()=>J.aplicarCondicao(P,''),/desconhecida/);assert.equal((P.ficha.efeitosAtivos||[]).length,0);
 });
+test('ficha: Resistência Implacável (traço racial do meio-orc) deixa 1 PV uma vez, registra o uso como recurso e volta no descanso longo; sem o traço nada muda; dano massivo não é salvo',()=>{
+  const {J,RC}=motor(),orc=()=>pers([{c:'Fighter',n:3}],{pv_atual:6,pv_max:10,ficha:{raca:'Meio-orc',classes:[{c:'Fighter',n:3}],atributos:{for:14,des:12,con:14,int:10,sab:10,car:10}}});
+  const P=orc();assert.ok(RC.calcular(P.ficha).some(r=>r.id==='resistencia-implacavel'&&r.max===1&&r.recarga==='longo'),'aparece nos recursos da ficha');
+  let r=J.dano(P,6);assert.equal(P.pv_atual,1);assert.match(r.mensagens.join(' '),/Resistência Implacável/);assert.equal(P.ficha.recursosUsados['resistencia-implacavel'],1);assert.ok(!r.zerou);
+  r=J.dano(P,1);assert.equal(P.pv_atual,0,'o uso acabou até o descanso longo');assert.ok(r.zerou);
+  P.pv_atual=3;assert.equal(J.descansoLongo(P).ok,true);assert.ok(!P.ficha.recursosUsados['resistencia-implacavel'],'volta no descanso longo');
+  const M=orc();M.pv_atual=4;const m=J.dano(M,14);assert.equal(m.morto,true,'sobraram 10 = PV máximo: morte instantânea, a habilidade não ajuda');assert.equal(M.ficha.recursosUsados?.['resistencia-implacavel']||0,0,'não gastou o uso');
+  const H=pers([{c:'Fighter',n:3}],{pv_atual:6,pv_max:10,ficha:{raca:'Humano',classes:[{c:'Fighter',n:3}],atributos:{con:14}}});J.dano(H,6);assert.equal(H.pv_atual,0,'sem a característica, cai a 0 PV');
+  const C=orc();C.ficha.criacao={};J.dano(C,6,{});const D=orc();J.dano(D,6);assert.equal(D.pv_atual,1);
+});
+test('ficha: crítico a 0 PV conta 2 falhas e dano igual ou maior que o PV máximo mata; Resistência Implacável por nome da característica, não por personagem',()=>{
+  const {J,RC}=motor(),P=pers([{c:'Fighter',n:3}],{pv_atual:0,pv_max:10});P.ficha.morte={sucessos:0,falhas:0,estavel:false,morto:false};
+  J.dano(P,3,{critico:true});assert.equal(P.ficha.morte.falhas,2);J.dano(P,10);assert.equal(P.ficha.morte.morto,true);
+  const A=pers([{c:'Barbarian',n:3}],{pv_atual:5,pv_max:12,ficha:{raca:'Humano',classes:[{c:'Barbarian',n:3}],caracteristicas:[{nome:'Resistência Implacável',desc:'x'}],atributos:{con:14}}});J.dano(A,5);assert.equal(A.pv_atual,1,'qualquer ficha com a característica (de raça, classe ou item) vale');
+  assert.deepEqual(JSON.parse(JSON.stringify(RC.habilidadesQueda({raca:'Meio-orc',classes:[]}).map(h=>h.id))),['resistencia-implacavel']);
+});

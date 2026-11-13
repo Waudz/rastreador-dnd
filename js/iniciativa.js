@@ -74,8 +74,14 @@
 
       /* salvaguardas contra a morte (personagem a 0 PV): 3 sucessos estabilizam, 3 falhas matam; cura a partir de 0 PV zera tudo */
       function moreTpl(c) {
-        const m = c.morte || { s: 0, f: 0 }, bol = (n, ok) => "●".repeat(n) + "○".repeat(3 - n);
-        return c.morto ? `<div class="morte-linha"><b>Morto</b></div>` : c.estavel ? `<div class="morte-linha"><b>Estabilizado</b> (inconsciente, a 0 PV)</div>` : `<div class="morte-linha"><span>Contra a morte: sucessos ${bol(m.s)} falhas ${bol(m.f)}</span><button class="small" type="button" data-morte="${c.id}|s">Sucesso</button><button class="small danger" type="button" data-morte="${c.id}|f">Falha</button></div>`;
+        const m = c.morte || { s: 0, f: 0 }, bol = (n) => "●".repeat(n) + "○".repeat(3 - n);
+        if (c.morto) return `<div class="morte-linha"><b>Morto</b><button class="small" type="button" data-morto="${c.id}|0">Reviver (1 PV)</button></div>`;
+        if (c.estavel) return `<div class="morte-linha"><b>Estabilizado</b> (inconsciente, a 0 PV)<button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
+        return `<div class="morte-linha"><span>Contra a morte: sucessos ${bol(m.s)} falhas ${bol(m.f)}</span><button class="small" type="button" data-morte="${c.id}|s">Sucesso</button><button class="small danger" type="button" data-morte="${c.id}|f">Falha</button><button class="small danger" type="button" data-morte="${c.id}|f2" title="Natural 1: duas falhas">Nat. 1</button><button class="small" type="button" data-morte="${c.id}|n20" title="Natural 20: volta a 1 PV">Nat. 20</button><button class="small" type="button" data-estab="${c.id}" title="Estabilizar (Medicina CD 10 ou Poupar os Moribundos)">Estabilizar</button><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
+      }
+      /* monstro ou NPC a 0 PV: inconsciente/derrotado até ser marcado morto (o turno pula os dois; só o morto não recebe cura) */
+      function derrotadoTpl(c) {
+        return c.morto ? `<div class="morte-linha"><b>Morto</b><button class="small" type="button" data-morto="${c.id}|0">Reviver (1 PV)</button></div>` : `<div class="morte-linha"><b>Inconsciente/derrotado</b><button class="small subtle" type="button" data-morto="${c.id}|1">Marcar morto</button></div>`;
       }
       function editTpl(c) {
         const f = (k, l, t, v) => `<div><label>${l}</label><input data-f="${k}" type="${t}" value="${escapeText(v)}"></div>`;
@@ -174,7 +180,7 @@
       });
       /* PV rápidos: registrar dano/cura sem simular ataque. Cada alteração guarda um estado para "Desfazer" (só o que ela mexeu). */
       const desfazer = [], quantidades = {};   // quantidades: o que foi digitado em cada cartão (o redesenho não apaga)
-      const copiaEstado = (c) => ({ hp: c.hp, temp: c.temp || 0, morte: c.morte ? { ...c.morte } : null, estavel: !!c.estavel, morto: !!c.morto, conc: c.conc || null });
+      const copiaEstado = (c) => ({ usos: c.usos ? { ...c.usos } : null, furia: !!c.furia, hp: c.hp, temp: c.temp || 0, morte: c.morte ? { ...c.morte } : null, estavel: !!c.estavel, morto: !!c.morto, conc: c.conc || null });
       function guardarDesfazer(rotulo, ids) {
         const estados = {}; for (const id of ids) { const c = combatants.find((x) => x.id === id); if (c) estados[id] = copiaEstado(c); }
         desfazer.push({ rotulo, estados, stats: JSON.parse(JSON.stringify(stats)) }); if (desfazer.length > 30) desfazer.shift();
@@ -182,15 +188,39 @@
       }
       function desfazerUltimo() {
         const u = desfazer.pop(); if (!u) return false;
-        for (const [id, e] of Object.entries(u.estados)) { const c = combatants.find((x) => x.id === id); if (c) Object.assign(c, e, { morte: e.morte, conc: e.conc }); }
+        for (const [id, e] of Object.entries(u.estados)) { const c = combatants.find((x) => x.id === id); if (c) Object.assign(c, e, { morte: e.morte, conc: e.conc, usos: e.usos }); }
         stats = u.stats; const b = $("desfazer"); if (b) { b.disabled = !desfazer.length; b.title = desfazer.length ? "Desfazer: " + desfazer[desfazer.length - 1].rotulo : "Nada para desfazer"; }
         render(); if (window.FEEDBACK) window.FEEDBACK.mostrar("Desfeito: " + u.rotulo); return true;
       }
       const aviso = (t) => { if (window.FEEDBACK) window.FEEDBACK.mostrar(t); };
+      /* Habilidades que mudam a queda a 0 PV (Resistência Implacável, Fúria Implacável, Fortitude dos Mortos-Vivos...) vêm da ficha ou do monstro pelo gancho __ini.habilidadesQueda,
+         sem exceções fixas. Automática: aplica sozinha (Desfazer reverte). Com salvaguarda: pergunta o resultado do dado. O uso fica no combatente e, se ele grava na ficha, na ficha. */
+      function tentarQueda(alvo, dano, opcoes) {
+        const lista = (window.__ini.habilidadesQueda && window.__ini.habilidadesQueda(alvo)) || [];
+        alvo.usos = alvo.usos || {};
+        for (const h of lista) {
+          if (h.requer === "furia" && !alvo.furia) continue;
+          const usado = Math.max(Number(h.usado) || 0, Number(alvo.usos[h.id]) || 0);
+          if (h.tipo === "auto") {
+            if (usado >= (h.limite || 1)) continue;
+            alvo.usos[h.id] = usado + 1; alvo.hp = 1;
+            if (alvo.sync && window.__ini.registrarUso) window.__ini.registrarUso(alvo, h.id, usado + 1);
+            return `${h.nome}: ${alvo.name} fica com 1 PV em vez de cair a 0 (uso registrado; volta no descanso longo). `;
+          }
+          const cd = h.cdPorDano ? h.cdBase + dano : h.cdBase + (h.incremento || 0) * usado;
+          if (h.excecoes && opcoes.critico) continue;
+          const ok = window.confirm(`${h.nome}: ${alvo.name} cairia a 0 PV.\nSalvaguarda de Constituição CD ${cd}${h.excecoes ? " (não vale se o dano for radiante ou de acerto crítico)" : ""}.\nPassou na salvaguarda? OK = sim (fica com 1 PV), Cancelar = não.`);
+          if (h.limite == null || usado < h.limite) { alvo.usos[h.id] = usado + 1; if (alvo.sync && window.__ini.registrarUso) window.__ini.registrarUso(alvo, h.id, usado + 1); }
+          if (ok) { alvo.hp = 1; return `${h.nome}: ${alvo.name} passou na salvaguarda (CD ${cd}) e fica com 1 PV. `; }
+          return `${h.nome}: ${alvo.name} falhou na salvaguarda (CD ${cd}) e caiu a 0 PV. `;
+        }
+        return "";
+      }
       /* dano a um combatente: absorvido primeiro pelos PV temporários; a 0 PV encerra a concentração; personagem a 0 PV que sofre dano soma uma falha na salvaguarda contra a morte (2014) */
-      function aplicarDano(id, amount, quemId) {
+      function aplicarDano(id, amount, quemId, opcoes = {}) {
         const alvo = combatants.find((c) => c.id === id), n = Math.max(0, Math.floor(Number(amount) || 0));
         if (!alvo || !n) return false;
+        if (alvo.morto) { aviso(`${alvo.name} já está morto. Use Reviver se for preciso corrigir.`); return false; }
         const antes = Number(alvo.hp), c = quemId && combatants.find((x) => x.id === quemId), quem = c ? { id: c.id, name: c.name } : attacker();
         guardarDesfazer(`${alvo.name} −${n} PV`, [alvo.id]);
         const absorvido = Math.min(Number(alvo.temp) || 0, n), resto = n - absorvido; alvo.temp = (Number(alvo.temp) || 0) - absorvido;
@@ -199,18 +229,54 @@
         if (antes > 0 && alvo.hp === 0) a.kills++;
         statOf(alvo.id, alvo.name).taken += n;
         let msg = absorvido ? `${absorvido} absorvido pelos PV temporários. ` : "";
-        if (antes > 0 && alvo.hp === 0) { if (alvo.conc) { msg += `${alvo.name} perdeu a concentração em ${alvo.conc}. `; alvo.conc = null; } if (alvo.kind === "Personagem") alvo.morte = { s: 0, f: 0 }; msg += `${alvo.name} caiu a 0 PV. `; }
-        else if (antes === 0 && resto > 0 && alvo.kind === "Personagem") { alvo.morte = alvo.morte || { s: 0, f: 0 }; alvo.morte.f = Math.min(3, alvo.morte.f + 1); alvo.estavel = false; msg += `Dano a 0 PV: falha na salvaguarda contra a morte (${alvo.morte.f}/3). `; if (alvo.morte.f >= 3) { alvo.morto = true; msg += `${alvo.name} morreu. `; } }
+        if (antes > 0 && alvo.hp === 0) { const sobraQueda = resto - antes; if (!(alvo.kind === "Personagem" && sobraQueda >= Number(alvo.maxHp))) msg += tentarQueda(alvo, resto, opcoes); }   // habilidades que deixam 1 PV (se sobreviver, hp > 0 e o ramo de 0 PV abaixo não roda)
+        if (antes > 0 && alvo.hp === 0) {
+          if (alvo.conc) { msg += `${alvo.name} perdeu a concentração em ${alvo.conc}. `; alvo.conc = null; }
+          if (alvo.kind === "Personagem") {
+            alvo.morte = { s: 0, f: 0 }; alvo.estavel = false;
+            const sobra = resto - antes;                                       // dano que passou de 0 PV
+            if (sobra >= Number(alvo.maxHp)) { alvo.morto = true; msg += `Dano massivo (${sobra} além de 0 PV, PV máximo ${alvo.maxHp}): ${alvo.name} morreu na hora. `; }
+            else msg += `${alvo.name} caiu a 0 PV, inconsciente. `;
+          } else msg += `${alvo.name} caiu a 0 PV (inconsciente/derrotado; marque Morto se for o caso). `;
+        }
+        else if (antes === 0 && resto > 0 && alvo.kind === "Personagem") {      // dano a 0 PV: 1 falha (2 se crítico); dano igual ou maior que o PV máximo mata na hora
+          alvo.morte = alvo.morte || { s: 0, f: 0 }; alvo.estavel = false;
+          if (resto >= Number(alvo.maxHp)) { alvo.morto = true; msg += `Dano a 0 PV igual ou maior que o PV máximo: ${alvo.name} morreu na hora. `; }
+          else { const falhas = opcoes.critico ? 2 : 1; alvo.morte.f = Math.min(3, alvo.morte.f + falhas); msg += `Dano a 0 PV${opcoes.critico ? " (crítico)" : ""}: ${falhas} falha(s) na salvaguarda contra a morte (${alvo.morte.f}/3). `; if (alvo.morte.f >= 3) { alvo.morto = true; msg += `${alvo.name} morreu. `; } }
+        }
         else if (alvo.conc && resto > 0 && alvo.hp > 0) msg += `Concentração de ${alvo.name} (${alvo.conc}): salvaguarda de Constituição, CD ${Math.max(10, Math.floor(resto / 2))}. `;
         render(); if (msg) aviso(msg.trim());
         return true;
       }
       function curar(id, amount) {
         const alvo = combatants.find((c) => c.id === id), n = Math.max(0, Math.floor(Number(amount) || 0)); if (!alvo || !n) return false;
+        if (alvo.morto) { aviso(`${alvo.name} está morto: cura comum não revive. Use Reviver.`); return false; }
         guardarDesfazer(`${alvo.name} +${n} PV`, [alvo.id]);
         const antes = Number(alvo.hp); alvo.hp = Math.min(Number(alvo.maxHp), antes + n);
         const quem = attacker(); if (alvo.hp > antes) statOf(quem.id, quem.name).healed += alvo.hp - antes;
         if (antes === 0 && alvo.hp > 0) { alvo.morte = null; alvo.estavel = false; }
+        render(); return true;
+      }
+      /* salvaguarda contra a morte registrada à mão (dado físico): sucesso, falha, natural 1 (2 falhas) ou natural 20 (volta a 1 PV) */
+      function salvaMorte(id, tipo) {
+        const p = combatants.find((c) => c.id === id); if (!p || p.morto || Number(p.hp) > 0) return false;
+        guardarDesfazer(`${p.name} contra a morte`, [p.id]);
+        p.morte = p.morte || { s: 0, f: 0 }; p.estavel = false;
+        if (tipo === "n20") { p.hp = 1; p.morte = null; aviso(`${p.name}: 20 natural, volta a 1 PV.`); render(); return true; }
+        if (tipo === "s") p.morte.s = Math.min(3, p.morte.s + 1); else p.morte.f = Math.min(3, p.morte.f + (tipo === "f2" ? 2 : 1));
+        if (p.morte.s >= 3) { p.estavel = true; aviso(`${p.name} estabilizou.`); }
+        if (p.morte.f >= 3) { p.morto = true; aviso(`${p.name} morreu.`); }
+        render(); return true;
+      }
+      function estabilizar(id) {
+        const p = combatants.find((c) => c.id === id); if (!p || p.morto || Number(p.hp) > 0) return false;
+        guardarDesfazer(`${p.name} estabilizado`, [p.id]); p.estavel = true; p.morte = { s: 0, f: 0 }; render(); aviso(`${p.name} está estável (inconsciente, a 0 PV; recupera 1 PV em 1d4 horas se ninguém curar).`); return true;
+      }
+      /* morto x inconsciente (monstros e NPCs a 0 PV ficam "inconscientes/derrotados" até serem marcados mortos); reviver volta a 1 PV */
+      function marcarMorto(id, morto) {
+        const p = combatants.find((c) => c.id === id); if (!p) return false;
+        guardarDesfazer(`${p.name} ${morto ? "morto" : "revivido"}`, [p.id]);
+        if (morto) { p.morto = true; p.conc = null; } else { p.morto = false; p.estavel = false; p.morte = null; if (Number(p.hp) <= 0) p.hp = 1; }
         render(); return true;
       }
       function darTemp(id, amount) {
@@ -293,7 +359,7 @@
         list.innerHTML = exibicao.map((c, posicao) => {
           if (c.id === editId) return editTpl(c);
           const isActive = c.id === currentId;
-          const isDefeated = Number(c.hp) <= 0;
+          const isDefeated = Number(c.hp) <= 0 || !!c.morto;
           const pct = Math.max(0, Math.min(100, (Number(c.hp) / Number(c.maxHp)) * 100));
           const hpClass = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
           return `
@@ -303,7 +369,7 @@
                 <span class="avfx">${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 40, c.foto) : ""}</span>
                 <div class="id-texto">
                 <div class="name"><span class="nome-texto">${escapeText(c.name)}</span>${isActive ? ` <span aria-label="turno atual" class="turn-mark">${ico("turn")}</span>` : ""}</div>
-                <div class="kind">${isActive?'<span class="turno-badge">Turno atual</span> · ':currentId && posicao === 1 ? '<span class="proximo-badge">Próximo</span> · ':''}${escapeText(c.kind)}${isDefeated ? " · Inconsciente/derrotado" : ""}${pendente(c) ? " · iniciativa pendente" : ""}</div>
+                <div class="kind">${isActive?'<span class="turno-badge">Turno atual</span> · ':currentId && posicao === 1 ? '<span class="proximo-badge">Próximo</span> · ':''}${escapeText(c.kind)}${isDefeated ? (c.morto ? " · Morto" : c.kind === "Personagem" ? (c.estavel ? " · Estável (0 PV)" : " · Inconsciente (0 PV)") : " · Inconsciente/derrotado") : ""}${pendente(c) ? " · iniciativa pendente" : ""}</div>
                 ${c.effects && c.effects.length ? `<div class="fxbar">${c.effects.map((e) => `<span class="fxchip" style="--c:${e.color}" data-fxtip="${escapeText(fxTip(e))}">${fxIcon(e.type)}${escapeText(e.name)} <b>${fxLeft(e)}</b><button type="button" data-fxdel="${c.id}|${e.id}" aria-label="Remover ${escapeText(e.name)}">${ico("x")}</button></span>`).join("")}</div>` : ""}
               </div>
               </div>
@@ -320,14 +386,17 @@
                   <button class="small danger" type="button" data-damage="${c.id}">${ico("minus")}Dano</button>
                   <button class="small" type="button" data-heal="${c.id}">${ico("plus")}Cura</button>
                   <button class="small" type="button" data-temp="${c.id}" title="PV temporários (não se acumulam)">Temp.</button>
+                  <label class="inline crit-rotulo" title="Dano de acerto crítico: a 0 PV vale 2 falhas na salvaguarda contra a morte"><input type="checkbox" data-crit="${c.id}" style="width:auto;height:auto"> Crítico</label>
                   <button class="small primary" type="button" data-atacar="${c.id}">${ico("swords")}Atacar</button>
                   <button class="small" type="button" data-reroll="${c.id}" ${rolagemAuto() ? "" : "disabled"} title="${rolagemAuto() ? "Rolar a iniciativa de novo (d20 + modificador)" : "Rolagem automática desligada: digite a iniciativa no campo"}" aria-label="Rolar a iniciativa de ${escapeText(c.name)} de novo">${ico("d20")}</button>
                 </div>
               </div>
               ${c.pid ? `<div class="sync-linha"><span class="sync-selo ${c.sync ? "grava" : "teste"}">${c.sync ? "Grava PV na ficha" : "Teste: não grava na ficha"}</span>${window.__ini && window.__ini.papel && window.__ini.papel() === "mestre" ? `<button class="small subtle" type="button" data-sync="${c.id}">${c.sync ? "Parar de gravar" : "Gravar na ficha"}</button>` : ""}</div>` : ""}
+              ${c.furia ? `<div class="conc-linha"><span class="conc-chip">Em fúria: resistência a contundente, perfurante e cortante</span></div>` : ""}
               ${c.conc ? `<div class="conc-linha"><span class="conc-chip">Concentrando: ${escapeText(c.conc)}</span><button class="small subtle" type="button" data-conc-fim="${c.id}">Encerrar</button></div>` : ""}
-              ${Number(c.hp) <= 0 && c.kind === "Personagem" ? moreTpl(c) : ""}
+              ${(Number(c.hp) <= 0 || c.morto) ? (c.kind === "Personagem" ? moreTpl(c) : derrotadoTpl(c)) : ""}
               <div class="row-actions">
+                ${window.__ini && window.__ini.temFuria && window.__ini.temFuria(c) ? `<button class="small subtle" type="button" data-furia="${c.id}" aria-pressed="${c.furia ? "true" : "false"}">${c.furia ? "Encerrar fúria" : "Fúria"}</button>` : ""}
                 <button class="small subtle" type="button" data-conc="${c.id}">Concentração</button>
                 <button class="small subtle" type="button" data-fxopen="${c.id}">${ico("sparkles")}Efeito</button>
                 <button class="small subtle" type="button" data-edit="${c.id}">Editar</button>
@@ -417,7 +486,8 @@
           if (!person) return;
           if (!(amount >= 1)) { aviso("Digite a quantidade de PV primeiro."); if (amountInput && amountInput.focus) amountInput.focus(); return; }   // sem quantidade não altera nada (antes valia 1 sem querer)
           delete quantidades[id];                                          // limpa para o clique duplo não aplicar duas vezes
-          if (button.dataset.damage) aplicarDano(id, amount); else if (button.dataset.heal) curar(id, amount); else darTemp(id, amount);
+          const crit = !!(document.querySelector(`[data-crit="${id}"]`) || {}).checked;
+          if (button.dataset.damage) aplicarDano(id, amount, undefined, { critico: crit }); else if (button.dataset.heal) curar(id, amount); else darTemp(id, amount);
           return;
         }
 
@@ -426,18 +496,15 @@
           if (!p.sync && !window.confirm(`Passar a gravar os PV e PV temporários de ${p.name} na ficha real?`)) return;
           p.sync = !p.sync; render(); aviso(p.sync ? `${p.name}: PV gravados na ficha.` : `${p.name}: modo teste, a ficha não muda.`); return;
         }
-        if (button.dataset.morte) {
-          const [id, tipo] = button.dataset.morte.split("|"), p = combatants.find((c) => c.id === id); if (!p) return;
-          guardarDesfazer(`${p.name} contra a morte`, [p.id]);
-          p.morte = p.morte || { s: 0, f: 0 }; p.morte[tipo] = Math.min(3, p.morte[tipo] + 1);
-          if (p.morte.s >= 3) { p.estavel = true; aviso(`${p.name} estabilizou.`); } if (p.morte.f >= 3) { p.morto = true; aviso(`${p.name} morreu.`); }
-          render(); return;
-        }
+        if (button.dataset.morte) { const [id, tipo] = button.dataset.morte.split("|"); salvaMorte(id, tipo); return; }
+        if (button.dataset.estab) { estabilizar(button.dataset.estab); return; }
+        if (button.dataset.morto) { const [id, v] = button.dataset.morto.split("|"); marcarMorto(id, v === "1"); return; }
         if (button.dataset.conc) {
           const p = combatants.find((c) => c.id === button.dataset.conc); if (!p) return;
           const nome = window.prompt(`Concentração de ${p.name}: qual magia ou efeito?`, p.conc || ""); if (nome === null) return;
           guardarDesfazer(`${p.name} concentração`, [p.id]); p.conc = nome.trim().slice(0, 40) || null; render(); return;
         }
+        if (button.dataset.furia) { const p = combatants.find((c) => c.id === button.dataset.furia); if (!p) return; guardarDesfazer(`${p.name} fúria`, [p.id]); p.furia = !p.furia; render(); aviso(p.furia ? `${p.name} entrou em fúria.` : `${p.name} saiu da fúria.`); return; }
         if (button.dataset.concFim) { const p = combatants.find((c) => c.id === button.dataset.concFim); if (!p) return; guardarDesfazer(`${p.name} concentração`, [p.id]); p.conc = null; render(); return; }
 
         if (button.dataset.remove) {
@@ -540,7 +607,7 @@
       });
 
       /* backup do combate (arquivo do usuário). A importação valida tudo e só substitui depois de quem chamou confirmar. */
-      const CAMPOS = ["id", "name", "kind", "initiative", "hp", "maxHp", "ac", "order", "key", "pid", "campanhaId", "foto", "effects", "temp", "morte", "estavel", "morto", "conc", "sync"];
+      const CAMPOS = ["id", "name", "kind", "initiative", "hp", "maxHp", "ac", "order", "key", "pid", "campanhaId", "foto", "effects", "temp", "morte", "estavel", "morto", "conc", "sync", "usos", "furia"];
       function exportarCombate() { return { v: 1, tipo: "backup-combate", criadoEm: new Date().toISOString(), combatants, currentId, round, nextOrder, stats, report }; }
       function limparCombatente(c, i) {
         if (!c || typeof c !== "object" || typeof c.name !== "string" || !c.name.trim() || c.name.length > 120) throw new Error("Combatente inválido no arquivo (posição " + (i + 1) + ").");
@@ -573,7 +640,7 @@
         rolagemAuto,
         list: () => combatants,
         atual: () => currentId,
-        aplicarDano, curar, darTemp, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
+        aplicarDano, curar, darTemp, salvaMorte, estabilizar, marcarMorto, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
         trocarContexto,
         contexto: () => contexto,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }

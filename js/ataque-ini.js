@@ -148,7 +148,9 @@
   const alvoPadrao = (l, atk) => { const grupo = (c) => (c.kind === "Personagem" ? "p" : "m"); return (l.find((c) => c.id !== atk.id && grupo(c) !== grupo(atk) && num(c.hp) > 0) || l.find((c) => c.id !== atk.id && num(c.hp) > 0) || l.find((c) => c.id !== atk.id) || atk); };
 
   /* defesas e salvaguardas do alvo, vindas da ficha da criatura (bestiário) ou do personagem (campanha); sem dado conhecido, o jogador informa à mão */
-  const defesasDo = (c) => (c && c.pid && window.__ini.defesasPersonagem ? window.__ini.defesasPersonagem(c.pid) : c && c.key && window.__ini.defesasDe ? window.__ini.defesasDe(c.key) : null);
+  const defesasBase = (c) => (c && c.pid && window.__ini.defesasPersonagem ? window.__ini.defesasPersonagem(c.pid) : c && c.key && window.__ini.defesasDe ? window.__ini.defesasDe(c.key) : null);
+  /* em fúria (2014): resistência a dano contundente, perfurante e cortante */
+  const defesasDo = (c) => { const b = defesasBase(c); if (!(c && c.furia)) return b; const x = b || { resistencias: [], imunidades: [], vulnerabilidades: [], naoMagico: false }; return { ...x, resistencias: [...new Set([...(x.resistencias || []), "bludgeoning", "piercing", "slashing"])] }; };
   const salvaDo = (c, ab) => { const v = c && c.pid && window.__ini.salvaPersonagem ? window.__ini.salvaPersonagem(c.pid, ab) : c && c.key && window.__ini.salvaDe ? window.__ini.salvaDe(c.key, ab) : null; return Number.isFinite(v) ? v : null; };
   const defesasTexto = (d) => d ? [["resistência a", d.resistencias], ["imunidade a", d.imunidades], ["vulnerabilidade a", d.vulnerabilidades]].filter(([, l]) => l && l.length).map(([r, l]) => r + " " + l.join(", ")).join("; ") : "";
   function limparResultados() { for (const k of Object.keys(resultados)) delete resultados[k]; blocos = []; const r = $("#vez-res"); if (r) r.innerHTML = ""; }
@@ -222,17 +224,18 @@
         else if (partes && partes.length && !acertou) linhas.push('<p class="muted">Errou: sem dano.</p>');
         else if (partes && partes.length && metadeFinal === "nada") linhas.push("<p class=\"muted\">Passou na salvaguarda: sem dano.</p>");
       } else {
-        const N = Math.max(1, Math.min(8, Math.round(num(estado().vezes, 1)))), defesas = defesasDo(alvo); let somaDano = 0, houveDano = false, ultimoDano = null;
+        const N = Math.max(1, Math.min(8, Math.round(num(estado().vezes, 1)))), defesas = defesasDo(alvo); let somaDano = 0, houveDano = false, ultimoDano = null; const golpes = [];
         for (let k = 1; k <= N; k++) {
           const rot = N > 1 ? ` ${k}/${N}` : "";
           if (parte !== "dano") {
             if (a.hit == null) { res.innerHTML = '<span class="err">Este ataque não tem bônus de acerto; use "Só o dano" em Outras opções.</span>'; return; }
             atq = rolarAtaque({ bonus: a.hit, modo, ca: num(alvo.ac), rng: rngK(k - 1) }); critico = atq.resultado === "critico";
             linhas.push(`<p><b>Ataque${rot} de ${esc(atacante.name)} (${esc(a.nome)}):</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`);
+            if (critico && window.__ini.temTraco && window.__ini.temTraco(atacante, /Ataques Selvagens|Savage Attacks/i)) linhas.push('<p class="muted">Ataques Selvagens: em acerto crítico com arma corpo a corpo, role mais um dado de dano da arma (some ao dano).</p>');
           }
           if (parte !== "ataque") {
             if (!partes || !partes.length) { if (!atq) { res.innerHTML = '<span class="err">Dano inválido. Use algo como 1d8+3.</span>'; return; } }
-            else if (parte === "dano" || (atq && atq.acertou)) { ultimoDano = man && Number.isFinite(man.dano && man.dano[k - 1]) ? danoManual(man.dano[k - 1], critico) : rolarDano(partes, { critico, metade, defesas }); somaDano += ultimoDano.total; houveDano = true; linhas.push(`<p><b>Dano${rot}:</b> ${ultimoDano.total}${ultimoDano.metade ? " (de " + ultimoDano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(ultimoDano))}</span></p>`); }
+            else if (parte === "dano" || (atq && atq.acertou)) { ultimoDano = man && Number.isFinite(man.dano && man.dano[k - 1]) ? danoManual(man.dano[k - 1], critico) : rolarDano(partes, { critico, metade, defesas }); somaDano += ultimoDano.total; houveDano = true; golpes.push({ total: ultimoDano.total, critico }); linhas.push(`<p><b>Dano${rot}:</b> ${ultimoDano.total}${ultimoDano.metade ? " (de " + ultimoDano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(ultimoDano))}</span></p>`); }
             else linhas.push(`<p class="muted">Errou${rot}: sem dano.</p>`);
           }
         }
@@ -240,7 +243,7 @@
       }
       const dt = defesasTexto(defesasDo(alvo)); if (dano && dt) linhas.push(`<p class="muted">Defesas de ${esc(alvo.name)}: ${esc(dt)}${(defesasDo(alvo) || {}).naoMagico ? " (resistências a ataques não mágicos: confira se a arma é mágica)" : ""}.</p>`);
       const n = ++seq;
-      if (dano && dano.total >= 0) resultados[n] = { dano, alvoId: alvo.id, atacanteId: atacante.id, aplicado: false };
+      if (dano && dano.total >= 0) resultados[n] = { dano, alvoId: alvo.id, atacanteId: atacante.id, aplicado: false, golpes: typeof golpes !== "undefined" && golpes.length ? golpes : [{ total: dano.total, critico }] };
       if (dano && dano.total >= 0) linhas.push(`<div class="row"><button type="button" class="danger atk-aplicar" data-aplicar="${n}">Aplicar ${dano.total} de dano em ${esc(alvo.name)}</button><span class="muted">PV ${num(alvo.hp)} → ${Math.max(0, num(alvo.hp) - dano.total)}</span></div>`);
       blocos.unshift(`<div class="res-ataque" data-res="${n}">${linhas.join("")}</div>`); blocos = blocos.slice(0, 5);   // os mais recentes em cima; os anteriores continuam aplicáveis uma vez
       res.innerHTML = blocos.join("");
@@ -277,7 +280,7 @@
   /* cada resultado tem o próprio Aplicar e só vale uma vez; o clique duplo ou um segundo clique não repete o dano */
   function aplicarResultado(n, b) {
     const U = resultados[n]; if (!U || U.aplicado) return; U.aplicado = true;
-    window.__ini.aplicarDano(U.alvoId, U.dano.total, U.atacanteId);
+    for (const g of U.golpes) window.__ini.aplicarDano(U.alvoId, g.total, U.atacanteId, { critico: !!g.critico });   // cada golpe separado: a 0 PV cada um conta (crítico = 2 falhas) e o dano massivo vale por golpe
     const alvo = lista().find((c) => c.id === U.alvoId);
     const nota = `<p><b>Dano aplicado.</b> ${esc(alvo ? alvo.name : "Alvo")}: PV ${alvo ? num(alvo.hp) : "?"}/${alvo ? num(alvo.maxHp) : "?"}.</p>`;
     blocos = blocos.map((h) => (h.includes(`data-res="${n}"`) ? h.replace(/<div class="row"><button type="button" class="danger atk-aplicar"[\s\S]*?<\/div>/, "").replace(/<\/div>$/, nota + "</div>") : h));

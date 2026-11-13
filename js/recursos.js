@@ -25,15 +25,30 @@
     Warlock: (f, n) => (n >= 20 ? [{ id: "mestre-arcano", nome: "Mestre Arcano", max: 1, recarga: "longo", nota: "Recupera todos os espaços de Pacto (1 minuto)" }] : []),
     Wizard: (f, n) => [{ id: "recuperacao-arcana", nome: "Recuperação Arcana", max: 1, recarga: "longo", nota: "Recupera espaços de até " + Math.ceil(n / 2) + " níveis combinados, nenhum de 6º círculo ou mais, num descanso curto" }],
   };
+  /* Características que mudam o que acontece ao cair a 0 PV. Detectadas pelo NOME na ficha (traços raciais + características de classe), nunca por personagem. */
+  const RE_IMPLACAVEL = /Resist[êe]ncia Implac[áa]vel|Relentless Endurance/i, RE_FURIA_IMPL = /F[úu]ria Implac[áa]vel|Relentless Rage/i, RE_ATAQUES_SELVAGENS = /Ataques Selvagens|Savage Attacks/i;
+  const nomesDeCaracteristicas = (f) => [...(R && R.tracosDaFicha ? R.tracosDaFicha(f || {}) : []).map((t) => t.nome), ...((f && f.caracteristicas) || []).map((h) => h.nome || h.n || "")];
+  const tem = (f, re) => nomesDeCaracteristicas(f).some((n) => re.test(String(n)));
+  const EXTRAS = [
+    { re: RE_IMPLACAVEL, r: () => ({ id: "resistencia-implacavel", nome: "Resistência Implacável", max: 1, recarga: "longo", nota: "Ao cair a 0 PV sem morrer na hora, fica com 1 PV" }) },
+    { re: RE_FURIA_IMPL, r: () => ({ id: "furia-implacavel", nome: "Fúria Implacável (usos desde o último descanso)", max: null, recarga: "curto", nota: "Salvaguarda de Constituição CD 10, +5 a cada uso depois do primeiro" }) },
+  ];
+  function habilidadesQueda(f) {
+    const u = (f && f.recursosUsados) || {}, out = [];
+    if (tem(f, RE_IMPLACAVEL)) out.push({ id: "resistencia-implacavel", nome: "Resistência Implacável", tipo: "auto", usado: num(u["resistencia-implacavel"]), limite: 1 });
+    if (tem(f, RE_FURIA_IMPL)) out.push({ id: "furia-implacavel", nome: "Fúria Implacável", tipo: "salva", cdBase: 10, incremento: 5, requer: "furia", usado: num(u["furia-implacavel"]) });
+    return out;
+  }
   function calcular(f) {
     const usados = f.recursosUsados || {}, out = [];
     for (const c of f.classes || []) {
       const t = TABELA[c.c]; if (!t || !(c.n > 0)) continue;
       for (const r of t(f, c.n)) {
-        const gasto = r.max == null ? 0 : Math.min(r.max, num(usados[r.id], 0));
+        const gasto = r.max == null ? num(usados[r.id], 0) : Math.min(r.max, num(usados[r.id], 0));
         out.push({ ...r, classe: c.c, usados: gasto, restante: r.max == null ? null : r.max - gasto });
       }
     }
+    for (const e of EXTRAS) if (tem(f, e.re)) { const r = e.r(), gasto = r.max == null ? num(usados[r.id], 0) : Math.min(r.max, num(usados[r.id], 0)); out.push({ ...r, classe: "caracteristica", usados: gasto, restante: r.max == null ? null : r.max - gasto }); }
     return out;
   }
   const achar = (f, id) => calcular(f).find((r) => r.id === id);
@@ -53,5 +68,5 @@
     return ids;
   }
   /* depois de reduzir o nível, usos gastos acima do novo máximo ficam limitados pelo cálculo (min com max) */
-  window.RECURSOS = { TABELA, calcular, usar, recuperar, achar };
+  window.RECURSOS = { RE_IMPLACAVEL, RE_FURIA_IMPL, RE_ATAQUES_SELVAGENS, nomesDeCaracteristicas, tem, habilidadesQueda, TABELA, calcular, usar, recuperar, achar };
 })();

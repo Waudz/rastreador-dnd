@@ -107,7 +107,10 @@
       else { const nf = opts.critico ? 2 : 1; m.falhas = Math.min(3, m.falhas + nf); m.estavel = false; out.falhaMorte = nf; out.mensagens.push(nf + " falha(s) na salvaguarda contra a morte"); if (m.falhas >= 3) { m.morto = true; out.morto = true; out.mensagens.push("Três falhas: o personagem morreu"); } }
     } else if (resto > 0) {
       const depois = Math.max(0, antes - resto); P.pv_atual = depois;
-      if (depois === 0) {
+      const excedenteQueda = resto - antes, queda = depois === 0 && excedenteQueda < pvMaxEf(P) ? (RC && RC.habilidadesQueda ? RC.habilidadesQueda(f) : []).find((h) => h.tipo === "auto" && h.usado < h.limite) : null;
+      if (queda) {                                               // Resistência Implacável (e afins automáticas): fica com 1 PV e consome o uso, que volta no descanso longo
+        P.pv_atual = 1; RC.usar(f, queda.id, 1); out.mensagens.push(queda.nome + ": em vez de cair a 0 PV, fica com 1 PV (uso registrado; volta no descanso longo)"); out.habilidade = queda.id;
+      } else if (depois === 0) {
         out.zerou = true; const excedente = resto - antes, m = morte(f);
         m.sucessos = 0; m.falhas = 0; m.estavel = false;
         if (excedente >= pvMaxEf(P)) { m.morto = true; out.morto = true; out.mensagens.push("Morte instantânea: o dano que sobrou (" + excedente + ") é igual ou maior que o PV máximo"); }

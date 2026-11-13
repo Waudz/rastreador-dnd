@@ -28,6 +28,23 @@
   };
   const bonusIniBase = window.__ini.bonusIniciativaDe;
   window.__ini.bonusIniciativaDe = (c) => { if (c && c.pid) { const f = window.__ini.fichaDe(c.pid); if (f && window.GRUPO_PERSONAGENS) return window.GRUPO_PERSONAGENS.bonus(f); } return bonusIniBase ? bonusIniBase(c) : undefined; };
+  /* habilidades que mudam a queda a 0 PV, Fúria e traços: vêm das características da ficha (RECURSOS), nunca de exceções por personagem */
+  const baseQueda = window.__ini.habilidadesQueda;
+  window.__ini.habilidadesQueda = (c) => { const f = c && c.pid ? window.__ini.fichaDe(c.pid) : null, RC = window.RECURSOS; return f && RC && RC.habilidadesQueda ? RC.habilidadesQueda(f) : (baseQueda ? baseQueda(c) : []); };
+  window.__ini.temFuria = (c) => { const f = c && c.pid ? window.__ini.fichaDe(c.pid) : null, RC = window.RECURSOS; return !!(f && RC && RC.achar && RC.achar(f, "furia")); };
+  window.__ini.temTraco = (c, re) => { const f = c && c.pid ? window.__ini.fichaDe(c.pid) : null, RC = window.RECURSOS; return !!(f && RC && RC.tem && RC.tem(f, re)); };
+  /* registra o uso na ficha (contagem desde o último descanso) só para quem foi marcado para gravar; com controle de versão */
+  window.__ini.registrarUso = async (c, id, valor) => {
+    if (!sincroniza() || !c || !c.pid || c.sync !== true) return;
+    try {
+      if (await nuvem.rpc("eh_mestre", { c: atual }) !== true) return;
+      const r = await nuvem.get("personagens?select=versao,ficha&id=eq." + encodeURIComponent(c.pid) + "&campanha_id=eq." + encodeURIComponent(atual)), reg = r[0]; if (!reg) return;
+      const f = reg.ficha || {}; f.recursosUsados = { ...(f.recursosUsados || {}), [id]: valor };
+      const salvo = await nuvem.patch("personagens?id=eq." + encodeURIComponent(c.pid) + "&versao=eq." + encodeURIComponent(reg.versao), { ficha: f });
+      if (!salvo || !salvo[0]) throw new Error("a ficha mudou durante o uso");
+      const p = pers.find((x) => x.id === c.pid); if (p) p.ficha = f;
+    } catch (e) { msg("Não foi possível registrar o uso na ficha: " + e.message, true); }
+  };
   window.__ini.papel = () => (!conta ? "visitante" : atual ? (jogador ? "jogador" : "mestre") : "sem-campanha");
   window.__ini.fichaDe = (pid) => (pers.find((x) => x.id === pid) || {}).ficha || null;
   /* Fora do modo treino (só mestre): conjurar com um personagem da campanha gasta um espaço na ficha dele, com controle de versão (nunca sobrescreve uma edição simultânea). */

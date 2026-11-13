@@ -203,6 +203,10 @@
       const m = ALL.find((x) => x.key === key); if (!m) return null; const r = m.resistances_and_immunities || {}, ks = (campo) => (r[campo] || []).map((x) => x.key).filter(Boolean);
       return { resistencias: ks("damage_resistances"), imunidades: ks("damage_immunities"), vulnerabilidades: ks("damage_vulnerabilities"), naoMagico: /nonmagical/i.test((r.damage_resistances_display || "") + (r.damage_immunities_display || "")) };
     };
+    window.__ini.habilidadesQueda = (c) => {                       // traços de criaturas que mudam a queda a 0 PV (ex.: Fortitude dos Mortos-Vivos)
+      const m = c && c.key && ALL.find((x) => x.key === c.key); if (!m) return [];
+      return (m.traits || []).some((t) => /Undead Fortitude/i.test(t.name)) ? [{ id: "fortitude-morta-viva", nome: "Fortitude dos Mortos-Vivos", tipo: "salva", cdBase: 5, cdPorDano: true, excecoes: true, usado: 0, limite: null }] : [];
+    };
     window.__ini.bonusIniciativaDe = (c) => { const m = c && c.key && ALL.find((x) => x.key === c.key); return m ? iniBonus(m) : undefined; };
     window.__ini.acoesDe = (key) => {
       const m = ALL.find((x) => x.key === key); if (!m) return [];
