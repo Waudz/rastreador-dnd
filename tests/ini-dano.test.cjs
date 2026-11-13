@@ -141,7 +141,7 @@ test('incapaz de agir: 0 PV, estável, morto ou condição que incapacita; Ataca
   h.estavel=true;assert.match(I.incapaz(h),/estável/);h.estavel=false;h.morto=true;assert.equal(I.incapaz(m),'');assert.equal(I.incapaz(h),'morto');h.morto=false;
   I.curar(h.id,5);assert.equal(I.incapaz(h),'');h.effects=[{id:'x',type:'paralyzed',name:'Paralisado'}];assert.match(I.incapaz(h),/paralisado/);h.effects=[];
   I.aplicarDano(h.id,5);let html=I.__doc.el('combatants').innerHTML;
-  assert.match(html,/<button class="small primary" type="button" data-atacar="[^"]+" disabled/,'cartão da vez a 0 PV: Atacar visível e desabilitado');
+  assert.match(html,/<button class="small primary" type="button" data-atacar="[^"]+"[^>]* disabled/,'cartão da vez a 0 PV: Atacar visível e desabilitado');
   assert.equal((html.match(/data-atacar=/g)||[]).length,1,'só o cartão da vez mostra Atacar; o outro fica em Mais opções recolhido');
   I.maisOpcoes(m.id,true);html=I.__doc.el('combatants').innerHTML;assert.equal((html.match(/data-atacar=/g)||[]).length,2,'em Mais opções o outro combatente também pode atacar (fora do turno)');
   assert.match(html,/Tipo de dano \(opcional\)/);assert.match(html,/Dano causado por/);assert.match(html,/Sem responsável/);

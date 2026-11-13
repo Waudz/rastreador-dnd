@@ -136,7 +136,7 @@
       }
       function atacarBtn(c, vez) {
         const m = incapaz(c);
-        return `<button class="small ${vez ? "primary" : ""}" type="button" data-atacar="${c.id}" ${m ? `disabled title="${escapeText(c.name)} está ${escapeText(m)} e não pode atacar"` : `title="Abre os ataques de ${escapeText(c.name)}${vez ? "" : " (fora do turno: ataque de oportunidade, reação ou ataque preparado)"}"`}>${ico("swords")}Atacar</button>`;
+        return `<button class="small ${vez ? "primary" : ""}" type="button" data-atacar="${c.id}" aria-label="Atacar com ${escapeText(c.name)}" ${m ? `disabled title="${escapeText(c.name)} está ${escapeText(m)} e não pode atacar"` : `title="Abre os ataques de ${escapeText(c.name)}${vez ? "" : " (fora do turno: ataque de oportunidade, reação ou ataque preparado)"}"`}>${ico("swords")}<span class="rot">Atacar</span></button>`;
       }
       /* Mais opções (um único nível): o que se usa menos durante o combate */
       function maisTpl(c, vez) {
@@ -536,10 +536,10 @@
                 </div>
               </div>
               <div class="row-actions">
-                <button class="small subtle" type="button" data-fxopen="${c.id}">${ico("sparkles")}Efeitos</button>
-                <button class="small subtle" type="button" data-ficha="${c.id}" ${c.key || c.pid ? `title="Abre a ficha de ${escapeText(c.name)} no painel lateral"` : `disabled title="Sem ficha vinculada"`}>Ficha</button>
+                <button class="small subtle" type="button" data-fxopen="${c.id}" aria-label="Efeitos e condições de ${escapeText(c.name)}" title="Efeitos e condições">${ico("sparkles")}<span class="rot">Efeitos</span></button>
+                <button class="small subtle" type="button" data-ficha="${c.id}" aria-label="Ficha de ${escapeText(c.name)}" ${c.key || c.pid ? `title="Abre a ficha de ${escapeText(c.name)} no painel lateral"` : `disabled title="Sem ficha vinculada"`}>${ico("book")}<span class="rot">Ficha</span></button>
                 ${isActive ? atacarBtn(c, true) : ""}
-                <button class="small subtle" type="button" data-mais="${c.id}" aria-expanded="${abertos.has(c.id) ? "true" : "false"}">Mais opções</button>
+                <button class="small subtle btn-mais" type="button" data-mais="${c.id}" aria-expanded="${abertos.has(c.id) ? "true" : "false"}" aria-label="Mais opções de ${escapeText(c.name)}" title="Mais opções deste combatente">${ico("chevdown")}<span class="rot">Mais opções</span></button>
               </div>
               ${danoAtivo(c) ? `<div class="conc-linha"><span class="conc-chip dano-chip" title="Vale só para o próximo dano e depois é limpo">Próximo dano: ${escapeText(danoAtivo(c))}</span><button class="small subtle" type="button" data-dano-limpar="${c.id}">Limpar</button></div>` : ""}
               ${c.furia ? `<div class="conc-linha"><span class="conc-chip">Em fúria: resistência a contundente, perfurante e cortante</span></div>` : ""}

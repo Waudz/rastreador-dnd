@@ -376,3 +376,49 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
   .acoes-vez-cab .vez-fechar { display:inline-flex; align-items:center; justify-content:center; order:99; margin-left:auto; min-width:44px; min-height:44px; padding:0; }
   .acoes-vez-cab .vez-fechar .ico { margin:0; }
 }
+
+/* ================= celular: cartão compacto em grade de 20 colunas ================= */
+@media (max-width:700px) {
+  .combatant:not(.editing) { display:grid; grid-template-columns:repeat(20,minmax(0,1fr)); gap:6px 0; padding:8px; align-items:center; margin:0 0 8px; border-radius:12px; }
+  .combatant:not(.editing) > .hp-block, .combatant:not(.editing) .hp-controls, .combatant:not(.editing) > .row-actions { display:contents; }
+  /* linha 1: iniciativa, retrato e nome, CA, mais opções */
+  .combatant:not(.editing) > input.initiative { grid-column:1 / span 3; grid-row:1; width:calc(100% - 4px); min-width:0; height:40px; font-size:18px; padding:0; margin:0 2px 0 0; text-align:center; }
+  .combatant:not(.editing) > .id-bloco { grid-column:4 / span 11; grid-row:1; min-width:0; padding:0 4px; }
+  .combatant:not(.editing) > .stats-linha { grid-column:15 / span 3; grid-row:1; display:block; justify-self:stretch; text-align:center; }
+  .combatant:not(.editing) > .stats-linha .stat { padding:0; margin:0; font-size:10px; line-height:1.1; }
+  .combatant:not(.editing) > .stats-linha .stat strong { display:block; font-size:18px; }
+  .combatant:not(.editing) .btn-mais { grid-column:18 / span 3; grid-row:1; }
+  /* linha 2: barra de vida com PV ao lado */
+  .combatant:not(.editing) .hp-barra { grid-column:1 / -1; grid-row:2; display:flex; align-items:center; gap:8px; min-width:0; }
+  .combatant:not(.editing) .hp-barra .hp-track { flex:1 1 auto; min-width:0; }
+  .combatant:not(.editing) .hp-barra .hp-top { order:2; flex:0 0 auto; margin:0; font-size:13px; }
+  .combatant:not(.editing) .hp-barra .hp-top > span:first-child { display:none; }
+  /* linha 3: Dano, quantidade, Cura, Efeitos, Ficha, Atacar */
+  .combatant:not(.editing) [data-damage] { grid-column:1 / span 4; grid-row:3; }
+  .combatant:not(.editing) input[data-amount] { grid-column:5 / span 3; grid-row:3; width:calc(100% - 6px); min-width:0; margin:0 3px; text-align:center; }
+  .combatant:not(.editing) [data-heal] { grid-column:8 / span 4; grid-row:3; }
+  .combatant:not(.editing) [data-fxopen] { grid-column:12 / span 3; grid-row:3; }
+  .combatant:not(.editing) [data-ficha] { grid-column:15 / span 3; grid-row:3; }
+  .combatant:not(.editing) > .row-actions [data-atacar] { grid-column:18 / span 3; grid-row:3; }
+  .combatant:not(.editing) [data-damage], .combatant:not(.editing) [data-heal], .combatant:not(.editing) input[data-amount], .combatant:not(.editing) .btn-mais, .combatant:not(.editing) [data-fxopen], .combatant:not(.editing) [data-ficha], .combatant:not(.editing) > .row-actions [data-atacar] { height:44px; min-height:44px; padding:0 2px; }
+  .combatant:not(.editing) [data-damage], .combatant:not(.editing) [data-heal] { font-size:12px; white-space:nowrap; }
+  .combatant:not(.editing) [data-fxopen], .combatant:not(.editing) [data-ficha], .combatant:not(.editing) .btn-mais, .combatant:not(.editing) > .row-actions [data-atacar] { margin:0 0 0 3px; display:inline-flex; align-items:center; justify-content:center; }
+  .combatant:not(.editing) > .row-actions .rot { display:none; }
+  .combatant:not(.editing) > .row-actions .ico, .combatant:not(.editing) [data-damage] .ico, .combatant:not(.editing) [data-heal] .ico { margin:0 3px 0 0; width:18px; height:18px; }
+  .combatant:not(.editing) > .row-actions .ico { margin:0; width:20px; height:20px; }
+  /* demais linhas ocupam a largura toda */
+  .combatant:not(.editing) > .conc-linha, .combatant:not(.editing) > .morte-linha, .combatant:not(.editing) > .mais-opcoes, .combatant:not(.editing) > .fx-form { grid-column:1 / -1; }
+  .combatant:not(.editing) .id-texto .name { font-size:15px; line-height:1.15; }
+  .combatant:not(.editing) .id-texto .kind { font-size:10px; line-height:1.2; letter-spacing:.03em; }
+  .combatant:not(.editing) .id-bloco .avfx { flex:0 0 36px; }
+  .combatant:not(.editing) .id-bloco .avfx .av { width:36px; height:36px; }
+}
+/* telas muito estreitas: os controles de ações descem para uma segunda linha */
+@media (max-width:350px) {
+  .combatant:not(.editing) [data-damage] { grid-column:1 / span 7; }
+  .combatant:not(.editing) input[data-amount] { grid-column:8 / span 6; }
+  .combatant:not(.editing) [data-heal] { grid-column:14 / span 7; }
+  .combatant:not(.editing) [data-fxopen] { grid-column:1 / span 7; grid-row:4; margin-left:0; }
+  .combatant:not(.editing) [data-ficha] { grid-column:8 / span 6; grid-row:4; }
+  .combatant:not(.editing) > .row-actions [data-atacar] { grid-column:14 / span 7; grid-row:4; }
+}
