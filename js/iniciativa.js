@@ -385,6 +385,8 @@
       function render(force=false) {
         if(!force&&document.activeElement?.matches?.('#combatants [data-iniciativa]')){save();return;}
         const list = $("combatants");
+        { const av = $("aviso-gravacao"), ficha = combatants.filter((c) => c.pid), grava = ficha.filter((c) => c.sync);     // um aviso único, fora dos cartões
+          if (av) { av.hidden = !ficha.length; av.textContent = !ficha.length ? "" : grava.length ? `Gravando nas fichas: ${grava.map((c) => c.name).join(", ")}.${grava.length < ficha.length ? " Os demais personagens estão em teste." : ""}` : "Combate de teste: PV, espaços e recursos dos personagens não são gravados nas fichas."; } }
         const ordered = sorted();
         const posVez = currentId ? ordered.findIndex((c) => c.id === currentId) : -1;
         const exibicao = posVez > 0 ? [...ordered.slice(posVez), ...ordered.slice(0, posVez)] : ordered;   // lista rotacionada: vez primeiro, quem acabou de jogar por último
@@ -445,13 +447,13 @@
                   <button class="small" type="button" data-reroll="${c.id}" ${rolagemAuto() ? "" : "disabled"} title="${rolagemAuto() ? "Rolar a iniciativa de novo (d20 + modificador)" : "Rolagem automática desligada: digite a iniciativa no campo"}" aria-label="Rolar a iniciativa de ${escapeText(c.name)} de novo">${ico("d20")}</button>
                 </div>
               </div>
-              ${c.pid ? `<div class="sync-linha"><span class="sync-selo ${c.sync ? "grava" : "teste"}">${c.sync ? "Grava PV na ficha" : "Teste: não grava na ficha"}</span>${window.__ini && window.__ini.papel && window.__ini.papel() === "mestre" ? `<button class="small subtle" type="button" data-sync="${c.id}">${c.sync ? "Parar de gravar" : "Gravar na ficha"}</button>` : ""}</div>` : ""}
               ${c.furia ? `<div class="conc-linha"><span class="conc-chip">Em fúria: resistência a contundente, perfurante e cortante</span></div>` : ""}
               ${recursosTpl(c)}
               ${c.conc ? `<div class="conc-linha"><span class="conc-chip">Concentrando: ${escapeText(c.conc)}</span><button class="small subtle" type="button" data-conc-fim="${c.id}">Encerrar</button></div>` : ""}
               ${(Number(c.hp) <= 0 || c.morto) ? (c.kind === "Personagem" ? moreTpl(c) : derrotadoTpl(c)) : ""}
               <div class="row-actions">
                 ${window.__ini && window.__ini.temFuria && window.__ini.temFuria(c) ? `<button class="small subtle" type="button" data-furia="${c.id}" aria-pressed="${c.furia ? "true" : "false"}">${c.furia ? "Encerrar fúria" : "Fúria"}</button>` : ""}
+                ${c.pid && window.__ini && window.__ini.papel && window.__ini.papel() === "mestre" ? `<button class="small subtle" type="button" data-sync="${c.id}" aria-pressed="${c.sync ? "true" : "false"}">${c.sync ? "Parar de gravar na ficha" : "Gravar na ficha"}</button>` : ""}
                 <button class="small subtle" type="button" data-conc="${c.id}">Concentração</button>
                 <button class="small subtle" type="button" data-fxopen="${c.id}">${ico("sparkles")}Efeito</button>
                 <button class="small subtle" type="button" data-edit="${c.id}">Editar</button>
