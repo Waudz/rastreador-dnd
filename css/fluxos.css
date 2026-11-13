@@ -469,3 +469,19 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
   .morte-ativa .morte-reg .num { margin:0; }
 }
 @media (max-width:700px) { .morte-ativa .morte-reg .num { font-size:14px; } .morte-ativa .morte-reg .num::placeholder { font-size:12px; } }
+/* celular: alvo de toque maior para remover condição (×), sem aumentar o chip */
+@media (max-width:700px) { .fxchip button { position:relative; } .fxchip button::after { content:""; position:absolute; inset:-12px; } }
+
+/* celular: rodada e indicador Manual numa linha pequena sob o nome do combatente atual (sobra mais largura para o nome) */
+.turn-sub { display:none; }
+@media (max-width:700px) {
+  .turn-sub { display:flex; align-items:center; gap:8px; margin-top:1px; line-height:1.1; }
+  .barra-rodada { padding:0; border:0; border-radius:0; font-size:11px; }
+  .barra-rodada b { font-size:12px; }
+  .chip-manual { padding:0 6px; font-size:10px; line-height:1.5; }
+}
+@media (max-width:700px) {
+  .combatant:not(.editing) .id-texto { min-width:0; max-width:100%; }
+  .combatant:not(.editing) .fxbar { display:flex; flex-wrap:wrap; gap:4px; max-width:100%; margin-top:3px; }
+  .combatant:not(.editing) .fxchip { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+}
