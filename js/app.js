@@ -194,6 +194,13 @@
     });
     $("#initiative").addEventListener("input", () => { $("#add-conta").textContent = $("#initiative").value === "" ? "" : "Valor informado por você"; });
     $("#add-form").addEventListener("submit", () => { limparPrevia(); });
+    const ABIL_EN = { for: "strength", des: "dexterity", con: "constitution", int: "intelligence", sab: "wisdom", car: "charisma" };
+    window.__ini.salvaDe = (key, ab) => { const m = ALL.find((x) => x.key === key), k = ABIL_EN[ab]; if (!m || !k) return null; const v = m.saving_throws?.[k] ?? m.modifiers?.[k]; return Number.isFinite(Number(v)) ? Number(v) : null; };
+    window.__ini.defesasDe = (key) => {
+      const m = ALL.find((x) => x.key === key); if (!m) return null; const r = m.resistances_and_immunities || {}, ks = (campo) => (r[campo] || []).map((x) => x.key).filter(Boolean);
+      return { resistencias: ks("damage_resistances"), imunidades: ks("damage_immunities"), vulnerabilidades: ks("damage_vulnerabilities"), naoMagico: /nonmagical/i.test((r.damage_resistances_display || "") + (r.damage_immunities_display || "")) };
+    };
+    window.__ini.bonusIniciativaDe = (c) => { const m = c && c.key && ALL.find((x) => x.key === c.key); return m ? iniBonus(m) : undefined; };
     window.__ini.acoesDe = (key) => {
       const m = ALL.find((x) => x.key === key); if (!m) return [];
       return (m.actions || []).map((a) => { const r = rollInfo(a); return r ? { nome: nmA(a), hit: r.hit, dmg: r.dmg.map((x) => ({ ...x, t: x.t ? trW(x.t.toLowerCase()) : "" })) } : null; }).filter(Boolean);

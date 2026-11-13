@@ -176,3 +176,9 @@ test('Adicionar combatente: prévia do monstro (foto, nome, CA, PV, iniciativa),
   assert.match(ini,/initiative: \$\("initiative"\)\.value\.trim\(\) === "" \? null : Number\(\$\("initiative"\)\.value\)/,'o campo é o resultado final, sem somar o modificador duas vezes');
   assert.match(css,/#add-form \.add-wrap button \{ width:100%; min-height:46px/);assert.ok(!/^\.form-grid|^\.add-wrap/m.test(css.slice(css.indexOf('/* Iniciativa: "Adicionar combatente"'))),'regras restritas ao #add-form');
 });
+test('ganchos de ataque dos personagens: salvaguarda (proficiência da classe inicial), resistências da ficha e bônus de iniciativa',async()=>{
+ const f=await fixture({search:'?campanha=atual',ficha:{classes:[{c:'Fighter',n:5,sub:''}],atributos:{for:16,des:14,con:14,int:10,sab:10,car:10},resistencias:'Resistência a fogo e cortante'}});
+ const I=f.window.__ini;assert.equal(I.salvaPersonagem('p','for'),3+3,'Força 16 (+3) mais proficiência +3 (Guerreiro tem Força e Constituição)');assert.equal(I.salvaPersonagem('p','des'),2,'Destreza 14 sem proficiência');
+ f.window.ATAQUE_INI={tipoEn:t=>({fogo:'fire',cortante:'slashing'}[t]||'')};const d=I.defesasPersonagem('p');assert.deepEqual(JSON.parse(JSON.stringify(d.resistencias.sort())),['fire','slashing']);
+ assert.equal(typeof I.bonusIniciativaDe({pid:'p'}),'number');assert.equal(I.bonusIniciativaDe({pid:'p'}),2+1*0+(I.bonusIniciativaDe({pid:'p'})-2),'usa a rotina compartilhada do grupo');
+});

@@ -19,6 +19,15 @@
     if (!f || !R || !A || !Array.isArray(f.ataques)) return [];
     return f.ataques.map((a) => { const v = R.valoresAtaque(f, a), partes = A.parseExpressao(a.dado || "1"); if (!partes) return null; partes[0].b = (partes[0].b || 0) + v.dano; partes[0].t = a.tipo || ""; return { nome: a.nome || "Ataque", hit: v.ataque, dmg: partes }; }).filter(Boolean);
   };
+  const TIPOS_PT = ["cortante", "perfurante", "contundente", "fogo", "frio", "ácido", "elétrico", "trovejante", "necrótico", "psíquico", "radiante", "venenoso", "veneno", "energia", "energético", "força"];
+  window.__ini.salvaPersonagem = (pid, ab) => { const p = pers.find((x) => x.id === pid), f = p && p.ficha, R = window.REGRAS; if (!f || !R) return null; const c0 = f.classes && f.classes[0] && R.classe(f.classes[0].c); return R.mod(R.atributoEf(f, ab)) + (c0 && (c0.salv || []).includes(ab) ? R.prof(R.nivelTotal(f.classes || []) || 1) : 0) + R.bonusTemp(f, "salvaguardas"); };
+  window.__ini.defesasPersonagem = (pid) => {                       // só resistências escritas na ficha (texto livre), por tipo de dano em português
+    const p = pers.find((x) => x.id === pid), f = p && p.ficha, A = window.ATAQUE_INI; if (!f || !A) return null;
+    const texto = (Array.isArray(f.resistencias) ? f.resistencias.join(" ") : String(f.resistencias || "")).toLowerCase(), achados = [...new Set(TIPOS_PT.filter((t) => texto.includes(t)).map((t) => A.tipoEn(t)).filter(Boolean))];
+    return achados.length ? { resistencias: achados, imunidades: [], vulnerabilidades: [], naoMagico: false } : null;
+  };
+  const bonusIniBase = window.__ini.bonusIniciativaDe;
+  window.__ini.bonusIniciativaDe = (c) => { if (c && c.pid) { const f = window.__ini.fichaDe(c.pid); if (f && window.GRUPO_PERSONAGENS) return window.GRUPO_PERSONAGENS.bonus(f); } return bonusIniBase ? bonusIniBase(c) : undefined; };
   window.__ini.papel = () => (!conta ? "visitante" : atual ? (jogador ? "jogador" : "mestre") : "sem-campanha");
   window.__ini.fichaDe = (pid) => (pers.find((x) => x.id === pid) || {}).ficha || null;
   /* Fora do modo treino (só mestre): conjurar com um personagem da campanha gasta um espaço na ficha dele, com controle de versão (nunca sobrescreve uma edição simultânea). */

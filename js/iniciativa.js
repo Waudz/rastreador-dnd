@@ -263,6 +263,7 @@
                   <button class="small danger" type="button" data-damage="${c.id}">${ico("minus")}Dano</button>
                   <button class="small" type="button" data-heal="${c.id}">${ico("plus")}Cura</button>
                   <button class="small primary" type="button" data-atacar="${c.id}">${ico("swords")}Atacar</button>
+                  <button class="small" type="button" data-reroll="${c.id}" title="Rolar a iniciativa de novo (d20 + modificador)" aria-label="Rolar a iniciativa de ${escapeText(c.name)} de novo">${ico("d20")}</button>
                 </div>
               </div>
               <div class="row-actions">
@@ -333,6 +334,14 @@
             p.name = g("name").trim(); p.initiative = g("initiative").trim()==="" ? null : Number(g("initiative")); p.ac = Math.max(0, Number(g("ac")) || 0);
             p.maxHp = maxHp; p.hp = Math.min(hp, maxHp); editId = null; render();
           }
+          return;
+        }
+
+        if (button.dataset.reroll) {                          // re-rolar: d20 + modificador do combatente; a ordem é recalculada e o turno atual não muda
+          const alvo = combatants.find((c) => c.id === button.dataset.reroll); if (!alvo) return;
+          const mod = Math.round(Number(window.__ini.bonusIniciativaDe && window.__ini.bonusIniciativaDe(alvo)) || 0), r = window.ROLAGENS.rolar("1d20", mod);
+          alvo.initiative = r.total; render();
+          window.FEEDBACK && window.FEEDBACK.mostrar(`${alvo.name}: d20 ${r.dados[0]} ${mod >= 0 ? "+" : "-"} ${Math.abs(mod)} = ${r.total}`);
           return;
         }
 

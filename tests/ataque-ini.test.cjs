@@ -128,3 +128,33 @@ test('celular: a faixa da vez, o painel Atacar e o cartão da iniciativa têm al
   for(const parte of ['.acoes-vez-botoes .small','#vez-avancado select','#ci-lista .ci-cartao-ini .ci-acoes .small','#ci-lista .ci-cartao-ini .ci-ini input','input[type=checkbox]'])assert.ok(bloco.includes(parte),parte);
   assert.equal((bloco.match(/min-height:44px/g)||[]).length>=4,true);assert.ok(!/^\.grupo-cartao|^\.personagem-card/m.test(bloco),'não mexe nos outros cartões');
 });
+test('defesas do alvo no dano (2014): imunidade zera, resistência divide, vulnerabilidade dobra, cada tipo à parte e antes de "metade"',()=>{
+  const seq2=(...v)=>{let i=0;return()=>v[i++%v.length];},partes=[{n:1,f:8,b:2,t:'fogo'},{n:1,f:6,b:0,t:'cortante'}];
+  const rng=()=>seq2(face(8,8),face(6,6))(),r0=()=>0.9999;       // dado máximo: 8+2 de fogo, 6 cortante
+  let r=A.rolarDano(partes,{rng:r0});assert.equal(r.total,10+6);
+  r=A.rolarDano(partes,{rng:r0,defesas:{resistencias:['fire'],imunidades:[],vulnerabilidades:[]}});assert.equal(r.total,5+6);assert.equal(r.ajustes[0].ajuste,'resistência');assert.match(A.descreverDano(r),/fogo \(resistência\)/);
+  r=A.rolarDano(partes,{rng:r0,defesas:{resistencias:[],imunidades:['fire'],vulnerabilidades:['slashing']}});assert.equal(r.total,0+12);
+  r=A.rolarDano(partes,{rng:r0,defesas:{resistencias:['fire'],imunidades:[],vulnerabilidades:[]},metade:true});assert.equal(r.bruto,11);assert.equal(r.total,5,'a metade vem depois das defesas');
+  r=A.rolarDano([{n:1,f:6,b:0,t:'fogo'}],{rng:r0,defesas:{resistencias:['fire'],imunidades:[],vulnerabilidades:['fire']}});assert.equal(r.total,6,'resistência e vulnerabilidade: metade e dobro');
+  assert.equal(A.tipoEn('Elétrico'),'lightning');assert.equal(A.tipoEn('ígneo'),'fire');assert.equal(A.tipoEn('energia'),'force');assert.equal(A.tipoEn('xyz'),'');
+  r=A.rolarDano([{n:1,f:6,b:0,t:'desconhecido'}],{rng:r0,defesas:{resistencias:['fire'],imunidades:['fire'],vulnerabilidades:[]}});assert.equal(r.total,6,'tipo sem correspondência não é alterado');
+});
+test('faixa: defesas da criatura aparecem no resultado e a salvaguarda do alvo é automática quando conhecida',async()=>{
+  const f={classes:[{c:'Wizard',n:5,sub:''}],atributos:{int:16,des:12,con:12,for:10,sab:10,car:10},magias:[{n:'Bola de Fogo',en:'Fireball',l:3,prep:true,classeConj:'Wizard',d:'Cada criatura faz uma salvaguarda de Destreza. Se falhar, sofre 8d6 pontos de dano ígneo, ou metade do dano se passar.'}]};
+  const t=ambiente({papelAtual:'jogador',fichaConj:f});
+  t.ini.defesasDe=k=>k==='gob'?{resistencias:['slashing'],imunidades:[],vulnerabilidades:[],naoMagico:true}:null;t.ini.salvaDe=(k,ab)=>k==='gob'&&ab==='des'?7:null;
+  t.muda('vez-atacante','b');t.muda('vez-alvo','a');t.w.valorDado=0.999;
+  t.clique({vez:'1'});await t.espera();assert.match(t.res(),/Salvaguarda de Goblin: 20 \+ 7 = 27/,'bônus do alvo automático (Destreza do goblin)');assert.match(t.res(),/Defesas de Goblin: resistência a slashing/);
+  t.muda('vez-atacante','a');t.muda('vez-alvo','b');t.w.valorDado=0.999;t.clique({vez:'0'});await t.espera();assert.ok(!/Defesas de Herói/.test(t.res()),'a linha de defesas só aparece se o alvo tiver defesas');
+});
+test('multiataque: repete o ataque escolhido N vezes, cada um com seu d20 e dano, e soma num só Aplicar',async()=>{
+  const t=ambiente();t.w.valorDado=0.999;t.muda('vez-vezes','3');t.clique({vez:'0'});await t.espera();
+  assert.match(t.res(),/Ataque 1\/3/);assert.match(t.res(),/Ataque 3\/3/);assert.match(t.res(),/Dano 2\/3/);assert.match(t.res(),/Dano total:<\/b> \d+/);assert.equal((t.res().match(/id="atk-aplicar"/g)||[]).length,1,'um só botão Aplicar');
+  t.clique({},'atk-aplicar');assert.equal(t.aplicados.length,1);const soma=t.aplicados[0][1];assert.ok(soma>=3*3&&soma<=3*16*2,'total dos três ataques');
+  t.muda('vez-vezes','1');t.clique({vez:'0'});await t.espera();assert.ok(!/Ataque 1\/1/.test(t.res()),'um ataque não mostra contagem');
+});
+test('re-rolar iniciativa: botão d20 em cada cartão usa o bônus do combatente e a rolagem compartilhada; bônus de criaturas e personagens por gancho',()=>{
+  const ini=ler('js/iniciativa.js'),app=ler('js/app.js'),ci=ler('js/campanha-ini.js');
+  assert.match(ini,/data-reroll="\$\{c\.id\}"/);assert.match(ini,/window\.ROLAGENS\.rolar\("1d20", mod\)/);assert.match(ini,/alvo\.initiative = r\.total; render\(\)/);assert.match(ini,/window\.__ini\.bonusIniciativaDe/);
+  assert.match(app,/window\.__ini\.bonusIniciativaDe = \(c\) =>/);assert.match(app,/window\.__ini\.salvaDe = /);assert.match(app,/window\.__ini\.defesasDe = /);assert.match(ci,/window\.__ini\.salvaPersonagem = /);assert.match(ci,/window\.__ini\.defesasPersonagem = /);
+});

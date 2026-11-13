@@ -38,17 +38,29 @@
     return { dados, nat, bonus: num(bonus), total, cd, modo, passou: total >= cd };
   }
 
+  /* tipos de dano em português (catálogo, bestiário e magias) -> chave do bestiário em inglês, para resistência, imunidade e vulnerabilidade */
+  const semAc = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  const TIPO_EN = { cortante: "slashing", perfurante: "piercing", contundente: "bludgeoning", fogo: "fire", igneo: "fire", frio: "cold", gelido: "cold", acido: "acid", eletrico: "lightning", relampago: "lightning", trovejante: "thunder", necrotico: "necrotic", psiquico: "psychic", radiante: "radiant", venenoso: "poison", veneno: "poison", energetico: "force", energia: "force", forca: "force" };
+  const tipoEn = (t) => TIPO_EN[semAc(t)] || "";
   /* Dano: componentes [{n,f,b,t}]. Crítico dobra os dados (não os modificadores). `metade` vale para salvaguarda bem-sucedida ou resistência (arredonda para baixo). */
-  function rolarDano(partes, { critico = false, metade = false, rng = aleatorioPadrao } = {}) {
-    let total = 0; const detalhe = [];
+  /* defesas do alvo (2014): imunidade zera, resistência divide por 2 (arredonda para baixo), vulnerabilidade dobra; cada tipo de dano é tratado à parte, antes de "metade" */
+  function rolarDano(partes, { critico = false, metade = false, defesas = null, rng = aleatorioPadrao } = {}) {
+    let total = 0; const detalhe = [], ajustes = [], tem = (lista, en) => !!en && (lista || []).includes(en);
     for (const p of partes || []) {
       const qtd = (critico ? 2 : 1) * num(p.n), rolls = []; for (let i = 0; i < qtd; i++) rolls.push(d(num(p.f), rng));
-      const sub = rolls.reduce((s, x) => s + x, 0) + num(p.b); total += sub; detalhe.push({ rolls, b: num(p.b), tipo: p.t || "", sub });
+      const original = rolls.reduce((s, x) => s + x, 0) + num(p.b); let sub = original, ajuste = "";
+      const en = tipoEn(p.t);
+      if (defesas && en) {
+        if (tem(defesas.imunidades, en)) { sub = 0; ajuste = "imunidade"; }
+        else { if (tem(defesas.resistencias, en)) { sub = Math.floor(sub / 2); ajuste = "resistência"; } if (tem(defesas.vulnerabilidades, en)) { sub *= 2; ajuste = ajuste ? "resistência e vulnerabilidade" : "vulnerabilidade"; } }
+        if (ajuste) ajustes.push({ tipo: p.t, de: original, para: sub, ajuste });
+      }
+      total += sub; detalhe.push({ rolls, b: num(p.b), tipo: p.t || "", sub, ajuste });
     }
     total = Math.max(0, total); const bruto = total; if (metade) total = Math.floor(total / 2);
-    return { bruto, total, detalhe, critico: !!critico, metade: !!metade };
+    return { bruto, total, detalhe, critico: !!critico, metade: !!metade, ajustes };
   }
-  const descreverDano = (r) => r.detalhe.map((x) => `${x.rolls.length ? "[" + x.rolls.join("+") + "]" : ""}${x.b ? (x.b > 0 && x.rolls.length ? "+" : "") + x.b : ""}${x.tipo ? " " + x.tipo : ""}`.trim()).join(" + ") + (r.critico ? " (crítico: dados em dobro)" : "") + (r.metade ? " (metade)" : "");
+  const descreverDano = (r) => r.detalhe.map((x) => `${x.rolls.length ? "[" + x.rolls.join("+") + "]" : ""}${x.b ? (x.b > 0 && x.rolls.length ? "+" : "") + x.b : ""}${x.tipo ? " " + x.tipo : ""}${x.ajuste ? " (" + x.ajuste + ")" : ""}`.trim()).join(" + ") + (r.critico ? " (crítico: dados em dobro)" : "") + (r.metade ? " (metade)" : "");
   const textoD20 = (a) => `${a.nat}${a.dados.length > 1 ? " (" + a.dados.join(", ") + ", " + (a.modo === "vantagem" ? "vantagem" : "desvantagem") + ")" : ""} ${a.bonus >= 0 ? "+" : "-"} ${Math.abs(a.bonus)} = ${a.total}`;
   const ROTULO = { critico: "CRÍTICO! Acertou", "falha-critica": "Falha crítica: errou", acerto: "Acertou", erro: "Errou", "sem-alvo": "Sem alvo (sem CA para comparar)" };
 
@@ -97,7 +109,7 @@
     return ((f && f.magias) || []).filter((m) => m.ativa !== false && (Number(m.l) === 0 || m.prep || m.semprePreparada || m.fonte === "mestre" || m.fonte === "raca" || m.origem === "Raça" || (MJ && MJ.tipoClasse(m.classeConj || "") === "known")));
   }
 
-  window.ATAQUE_INI = { parseExpressao, rolarAtaque, rolarSalvaguarda, rolarDano, descreverDano, textoAtaque: textoD20, ROTULO, analisarMagia, danoSugerido, estatisticasMagia, conjuraveis, NOME_ATR };
+  window.ATAQUE_INI = { tipoEn, parseExpressao, rolarAtaque, rolarSalvaguarda, rolarDano, descreverDano, textoAtaque: textoD20, ROTULO, analisarMagia, danoSugerido, estatisticasMagia, conjuraveis, NOME_ATR };
 
   /* ---------------- interface única: faixa "Vez de ..." (com "Outras opções" para ataque manual, magias e controles avançados) ---------------- */
   const faixa = typeof document !== "undefined" && document.getElementById("acoes-da-vez");
@@ -129,6 +141,10 @@
   }
   const alvoPadrao = (l, atk) => { const grupo = (c) => (c.kind === "Personagem" ? "p" : "m"); return (l.find((c) => c.id !== atk.id && grupo(c) !== grupo(atk) && num(c.hp) > 0) || l.find((c) => c.id !== atk.id && num(c.hp) > 0) || l.find((c) => c.id !== atk.id) || atk); };
 
+  /* defesas e salvaguardas do alvo, vindas da ficha da criatura (bestiário) ou do personagem (campanha); sem dado conhecido, o jogador informa à mão */
+  const defesasDo = (c) => (c && c.pid && window.__ini.defesasPersonagem ? window.__ini.defesasPersonagem(c.pid) : c && c.key && window.__ini.defesasDe ? window.__ini.defesasDe(c.key) : null);
+  const salvaDo = (c, ab) => { const v = c && c.pid && window.__ini.salvaPersonagem ? window.__ini.salvaPersonagem(c.pid, ab) : c && c.key && window.__ini.salvaDe ? window.__ini.salvaDe(c.key, ab) : null; return Number.isFinite(v) ? v : null; };
+  const defesasTexto = (d) => d ? [["resistência a", d.resistencias], ["imunidade a", d.imunidades], ["vulnerabilidade a", d.vulnerabilidades]].filter(([, l]) => l && l.length).map(([r, l]) => r + " " + l.join(", ")).join("; ") : "";
   function desenharVez() {
     const l = lista(), atk = atacanteAtual();
     if (!atk || l.length < 2) { faixa.hidden = true; $("#vez-topo").innerHTML = ""; $("#vez-avancado").hidden = true; $("#vez-res").innerHTML = ""; return; }
@@ -136,7 +152,7 @@
     sel.atacante = atk.id; fontes = fontesDe(atk);
     if (!l.some((c) => c.id === sel.alvo) || sel.alvo === atk.id) sel.alvo = alvoPadrao(l, atk).id;
     faixa.hidden = false;
-    $("#vez-topo").innerHTML = `<div class="acoes-vez-cab"><label class="inline"><b>${cur === atk.id ? "Vez de" : "Ataque de"}</b><select id="vez-atacante" aria-label="Quem ataca">${l.map((c) => `<option value="${esc(c.id)}" ${c.id === atk.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Alvo<select id="vez-alvo" aria-label="Em quem atacar">${l.filter((c) => c.id !== atk.id).map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvo ? "selected" : ""}>${esc(c.name)} (CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)})</option>`).join("")}</select></label><label class="inline">Jogada<select id="vez-modo" aria-label="Vantagem ou desvantagem"><option value="normal" ${sel.modo !== "vantagem" && sel.modo !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modo === "vantagem" ? "selected" : ""}>Vantagem</option><option value="desvantagem" ${sel.modo === "desvantagem" ? "selected" : ""}>Desvantagem</option></select></label><label class="inline vez-treino"><input type="checkbox" id="vez-treino" ${emTreino() ? "checked" : ""} ${treinoTravado() ? "disabled" : ""}> Treino${treinoTravado() ? "" : ": não gasta nada"}</label></div>
+    $("#vez-topo").innerHTML = `<div class="acoes-vez-cab"><label class="inline"><b>${cur === atk.id ? "Vez de" : "Ataque de"}</b><select id="vez-atacante" aria-label="Quem ataca">${l.map((c) => `<option value="${esc(c.id)}" ${c.id === atk.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label><label class="inline">Alvo<select id="vez-alvo" aria-label="Em quem atacar">${l.filter((c) => c.id !== atk.id).map((c) => `<option value="${esc(c.id)}" ${c.id === sel.alvo ? "selected" : ""}>${esc(c.name)} (CA ${num(c.ac)}, PV ${num(c.hp)}/${num(c.maxHp)})</option>`).join("")}</select></label><label class="inline">Jogada<select id="vez-modo" aria-label="Vantagem ou desvantagem"><option value="normal" ${sel.modo !== "vantagem" && sel.modo !== "desvantagem" ? "selected" : ""}>Normal</option><option value="vantagem" ${sel.modo === "vantagem" ? "selected" : ""}>Vantagem</option><option value="desvantagem" ${sel.modo === "desvantagem" ? "selected" : ""}>Desvantagem</option></select></label><label class="inline vez-vezes">Ataques<input type="number" id="vez-vezes" class="num" min="1" max="8" step="1" value="${Math.max(1, Math.min(8, Math.round(num(sel.vezes, 1))))}" aria-label="Quantas vezes repetir o ataque (multiataque)" title="Repete o ataque escolhido, cada um com seu d20 e dano; o dano total vai num só Aplicar"></label><label class="inline vez-treino"><input type="checkbox" id="vez-treino" ${emTreino() ? "checked" : ""} ${treinoTravado() ? "disabled" : ""}> Treino${treinoTravado() ? "" : ": não gasta nada"}</label></div>
       <div class="row acoes-vez-botoes">${fontes.length ? fontes.map((a, i) => `<button type="button" class="small primary" data-vez="${i}" title="Rola o ataque contra a CA do alvo e o dano">${esc(a.tipo === "magia" ? a.nome + " (magia)" : a.nome)}${a.tipo !== "magia" && a.hit != null ? " " + (a.hit >= 0 ? "+" : "") + a.hit : ""}</button>`).join("") : '<span class="muted">Sem ataques cadastrados: use Outras opções para um ataque manual.</span>'}<button type="button" class="small subtle" data-vez-avancado aria-expanded="${sel.avancado ? "true" : "false"}">Outras opções</button></div>`;
     $("#vez-avancado").hidden = !sel.avancado;
     if (sel.avancado) desenharAvancado();
@@ -152,7 +168,7 @@
       const an = fonte.an, circ = sel.circulo && sel.circulo >= Number(fonte.m.l) ? sel.circulo : (Number(fonte.m.l) || null), circulos = circulosDe(fonte);
       const sugestao = danoSugerido(fonte.m, an, { circulo: circ, nivelTotal: fonte.st.nivelTotal }), valor = sel.danoMagia != null && sel.danoMagiaDe === fonte.m.en + "|" + circ ? sel.danoMagia : sugestao;
       const regra = an.tipo === "ataque" ? `Ataque de magia <b>${fonte.st.ataque >= 0 ? "+" : ""}${fonte.st.ataque}</b>` : an.tipo === "salvaguarda" ? `CD <b>${fonte.st.cd}</b> (salvaguarda de ${NOME_ATR[an.atributoSalva]})${an.metadeNaSalva ? ", metade do dano se passar" : ""}` : "Sem jogada de ataque nem salvaguarda: só o dano sugerido";
-      extra = `<div class="row">${circulos.length ? `<label>Espaço de magia<select id="atk-circulo">${circulos.map((c) => `<option value="${c}" ${c === circ ? "selected" : ""}>${c}º círculo</option>`).join("")}</select></label>` : ""}<label>Dano (sugerido pelo texto, edite se precisar)<input id="atk-dano-magia" maxlength="40" value="${esc(valor)}"></label>${an.tipo === "salvaguarda" ? `<label>Bônus de salvaguarda do alvo<input id="atk-salva-bonus" class="num" type="number" step="1" value="${num(sel.salvaBonus, 0)}"></label>` : ""}</div><p class="muted">${regra}. ${an.tipoDano ? "Dano " + esc(an.tipoDano) + ". " : ""}${emTreino() ? "Modo treino: nenhum espaço é gasto." : Number(fonte.m.l) ? "Conjurar gasta um espaço de magia da ficha." : ""}</p>`;
+      extra = `<div class="row">${circulos.length ? `<label>Espaço de magia<select id="atk-circulo">${circulos.map((c) => `<option value="${c}" ${c === circ ? "selected" : ""}>${c}º círculo</option>`).join("")}</select></label>` : ""}<label>Dano (sugerido pelo texto, edite se precisar)<input id="atk-dano-magia" maxlength="40" value="${esc(valor)}"></label>${an.tipo === "salvaguarda" ? `<label>Bônus de salvaguarda do alvo${salvaDo(lista().find((c) => c.id === sel.alvo), an.atributoSalva) !== null && !sel.salvaManual ? " (automático)" : ""}<input id="atk-salva-bonus" class="num" type="number" step="1" value="${sel.salvaManual ? num(sel.salvaBonus, 0) : num(salvaDo(lista().find((c) => c.id === sel.alvo), an.atributoSalva), 0)}"></label>` : ""}</div><p class="muted">${regra}. ${an.tipoDano ? "Dano " + esc(an.tipoDano) + ". " : ""}${emTreino() ? "Modo treino: nenhum espaço é gasto." : Number(fonte.m.l) ? "Conjurar gasta um espaço de magia da ficha." : ""}</p>`;
     }
     $("#vez-avancado-corpo").innerHTML = `<label>Ataque ou magia<select id="atk-ataque">${fontes.map((a, i) => `<option value="${i}" ${sel.idx === i ? "selected" : ""}>${esc(rotuloFonte(a))}</option>`).join("")}<option value="manual" ${manual ? "selected" : ""}>Manual…</option></select></label>${extra}
       <div class="row"><button type="button" id="atk-rolar" class="primary">${magia ? "Conjurar e rolar" : "Rolar ataque e dano"}</button>${magia ? "" : '<button type="button" id="atk-so-ataque" class="small">Só o ataque</button>'}<button type="button" id="atk-so-dano" class="small">Só o dano</button><label class="inline"><input type="checkbox" id="atk-metade" ${sel.metade ? "checked" : ""}> Metade do dano</label></div>`;
@@ -177,7 +193,7 @@
       let atq = null, dano = null, salva = null, linhas = [], partes = a.dmg, critico = false, metadeFinal = metade;
       if (a.tipo === "magia") {
         const sel = estado(), circulo = opts.rapido ? (Number(a.m.l) || null) : (Number($("#atk-circulo")?.value) || Number(a.m.l) || null), expr = opts.rapido ? danoSugerido(a.m, a.an, { circulo, nivelTotal: a.st.nivelTotal }) : ($("#atk-dano-magia")?.value || "");
-        if (!opts.rapido) { sel.circulo = circulo; sel.danoMagia = expr; sel.danoMagiaDe = a.m.en + "|" + circulo; sel.salvaBonus = num($("#atk-salva-bonus")?.value, 0); }
+        if (!opts.rapido) { sel.circulo = circulo; sel.danoMagia = expr; sel.danoMagiaDe = a.m.en + "|" + circulo; if (sel.salvaManual) sel.salvaBonus = num($("#atk-salva-bonus")?.value, 0); }
         partes = expr.trim() ? parseExpressao(expr) : null;
         if (parte !== "dano") {
           if (expr.trim() && !partes) { res.innerHTML = '<span class="err">Dano inválido. Use algo como 8d6.</span>'; return; }
@@ -187,26 +203,32 @@
         }
         if (parte !== "dano" && a.an.tipo === "ataque") { atq = rolarAtaque({ bonus: a.st.ataque, modo, ca: num(alvo.ac) }); critico = atq.resultado === "critico"; linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}:</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`); }
         else if (parte !== "dano" && a.an.tipo === "salvaguarda") {
-          salva = rolarSalvaguarda({ bonus: estado().salvaBonus || 0, cd: a.st.cd, modo: "normal" });
+          const auto = salvaDo(alvo, a.an.atributoSalva); salva = rolarSalvaguarda({ bonus: estado().salvaManual ? num(estado().salvaBonus, 0) : (auto ?? 0), cd: a.st.cd, modo: "normal" });
           linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}</b> (CD ${a.st.cd}, ${esc(NOME_ATR[a.an.atributoSalva])}). Salvaguarda de ${esc(alvo.name)}: ${esc(textoD20(salva))} → <b>${salva.passou ? "passou" : "falhou"}</b></p>`);
           if (salva.passou) metadeFinal = a.an.metadeNaSalva ? true : "nada";
         } else if (parte !== "dano") linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}.</b></p>`);
         const acertou = parte === "dano" || !atq || atq.acertou;
-        if (partes && partes.length && acertou && metadeFinal !== "nada") { dano = rolarDano(partes, { critico, metade: metadeFinal === true }); linhas.push(`<p><b>Dano:</b> ${dano.total}${dano.metade ? " (de " + dano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(dano))}${a.an.tipoDano ? " " + esc(a.an.tipoDano) : ""}</span></p>`); }
+        if (partes && partes.length && acertou && metadeFinal !== "nada") { dano = rolarDano(partes, { critico, metade: metadeFinal === true, defesas: defesasDo(alvo) }); linhas.push(`<p><b>Dano:</b> ${dano.total}${dano.metade ? " (de " + dano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(dano))}${a.an.tipoDano ? " " + esc(a.an.tipoDano) : ""}</span></p>`); }
         else if (partes && partes.length && !acertou) linhas.push('<p class="muted">Errou: sem dano.</p>');
         else if (partes && partes.length && metadeFinal === "nada") linhas.push("<p class=\"muted\">Passou na salvaguarda: sem dano.</p>");
       } else {
-        if (parte !== "dano") {
-          if (a.hit == null) { res.innerHTML = '<span class="err">Este ataque não tem bônus de acerto; use "Só o dano" em Outras opções.</span>'; return; }
-          atq = rolarAtaque({ bonus: a.hit, modo, ca: num(alvo.ac) }); critico = atq.resultado === "critico";
-          linhas.push(`<p><b>Ataque de ${esc(atacante.name)} (${esc(a.nome)}):</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`);
+        const N = Math.max(1, Math.min(8, Math.round(num(estado().vezes, 1)))), defesas = defesasDo(alvo); let somaDano = 0, houveDano = false, ultimoDano = null;
+        for (let k = 1; k <= N; k++) {
+          const rot = N > 1 ? ` ${k}/${N}` : "";
+          if (parte !== "dano") {
+            if (a.hit == null) { res.innerHTML = '<span class="err">Este ataque não tem bônus de acerto; use "Só o dano" em Outras opções.</span>'; return; }
+            atq = rolarAtaque({ bonus: a.hit, modo, ca: num(alvo.ac) }); critico = atq.resultado === "critico";
+            linhas.push(`<p><b>Ataque${rot} de ${esc(atacante.name)} (${esc(a.nome)}):</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`);
+          }
+          if (parte !== "ataque") {
+            if (!partes || !partes.length) { if (!atq) { res.innerHTML = '<span class="err">Dano inválido. Use algo como 1d8+3.</span>'; return; } }
+            else if (parte === "dano" || (atq && atq.acertou)) { ultimoDano = rolarDano(partes, { critico, metade, defesas }); somaDano += ultimoDano.total; houveDano = true; linhas.push(`<p><b>Dano${rot}:</b> ${ultimoDano.total}${ultimoDano.metade ? " (de " + ultimoDano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(ultimoDano))}</span></p>`); }
+            else linhas.push(`<p class="muted">Errou${rot}: sem dano.</p>`);
+          }
         }
-        if (parte !== "ataque") {
-          if (!partes || !partes.length) { if (!atq) { res.innerHTML = '<span class="err">Dano inválido. Use algo como 1d8+3.</span>'; return; } }
-          else if (parte === "dano" || (atq && atq.acertou)) { dano = rolarDano(partes, { critico, metade }); linhas.push(`<p><b>Dano:</b> ${dano.total}${dano.metade ? " (de " + dano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(dano))}</span></p>`); }
-          else linhas.push('<p class="muted">Errou: sem dano.</p>');
-        }
+        if (houveDano) { dano = N > 1 ? { bruto: somaDano, total: somaDano, detalhe: [], critico: false, metade: false, ajustes: [] } : ultimoDano; if (N > 1) linhas.push(`<p><b>Dano total:</b> ${somaDano}</p>`); }
       }
+      const dt = defesasTexto(defesasDo(alvo)); if (dano && dt) linhas.push(`<p class="muted">Defesas de ${esc(alvo.name)}: ${esc(dt)}${(defesasDo(alvo) || {}).naoMagico ? " (resistências a ataques não mágicos: confira se a arma é mágica)" : ""}.</p>`);
       ultimo = { dano, alvoId: alvo.id, atacanteId: atacante.id };
       if (dano && dano.total >= 0) linhas.push(`<div class="row"><button type="button" id="atk-aplicar" class="danger">Aplicar ${dano.total} de dano em ${esc(alvo.name)}</button><span class="muted">PV ${num(alvo.hp)} → ${Math.max(0, num(alvo.hp) - dano.total)}</span></div>`);
       res.innerHTML = linhas.join("");
@@ -223,7 +245,9 @@
   faixa.addEventListener("change", (e) => {
     const sel = estado(), id = e.target.id;
     if (id === "vez-atacante") { sel.atacante = e.target.value; sel.manualAtacante = true; sel.idx = null; sel.circulo = null; ultimo = null; $("#vez-res").innerHTML = ""; desenharVez(); }
-    else if (id === "vez-alvo") sel.alvo = e.target.value;
+    else if (id === "vez-alvo") { sel.alvo = e.target.value; sel.salvaManual = false; }
+    else if (id === "vez-vezes") sel.vezes = Math.max(1, Math.min(8, Math.round(num(e.target.value, 1))));
+    else if (id === "atk-salva-bonus") { sel.salvaManual = true; sel.salvaBonus = num(e.target.value, 0); }
     else if (id === "vez-modo") sel.modo = e.target.value;
     else if (id === "vez-treino") { sel.treino = e.target.checked; desenharVez(); }
     else if (id === "atk-ataque") { sel.idx = e.target.value === "manual" ? "manual" : +e.target.value; sel.circulo = null; desenharAvancado(); }
