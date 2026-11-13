@@ -245,6 +245,7 @@
       function aplicarRolagemAuto() {
         const on = rolagemAuto(), caixa = $("rolagem-auto"), est = $("rolagem-auto-estado");
         if (caixa) caixa.checked = on; if (est) est.textContent = on ? "ligada" : "desligada";
+        const chip = $("chip-manual"); if (chip) chip.hidden = on;                      // indicador discreto na barra de turno (só aparece no celular)
         const dica = $("rolagem-auto-dica"); if (dica) dica.textContent = on ? "Ligada: os botões d20 e de ataque rolam os dados." : "Desligada: você digita todos os valores (iniciativa, d20 e dano).";   // mostra só a explicação do estado atual
         if (document.body && document.body.classList && document.body.classList.toggle) document.body.classList.toggle("rolagem-manual", !on);
       }
@@ -476,17 +477,17 @@
         if(!force&&document.activeElement?.matches?.('#combatants [data-iniciativa]')){save();return;}
         const list = $("combatants");
         { const av = $("aviso-gravacao"), ficha = combatants.filter((c) => c.pid), grava = ficha.filter((c) => c.sync);     // um aviso único, fora dos cartões
-          if (av) { av.hidden = !ficha.length; av.textContent = !ficha.length ? "" : grava.length ? `Gravando nas fichas: ${grava.map((c) => c.name).join(", ")}.${grava.length < ficha.length ? " Os demais personagens estão em teste." : ""}` : "Combate de teste: PV, espaços e recursos dos personagens não são gravados nas fichas."; } }
+          if (av) { av.hidden = !ficha.length; av.innerHTML = !ficha.length ? "" : grava.length ? `<span class="l">Gravando nas fichas: ${escapeText(grava.map((c) => c.name).join(", "))}.${grava.length < ficha.length ? " Os demais personagens estão em teste." : ""}</span><span class="c">Gravando: ${escapeText(grava.map((c) => c.name).join(", "))}</span>` : `<span class="l">Combate de teste: PV, espaços e recursos dos personagens não são gravados nas fichas.</span><span class="c">Teste: não grava nas fichas.</span>`; } }
         const ordered = sorted();
         const posVez = currentId ? ordered.findIndex((c) => c.id === currentId) : -1;
         const exibicao = posVez > 0 ? [...ordered.slice(posVez), ...ordered.slice(0, posVez)] : ordered;   // lista rotacionada: vez primeiro, quem acabou de jogar por último
-        $("round").textContent = round;
+        $("round").textContent = round; { const br = $("barra-rodada-n"); if (br) br.textContent = round; const sec = $("iniciativa-atual"); if (sec && sec.dataset) sec.dataset.iniciado = currentId ? "1" : "0"; }
         document.querySelector(".round-box").hidden = !currentId;
         renderReport();
 
         const active = combatants.find((c) => c.id === currentId);
         $("current-turn").innerHTML = active
-          ? `Vez de: <strong>${escapeText(active.name)}</strong>`
+          ? `<span class="vez-de">Vez de: </span><strong>${escapeText(active.name)}</strong>`
           : "Nenhum turno ativo. Comece o combate quando estiver pronto.";
 
         atualizarInicio(ordered);
@@ -725,6 +726,27 @@
       if ($("desfazer")) $("desfazer").addEventListener("click", () => desfazerUltimo());
       document.addEventListener("input", (e) => { const t = e.target; if (t && t.dataset && t.dataset.amount) quantidades[t.dataset.amount] = t.value; });
       $("next").addEventListener("click", () => moveTurn(1));
+      /* ---- celular (700 px ou menos): Encerrar, Limpar, rolagem automática e ferramentas da lista vão para o menu do combate (os mesmos elementos, sem duplicar IDs) ---- */
+      const mqCelular = window.matchMedia ? window.matchMedia("(max-width: 700px)") : null;
+      const lugares = [];
+      function layoutCelular() {
+        const menu = $("menu-combate"), caixa = $("menu-combate-itens"); if (!mqCelular || !menu || !caixa || !document.createComment) return;
+        const on = mqCelular.matches;
+        if (!lugares.length) for (const id of ["reset", "limpar-ini", "rolagem-auto-bar", "lista-ferramentas"]) { const el = id === "rolagem-auto-bar" ? document.querySelector(".rolagem-auto-bar") : $(id); if (el && el.parentNode) { const marca = document.createComment("lugar:" + id); el.parentNode.insertBefore(marca, el); lugares.push({ el, marca }); } }
+        menu.hidden = !on;
+        for (const { el, marca } of lugares) { if (on) { if (el.parentNode !== caixa) caixa.appendChild(el); } else if (marca.parentNode && el.parentNode !== marca.parentNode) marca.parentNode.insertBefore(el, marca.nextSibling); }
+        const cab = document.querySelector(".appheader"); document.documentElement.style.setProperty("--appheader-h", (cab ? Math.round(cab.getBoundingClientRect().height) : 56) + "px");
+      }
+      if (mqCelular) { if (mqCelular.addEventListener) mqCelular.addEventListener("change", layoutCelular); window.addEventListener("resize", layoutCelular); layoutCelular(); setTimeout(layoutCelular, 600); }
+      { const caixa = $("menu-combate-itens"); if (caixa) caixa.addEventListener("click", (e) => { if (e.target.closest && e.target.closest("button") && window.MENUS && window.MENUS.fecharTodos) window.MENUS.fecharTodos(); }); }
+      /* ao avançar o turno, a página só rola até o combatente atual se ele estiver fora da área visível (entre as barras fixas) */
+      function mostrarAtual(forcar) {
+        if (!mqCelular || !mqCelular.matches) return;
+        const el = document.querySelector("#combatants .combatant.active"); if (!el || !el.getBoundingClientRect) return;
+        const cab = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--appheader-h")) || 56, barra = document.querySelector(".combat-bar"), topo = cab + (barra ? barra.getBoundingClientRect().height : 48) + 8, base = window.innerHeight - 66 - 8, r = el.getBoundingClientRect();
+        if (forcar || r.top < topo || r.top > base - 60) window.scrollTo({ top: window.scrollY + r.top - topo, behavior: "smooth" });
+      }
+      $("current-turn").addEventListener("click", () => mostrarAtual(true));
       $("expandir-tudo").addEventListener("click", () => { combatants.forEach((c) => abertos.add(c.id)); render(); });
       $("recolher-tudo").addEventListener("click", () => { abertos.clear(); render(); });
       /* Ficha: usa o mesmo caminho do clique no cartão, que já abre o painel lateral (criatura do bestiário ou personagem da campanha) */
@@ -764,7 +786,7 @@
         if (direction > 0) round += voltas; else if (round > 1) round = Math.max(1, round - voltas);
         currentId = ordered[nextIndex].id;
         { const nx = ordered[nextIndex]; if (nx.kind === "Personagem" && Number(nx.hp) <= 0 && !nx.morto && !nx.estavel) aviso(`Vez de ${nx.name}, a 0 PV: faça a salvaguarda contra a morte (d20).`); }
-        render();
+        render(); mostrarAtual(false);
       }
 
       $("reset").addEventListener("click", async () => {

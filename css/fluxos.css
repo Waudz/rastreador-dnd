@@ -324,3 +324,46 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
 #ci-lista .ci-cartao-ini .ci-acoes .primary { min-height:44px; padding:0 16px; }
 #ci-lista .ci-cartao-ini .ci-ini-res { flex:1 1 100%; text-align:right; }
 @media (max-width:560px) { #ci-lista .ci-cartao-ini .ci-acoes { flex:1 1 100%; margin-left:0; justify-content:flex-start; flex-wrap:wrap; } #ci-lista .ci-cartao-ini .ci-ini-res { text-align:left; } }
+
+/* ================= celular (até 700 px): barra de turno fixa, menu do combate e página enxuta ================= */
+.barra-rodada, .chip-manual { display:none; }
+.menu-combate { display:none; }
+.menu-combate[hidden] { display:none; }
+@media (max-width:700px) {
+  html[data-app-view=iniciativa] .header { display:none; }
+  #iniciativa-atual { padding:0 10px 10px; margin-top:0; border-radius:12px; }
+  #iniciativa-atual .combat-bar { position:sticky; top:var(--appheader-h,56px); z-index:30; display:flex; flex-wrap:nowrap; align-items:center; justify-content:flex-start; gap:6px; margin:0 -10px 8px; padding:6px 8px; background:var(--panel); border-bottom:1px solid var(--line); border-radius:12px 12px 0 0; }
+  #iniciativa-atual .combat-bar-info { flex:1 1 auto; min-width:0; }
+  #iniciativa-atual .combat-bar .panel-title { display:none; }
+  #iniciativa-atual .turn-label { margin:0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; color:var(--text); }
+  #iniciativa-atual .turn-label .vez-de { display:none; }
+  #iniciativa-atual .turn-label strong::before { content:"\25CF "; color:var(--gold); }
+  #iniciativa-atual .fx-note { font-size:11px; white-space:normal; }
+  .barra-rodada { display:inline-flex; align-items:baseline; gap:3px; flex:0 0 auto; padding:3px 8px; border:1px solid var(--line); border-radius:999px; font-size:11px; color:var(--muted); white-space:nowrap; }
+  .barra-rodada b { font-size:14px; color:var(--text); }
+  .chip-manual { display:inline-block; flex:0 0 auto; padding:2px 7px; border:1px solid var(--gold); border-radius:999px; font-size:11px; color:var(--gold); }
+  .chip-manual[hidden] { display:none; }
+  #iniciativa-atual .turn-actions { display:flex; flex-wrap:nowrap; gap:6px; flex:0 0 auto; align-items:center; }
+  #iniciativa-atual .turn-actions > button { min-width:44px; min-height:44px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+  #iniciativa-atual .turn-actions .rot { display:none; }
+  #iniciativa-atual .turn-actions .ico { margin:0; width:20px; height:20px; }
+  #iniciativa-atual #start { padding:0 12px; font-size:13px; white-space:nowrap; }
+  #iniciativa-atual[data-iniciado="1"] #start { display:none; }
+  #iniciativa-atual[data-iniciado="0"] #previous, #iniciativa-atual[data-iniciado="0"] #next { display:none; }
+  .menu-combate { display:block; position:relative; }
+  .menu-combate[hidden] { display:none; }
+  .menu-combate > summary { width:44px; height:44px; }
+  .menu-combate > summary .ico { margin:0; width:20px; height:20px; }
+  .menu-combate .compact-popover { display:flex; flex-direction:column; gap:8px; width:min(320px,calc(100vw - 24px)); max-height:min(70vh,520px); overflow:auto; }
+  .menu-combate .menu-titulo { margin:0; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .menu-combate .compact-popover > button { width:100%; min-height:44px; justify-content:flex-start; }
+  .menu-combate .rolagem-auto-bar { margin:0; padding:8px 0 0; border-top:1px solid var(--line); }
+  .menu-combate .lista-ferramentas { margin:0; padding:8px 0 0; border-top:1px solid var(--line); justify-content:flex-start; }
+  #iniciativa-atual > .rolagem-auto-bar { display:none; }
+  #iniciativa-atual #inicio-aviso { margin:0 0 6px; font-size:12px; }
+  #iniciativa-atual #inicio-aviso:empty { display:none; }
+  .aviso-gravacao { margin:0 0 8px; padding:3px 8px; font-size:11px; }
+  .aviso-gravacao .l { display:none; } .aviso-gravacao .c { display:inline; }
+  #iniciativa-atual .footer { font-size:11px; margin:6px 0 0; }
+}
+@media (min-width:701px) { .aviso-gravacao .c { display:none; } }

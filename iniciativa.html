@@ -82,18 +82,21 @@
     <p id="ini-sem-campanha" class="vista-iniciativa muted" hidden>Selecione uma campanha pelo botão Campanhas. A iniciativa da campanha é gerenciada pelo mestre.</p>
     <section class="vista-iniciativa panel" id="iniciativa-atual">
       <div class="combat-bar">
-        <div>
+        <div class="combat-bar-info">
           <h2 class="panel-title" style="margin-bottom:4px"><i data-i="swords"></i>Ordem do combate</h2>
           <div class="turn-label" id="current-turn" role="status" aria-live="polite">Adicione os combatentes para começar.</div>
         </div>
+        <span class="chip-manual" id="chip-manual" hidden title="Rolagem automática desligada: você digita os valores dos dados">Manual</span>
+        <span class="barra-rodada" aria-label="Rodada atual">Rod. <b id="barra-rodada-n">1</b></span>
         <div class="turn-actions">
 
           <button id="start" class="primary" type="button">Começar combate</button>
-          <button id="previous" type="button" disabled><i data-i="left"></i>Anterior</button>
-          <button id="next" type="button" disabled title="Próximo turno (atalho: N, fora dos campos de texto)" aria-keyshortcuts="N">Próximo<i data-i="right"></i></button>
-          <button id="desfazer" class="subtle" type="button" disabled title="Nada para desfazer">Desfazer</button>
+          <button id="previous" type="button" disabled aria-label="Turno anterior"><i data-i="left"></i><span class="rot">Anterior</span></button>
+          <button id="next" type="button" disabled aria-label="Próximo turno" title="Próximo turno (atalho: N, fora dos campos de texto)" aria-keyshortcuts="N"><span class="rot">Próximo</span><i data-i="right"></i></button>
+          <button id="desfazer" class="subtle" type="button" disabled aria-label="Desfazer" title="Nada para desfazer"><i data-i="undo"></i><span class="rot">Desfazer</span></button>
           <button id="reset" class="subtle" type="button" disabled>Encerrar</button>
           <button id="limpar-ini" class="subtle danger" type="button" disabled title="Remove todos os combatentes da lista (não apaga fichas, bestiário nem campanhas)">Limpar</button>
+          <details class="compact-menu menu-combate" id="menu-combate" hidden><summary aria-label="Menu do combate" title="Menu do combate"><i data-i="more"></i></summary><div class="compact-popover" id="menu-combate-itens"><p class="menu-titulo">Combate</p></div></details>
         </div>
       </div>
 
