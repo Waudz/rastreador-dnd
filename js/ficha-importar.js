@@ -163,13 +163,19 @@
 
   /* resumo legível para a prévia */
   const NOME_ATR = { strength: "FOR", dexterity: "DES", constitution: "CON", intelligence: "INT", wisdom: "SAB", charisma: "CAR" };
+  const PT_TAM = { tiny: "Miúdo", small: "Pequeno", medium: "Médio", large: "Grande", huge: "Enorme", gargantuan: "Imenso" };
+  const PT_TIPO = { aberration: "Aberração", beast: "Fera", celestial: "Celestial", construct: "Constructo", dragon: "Dragão", elemental: "Elemental", fey: "Feérico", fiend: "Ínfero", giant: "Gigante", humanoid: "Humanoide", monstrosity: "Monstruosidade", ooze: "Gosma", plant: "Planta", undead: "Morto-vivo" };
+  const PT_DESL = { walk: "andando", fly: "voo", swim: "natação", climb: "escalada", burrow: "escavação" };
+  const PT_SENT = { darkvision: "visão no escuro", blindsight: "visão às cegas", tremorsense: "sentido sísmico", truesight: "visão verdadeira" };
+  const rotAlin = (a) => { const f = (FC.ALINHAMENTOS || []).find((x) => x[0] === a); return f ? f[1] : a; };
+  const rotPer = (k) => { const f = (FC.PERICIAS || []).find((x) => x[0] === k); return f ? f[1] : k; };
   function resumo(v) {
     const L = []; const add = (r, x) => { if (x !== null && x !== undefined && x !== "" && !(Array.isArray(x) && !x.length)) L.push([r, x]); };
-    add("Nome", v.nome); add("Tamanho / tipo / tendência", [v.tamanho, v.tipo, v.alinhamento].filter(Boolean).join(" · ")); add("Classe de Armadura", v.ca != null ? v.ca + (v.armadura ? ` (${v.armadura})` : "") : ""); add("Pontos de vida", v.pv != null ? v.pv + (v.dados ? ` (${v.dados})` : "") : "");
-    add("Deslocamentos (pés)", Object.entries(v.deslocamentos).map(([k, n]) => `${k} ${n}`).join(", ")); add("Atributos", Object.entries(v.atributos).map(([k, n]) => `${NOME_ATR[k]} ${n}`).join(" · "));
-    add("Salvaguardas", Object.entries(v.salvaguardas).map(([k, n]) => `${NOME_ATR[k]} ${n >= 0 ? "+" : ""}${n}`).join(", ")); add("Perícias", Object.entries(v.pericias).map(([k, n]) => `${k} ${n >= 0 ? "+" : ""}${n}`).join(", "));
+    add("Nome", v.nome); add("Tamanho / tipo / tendência", [PT_TAM[String(v.tamanho).toLowerCase()] || v.tamanho, PT_TIPO[String(v.tipo).toLowerCase()] || v.tipo, rotAlin(v.alinhamento)].filter(Boolean).join(" · ")); add("Classe de Armadura", v.ca != null ? v.ca + (v.armadura ? ` (${v.armadura})` : "") : ""); add("Pontos de vida", v.pv != null ? v.pv + (v.dados ? ` (${v.dados})` : "") : "");
+    add("Deslocamentos (pés)", Object.entries(v.deslocamentos).map(([k, n]) => `${PT_DESL[k] || k} ${n}`).join(", ")); add("Atributos", Object.entries(v.atributos).map(([k, n]) => `${NOME_ATR[k]} ${n}`).join(" · "));
+    add("Salvaguardas", Object.entries(v.salvaguardas).map(([k, n]) => `${NOME_ATR[k]} ${n >= 0 ? "+" : ""}${n}`).join(", ")); add("Perícias", Object.entries(v.pericias).map(([k, n]) => `${rotPer(k)} ${n >= 0 ? "+" : ""}${n}`).join(", "));
     add("Resistências", v.resistencias.join(", ") + (v.naoMagico.res && v.resistencias.length ? " (não mágicos)" : "")); add("Imunidades", v.imunidades.join(", ") + (v.naoMagico.imu && v.imunidades.length ? " (não mágicos)" : "")); add("Vulnerabilidades", v.vulnerabilidades.join(", ") + (v.naoMagico.vul && v.vulnerabilidades.length ? " (não mágicos)" : "")); add("Imunidades a condições", v.condicoes.join(", "));
-    add("Sentidos (pés)", Object.entries(v.sentidos).map(([k, n]) => `${k} ${n}`).join(", ")); add("Idiomas", v.idiomas); add("Desafio", v.nd != null ? v.nd + (v.xp ? ` (${v.xp} XP)` : "") : ""); add("Bônus de proficiência", v.prof != null && v.prof !== "" ? "+" + v.prof : "");
+    add("Sentidos (pés)", Object.entries(v.sentidos).map(([k, n]) => `${PT_SENT[k] || (k === "passive" || k === "passiva" ? "passiva" : k)} ${n}`).join(", ")); add("Idiomas", v.idiomas); add("Desafio", v.nd != null ? v.nd + (v.xp ? ` (${v.xp} XP)` : "") : ""); add("Bônus de proficiência", v.prof != null && v.prof !== "" ? "+" + v.prof : "");
     add("Características", v.caracteristicas.map((c) => c.nome).join(", "));
     for (const [id, rot] of [["acao", "Ações"], ["bonus", "Ações bônus"], ["reacao", "Reações"], ["lendaria", "Ações lendárias"], ["covil", "Ações de covil"]]) add(rot, v.acoes[id].map((l) => l.split("|")[0].trim()).join(", "));
     return L;
