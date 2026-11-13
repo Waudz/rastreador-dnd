@@ -46,6 +46,8 @@
   <script src="js/rolagens.js" defer></script>
   <script src="js/ficha-monstro.js" defer></script>
   <script src="js/recentes.js" defer></script>
+  <script src="js/ficha-criacao.js" defer></script>
+  <script src="js/ficha-importar.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/origens.js" defer></script>
   <script src="js/texto-regras.js" defer></script>
@@ -189,19 +191,27 @@
 
     <details class="vista-monstros panel" id="cm">
       <summary class="panel-title"><i data-i="plus"></i>Criar ficha (monstro, personagem ou NPC)</summary>
+      <p class="muted">Só o nome é obrigatório: preencha o que quiser e salve. Os detalhes do Livro dos Monstros (defesas, sentidos, perícias, reações, ações lendárias…) ficam em “Mais detalhes”.</p>
+      <details class="cm-importar" id="cm-importar"><summary>Importar bloco de estatísticas (colar o texto de uma ficha)</summary>
+        <p class="muted">Cole o texto de uma ficha que você possui (português ou inglês, inclusive copiado do D&amp;D Beyond). Nada é enviado para fora: a leitura acontece neste aparelho. Você revisa a prévia, o formulário preenche e só então salva.</p>
+        <textarea id="imp-texto" rows="8" placeholder="Cole aqui o texto da ficha do monstro…"></textarea>
+        <div class="row"><button type="button" class="small primary" id="imp-ler">Interpretar texto</button><button type="button" class="small subtle" id="imp-limpar">Limpar</button></div>
+        <div id="imp-previa" class="imp-previa" hidden></div>
+      </details>
       <div class="cmg">
         <div><label>Categoria</label><select id="cm-cat"><option value="monster">Monstro</option><option value="player">Personagem (jogador)</option><option value="npc">NPC</option></select></div>
         <div style="grid-column:span 2"><label>Nome</label><input id="cm-name" maxlength="48"></div>
         <div style="grid-column:span 2"><label>Descrição curta (classe, raça, papel…)</label><input id="cm-sub" maxlength="80"></div>
         <div><label>Tamanho</label><select id="cm-size"><option value="Tiny">Miúdo</option><option value="Small">Pequeno</option><option value="Medium" selected>Médio</option><option value="Large">Grande</option><option value="Huge">Enorme</option><option value="Gargantuan">Imenso</option></select></div>
         <div><label>Tipo</label><select id="cm-type"></select></div>
-        <div><label id="cm-crl">ND</label><input id="cm-cr" type="number" step="any" value="1"></div>
+        <div><label id="cm-crl">ND</label><input id="cm-cr" type="text" inputmode="decimal" value="1" placeholder="1/4, 2, 10…"></div>
         <div><label>CA</label><input id="cm-ac" type="number" value="12"></div>
         <div><label>PV</label><input id="cm-hp" type="number" value="20"></div>
         <div><label>Dados de vida</label><input id="cm-hd" placeholder="4d8 + 8"></div>
         <div><label>Deslocamento (pés)</label><input id="cm-sp" type="number" value="30"></div>
       </div>
       <div class="cmg" id="cm-ab"></div>
+      <div id="cm-livro-ui"></div>
       <label>Foto (opcional)</label>
       <div class="row"><span id="cm-phv"></span><button type="button" class="small" id="cm-ph">Escolher foto…</button><button type="button" class="small subtle" id="cm-phx">Remover foto</button></div>
       <label>Características (uma por linha: Nome: descrição)</label>

@@ -27,7 +27,7 @@ test('a lista persiste só o identificador estável; limpar a iniciativa e o bes
   assert.match(app,/acervo\.chave\("ini_recentes"\)/);assert.match(app,/const ok = lista\.filter\(\(k\) => BY\[k\]\)/,'monstro personalizado excluído some do histórico');assert.match(app,/if \(!ALL\.length\) return lista;/,'catálogo carregando não descarta nada');
   assert.match(app,/window\.addEventListener\("ini:adicionado"/);assert.match(app,/if \(!REC \|\| !k \|\| !BY\[k\]\) return;/,'só monstros que existem no bestiário (oficial ou próprio)');
   assert.match(ini,/window\.dispatchEvent\?\.\(new CustomEvent\("ini:adicionado"/);assert.equal((ini.match(/ini:adicionado/g)||[]).length,2,'registra nos dois caminhos de adição, nunca ao pesquisar ou abrir a ficha');
-  assert.match(html,/id="recentes-btn"/);assert.match(html,/<script src="js\/recentes\.js" defer><\/script>\s*<script src="js\/app\.js" defer>/);assert.match(sw,/"js\/recentes\.js"/);
+  assert.match(html,/id="recentes-btn"/);assert.match(html,/<script src="js\/recentes\.js" defer><\/script>(?:\s*<script src="js\/ficha-[a-z]+\.js" defer><\/script>)*\s*<script src="js\/app\.js" defer>/);assert.match(sw,/"js\/recentes\.js"/);
 });
 test('interface: excluir individual sem confirmação, Limpar recentes com a confirmação do site, mensagem de vazio e clique usa o mesmo caminho da pesquisa',()=>{
   const app=ler('js/app.js');

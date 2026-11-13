@@ -518,3 +518,23 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 .attr .atr-valor small { font-size:10px; }
 /* pesquisa de magias: botão Ver com alvo de toque confortável no celular */
 @media (max-width:700px) { #spells .res .small { min-height:44px; min-width:52px; } }
+
+/* Criar ficha no padrão do Livro dos Monstros: seções opcionais e importação */
+.cm-livro, .cm-importar { margin:10px 0; padding:8px 12px; border:1px solid var(--line); border-radius:10px; background:#10182030; }
+.cm-livro > summary, .cm-importar > summary, .cm-sub > summary { cursor:pointer; font-weight:600; min-height:36px; display:flex; align-items:center; }
+.cm-livro h4 { margin:14px 0 6px; font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--gold); }
+.cm-sub { margin:8px 0; }
+.cm-caixas { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:4px 10px; margin:4px 0 6px; }
+.cm-caixas label.inline { margin:0; min-height:32px; display:flex; align-items:center; gap:6px; font-size:13px; }
+.cm-livro input[type=checkbox], .cm-caixas input[type=checkbox] { width:auto; height:auto; min-height:0; margin:0; }
+.cm-livro textarea { min-height:70px; }
+.cm-livro code { font-size:11px; }
+.imp-previa { margin-top:10px; padding:10px 12px; border:1px dashed var(--gold-dark, var(--line)); border-radius:10px; }
+.imp-previa h4 { margin:0 0 8px; font-size:13px; color:var(--gold); }
+.imp-tabela { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:8px; }
+.imp-tabela th { text-align:left; vertical-align:top; width:34%; padding:3px 8px 3px 0; color:var(--muted); font-weight:500; }
+.imp-tabela td { padding:3px 0; overflow-wrap:anywhere; }
+.imp-avisos { margin:8px 0; padding:8px 10px; border-left:2px solid var(--gold); background:#D4AE720A; border-radius:0 8px 8px 0; font-size:12px; }
+.imp-avisos ul { margin:4px 0 0; padding-left:18px; }
+.imp-previa details p { font-size:12px; margin:6px 0; overflow-wrap:anywhere; }
+@media (max-width:700px) { .cm-livro > summary, .cm-importar > summary { min-height:44px; } .cm-caixas label.inline { min-height:44px; } .imp-tabela th { width:42%; } }

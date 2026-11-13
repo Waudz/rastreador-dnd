@@ -116,7 +116,12 @@
       const d = String(a.desc || "").replace(/\*+/g, ""), h = d.match(/Attack(?: Roll)?:\s*([+-]\d+)/i) || d.match(/([+-]\d+) to hit/i);
       const dmg = [...d.matchAll(/(\d+)\s*\((\d+)d(\d+)(?:\s*([+-])\s*(\d+))?\)\s*([A-Za-z]+)?\s*damage/gi)].map((x) => ({ n: +x[2], f: +x[3], b: x[5] ? (x[4] === "-" ? -1 : 1) * +x[5] : 0, t: x[6] || "" }));
       let hit = h ? +h[1] : null; const at = (a.attacks || [])[0];
+      const doTexto = dmg.length;
       if (at) { if (hit == null && at.to_hit_mod != null) hit = at.to_hit_mod; if (!dmg.length && at.damage_die_count) dmg.push({ n: at.damage_die_count, f: +String(at.damage_die_type).slice(1), b: at.damage_bonus || 0, t: at.damage_type?.name || at.extra_damage_type?.name || "" }); }
+      if (at && !doTexto && dmg.length) {                                           // dano estruturado (ficha própria): segundo e demais tipos de dano
+        if (at.extra_damage_die_count) dmg.push({ n: at.extra_damage_die_count, f: +String(at.extra_damage_die_type).slice(1), b: at.extra_damage_bonus || 0, t: at.extra_damage_type?.name || "" });
+        if (Array.isArray(at.more_damage)) for (const x of at.more_damage) dmg.push({ n: x.n, f: x.f, b: x.b || 0, t: x.t || "" });
+      }
       return hit == null && !dmg.length ? null : { hit, dmg };
     }
     const dstr = (x) => `${x.n}d${x.f}${x.b ? ` ${x.b > 0 ? "+" : "-"} ${Math.abs(x.b)}` : ""}${x.t ? " " + trW(x.t.toLowerCase()) : ""}`;
@@ -302,7 +307,7 @@
       const m = ALL.find((x) => x.key === k), el = $("#sheet-body"); curSheet = k;
       if (!m) { curSheet=null; return; }
       const r = m.resistances_and_immunities || {}, ln = (l, v) => v ? `<div><b>${l}:</b> ${esc(v)}</div>` : "";
-      const saves = Object.entries(m.saving_throws || {}).filter(([a, v]) => v !== m.modifiers?.[a]).map(([a, v]) => `${ABIL.find((x) => x[0] === a)?.[1] || a} ${mod(v)}`).join(", ");
+      const saves = Object.entries(m.saving_throws || {}).filter(([a, v]) => m.custom || v !== m.modifiers?.[a]).map(([a, v]) => `${ABIL.find((x) => x[0] === a)?.[1] || a} ${mod(v)}`).join(", ");
       const skills = Object.entries(m.skill_bonuses || {}).map(([a, v]) => `${SK[a] || a} ${mod(v)}`).join(", ");
       const senses = [["darkvision_range", "visão no escuro"], ["blindsight_range", "percepção às cegas"], ["tremorsense_range", "sentido sísmico"], ["truesight_range", "visão verdadeira"]].filter(([a]) => m[a]).map(([a, l]) => `${l} ${fm(m[a])}`).concat("Percepção passiva " + m.passive_perception).join(", ");
       const g = {}; (m.actions || []).forEach((a) => (g[a.action_type || "ACTION"] ??= []).push(a));
@@ -421,7 +426,7 @@
 
     /* criar / editar ficha (monstro, personagem ou NPC) */
     $("#cm-type").innerHTML = Object.entries(TP).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
-    $("#cm-ab").innerHTML = ABIL.map(([k, l]) => `<div><label>${l}</label><input id="ab-${k}" type="number" value="10"></div>`).join("");
+    $("#cm-ab").innerHTML = ABIL.map(([k, l]) => `<div><label>${l}</label><input id="ab-${k}" type="number" value="10"></div>`).join(""); window.FICHA_CRIACAO.montarFormulario();
     $("#cm-cat").onchange = () => { const mo = $("#cm-cat").value === "monster"; $("#cm-crl").textContent = mo ? "ND" : "Nível"; if (!mo) $("#cm-type").value = "Humanoid"; };
     const lines = (id) => $(id).value.split("\n").map((s) => s.trim()).filter(Boolean);
     const spName = (s) => D.S[String(s.name).toLowerCase()]?.[0] || s.name;
@@ -455,7 +460,7 @@
     });
     let cfPend = {};
     function resetForm() {
-      cfPend = {}; setTimeout(refreshLineChips, 0);
+      cfPend = {}; setTimeout(refreshLineChips, 0); window.FICHA_CRIACAO.limparExtras();
       editKey = null; cmSpells = []; formPhoto = undefined; chips();
       ["#cm-name", "#cm-sub", "#cm-traits", "#cm-acts"].forEach((s) => ($(s).value = "")); ABIL.forEach(([k]) => ($("#ab-" + k).value = 10));
       $("#cm-save").textContent = "Salvar ficha"; $("#cm-cancel").hidden = true; formPv();
@@ -466,26 +471,55 @@
       resetForm(); editKey = k; cmSpells = (m.spells || []).slice(); chips(); formPv();
       $("#cm-cat").value = catOf(m); $("#cm-cat").onchange(); $("#cm-name").value = m.name; $("#cm-sub").value = m.subtitle || "";
       $("#cm-size").value = m.size?.name || "Medium"; $("#cm-type").value = m.type?.name || "Humanoid";
-      $("#cm-cr").value = catOf(m) === "monster" ? m.challenge_rating : (m.level ?? 1); $("#cm-ac").value = m.armor_class; $("#cm-hp").value = m.hit_points;
+      $("#cm-cr").value = catOf(m) === "monster" ? cr(m.challenge_rating) : (m.level ?? 1); $("#cm-ac").value = m.armor_class; $("#cm-hp").value = m.hit_points;
       $("#cm-hd").value = m.hit_dice || ""; $("#cm-sp").value = m.speed?.walk ?? 30; ABIL.forEach(([a]) => ($("#ab-" + a).value = m.ability_scores?.[a] ?? 10));
       $("#cm-traits").value = m.raw?.traits ?? (m.traits || []).map((t) => `${t.name}: ${t.desc}`).join("\n");
       $("#cm-acts").value = m.raw?.actions ?? (m.actions || []).map((a) => `${a.name} | ${a.desc}`).join("\n");
+      window.FICHA_CRIACAO.preencherExtras(window.FICHA_CRIACAO.extrasDeMonstro(m));
       refreshLineChips(); $("#cm-save").textContent = "Salvar alterações"; $("#cm-cancel").hidden = false; $("#cm-msg").textContent = "";
       $("#cm").open = true; $("#cm").scrollIntoView({ behavior: "smooth" });
     }
     $("#cm-cancel").onclick = () => { resetForm(); $("#cm-msg").textContent = "Edição cancelada."; };
-    function parseAct(l) {
-      const p = l.split("|").map((s) => s.trim()), a = { name: p[0], action_type: "ACTION", attacks: [] };
-      if (p.length < 3) { a.desc = p[1] || ""; return a; }
-      const hit = parseInt(p[1]) || 0, d = (p[2] || "").match(/(\d+)d(\d+)\s*([+-]\s*\d+)?/);
-      a.attacks = [{ to_hit_mod: hit, damage_die_count: d ? +d[1] : 0, damage_die_type: d ? "D" + d[2] : "D0", damage_bonus: d && d[3] ? parseInt(d[3].replace(/\s/g, "")) : 0, damage_type: p[3] ? { name: p[3] } : null }];
-      a.desc = `Ataque: ${mod(hit)} para acertar. Dano: ${p[2]}${p[3] ? " " + p[3] : ""}. ${p[4] || ""}`.trim();
-      return a;
+    /* ---- Importar bloco de estatísticas: a leitura acontece neste aparelho (js/ficha-importar.js); a prévia é revista antes de preencher o formulário, que continua editável ---- */
+    let impAtual = null;
+    const impPrevia = (v) => {
+      const FI = window.FICHA_IMPORTAR, rotulosAcao = { acao: "Ação", bonus: "Ação bônus", reacao: "Reação", lendaria: "Ação lendária", covil: "Ação de covil" };
+      const linhas = FI.resumo(v).map(([r, x]) => `<tr><th>${esc(r)}</th><td>${esc(x)}</td></tr>`).join("");
+      const textos = [...v.caracteristicas.map((c) => ["Característica", c.nome, c.texto]), ...Object.entries(rotulosAcao).flatMap(([k, rot]) => v.acoes[k].map((l) => { const p = l.split("|"); return [rot, p[0].trim(), p[p.length - 1].trim()]; }))];
+      return `<h4>Prévia: revise antes de preencher o formulário</h4><table class="imp-tabela">${linhas}</table>`
+        + (v.avisos.length ? `<div class="imp-avisos"><b>Atenção</b><ul>${v.avisos.map((a) => `<li>${esc(a)}</li>`).join("")}</ul></div>` : "")
+        + (v.naoReconhecido.length ? `<div class="imp-avisos"><b>Não reconhecido (fica guardado como nota na ficha; você pode apagar)</b><ul>${v.naoReconhecido.map((a) => `<li>${esc(a)}</li>`).join("")}</ul></div>` : "")
+        + `<details><summary>Textos originais das habilidades e ações (${textos.length})</summary>${textos.map(([t, n, x]) => `<p><b>${esc(n)}</b> <span class="muted">(${t})</span><br>${esc(x)}</p>`).join("")}</details>`
+        + `<div class="row"><button type="button" class="small primary" id="imp-usar">Preencher o formulário</button><button type="button" class="small subtle" id="imp-descartar">Descartar</button></div>`;
+    };
+    function impUsar(v) {
+      const set = (id, val) => { if (val !== null && val !== undefined && val !== "") $(id).value = val; };
+      $("#cm-cat").value = "monster"; $("#cm-cat").onchange();
+      set("#cm-name", String(v.nome).slice(0, 48)); if (v.tamanho) $("#cm-size").value = v.tamanho; if (v.tipo && [...$("#cm-type").options].some((o) => o.value === v.tipo)) $("#cm-type").value = v.tipo;
+      if (v.nd != null) $("#cm-cr").value = cr(v.nd);
+      if (v.ca != null) $("#cm-ac").value = v.ca; if (v.pv != null) $("#cm-hp").value = v.pv; set("#cm-hd", v.dados);
+      if (v.deslocamentos.walk != null) $("#cm-sp").value = v.deslocamentos.walk;
+      for (const [k, n] of Object.entries(v.atributos)) if ($("#ab-" + k)) $("#ab-" + k).value = n;
+      const notas = [...(v.naoReconhecido || [])]; if (v.fonte) notas.push("Fonte: " + v.fonte);
+      const tracos = v.caracteristicas.map((c) => c.nome + ": " + encP(c.texto)); if (notas.length) tracos.push("Notas da importação: " + encP(notas.join("\n")));
+      $("#cm-traits").value = tracos.join("\n"); $("#cm-acts").value = v.acoes.acao.join("\n");
+      window.FICHA_CRIACAO.preencherExtras({ alinhamento: v.alinhamento, armadura: v.armadura, deslocamentos: { fly: v.deslocamentos.fly, swim: v.deslocamentos.swim, climb: v.deslocamentos.climb, burrow: v.deslocamentos.burrow }, prof: v.prof ?? "", xp: v.xp ?? "",
+        salvaguardas: v.salvaguardas, pericias: v.pericias, resistencias: v.resistencias, imunidades: v.imunidades, vulnerabilidades: v.vulnerabilidades, condicoes: v.condicoes, naoMagico: v.naoMagico, sentidos: v.sentidos, idiomas: v.idiomas,
+        acoes: { bonus: v.acoes.bonus.join("\n"), reacao: v.acoes.reacao.join("\n"), lendaria: v.acoes.lendaria.join("\n"), covil: v.acoes.covil.join("\n") } });
+      refreshLineChips(); $("#cm-msg").textContent = "Formulário preenchido a partir do texto: revise os campos e salve.";
+      $("#cm-name").scrollIntoView?.({ block: "center" });
     }
+    $("#imp-ler").onclick = () => {
+      const t = $("#imp-texto").value; if (!t.trim()) { $("#cm-msg").textContent = "Cole o texto da ficha primeiro."; return; }
+      impAtual = window.FICHA_IMPORTAR.parsear(t); const box = $("#imp-previa"); box.innerHTML = impPrevia(impAtual); box.hidden = false;
+    };
+    $("#imp-limpar").onclick = () => { $("#imp-texto").value = ""; $("#imp-previa").hidden = true; $("#imp-previa").innerHTML = ""; impAtual = null; };
+    $("#imp-previa").addEventListener("click", (e) => { if (e.target.id === "imp-usar" && impAtual) impUsar(impAtual); if (e.target.id === "imp-descartar") { $("#imp-previa").hidden = true; $("#imp-previa").innerHTML = ""; impAtual = null; } });
+    const parseAct = (l) => window.FICHA_CRIACAO.parseAcao(l, "ACTION");   // formato e regras em js/ficha-criacao.js
     $("#cm-save").onclick = async () => {
       if (visitante()) { $("#cm-msg").textContent = "Criar e salvar fichas exige uma conta (gratuita)."; return; }
       const name = $("#cm-name").value.trim(); if (!name) { $("#cm-msg").textContent = "Informe o nome."; return; }
-      const cat = $("#cm-cat").value, v = parseFloat($("#cm-cr").value) || 0, ab = {}, md = {};
+      const cat = $("#cm-cat").value, v = window.FICHA_CRIACAO.lerND($("#cm-cr").value) || 0, ab = {}, md = {};
       ABIL.forEach(([k]) => { ab[k] = parseInt($("#ab-" + k).value) || 10; md[k] = Math.floor((ab[k] - 10) / 2); });
       const m = { key: editKey || "custom_" + Date.now().toString(36), custom: true, updatedAt: Date.now(), cat, name, subtitle: $("#cm-sub").value.trim(), document: { display_name: "Personalizado", key: "custom" },
         size: { name: $("#cm-size").value }, type: { name: $("#cm-type").value }, challenge_rating: cat === "monster" ? v : 0, level: cat === "monster" ? null : v, alignment: "—",
@@ -495,6 +529,7 @@
         raw: { traits: $("#cm-traits").value, actions: $("#cm-acts").value },
         traits: lines("#cm-traits").map((l) => { const i = l.indexOf(":"), t = i < 0 ? { name: l, desc: "" } : { name: l.slice(0, i).trim(), desc: decP(l.slice(i + 1).trim()) }, ref = ((editKey && BY[editKey]?.traits) || []).find((x) => x.name === t.name && x.cf)?.cf || cfPend[t.name]; return ref ? { ...t, cf: ref } : t; }),
         actions: lines("#cm-acts").map(parseAct) };
+      window.FICHA_CRIACAO.aplicarExtras(m, window.FICHA_CRIACAO.lerExtras());   // defesas, sentidos, perícias, salvaguardas, tipos de ação (tudo opcional)
       const edited = !!editKey; await put("mon", [m]);
       if (typeof formPhoto === "string") await put("img", [{ key: m.key, data: formPhoto }]); else if (formPhoto === null) await del("img", m.key);
       resetForm(); await reload(); queueSync();
