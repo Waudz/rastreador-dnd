@@ -30,3 +30,8 @@ test('desktop acima de 700 px mantém o layout anterior: regras do celular só d
   const i=css.indexOf('celular (até 700 px): barra de turno fixa'),resto=css.slice(i);
   assert.ok(!/^\.combat-bar \{[^}]*sticky/m.test(resto.split('@media')[0]),'nada de sticky fora do media');assert.match(css,/@media \(min-width:701px\) \{ \.aviso-gravacao \.c \{ display:none; \} \}/);
 });
+test('ficha do jogador no painel lateral com as mesmas medidas da ficha do monstro (estatísticas, atributos, abas, PV, margens) e cabeçalhos paralelos',()=>{
+  const css=ler('css/fluxos.css'),html=ler('iniciativa.html');
+  for(const rx of [/\.ficha-embutida \.ficha-estatistica \{ min-height:70px; \}/,/\.ficha-embutida \.attr \{ min-height:94px; \}/,/\.ficha-embutida \.ficha-abas button \{ padding:6px 12px; \}/,/\.ficha-embutida \.vida-ficha \{ padding:15px; \}/,/body\.ficha-embutida \.tracker \{ padding:14px; \}/,/\.attr \.atr-valor \{ order:2;/,/\.ficha-embutida \.ficha-abas \{ flex-wrap:wrap;/])assert.match(css,rx);
+  assert.match(html,/<span class="muted">Ficha do monstro<\/span><button type="button" class="small" id="sh-close">Fechar \(Esc\)<\/button>/);assert.match(html,/<strong>Ficha do personagem<\/strong><button type="button" id="ci-resumo-fechar">Fechar \(Esc\)<\/button>/);
+});
