@@ -6,7 +6,7 @@
   const esc = nuvem.esc;
   const params = new URLSearchParams(location.search), pedido = params.get("campanha"), personagemPedido = params.get("personagem");
   const conta = nuvem.usuario()?.id;
-  let forcarSync = false, vistos = {}, jogador = false, camps = [], pers = [], atual = "", enviado = {}, falhas = 0, adicionouPedido = false, buscando = false, carregou = false, resumoId = null, focoAnterior = null, ultimaGrade = null;
+  let forcarSync = false, vistos = {}, jogador = false, camps = [], pers = [], atual = "", enviado = {}, enviadoT = {}, falhas = 0, adicionouPedido = false, buscando = false, carregou = false, resumoId = null, focoAnterior = null, ultimaGrade = null;
   const msg = (t, erro) => { $("#ci-msg").innerHTML = erro ? '<span class="err">'+esc(t)+'</span>' : esc(t || ""); };
   const mesmaConta = () => nuvem.usuario()?.id === conta;
   const emCombate = p => window.__ini.list().some(c => c.pid === p.id);
@@ -50,6 +50,8 @@
   };
   const rolagemAuto=()=>window.__ini.rolagemAuto?window.__ini.rolagemAuto():true;
   window.addEventListener?.('ini:rolagem',()=>{ultimaGrade=null;desenhar();});
+  const gravar = () => !jogador && !!($('#ci-gravar') && $('#ci-gravar').checked);     // escolha explícita: por padrão o combate é de teste e não grava na ficha
+  const chaveGravar = () => 'ini_gravar_fichas:' + atual;
   const selecionados=new Set(), digitadas = {}, resultadosCartao = {};   // digitadas: iniciativa informada à mão (dado físico) por personagem
   const ocupadas = new Set();
   const basesPV = new Map();
@@ -80,7 +82,7 @@
     const f = p.ficha || {};
     const usados = new Set(window.__ini.list().map(c => c.name));
     let nome = p.nome, n = 2; while (usados.has(nome)) nome = p.nome+" "+n++;
-    window.__ini.add({name:nome,kind:f.npc?"NPC":"Personagem",initiative:Number.isFinite(numero)?numero:rolar?window.GRUPO_PERSONAGENS.rolar(p):null,hp:p.pv_atual,maxHp:Math.max(1,p.pv_max),ac:p.ca||0,key:"",pid:p.id,campanhaId:atual,foto:f.foto||""});
+    window.__ini.add({name:nome,kind:f.npc?"NPC":"Personagem",initiative:Number.isFinite(numero)?numero:rolar?window.GRUPO_PERSONAGENS.rolar(p):null,hp:p.pv_atual,maxHp:Math.max(1,p.pv_max),ac:p.ca||0,key:"",pid:p.id,campanhaId:atual,foto:f.foto||"",sync:gravar()});
     enviado[p.id] = p.pv_atual;
   }
   /* iniciativa informada à mão (vazio = não informada); aceita inteiros razoáveis */
@@ -170,7 +172,7 @@
       const c=window.CAMPANHAS_UI?.validar?window.CAMPANHAS_UI.validar(ms,preferida):camps.find(c=>c.id===preferida);
       if(!c){if(preferida)window.CAMPANHAS_UI?.esquecer(preferida);atual='';jogador=false;window.__ini.trocarContexto?.('');contextoVisual(true);box.hidden=true;await window.CAMPANHAS_UI?.montarSeletor({});return;}   // sem campanha ativa: rastreador próprio, independente do mestre
       jogador=c.papel==='jogador';const titulo=box.querySelector('summary');if(titulo)titulo.textContent=jogador?'Meus personagens':'Personagens';
-      atual=c.id;window.CAMPANHAS_UI?.lembrar(atual);window.__ini.trocarContexto?.(atual);contextoVisual(true);box.open=true;
+      atual=c.id;{const g=$('#ci-gravar'),r=$('#ci-gravar-rotulo'),d=$('#ci-gravar-dica');if(g){try{g.checked=!jogador&&localStorage.getItem(chaveGravar())==='1';}catch(_){g.checked=false;}}if(r)r.hidden=jogador;if(d)d.hidden=jogador;}window.CAMPANHAS_UI?.lembrar(atual);window.__ini.trocarContexto?.(atual);contextoVisual(true);box.open=true;
       await carregar();if(g!==geracaoContexto)return;
       await window.CAMPANHAS_UI?.montarSeletor({...c,podeEditarVisual:false});
       pararConsulta=nuvem.observar?.(carregar,5000);
@@ -188,6 +190,7 @@
     if(e.target.closest('#ci-rolar')){adicionarSelecionados([...selecionados]).catch(e=>msg(e.message,true));return;}
     if(e.target.closest("#ci-recarregar")){falhas=0;carregou=false;forcarSync=true;carregar();}
   });
+  box.addEventListener("change",e=>{if(e.target.id==='ci-gravar'){try{localStorage.setItem(chaveGravar(),e.target.checked?'1':'0');}catch(_){}msg(e.target.checked?'Os personagens adicionados a partir de agora gravam PV e PV temporários na ficha real.':'Combate de teste: a ficha real não será alterada.');}});
   box.addEventListener("input",e=>{if(e.target.dataset?.ciIni!==undefined)digitadas[e.target.dataset.ciIni]=e.target.value;});
   box.addEventListener("change",e=>{
     if(e.target.dataset?.ciSel){if(!podeUsar())return;const pid=e.target.dataset.ciSel;if(!pers.some(p=>p.id===pid&&!emCombate(p)))return;e.target.checked?selecionados.add(pid):selecionados.delete(pid);desenhar();document.querySelector('[data-ci-sel="'+pid+'"]')?.focus();return;}
@@ -200,11 +203,11 @@
   setInterval(async()=>{
     if(!sincroniza() || falhas>5)return;
     for(const c of window.__ini.list()){
-      if(!c.pid || ocupadas.has(c.pid) || !pers.some(p=>p.id===c.pid))continue;
-      const v=Math.max(0,Math.min(c.maxHp,Math.round(c.hp)));
-      if(enviado[c.pid]===undefined){enviado[c.pid]=v;continue;}
-      if(enviado[c.pid]===v)continue;
-      try{if(await nuvem.rpc('eh_mestre',{c:atual}) !== true){bloquear();return;}const r=await nuvem.patch("personagens?id=eq."+encodeURIComponent(c.pid),{pv_atual:v});if(!r?.[0])throw new Error("A ficha não confirmou a atualização.");enviado[c.pid]=v;falhas=0;}
+      if(!c.pid || c.sync!==true || ocupadas.has(c.pid) || !pers.some(p=>p.id===c.pid))continue;     // sem sync marcado é combate de teste: nunca grava
+      const v=Math.max(0,Math.min(c.maxHp,Math.round(c.hp))),t=Math.max(0,Math.round(Number(c.temp)||0));
+      if(enviado[c.pid]===undefined){enviado[c.pid]=v;enviadoT[c.pid]=t;continue;}
+      if(enviado[c.pid]===v&&(enviadoT[c.pid]??0)===t)continue;
+      try{if(await nuvem.rpc('eh_mestre',{c:atual}) !== true){bloquear();return;}const r=await nuvem.patch("personagens?id=eq."+encodeURIComponent(c.pid),{pv_atual:v,pv_temp:t});if(!r?.[0])throw new Error("A ficha não confirmou a atualização.");enviado[c.pid]=v;enviadoT[c.pid]=t;falhas=0;}
       catch(e){falhas++;msg("Não foi possível salvar os PV na ficha: "+e.message,true);}
     }
   },2500);
@@ -224,7 +227,7 @@
       if(!podeUsar() || !rows[0])return;
       const p=rows[0],combatente=window.__ini.list().find(c=>c.pid===pid),base=basesPV.get(pid);
       // Preserva dano/cura feitos no combate enquanto a ficha estava gravando.
-      if(combatente && Number.isFinite(base) && combatente.hp!==base){
+      if(combatente && combatente.sync===true && Number.isFinite(base) && combatente.hp!==base){
         p.pv_atual=Math.max(0,Math.min(p.pv_max,p.pv_atual+combatente.hp-base));
         const salvo=await nuvem.patch('personagens?id=eq.'+encodeURIComponent(pid),{pv_atual:p.pv_atual});
         if(!salvo?.[0])throw Error('A ficha não confirmou a conciliação de PV.');

@@ -21,3 +21,23 @@ test('lista do combate: quem está na vez sobe ao topo em destaque, o próximo v
   for(const [vez,esperado] of [['idC','CDAB'],['idA','ABCD'],['idD','DABC'],['idB','BCDA'],[null,'ABCD']]){const r=ordem(vez);assert.equal(r.nomes.join(''),esperado,'vez de '+vez);if(vez){assert.equal(r.ativos,1);assert.equal(r.proximos,1);assert.ok(r.h.indexOf('class="combatant active')<r.h.indexOf('proximo'),'o destaque vem antes do próximo');}}
   const r=ordem('idC');assert.match(r.h,/Turno atual/);assert.match(r.h,/proximo-badge">Próximo/);
 });
+const novo=(lista,extra={})=>{const I=iniciativa({combatants:lista.map(([name,i,hp,kind],k)=>({id:'i'+name,name,kind:kind||'Monstro',initiative:i,hp:hp??10,maxHp:10,ac:12,order:k})),currentId:extra.vez||null,round:extra.rodada||1,nextOrder:9,stats:{}});return I;};
+test('PV rápidos: PV temporários absorvem o dano primeiro e não se acumulam; cura respeita o máximo; Desfazer volta só o que mudou',()=>{
+  const I=novo([['A',20,10],['B',10,10,'Personagem']]),[a,b]=I.list();
+  assert.equal(I.darTemp(a.id,5),true);assert.equal(a.temp,5);I.darTemp(a.id,3);assert.equal(a.temp,5,'vale o maior, não soma');I.darTemp(a.id,8);assert.equal(a.temp,8);
+  I.aplicarDano(a.id,6);assert.equal(a.temp,2);assert.equal(a.hp,10,'só os temporários perderam');I.aplicarDano(a.id,5);assert.equal(a.temp,0);assert.equal(a.hp,7);
+  I.curar(a.id,50);assert.equal(a.hp,10,'cura limitada ao máximo');
+  I.aplicarDano(a.id,4);assert.equal(a.hp,6);assert.equal(I.desfazerUltimo(),true);assert.equal(a.hp,10);assert.equal(I.desfazerUltimo(),true);assert.equal(a.hp,7,'desfaz a cura que subiu de 7 para 10');
+  assert.equal(I.curar(a.id,0),false);assert.equal(I.aplicarDano(a.id,-3),false);assert.equal(b.hp,10,'o outro combatente não mudou');
+});
+test('personagem a 0 PV: dano soma falha contra a morte (3 = morte); cura zera; monstro a 0 PV não joga o turno e os mortos ficam de fora; rodada conta certo',()=>{
+  const I=novo([['A',20,10],['B',15,10,'Personagem'],['C',10,10],['D',5,10]],{vez:'iD'}),[a,b,c,d]=I.list();
+  I.aplicarDano(b.id,10);assert.equal(b.hp,0);assert.deepEqual(JSON.parse(JSON.stringify(b.morte)),{s:0,f:0});I.aplicarDano(b.id,3);I.aplicarDano(b.id,3);assert.equal(b.morte.f,2);I.curar(b.id,4);assert.equal(b.morte,null,'cura a partir de 0 zera');assert.equal(b.hp,4);
+  I.aplicarDano(b.id,4);I.aplicarDano(b.id,1);I.aplicarDano(b.id,1);I.aplicarDano(b.id,1);assert.equal(b.morto,true,'três falhas');
+  I.aplicarDano(a.id,10);assert.equal(a.hp,0,'monstro a 0 PV');
+  const r0=I.rodada();I.moverTurno(1);assert.equal(I.list().find(x=>x.id==='iD').hp,10);assert.equal(I.rodada(),r0+1,'D era o último: nova rodada');
+  const J=novo([['A',20,0],['B',15,10,'Personagem'],['C',10,10]],{vez:'iC',rodada:3});J.moverTurno(1);assert.equal(J.atual(),'iB','A (monstro a 0 PV) é pulado');assert.equal(J.rodada(),4);
+  const K=novo([['A',20,0],['B',15,0,'Personagem'],['C',10,10]],{vez:'iC'});K.moverTurno(1);assert.equal(K.atual(),'iB','personagem a 0 PV joga (salvaguarda contra a morte)');
+  const L=novo([['A',20,0],['B',15,0],['C',10,0]],{vez:'iC'});L.moverTurno(1);assert.equal(L.atual(),'iA','todos derrotados: segue a ordem normal');
+  const M=novo([['A',20,10],['B',15,0],['C',10,10]],{vez:'iC',rodada:2});M.moverTurno(-1);assert.equal(M.atual(),'iA','voltando também pula quem está derrotado');assert.equal(M.rodada(),2);
+});

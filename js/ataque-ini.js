@@ -118,7 +118,8 @@
   const faixa = typeof document !== "undefined" && document.getElementById("acoes-da-vez");
   if (!faixa || !window.__ini) return;
   const $ = (s) => faixa.querySelector(s), esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  let fontes = [], ultimo = null, gastando = false;
+  let fontes = [], gastando = false, seq = 0, blocos = [];   // blocos: resultados recentes (cada um com o próprio Aplicar, para ataques contra alvos diferentes sem dano duplicado)
+  const resultados = {};
   const lista = () => window.__ini.list();
   const estado = () => window.__ini.__atk || (window.__ini.__atk = {});
   const papel = () => (window.__ini.papel ? window.__ini.papel() : "sem-campanha");
@@ -150,11 +151,12 @@
   const defesasDo = (c) => (c && c.pid && window.__ini.defesasPersonagem ? window.__ini.defesasPersonagem(c.pid) : c && c.key && window.__ini.defesasDe ? window.__ini.defesasDe(c.key) : null);
   const salvaDo = (c, ab) => { const v = c && c.pid && window.__ini.salvaPersonagem ? window.__ini.salvaPersonagem(c.pid, ab) : c && c.key && window.__ini.salvaDe ? window.__ini.salvaDe(c.key, ab) : null; return Number.isFinite(v) ? v : null; };
   const defesasTexto = (d) => d ? [["resistência a", d.resistencias], ["imunidade a", d.imunidades], ["vulnerabilidade a", d.vulnerabilidades]].filter(([, l]) => l && l.length).map(([r, l]) => r + " " + l.join(", ")).join("; ") : "";
+  function limparResultados() { for (const k of Object.keys(resultados)) delete resultados[k]; blocos = []; const r = $("#vez-res"); if (r) r.innerHTML = ""; }
   function desenharVez() {
     const l = lista(), atk = atacanteAtual();
     if (!atk || l.length < 2) { faixa.hidden = true; $("#vez-topo").innerHTML = ""; $("#vez-avancado").hidden = true; $("#vez-res").innerHTML = ""; return; }
     const sel = estado(), cur = window.__ini.atual?.() ?? null;
-    if ((sel.vezDe ?? null) !== cur) { sel.vezDe = cur; sel.manualAtacante = false; sel.idx = null; sel.circulo = null; sel.alvo = null; ultimo = null; $("#vez-res").innerHTML = ""; $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null; }   // mudou o turno: a faixa acompanha quem está na vez e limpa o resultado anterior
+    if ((sel.vezDe ?? null) !== cur) { sel.vezDe = cur; sel.manualAtacante = false; sel.idx = null; sel.circulo = null; sel.alvo = null; limparResultados(); $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null; }   // mudou o turno: a faixa acompanha quem está na vez e limpa o resultado anterior
     sel.atacante = atk.id; fontes = fontesDe(atk);
     if (!l.some((c) => c.id === sel.alvo) || sel.alvo === atk.id) sel.alvo = alvoPadrao(l, atk).id;
     faixa.hidden = false;
@@ -237,9 +239,11 @@
         if (houveDano) { dano = N > 1 ? { bruto: somaDano, total: somaDano, detalhe: [], critico: false, metade: false, ajustes: [] } : ultimoDano; if (N > 1) linhas.push(`<p><b>Dano total:</b> ${somaDano}</p>`); }
       }
       const dt = defesasTexto(defesasDo(alvo)); if (dano && dt) linhas.push(`<p class="muted">Defesas de ${esc(alvo.name)}: ${esc(dt)}${(defesasDo(alvo) || {}).naoMagico ? " (resistências a ataques não mágicos: confira se a arma é mágica)" : ""}.</p>`);
-      ultimo = { dano, alvoId: alvo.id, atacanteId: atacante.id };
-      if (dano && dano.total >= 0) linhas.push(`<div class="row"><button type="button" id="atk-aplicar" class="danger">Aplicar ${dano.total} de dano em ${esc(alvo.name)}</button><span class="muted">PV ${num(alvo.hp)} → ${Math.max(0, num(alvo.hp) - dano.total)}</span></div>`);
-      res.innerHTML = linhas.join("");
+      const n = ++seq;
+      if (dano && dano.total >= 0) resultados[n] = { dano, alvoId: alvo.id, atacanteId: atacante.id, aplicado: false };
+      if (dano && dano.total >= 0) linhas.push(`<div class="row"><button type="button" class="danger atk-aplicar" data-aplicar="${n}">Aplicar ${dano.total} de dano em ${esc(alvo.name)}</button><span class="muted">PV ${num(alvo.hp)} → ${Math.max(0, num(alvo.hp) - dano.total)}</span></div>`);
+      blocos.unshift(`<div class="res-ataque" data-res="${n}">${linhas.join("")}</div>`); blocos = blocos.slice(0, 5);   // os mais recentes em cima; os anteriores continuam aplicáveis uma vez
+      res.innerHTML = blocos.join("");
     } finally { gastando = false; }
   }
   /* Rolagem automática desligada: em vez de rolar, a faixa pede os valores (d20 natural, salvaguarda do alvo, dano) e calcula o resultado com as mesmas regras */
@@ -270,17 +274,18 @@
     rolar(M.parte, { ...M.opts, manual: { d20, dano, salva } });
   }
   const dispara = (parte, opts) => (auto() ? rolar(parte, opts) : pedirManual(parte, opts));
-  function aplicarUltimo(b) {
-    const U = ultimo; ultimo = null;                                   // um clique aplica uma vez só
+  /* cada resultado tem o próprio Aplicar e só vale uma vez; o clique duplo ou um segundo clique não repete o dano */
+  function aplicarResultado(n, b) {
+    const U = resultados[n]; if (!U || U.aplicado) return; U.aplicado = true;
     window.__ini.aplicarDano(U.alvoId, U.dano.total, U.atacanteId);
-    const alvo = lista().find((c) => c.id === U.alvoId), res = $("#vez-res");
+    const alvo = lista().find((c) => c.id === U.alvoId);
     const nota = `<p><b>Dano aplicado.</b> ${esc(alvo ? alvo.name : "Alvo")}: PV ${alvo ? num(alvo.hp) : "?"}/${alvo ? num(alvo.maxHp) : "?"}.</p>`;
-    res.innerHTML = res.innerHTML.replace(/<div class="row"><button type="button" id="atk-aplicar"[\s\S]*?<\/div>/, "") + nota;
-    if (b) b.disabled = true;
+    blocos = blocos.map((h) => (h.includes(`data-res="${n}"`) ? h.replace(/<div class="row"><button type="button" class="danger atk-aplicar"[\s\S]*?<\/div>/, "").replace(/<\/div>$/, nota + "</div>") : h));
+    $("#vez-res").innerHTML = blocos.join(""); if (b) b.disabled = true;
   }
   faixa.addEventListener("change", (e) => {
     const sel = estado(), id = e.target.id;
-    if (id === "vez-atacante") { sel.atacante = e.target.value; sel.manualAtacante = true; sel.manualPara = window.__ini.atual?.() ?? null; sel.idx = null; sel.circulo = null; ultimo = null; $("#vez-res").innerHTML = ""; desenharVez(); }
+    if (id === "vez-atacante") { sel.atacante = e.target.value; sel.manualAtacante = true; sel.manualPara = window.__ini.atual?.() ?? null; sel.idx = null; sel.circulo = null; limparResultados(); desenharVez(); }
     else if (id === "vez-alvo") { sel.alvo = e.target.value; sel.salvaManual = false; }
     else if (id === "vez-vezes") sel.vezes = Math.max(1, Math.min(8, Math.round(num(e.target.value, 1))));
     else if (id === "atk-salva-bonus") { sel.salvaManual = true; sel.salvaBonus = num(e.target.value, 0); }
@@ -297,12 +302,12 @@
     else if (b.dataset.vez !== undefined) dispara("tudo", { rapido: true, idx: +b.dataset.vez });
     else if (b.dataset.vezAvancado !== undefined) { const sel = estado(); sel.avancado = !sel.avancado; desenharVez(); }
     else if (b.id === "atk-rolar") dispara("tudo"); else if (b.id === "atk-so-ataque") dispara("ataque"); else if (b.id === "atk-so-dano") dispara("dano");
-    else if (b.id === "atk-aplicar" && ultimo && ultimo.dano) aplicarUltimo(b);
+    else if (b.dataset.aplicar !== undefined) aplicarResultado(+b.dataset.aplicar, b);
   });
   /* botão "Atacar" do cartão do combatente: abre esta mesma interface com ele como atacante */
   window.addEventListener?.("ini:atacar", (e) => {
     const sel = estado(), id = e.detail && e.detail.id; if (!id) return;
-    sel.atacante = id; sel.manualAtacante = true; sel.manualPara = window.__ini.atual?.() ?? null; sel.idx = null; sel.circulo = null; ultimo = null; $("#vez-res").innerHTML = "";
+    sel.atacante = id; sel.manualAtacante = true; sel.manualPara = window.__ini.atual?.() ?? null; sel.idx = null; sel.circulo = null; limparResultados();
     desenharVez(); faixa.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
   });
   window.addEventListener?.("ini:rolagem", () => { $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null; desenharVez(); });

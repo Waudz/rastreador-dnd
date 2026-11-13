@@ -72,6 +72,11 @@
         })[char]);
       }
 
+      /* salvaguardas contra a morte (personagem a 0 PV): 3 sucessos estabilizam, 3 falhas matam; cura a partir de 0 PV zera tudo */
+      function moreTpl(c) {
+        const m = c.morte || { s: 0, f: 0 }, bol = (n, ok) => "●".repeat(n) + "○".repeat(3 - n);
+        return c.morto ? `<div class="morte-linha"><b>Morto</b></div>` : c.estavel ? `<div class="morte-linha"><b>Estabilizado</b> (inconsciente, a 0 PV)</div>` : `<div class="morte-linha"><span>Contra a morte: sucessos ${bol(m.s)} falhas ${bol(m.f)}</span><button class="small" type="button" data-morte="${c.id}|s">Sucesso</button><button class="small danger" type="button" data-morte="${c.id}|f">Falha</button></div>`;
+      }
       function editTpl(c) {
         const f = (k, l, t, v) => `<div><label>${l}</label><input data-f="${k}" type="${t}" value="${escapeText(v)}"></div>`;
         return `<article class="combatant editing">${f("name", "Nome", "text", c.name)}${f("initiative", "Iniciativa", "number", pendente(c) ? "" : Number(c.initiative))}${f("ac", "CA", "number", Number(c.ac))}${f("hp", "PV", "number", Number(c.hp))}${f("maxHp", "PV máx.", "number", Number(c.maxHp))}<div class="row-actions" style="align-self:end"><button class="small primary" type="button" data-save="${c.id}">Salvar</button><button class="small subtle" type="button" data-cancel="1">Cancelar</button></div></article>`;
@@ -167,15 +172,52 @@
         aplicarRolagemAuto(); render(true);
         if (window.dispatchEvent && typeof CustomEvent === "function") window.dispatchEvent(new CustomEvent("ini:rolagem"));
       });
+      /* PV rápidos: registrar dano/cura sem simular ataque. Cada alteração guarda um estado para "Desfazer" (só o que ela mexeu). */
+      const desfazer = [], quantidades = {};   // quantidades: o que foi digitado em cada cartão (o redesenho não apaga)
+      const copiaEstado = (c) => ({ hp: c.hp, temp: c.temp || 0, morte: c.morte ? { ...c.morte } : null, estavel: !!c.estavel, morto: !!c.morto, conc: c.conc || null });
+      function guardarDesfazer(rotulo, ids) {
+        const estados = {}; for (const id of ids) { const c = combatants.find((x) => x.id === id); if (c) estados[id] = copiaEstado(c); }
+        desfazer.push({ rotulo, estados, stats: JSON.parse(JSON.stringify(stats)) }); if (desfazer.length > 30) desfazer.shift();
+        const b = $("desfazer"); if (b) { b.disabled = false; b.title = "Desfazer: " + rotulo; }
+      }
+      function desfazerUltimo() {
+        const u = desfazer.pop(); if (!u) return false;
+        for (const [id, e] of Object.entries(u.estados)) { const c = combatants.find((x) => x.id === id); if (c) Object.assign(c, e, { morte: e.morte, conc: e.conc }); }
+        stats = u.stats; const b = $("desfazer"); if (b) { b.disabled = !desfazer.length; b.title = desfazer.length ? "Desfazer: " + desfazer[desfazer.length - 1].rotulo : "Nada para desfazer"; }
+        render(); if (window.FEEDBACK) window.FEEDBACK.mostrar("Desfeito: " + u.rotulo); return true;
+      }
+      const aviso = (t) => { if (window.FEEDBACK) window.FEEDBACK.mostrar(t); };
+      /* dano a um combatente: absorvido primeiro pelos PV temporários; a 0 PV encerra a concentração; personagem a 0 PV que sofre dano soma uma falha na salvaguarda contra a morte (2014) */
       function aplicarDano(id, amount, quemId) {
         const alvo = combatants.find((c) => c.id === id), n = Math.max(0, Math.floor(Number(amount) || 0));
         if (!alvo || !n) return false;
         const antes = Number(alvo.hp), c = quemId && combatants.find((x) => x.id === quemId), quem = c ? { id: c.id, name: c.name } : attacker();
-        alvo.hp = Math.max(0, antes - n);
+        guardarDesfazer(`${alvo.name} −${n} PV`, [alvo.id]);
+        const absorvido = Math.min(Number(alvo.temp) || 0, n), resto = n - absorvido; alvo.temp = (Number(alvo.temp) || 0) - absorvido;
+        alvo.hp = Math.max(0, antes - resto);
         const a = statOf(quem.id, quem.name); a.dealt += n;
         if (antes > 0 && alvo.hp === 0) a.kills++;
         statOf(alvo.id, alvo.name).taken += n;
-        render();
+        let msg = absorvido ? `${absorvido} absorvido pelos PV temporários. ` : "";
+        if (antes > 0 && alvo.hp === 0) { if (alvo.conc) { msg += `${alvo.name} perdeu a concentração em ${alvo.conc}. `; alvo.conc = null; } if (alvo.kind === "Personagem") alvo.morte = { s: 0, f: 0 }; msg += `${alvo.name} caiu a 0 PV. `; }
+        else if (antes === 0 && resto > 0 && alvo.kind === "Personagem") { alvo.morte = alvo.morte || { s: 0, f: 0 }; alvo.morte.f = Math.min(3, alvo.morte.f + 1); alvo.estavel = false; msg += `Dano a 0 PV: falha na salvaguarda contra a morte (${alvo.morte.f}/3). `; if (alvo.morte.f >= 3) { alvo.morto = true; msg += `${alvo.name} morreu. `; } }
+        else if (alvo.conc && resto > 0 && alvo.hp > 0) msg += `Concentração de ${alvo.name} (${alvo.conc}): salvaguarda de Constituição, CD ${Math.max(10, Math.floor(resto / 2))}. `;
+        render(); if (msg) aviso(msg.trim());
+        return true;
+      }
+      function curar(id, amount) {
+        const alvo = combatants.find((c) => c.id === id), n = Math.max(0, Math.floor(Number(amount) || 0)); if (!alvo || !n) return false;
+        guardarDesfazer(`${alvo.name} +${n} PV`, [alvo.id]);
+        const antes = Number(alvo.hp); alvo.hp = Math.min(Number(alvo.maxHp), antes + n);
+        const quem = attacker(); if (alvo.hp > antes) statOf(quem.id, quem.name).healed += alvo.hp - antes;
+        if (antes === 0 && alvo.hp > 0) { alvo.morte = null; alvo.estavel = false; }
+        render(); return true;
+      }
+      function darTemp(id, amount) {
+        const alvo = combatants.find((c) => c.id === id), n = Math.max(0, Math.floor(Number(amount) || 0)); if (!alvo || !n) return false;
+        guardarDesfazer(`${alvo.name} PV temp.`, [alvo.id]);
+        const antes = Number(alvo.temp) || 0; alvo.temp = Math.max(antes, n);                    // 2014: PV temporários não se acumulam; vale o maior
+        render(); aviso(alvo.temp > antes ? `${alvo.name}: ${alvo.temp} PV temporários.` : `${alvo.name} já tem ${antes} PV temporários (não se acumulam; vale o maior).`);
         return true;
       }
       function statOf(id, name) {
@@ -271,17 +313,22 @@
                 <div class="stat">Máx. PV<strong>${Number(c.maxHp)}</strong></div>
               </div>
               <div class="hp-block">
-                <div class="hp-top"><span>Pontos de vida</span><strong>${Number(c.hp)} / ${Number(c.maxHp)}</strong></div>
+                <div class="hp-top"><span>Pontos de vida</span><strong>${Number(c.hp)} / ${Number(c.maxHp)}${Number(c.temp) > 0 ? ` <span class="pv-temp">+${Number(c.temp)} temp.</span>` : ""}</strong></div>
                 <div class="hp-track"><div class="hp-fill ${hpClass}" style="width:${pct}%"></div></div>
                 <div class="hp-controls">
-                  <input type="number" min="1" step="1" value="1" aria-label="Quantidade de PV para alterar" data-amount="${c.id}">
+                  <input type="number" min="1" step="1" inputmode="numeric" value="${escapeText(quantidades[c.id] ?? "")}" placeholder="PV" aria-label="Quantidade de PV para alterar" data-amount="${c.id}">
                   <button class="small danger" type="button" data-damage="${c.id}">${ico("minus")}Dano</button>
                   <button class="small" type="button" data-heal="${c.id}">${ico("plus")}Cura</button>
+                  <button class="small" type="button" data-temp="${c.id}" title="PV temporários (não se acumulam)">Temp.</button>
                   <button class="small primary" type="button" data-atacar="${c.id}">${ico("swords")}Atacar</button>
                   <button class="small" type="button" data-reroll="${c.id}" ${rolagemAuto() ? "" : "disabled"} title="${rolagemAuto() ? "Rolar a iniciativa de novo (d20 + modificador)" : "Rolagem automática desligada: digite a iniciativa no campo"}" aria-label="Rolar a iniciativa de ${escapeText(c.name)} de novo">${ico("d20")}</button>
                 </div>
               </div>
+              ${c.pid ? `<div class="sync-linha"><span class="sync-selo ${c.sync ? "grava" : "teste"}">${c.sync ? "Grava PV na ficha" : "Teste: não grava na ficha"}</span>${window.__ini && window.__ini.papel && window.__ini.papel() === "mestre" ? `<button class="small subtle" type="button" data-sync="${c.id}">${c.sync ? "Parar de gravar" : "Gravar na ficha"}</button>` : ""}</div>` : ""}
+              ${c.conc ? `<div class="conc-linha"><span class="conc-chip">Concentrando: ${escapeText(c.conc)}</span><button class="small subtle" type="button" data-conc-fim="${c.id}">Encerrar</button></div>` : ""}
+              ${Number(c.hp) <= 0 && c.kind === "Personagem" ? moreTpl(c) : ""}
               <div class="row-actions">
+                <button class="small subtle" type="button" data-conc="${c.id}">Concentração</button>
                 <button class="small subtle" type="button" data-fxopen="${c.id}">${ico("sparkles")}Efeito</button>
                 <button class="small subtle" type="button" data-edit="${c.id}">Editar</button>
                 <button class="small subtle" type="button" data-remove="${c.id}" aria-label="Remover ${escapeText(c.name)}">Remover</button>
@@ -362,21 +409,36 @@
 
         if (button.dataset.atacar) { window.dispatchEvent?.(new CustomEvent("ini:atacar", { detail: { id: button.dataset.atacar } })); return; }
 
-        if (button.dataset.damage || button.dataset.heal) {
-          const id = button.dataset.damage || button.dataset.heal;
+        if (button.dataset.damage || button.dataset.heal || button.dataset.temp) {
+          const id = button.dataset.damage || button.dataset.heal || button.dataset.temp;
           const person = combatants.find((c) => c.id === id);
           const amountInput = document.querySelector(`[data-amount="${id}"]`);
-          const amount = Math.max(1, Math.floor(Number(amountInput?.value) || 1));
+          const amount = Math.floor(Number(amountInput && amountInput.value));
           if (!person) return;
-          if (button.dataset.damage) aplicarDano(id, amount);
-          else {
-            const antes = Number(person.hp), quem = attacker();
-            person.hp = Math.min(Number(person.maxHp), antes + amount);
-            if (person.hp > antes) statOf(quem.id, quem.name).healed += person.hp - antes;
-          }
-          render();
+          if (!(amount >= 1)) { aviso("Digite a quantidade de PV primeiro."); if (amountInput && amountInput.focus) amountInput.focus(); return; }   // sem quantidade não altera nada (antes valia 1 sem querer)
+          delete quantidades[id];                                          // limpa para o clique duplo não aplicar duas vezes
+          if (button.dataset.damage) aplicarDano(id, amount); else if (button.dataset.heal) curar(id, amount); else darTemp(id, amount);
           return;
         }
+
+        if (button.dataset.sync) {                       // escolha explícita de gravar (ou parar de gravar) PV na ficha real
+          const p = combatants.find((c) => c.id === button.dataset.sync); if (!p) return;
+          if (!p.sync && !window.confirm(`Passar a gravar os PV e PV temporários de ${p.name} na ficha real?`)) return;
+          p.sync = !p.sync; render(); aviso(p.sync ? `${p.name}: PV gravados na ficha.` : `${p.name}: modo teste, a ficha não muda.`); return;
+        }
+        if (button.dataset.morte) {
+          const [id, tipo] = button.dataset.morte.split("|"), p = combatants.find((c) => c.id === id); if (!p) return;
+          guardarDesfazer(`${p.name} contra a morte`, [p.id]);
+          p.morte = p.morte || { s: 0, f: 0 }; p.morte[tipo] = Math.min(3, p.morte[tipo] + 1);
+          if (p.morte.s >= 3) { p.estavel = true; aviso(`${p.name} estabilizou.`); } if (p.morte.f >= 3) { p.morto = true; aviso(`${p.name} morreu.`); }
+          render(); return;
+        }
+        if (button.dataset.conc) {
+          const p = combatants.find((c) => c.id === button.dataset.conc); if (!p) return;
+          const nome = window.prompt(`Concentração de ${p.name}: qual magia ou efeito?`, p.conc || ""); if (nome === null) return;
+          guardarDesfazer(`${p.name} concentração`, [p.id]); p.conc = nome.trim().slice(0, 40) || null; render(); return;
+        }
+        if (button.dataset.concFim) { const p = combatants.find((c) => c.id === button.dataset.concFim); if (!p) return; guardarDesfazer(`${p.name} concentração`, [p.id]); p.conc = null; render(); return; }
 
         if (button.dataset.remove) {
           const id = button.dataset.remove;
@@ -435,6 +497,8 @@
         finally{iniciando=false;atualizarInicio();if(erroInicio)$('inicio-aviso').textContent=erroInicio;}
       });
 
+      if ($("desfazer")) $("desfazer").addEventListener("click", () => desfazerUltimo());
+      document.addEventListener("input", (e) => { const t = e.target; if (t && t.dataset && t.dataset.amount) quantidades[t.dataset.amount] = t.value; });
       $("next").addEventListener("click", () => moveTurn(1));
       $("previous").addEventListener("click", () => moveTurn(-1));
 
@@ -443,7 +507,13 @@
         if (ordered.length < 2 || !currentId) return;
         let index = ordered.findIndex((c) => c.id === currentId);
         if (index < 0) index = 0;
-        const nextIndex = (index + direction + ordered.length) % ordered.length;
+        /* monstros e NPCs a 0 PV não jogam (personagens a 0 PV jogam: salvaguarda contra a morte); mortos também ficam de fora */
+        const joga = (c) => !c.morto && !(Number(c.hp) <= 0 && c.kind !== "Personagem");
+        let nextIndex = (index + direction + ordered.length) % ordered.length, voltas = 0, tentativas = 0;
+        const passou = (de, para) => (direction > 0 ? para <= de : para >= de);
+        if (passou(index, nextIndex)) voltas++;
+        while (!joga(ordered[nextIndex]) && tentativas < ordered.length) { const anterior = nextIndex; nextIndex = (nextIndex + direction + ordered.length) % ordered.length; if (passou(anterior, nextIndex)) voltas++; tentativas++; }
+        if (!joga(ordered[nextIndex])) { nextIndex = (index + direction + ordered.length) % ordered.length; voltas = passou(index, nextIndex) ? 1 : 0; }   // todos derrotados: segue a ordem normal
         fxNote.textContent = "";
         const atual = ordered[index];
         if (direction > 0 && atual && atual.effects && atual.effects.length) {
@@ -451,8 +521,7 @@
           atual.effects = atual.effects.filter((e) => { if (e.rounds == null) return true; e.rounds--; if (e.rounds <= 0) { fim.push(e.name); return false; } return true; });
           if (fim.length) fxNote.textContent = `Terminou em ${atual.name}: ${fim.join(", ")}.`;
         }
-        if (direction > 0 && nextIndex === 0) round++;
-        if (direction < 0 && index === 0 && round > 1) round--;
+        if (direction > 0) round += voltas; else if (round > 1) round = Math.max(1, round - voltas);
         currentId = ordered[nextIndex].id;
         render();
       }
@@ -471,7 +540,7 @@
       });
 
       /* backup do combate (arquivo do usuário). A importação valida tudo e só substitui depois de quem chamou confirmar. */
-      const CAMPOS = ["id", "name", "kind", "initiative", "hp", "maxHp", "ac", "order", "key", "pid", "campanhaId", "foto", "effects"];
+      const CAMPOS = ["id", "name", "kind", "initiative", "hp", "maxHp", "ac", "order", "key", "pid", "campanhaId", "foto", "effects", "temp", "morte", "estavel", "morto", "conc", "sync"];
       function exportarCombate() { return { v: 1, tipo: "backup-combate", criadoEm: new Date().toISOString(), combatants, currentId, round, nextOrder, stats, report }; }
       function limparCombatente(c, i) {
         if (!c || typeof c !== "object" || typeof c.name !== "string" || !c.name.trim() || c.name.length > 120) throw new Error("Combatente inválido no arquivo (posição " + (i + 1) + ").");
@@ -504,7 +573,7 @@
         rolagemAuto,
         list: () => combatants,
         atual: () => currentId,
-        aplicarDano,
+        aplicarDano, curar, darTemp, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
         trocarContexto,
         contexto: () => contexto,
         add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }

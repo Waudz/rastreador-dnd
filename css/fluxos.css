@@ -178,3 +178,14 @@ body.ficha-embutida { padding-top:0!important; padding-bottom:0!important; }
 .vez-manual input.num { width:84px; text-align:center; }
 @media (max-width:760px), (pointer:coarse) { .vez-manual input.num { min-height:44px; } .vez-manual .row button { min-height:44px; } }
 body.rolagem-manual [data-reroll][disabled], body.rolagem-manual [data-ci-rolar][disabled], body.rolagem-manual #add-d20[disabled] { opacity:.45; cursor:not-allowed; }
+
+/* Iniciativa: PV temporários, concentração e salvaguardas contra a morte */
+.pv-temp { color:var(--gold); font-size:.85em; font-weight:700; }
+.conc-linha, .morte-linha { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin:6px 0; font-size:13px; }
+.conc-chip { padding:2px 8px; border:1px solid var(--gold-dark, var(--line)); border-radius:999px; }
+.morte-linha b { color:var(--gold); }
+@media (max-width:760px), (pointer:coarse) { .conc-linha .small, .morte-linha .small, .hp-controls .small { min-height:44px; } .hp-controls input[data-amount] { min-height:44px; } }
+.sync-linha { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin:6px 0; font-size:12px; }
+.sync-selo { padding:2px 8px; border-radius:999px; border:1px solid var(--line); }
+.sync-selo.grava { border-color:var(--gold); color:var(--gold); }
+#ci-gravar-rotulo { margin-left:auto; min-height:44px; display:inline-flex; align-items:center; gap:6px; }

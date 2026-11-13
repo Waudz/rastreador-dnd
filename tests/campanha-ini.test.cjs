@@ -1,16 +1,16 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
 const {vm,executar,documentoFalso,armazenamento,tick}=require("./helpers.cjs");
 async function fixture({sheet={pv:12},search="?campanha=antiga",erro=false,user={id:"mestre"},ficha={},papel='mestre',autorizado=true}={}){
-  const document=documentoFalso(),localStorage=armazenamento(),lista=[],consultas=[],rpcs=[],eventos={};let atualizar;
+  const document=documentoFalso(),localStorage=armazenamento(),lista=[],consultas=[],rpcs=[],intervalos=[],eventos={};let atualizar;
   localStorage.setItem("ini_campanha","antiga");
   const nuvem={usuario:()=>user,esc:s=>String(s??""),rpc:async n=>{rpcs.push(n);return autorizado;},observar(fn){atualizar=fn;},get:async q=>{
     consultas.push(q);if(erro)throw Error("Permissão recusada");
     return q.startsWith("membros")?[{papel,campanha:{id:"antiga",nome:"Antiga"}},{papel,campanha:{id:"atual",nome:"Atual"}}]:[{id:"p",nome:"Herói",pv_atual:sheet.pv,pv_max:15,ca:13,ficha:{foto:"data:image/png;base64,FOTO",classes:[{c:"Bard",n:2}],atributos:{des:14},...ficha}}];
   }};
   const window={nuvem,addEventListener:(n,fn)=>eventos[n]=fn,__ini:{list:()=>lista,add:c=>lista.push(c),render(){}}};
-  const c=vm.createContext({window,nuvem,document,location:{search,origin:'http://localhost'},localStorage,URLSearchParams,setInterval(){}});
+  const c=vm.createContext({window,nuvem,document,location:{search,origin:'http://localhost'},localStorage,URLSearchParams,setInterval(fn){intervalos.push(fn);}});
   executar("js/origens.js",c);executar("js/regras.js",c);c.REGRAS=window.REGRAS;executar('js/ficha-componentes.js',c);executar('js/rolagens.js',c);executar('js/grupo-personagens.js',c);executar("js/campanha-ini.js",c);await tick();
-  return {document,lista,consultas,rpcs,atualizar,nuvem,eventos,window,sheet};
+  return {document,lista,consultas,rpcs,intervalos,atualizar,nuvem,eventos,window,sheet};
 }
 test("link da campanha escolhe a campanha atual em vez da preferência antiga",async()=>{
   const f=await fixture({search:"?campanha=atual&personagem=p"});
@@ -86,6 +86,7 @@ test('dano no combate durante gravação da ficha é conciliado sem perder alter
  frame.contentWindow={};frame.dataset={personagem:'p'};
  const mensagem=tipo=>({origin:'http://localhost',source:frame.contentWindow,data:{tipo,id:'p'}});
  await f.eventos.message(mensagem('ficha-salvando'));
+ f.lista[0].sync=true;   // gravar na ficha é escolha explícita
  f.lista[0].hp=10;
  const get=f.nuvem.get;f.nuvem.get=async q=>{const r=await get(q);if(q.startsWith('personagens'))r[0].pv_atual=9;return r;};
  let gravado;f.nuvem.patch=async(_q,d)=>{gravado=d.pv_atual;return[{versao:2}];};
@@ -189,4 +190,13 @@ test('rolagem automática desligada: o botão Rolar d20 do cartão fica desativa
  box.events.change({target:{dataset:{ciSel:'p'},checked:true}});assert.match(f.document.el('ci-selecao').innerHTML,/Adicionar \(1\)/);assert.ok(!/Rolar iniciativa/.test(f.document.el('ci-selecao').innerHTML));
  box.events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();assert.equal(f.lista.length,1);assert.equal(f.lista[0].initiative,null);assert.match(f.document.el('ci-resultado').innerHTML,/sem iniciativa \(rolagem automática desligada/);
  const g=await fixture({search:'?campanha=atual'});g.window.__ini.rolagemAuto=()=>false;const b2=g.document.el('camp-ini');b2.events.input({target:{dataset:{ciIni:'p'},value:'14'}});b2.events.change({target:{dataset:{ciSel:'p'},checked:true}});b2.events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();assert.equal(g.lista[0].initiative,14,'o número digitado é usado');assert.match(g.document.el('ci-resultado').innerHTML,/Herói: 14 \(informado por você\)/);
+});
+
+test('combate de teste não grava na ficha: só combatentes marcados explicitamente gravam PV e PV temporários; a escolha é por campanha',async()=>{
+ const f=await fixture({search:'?campanha=atual'});const box=f.document.el('camp-ini'),patches=[];f.nuvem.patch=async(q,d)=>{patches.push([q,d]);return[{versao:2}];};
+ box.events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});assert.equal(f.lista[0].sync,false,'padrão: teste');
+ const tic=async()=>{for(const fn of f.intervalos)await fn();};
+ await tic();f.lista[0].hp=3;await tic();assert.equal(patches.length,0,'o teste nunca altera a ficha real');
+ f.lista[0].sync=true;await tic();f.lista[0].hp=4;f.lista[0].temp=5;await tic();assert.deepEqual(JSON.parse(JSON.stringify(patches[0][1])),{pv_atual:3,pv_temp:0},'ao ligar, grava o estado atual do combate (escolha explícita)');assert.equal(patches.length,2);assert.deepEqual(JSON.parse(JSON.stringify(patches[1][1])),{pv_atual:4,pv_temp:5});
+ const g=await fixture({search:'?campanha=atual'});g.document.el('ci-gravar').checked=true;g.document.el('camp-ini').events.change({target:{id:'ci-gravar',checked:true}});g.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});assert.equal(g.lista[0].sync,true,'com a chave ligada o personagem entra gravando');
 });

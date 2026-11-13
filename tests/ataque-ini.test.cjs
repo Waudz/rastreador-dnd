@@ -32,12 +32,12 @@ test('dano: soma dados e modificador; crítico dobra os dados mas não o modific
 });
 test('integração: aplicar dano usa as mesmas estatísticas do botão Dano; criaturas e fichas alimentam o painel; o painel existe na página e no cache',()=>{
   const ini=ler('js/iniciativa.js'),app=ler('js/app.js'),ci=ler('js/campanha-ini.js'),html=ler('iniciativa.html'),sw=ler('sw.js');
-  assert.match(ini,/function aplicarDano\(id, amount, quemId\)/);assert.match(ini,/if \(button\.dataset\.damage\) aplicarDano\(id, amount\);/);assert.match(ini,/aplicarDano,\n\s+trocarContexto/);assert.match(ini,/atual: \(\) => currentId/);
+  assert.match(ini,/function aplicarDano\(id, amount, quemId\)/);assert.match(ini,/if \(button\.dataset\.damage\) aplicarDano\(id, amount\);/);assert.match(ini,/aplicarDano, curar, darTemp, desfazerUltimo,/);assert.match(ini,/atual: \(\) => currentId/);
   assert.match(app,/window\.__ini\.acoesDe = \(key\)/);assert.match(ci,/window\.__ini\.ataquesDe = \(pid\)/);
   assert.ok(!/id="painel-ataque"/.test(html),"o painel separado foi removido");assert.match(html,/js\/ataque-ini\.js/);assert.match(sw,/"js\/ataque-ini\.js"/);assert.ok(!/painel-ataque/.test(ci),'campanha-ini não depende do painel antigo');
 });
-test('cada clique em Aplicar aplica o dano uma vez só',()=>{
-  const j=ler('js/ataque-ini.js');assert.match(j,/const U = ultimo; ultimo = null;/);assert.match(j,/b\.disabled = true;/);
+test('cada resultado tem o próprio Aplicar e só vale uma vez',()=>{
+  const j=ler('js/ataque-ini.js');assert.match(j,/if \(!U \|\| U\.aplicado\) return; U\.aplicado = true;/);assert.match(j,/b\.disabled = true/);
 });
 function motorMagias(){const c=vm.createContext({window:{},document:undefined});for(const n of ['origens','regras','magias-jogo','ataque-ini'])vm.runInContext(ler('js/'+n+'.js'),c);return {A:c.window.ATAQUE_INI,R:c.window.REGRAS,M:c.window.MAGIAS_JOGO,cat:JSON.parse(ler('dados/magias.json'))};}
 test('magias: o texto do catálogo vira ataque, salvaguarda e dano sugerido (inclusive o "1d1O" com letra O)',()=>{
@@ -72,6 +72,7 @@ test('interface única de ataque: faixa "Vez de ..." acima da lista, com ataques
   assert.match(j,/id="vez-atacante"/);assert.match(j,/id="vez-alvo"/);assert.match(j,/id="vez-modo"/);assert.match(j,/data-vez="\$\{i\}"/);assert.match(j,/data-vez-avancado/);assert.match(j,/Outras opções/);assert.match(j,/id="atk-so-ataque"/);assert.match(j,/id="atk-so-dano"/);assert.match(j,/id="atk-metade"/);assert.match(j,/id="atk-rolar"/);
   assert.match(ini,/data-atacar="\$\{c\.id\}"/);assert.match(ini,/new CustomEvent\("ini:atacar"/);assert.match(j,/window\.addEventListener\?\.\("ini:atacar"/);
 });
+const apN=t=>(t.res().match(/data-aplicar="(\d+)"/)||[])[1],topo=t=>t.res().split('<div class="res-ataque"')[1]||'';
 function ambiente({papelAtual='jogador',fichaConj=null}={}){
   const caches=new Map(),el=()=>{const o={innerHTML:'',hidden:false,listeners:{},dataset:{},style:{},addEventListener(n,f){(o.listeners[n]??=[]).push(f);},querySelector:q=>{if(!caches.has(q))caches.set(q,el());return caches.get(q);},scrollIntoView(){},closest:()=>null,insertAdjacentHTML(_,h){o.innerHTML+=h;}};return o;};
   const faixa=el(),docEls={'acoes-da-vez':faixa},document={getElementById:id=>docEls[id],activeElement:null};
@@ -89,8 +90,8 @@ test('faixa unificada: aparece com atacante e alvo; resultado e Aplicar só depo
   const t=ambiente();assert.equal(t.faixa.hidden,false);assert.match(t.texto(),/Vez de[\s\S]*Goblin/);assert.match(t.texto(),/Cimitarra \+4/);assert.match(t.texto(),/<option value="b" selected>Herói/);
   assert.equal(t.res(),'','sem ataque, sem resultado nem botão aplicar');assert.equal(t.q('#vez-avancado').hidden,true,'Outras opções começa recolhido');
   t.clique({vez:'0'});await t.espera();assert.match(t.res(),/CRÍTICO/);assert.match(t.res(),/Aplicar \d+ de dano em Herói/);
-  t.clique({},'atk-aplicar');assert.equal(t.aplicados.length,1);assert.equal(t.aplicados[0][0],'b');assert.equal(t.aplicados[0][2],'a');
-  t.clique({},'atk-aplicar');assert.equal(t.aplicados.length,1);assert.ok(!/id="atk-aplicar"/.test(t.res()));
+  const n1=apN(t);t.clique({aplicar:n1});assert.equal(t.aplicados.length,1);assert.equal(t.aplicados[0][0],'b');assert.equal(t.aplicados[0][2],'a');
+  t.clique({aplicar:n1});assert.equal(t.aplicados.length,1,'segundo clique no mesmo resultado não repete o dano');assert.ok(!/data-aplicar=/.test(t.res()),'o botão some depois de aplicar');
 });
 test('ataque rápido com vantagem e desvantagem usa dois d20; ataque sem bônus de acerto pede Só o dano em Outras opções',async()=>{
   const t=ambiente();t.muda('vez-modo','vantagem');t.clique({vez:'0'});await t.espera();assert.match(t.res(),/vantagem/);
@@ -100,8 +101,8 @@ test('ataque rápido com vantagem e desvantagem usa dois d20; ataque sem bônus 
 test('Outras opções: ataque manual, só ataque, só dano e metade do dano com o mesmo motor e a mesma confirmação',async()=>{
   const t=ambiente();t.clique({vezAvancado:''});assert.equal(t.q('#vez-avancado').hidden,false);assert.match(t.avanc(),/id="atk-so-ataque"/);assert.match(t.avanc(),/id="atk-so-dano"/);assert.match(t.avanc(),/Metade do dano/);assert.match(t.avanc(),/Manual…/);
   t.w.valorDado=0.55;
-  t.clique({},'atk-so-ataque');await t.espera();assert.match(t.res(),/<b>Acertou/);assert.ok(!/Dano:/.test(t.res()),'só o ataque não rola dano');assert.ok(!/atk-aplicar/.test(t.res()));
-  t.clique({},'atk-so-dano');await t.espera();assert.match(t.res(),/<b>Dano:<\/b> \d+/);assert.match(t.res(),/atk-aplicar/);
+  t.clique({},'atk-so-ataque');await t.espera();assert.match(t.res(),/<b>Acertou/);assert.ok(!/Dano:/.test(t.res()),'só o ataque não rola dano');assert.ok(!/data-aplicar/.test(t.res()));
+  t.clique({},'atk-so-dano');await t.espera();assert.match(t.res(),/<b>Dano:<\/b> \d+/);assert.match(t.res(),/data-aplicar/);
   t.muda('atk-ataque','manual');assert.match(t.avanc(),/id="atk-bonus"/);assert.match(t.avanc(),/id="atk-dano"/);
   t.q('#atk-dano').value='2d8+2';t.q('#atk-bonus').value='6';t.q('#atk-metade').checked=true;t.clique({},'atk-so-dano');await t.espera();assert.match(t.res(),/\(de \d+\)/,'metade do dano mostra o bruto');assert.match(t.res(),/\(metade\)/);
   t.q('#atk-dano').value='lixo';t.clique({},'atk-so-dano');await t.espera();assert.match(t.res(),/Dano inválido/);
@@ -149,8 +150,8 @@ test('faixa: defesas da criatura aparecem no resultado e a salvaguarda do alvo �
 });
 test('multiataque: repete o ataque escolhido N vezes, cada um com seu d20 e dano, e soma num só Aplicar',async()=>{
   const t=ambiente();t.w.valorDado=0.999;t.muda('vez-vezes','3');t.clique({vez:'0'});await t.espera();
-  assert.match(t.res(),/Ataque 1\/3/);assert.match(t.res(),/Ataque 3\/3/);assert.match(t.res(),/Dano 2\/3/);assert.match(t.res(),/Dano total:<\/b> \d+/);assert.equal((t.res().match(/id="atk-aplicar"/g)||[]).length,1,'um só botão Aplicar');
-  t.clique({},'atk-aplicar');assert.equal(t.aplicados.length,1);const soma=t.aplicados[0][1];assert.ok(soma>=3*3&&soma<=3*16*2,'total dos três ataques');
+  assert.match(t.res(),/Ataque 1\/3/);assert.match(t.res(),/Ataque 3\/3/);assert.match(t.res(),/Dano 2\/3/);assert.match(t.res(),/Dano total:<\/b> \d+/);assert.equal((t.res().match(/data-aplicar=/g)||[]).length,1,'um só botão Aplicar');
+  t.clique({aplicar:apN(t)});assert.equal(t.aplicados.length,1);const soma=t.aplicados[0][1];assert.ok(soma>=3*3&&soma<=3*16*2,'total dos três ataques');
   t.muda('vez-vezes','1');t.clique({vez:'0'});await t.espera();assert.ok(!/Ataque 1\/1/.test(t.res()),'um ataque não mostra contagem');
 });
 test('re-rolar iniciativa: botão d20 em cada cartão usa o bônus do combatente e a rolagem compartilhada; bônus de criaturas e personagens por gancho',()=>{
@@ -173,9 +174,9 @@ test('rolagem automática desligada: os botões pedem os valores (d20, dano) em 
   t.clique({},'man-ok');assert.match(t.q('#man-erro').textContent,/Informe o resultado do d20/);
   t.q('[data-man-d20="0-0"]').value='15';t.q('[data-man-dano="0"]').value='9';t.clique({},'man-ok');await t.espera();
   assert.match(t.res(),/15 \+ 4 = 19 contra CA 15 → <b>Acertou/);assert.match(t.res(),/<b>Dano:<\/b> 9/);assert.equal(t.q('#vez-manual').hidden,true);
-  t.clique({},'atk-aplicar');assert.equal(t.aplicados[0][1],9,'aplica exatamente o dano digitado');
+  t.clique({aplicar:apN(t)});assert.equal(t.aplicados[0][1],9,'aplica exatamente o dano digitado');
   t.clique({vez:'0'});t.q('[data-man-d20="0-0"]').value='20';t.q('[data-man-dano="0"]').value='14';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/CRÍTICO/);assert.match(t.res(),/<b>Dano:<\/b> 14/);
-  t.clique({vez:'0'});t.q('[data-man-d20="0-0"]').value='1';t.q('[data-man-dano="0"]').value='7';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/Falha crítica/);assert.ok(!/Dano:/.test(t.res()),'errou: o dano digitado é ignorado');assert.ok(!/atk-aplicar/.test(t.res()));
+  t.clique({vez:'0'});t.q('[data-man-d20="0-0"]').value='1';t.q('[data-man-dano="0"]').value='7';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/Falha crítica/);assert.ok(!/Dano:/.test(topo(t)),'errou: o dano digitado é ignorado');assert.ok(!/data-aplicar/.test(topo(t)));
   t.clique({vez:'0'});t.clique({},'man-cancelar');assert.equal(t.q('#vez-manual').hidden,true);
 });
 test('rolagem desligada: vantagem pede dois d20, multiataque pede uma linha por ataque, só dano pede só o dano e magia com salvaguarda pede o resultado do alvo',async()=>{
@@ -201,4 +202,14 @@ test('botão de treino só aparece para o mestre; todos os botões que rolam dad
   jog.clique({vezAvancado:''});assert.ok(!/Modo treino/.test(jog.avanc()),'sem aviso de treino para o jogador');
   assert.match(j,/\$\{D20\(\)\}\$\{esc\(a\.tipo === "magia"/);assert.match(j,/id="atk-rolar" class="primary">\$\{D20\(\)\}/);assert.match(j,/id="atk-so-ataque" class="small">\$\{D20\(\)\}Só o ataque/);assert.match(j,/id="atk-so-dano" class="small">\$\{D20\(\)\}Só o dano/);
   assert.match(ci,/window\.ico\('d20'\)\:''\)\+'Rolar d20/);assert.match(gp,/window\.ico\('d20'\)\:''\)\+'Rolar iniciativa/);
+});
+
+test('ataques contra alvos diferentes: cada resultado fica na tela com o próprio Aplicar e o dano de um não se repete no outro',async()=>{
+  const t=ambiente();t.lista.push({id:'c',name:'Lobo',kind:'Monstro',hp:11,maxHp:11,ac:11});t.w.valorDado=0.999;
+  t.muda('vez-alvo','b');t.clique({vez:'0'});await t.espera();const n1=apN(t);
+  t.muda('vez-alvo','c');t.clique({vez:'0'});await t.espera();const n2=apN(t);assert.notEqual(n1,n2);
+  assert.match(t.res(),/Aplicar \d+ de dano em Lobo/);assert.match(t.res(),/Aplicar \d+ de dano em Herói/,'o resultado anterior continua aplicável');
+  t.clique({aplicar:n2});t.clique({aplicar:n2});assert.equal(t.aplicados.length,1);assert.equal(t.aplicados[0][0],'c');
+  t.clique({aplicar:n1});assert.equal(t.aplicados.length,2);assert.equal(t.aplicados[1][0],'b');t.clique({aplicar:n1});assert.equal(t.aplicados.length,2);
+  t.setVez('b');assert.equal(t.res(),'','mudou o turno: os resultados antigos somem');
 });

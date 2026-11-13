@@ -90,6 +90,7 @@
           <button id="start" class="primary" type="button">Começar combate</button>
           <button id="previous" type="button" disabled><i data-i="left"></i>Anterior</button>
           <button id="next" type="button" disabled>Próximo<i data-i="right"></i></button>
+          <button id="desfazer" class="subtle" type="button" disabled title="Nada para desfazer">Desfazer</button>
           <button id="reset" class="subtle" type="button" disabled>Encerrar</button>
         </div>
       </div>
@@ -116,7 +117,8 @@
     </section>
     <details class="vista-iniciativa panel" id="camp-ini" hidden>
       <summary class="panel-title" style="cursor:pointer">Personagens</summary>
-      <div class="bar ci-filtros"><button type="button" class="small" id="ci-recarregar">Atualizar personagens</button></div>
+      <div class="bar ci-filtros"><button type="button" class="small" id="ci-recarregar">Atualizar personagens</button><label class="inline" id="ci-gravar-rotulo" title="Desligado = combate de teste: os PV do combate nunca alteram a ficha real"><input type="checkbox" id="ci-gravar" style="width:auto;height:auto"> Gravar PV nas fichas reais</label></div>
+      <p class="muted" id="ci-gravar-dica">Desligado (padrão): é um teste, a ficha real não muda. Ligado: ao adicionar, o personagem passa a gravar PV e PV temporários na ficha.</p>
       <div id="ci-msg" class="muted"></div>
       <div id="ci-resultado" class="ci-resultado" role="status" aria-live="polite"></div>
       <div id="ci-selecao"></div><div id="ci-lista" class="ci-grade"></div>
