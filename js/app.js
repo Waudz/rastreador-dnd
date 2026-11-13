@@ -203,6 +203,36 @@
     });
     $("#initiative").addEventListener("input", () => { $("#add-conta").textContent = $("#initiative").value === "" ? "" : "Valor informado por você"; });
     $("#add-form").addEventListener("submit", () => { limparPrevia(); });
+    /* ---- Monstros recentes: últimos 15 efetivamente adicionados ao combate (js/recentes.js); clicar usa o mesmo caminho da pesquisa (pick) ---- */
+    const REC = window.RECENTES, recBox = $("#recentes"), recBtn = $("#recentes-btn"), chaveRec = () => acervo.chave("ini_recentes");
+    function recentesValidos() {
+      const lista = REC ? REC.ler(chaveRec()) : []; if (!ALL.length) return lista;                     // catálogo ainda carregando: não descarta nada
+      const ok = lista.filter((k) => BY[k]); if (ok.length !== lista.length) REC.gravar(chaveRec(), ok);   // referência a monstro excluído some do histórico sem quebrar nada
+      return ok;
+    }
+    function renderRecentes() {
+      if (!recBox) return; const lista = recentesValidos();
+      recBox.innerHTML = lista.length
+        ? `<div class="rec-cab"><span class="muted">Usados recentemente</span><button type="button" class="small subtle" data-rec-limpar>Limpar recentes</button></div>` + lista.map((k) => { const m = BY[k], nome = pt(m) || m.name; return `<div class="rec-item" data-rec="${esc(k)}" role="button" tabindex="0" aria-label="Usar ${esc(nome)}">${av(m, 22)}<span class="rec-nome">${esc(nome)}</span><span class="muted rec-meta">${CAT[catOf(m)]} · ${lvl(m)}</span><button type="button" class="small subtle rec-x" data-rec-x="${esc(k)}" aria-label="Remover ${esc(nome)} dos recentes" title="Remover dos recentes">${window.ico ? window.ico("x") : "x"}</button></div>`; }).join("")
+        : `<p class="muted rec-vazio">Nenhum monstro utilizado recentemente.</p>`;
+    }
+    function abrirRecentes(abrir) {
+      if (!recBox || !recBtn) return; recBox.hidden = !abrir; recBtn.setAttribute("aria-expanded", abrir ? "true" : "false");
+      if (abrir) { sug.hidden = true; renderRecentes(); if (recBox.scrollIntoView) recBox.scrollIntoView({ block: "nearest" }); }
+    }
+    if (recBtn) {
+      recBtn.addEventListener("click", () => abrirRecentes(recBox.hidden));
+      recBox.addEventListener("click", async (e) => {
+        const x = e.target.closest("[data-rec-x]"); if (x) { e.stopPropagation(); REC.remover(chaveRec(), x.dataset.recX); renderRecentes(); return; }   // sem confirmação
+        if (e.target.closest("[data-rec-limpar]")) { if (await perguntar("Apagar o histórico de monstros recentes? Os combates, as fichas e os monstros do bestiário não são afetados.", { titulo: "Limpar recentes", ok: "Limpar", perigo: true })) { REC.limpar(chaveRec()); renderRecentes(); } return; }
+        const it = e.target.closest("[data-rec]"); if (it) { pick(it.dataset.rec); abrirRecentes(false); const n = $("#name"); if (n && n.focus) n.focus({ preventScroll: true }); }
+      });
+      recBox.addEventListener("keydown", (e) => { const it = e.target.closest && e.target.closest("[data-rec]"); if (it && e.target === it && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pick(it.dataset.rec); abrirRecentes(false); } });
+      document.addEventListener("click", (e) => { if (!recBox.hidden && !e.target.closest("#recentes, #recentes-btn")) abrirRecentes(false); });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !recBox.hidden) { abrirRecentes(false); recBtn.focus(); } });
+      $("#name").addEventListener("input", () => { if (!recBox.hidden) abrirRecentes(false); });
+    }
+    window.addEventListener("ini:adicionado", (e) => { const k = e.detail && e.detail.key; if (!REC || !k || !BY[k]) return; REC.registrar(chaveRec(), k); if (recBox && !recBox.hidden) renderRecentes(); });
     const ABIL_EN = { for: "strength", des: "dexterity", con: "constitution", int: "intelligence", sab: "wisdom", car: "charisma" };
     window.__ini.salvaDe = (key, ab) => { const m = ALL.find((x) => x.key === key), k = ABIL_EN[ab]; if (!m || !k) return null; const v = m.saving_throws?.[k] ?? m.modifiers?.[k]; return Number.isFinite(Number(v)) ? Number(v) : null; };
     window.__ini.defesasDe = (key) => {

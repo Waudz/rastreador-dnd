@@ -45,6 +45,7 @@
   <script src="js/edicoes.js" defer></script>
   <script src="js/rolagens.js" defer></script>
   <script src="js/ficha-monstro.js" defer></script>
+  <script src="js/recentes.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/origens.js" defer></script>
   <script src="js/texto-regras.js" defer></script>
@@ -135,8 +136,12 @@
       <form id="add-form" class="form-grid add-form-novo">
         <div class="field-name">
           <label for="name">Nome</label>
-          <input id="name" name="name" placeholder="Nome — digite para buscar no bestiário" maxlength="48" autocomplete="off" required>
+          <div class="nome-linha">
+            <input id="name" name="name" placeholder="Nome — digite para buscar no bestiário" maxlength="48" autocomplete="off" required>
+            <button type="button" id="recentes-btn" class="small" aria-expanded="false" aria-controls="recentes" aria-label="Monstros usados recentemente" title="Monstros usados recentemente"><i data-i="history"></i><span class="rot">Recentes</span></button>
+          </div>
           <div id="sug" class="sug" hidden></div>
+          <div id="recentes" class="sug recentes" hidden role="region" aria-label="Monstros recentes"></div>
         </div>
         <div id="add-previa" class="add-previa" hidden><div class="add-previa-dados"></div></div>
         <div>

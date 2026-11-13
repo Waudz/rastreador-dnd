@@ -561,7 +561,7 @@
         const hp = Number($("hp").value);
         if (!name || !Number.isFinite(maxHp) || maxHp < 1 || !Number.isFinite(hp) || hp < 0) return;
 
-        combatants.push({
+        const novoCombatente = {
           id: (Date.now().toString(36) + Math.random().toString(36).slice(2, 7)),
           name,
           kind: $("kind").value,
@@ -571,7 +571,9 @@
           ac: Math.max(0, Number($("ac").value) || 0),
           order: nextOrder++,
           key: (window.__ini && window.__ini.pending) || ""
-        });
+        };
+        combatants.push(novoCombatente);
+        if (novoCombatente.key) window.dispatchEvent?.(new CustomEvent("ini:adicionado", { detail: { key: novoCombatente.key } }));   // alimenta os monstros recentes (só quando entra no combate)
         if (window.__ini) window.__ini.pending = "";
         $("ini-mod").value = 0; $("initiative").value = "";
 
@@ -850,7 +852,7 @@
         aplicarDano, curar, darTemp, aplicarPV, lerQuantidade, maisOpcoes, limparIniciativa, rolarAte, desfazerGrupoPV, estatisticas: () => stats, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
         trocarContexto,
         contexto: () => contexto,
-        add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); }
+        add: (c) => { combatants.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), order: nextOrder++, ...c }); render(); if (c && c.key) window.dispatchEvent?.(new CustomEvent("ini:adicionado", { detail: { key: c.key } })); }
       };
       try { const q = new URLSearchParams(location.search).get("campanha"), u = window.nuvem && window.nuvem.usuario && window.nuvem.usuario(); contexto = u ? (q || (window.CAMPANHAS_UI && window.CAMPANHAS_UI.ativaId()) || "") : ""; } catch (_) { contexto = ""; }
       load();
