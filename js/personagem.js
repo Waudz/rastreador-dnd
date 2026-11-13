@@ -352,17 +352,19 @@
     if (pr.cargas) acoes.push(`<span class="muted">Cargas ${num(pr.cargas.atual, 0)}/${num(pr.cargas.max, 0)}</span>`);
     if (pr.raridade) acoes.push(`<span class="muted">${esc(pr.raridade)}</span>`);
     const org = it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? ` · ${esc(ROT_ORIGEM[it.origem.tipo] || it.origem.tipo)}${it.origem.nota ? ": " + esc(it.origem.nota) : ""}` : "";
-    const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim();
+    const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim(), qn = Math.max(0, num(it.qtd, 1));
     const thumb = `<button type="button" class="inv-thumb${im ? "" : " vazio"}" data-inv-img="${i}" aria-label="${im ? "Ampliar a imagem de " : "Adicionar imagem a "}${nomeIt}" title="${im ? "Ampliar a imagem" : "Adicionar imagem"}">${im ? `<img class="inv-thumb-img" src="${esc(im.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : (window.ico ? window.ico(II.ICONE[t] || "bag") : "")}</button>`;
-    return `<div class="item-inv inv-card" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b><span class="inv-qtd-badge" title="Quantidade">×${num(it.qtd, 1)}</span></div>
+    const qtdCtl = `<span class="inv-qtd-ctl" role="group" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-menos="${i}" aria-label="Diminuir a quantidade de ${nomeIt}"${qn <= 0 ? " disabled" : ""}>−</button><input class="num" type="number" min="0" step="1" inputmode="numeric" data-inv="qtd" value="${qn}" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-mais="${i}" aria-label="Aumentar a quantidade de ${nomeIt}">+</button></span>`;
+    const mais = `<details class="inv-mais"><summary class="small" aria-label="Mais ações de ${nomeIt}" title="Mais ações">${window.ico ? window.ico("more") : "…"}</summary><div class="inv-mais-menu"><button type="button" data-inv-descartar="${i}">Descartar…</button><button type="button" class="danger" data-inv-excluir="${i}">Excluir item…</button></div></details>`;
+    return `<div class="item-inv inv-card${qn <= 0 ? " zerado" : ""}" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></div>
       <div class="inv-meta muted"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span>${org}</div>
-      <div class="inv-acoes">${acoes.join(" ")}${souMestre ? `<button type="button" class="small subtle" data-inv-editar="${i}">Efeitos do item</button>` : ""}</div></div>
+      <div class="inv-acoes">${qtdCtl}${acoes.join(" ")}<button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</div></div>
       <details class="inv-edit" data-inv-uid="${esc(it.uid)}"${aberto ? " open" : ""}><summary>Editar</summary><div class="inv-edit-campos">
         <label class="inv-c-nome">Nome<input data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"></label>
-        <label>Quantidade<input class="num" type="number" min="0" step="1" data-inv="qtd" value="${num(it.qtd, 1)}"></label>
         <label>Peso cada (kg)<input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}"></label>
         <label>Tipo<select data-inv-tipo aria-label="Tipo do item">${Object.entries(IV.TIPOS).map(([k, n]) => opt(k, n, t === k)).join("")}</select></label>
-        <div class="inv-edit-botoes"><button type="button" class="small" data-inv-img-gerir="${i}">${im ? "Trocar ou remover imagem" : "Adicionar imagem"}</button><button type="button" class="small danger" data-rm-item="${i}" aria-label="Remover ${nomeIt}">${window.ico ? window.ico("x") : "x"} Remover item</button></div></div></details></div>`;
+        <label class="inv-c-nome">Descrição<textarea data-inv="desc" rows="3" maxlength="1500" placeholder="Aparência, história, funcionamento conhecido…">${esc(it.desc || "")}</textarea></label>
+        <div class="inv-edit-botoes"><button type="button" class="small" data-inv-img-gerir="${i}">${im ? "Trocar ou remover imagem" : "Adicionar imagem"}</button></div></div></details></div>`;
   }
   /* Imagem do item: ver maior, enviar do aparelho, usar URL https, trocar ou remover (o retrato usa o mesmo recorte) */
   function abrirImagemItem(i) {
@@ -402,6 +404,94 @@
     b.classList.add("vazio"); b.innerHTML = window.ico ? window.ico((it && II.ICONE[it.tipo || "equipamento"]) || "bag") : "";
   }, true);
   document.addEventListener("toggle", (e) => { const d = e.target; if (!d || !d.matches || !d.matches("details.inv-edit")) return; const u = d.dataset.invUid; if (u) d.open ? invAbertos.add(u) : invAbertos.delete(u); }, true);
+  /* ---------- janelas do inventário: detalhes do item, descartar e excluir ---------- */
+  function modalInv(rotulo, html) {
+    document.getElementById("inv-modal")?.remove();
+    const ov = document.createElement("div"); ov.id = "inv-modal"; ov.className = "inv-ov";
+    ov.innerHTML = `<div class="crop-box inv-modal-box" role="dialog" aria-modal="true" aria-label="${esc(rotulo)}">${html}</div>`;
+    const fim = () => { document.removeEventListener("keydown", tecla, true); ov.remove(); };
+    const tecla = (e) => { if (e.key === "Escape" && !document.querySelector(".vi-ov")) { e.stopPropagation(); fim(); } };
+    ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-modal-fechar]")) fim(); });
+    document.body.appendChild(ov); document.addEventListener("keydown", tecla, true);
+    const f = ov.querySelector("input,textarea,button:not([data-modal-fechar])"); if (f) f.focus({ preventScroll: true });
+    return { ov, fim };
+  }
+  const mediaDados = (d) => (d && d.n && d.d ? Math.round((num(d.n) * (num(d.d) + 1) / 2 + num(d.b)) * 10) / 10 : num(d && d.b));
+  /* texto compreensível de cada efeito (consulta do jogador; nada de formulário) */
+  function descreverEfeito(e) {
+    const T = IE.TIPOS_EFEITO[e.tipo] || {}, dur = e.duracao && e.duracao.texto ? ` Dura: ${e.duracao.texto}.` : "", pas = e.passivo ? " Vale enquanto o item estiver equipado." : "";
+    if (e.tipo === "cura") return `Recupera ${IE.formatarDados(e.dados)} pontos de vida (média ${mediaDados(e.dados)}), sem passar do máximo.${pas}`;
+    if (e.tipo === "pv-temp") return `Concede ${IE.formatarDados(e.dados)} pontos de vida temporários (média ${mediaDados(e.dados)}).${pas}`;
+    return `${T.rotulo || e.tipo}: ${T.descrever ? T.descrever(e) : ""}.${dur}${pas}`;
+  }
+  function htmlDetalhes(it, i) {
+    const t = it.tipo || "equipamento", pr = it.propriedades || {}, efs = IE.efeitosDe(it), im = II.obter(F(), it), qn = Math.max(0, num(it.qtd, 1));
+    const consumo = pr.consumo || (t === "magico" ? "carga" : "unidade"), usavel = IE.temEfeitos(it) || t === "consumivel";
+    const org = it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? (ROT_ORIGEM[it.origem.tipo] || it.origem.tipo) + (it.origem.nota ? ": " + it.origem.nota : "") : "";
+    const linhas = [
+      ["Tipo", IV.TIPOS[t] || t], pr.raridade ? ["Raridade", pr.raridade] : null,
+      ["Quantidade", String(qn)], ["Peso", `${kg(num(it.peso, 0))} kg cada · ${kg(qn * num(it.peso, 0))} kg no total`],
+      pr.sintonia && pr.sintonia.requer ? ["Sintonia", pr.sintonia.sintonizado ? "Exige sintonia · você está sintonizado" : "Exige sintonia · você não está sintonizado"] : null,
+      pr.cargas ? ["Cargas", `${num(pr.cargas.atual, 0)} de ${num(pr.cargas.max, 0)}${pr.cargas.recarga ? " · recarga: " + pr.cargas.recarga : ""}`] : null,
+      usavel && efs.some((e) => !e.passivo) ? ["Ao usar", consumo === "carga" ? "Gasta carga(s) do item" : consumo === "nenhum" ? "Não gasta nada" : "Gasta 1 unidade"] : null,
+      it.magiaVinculada ? ["Magia", `${it.magiaVinculada.n} (${Number(it.magiaVinculada.l) ? it.magiaVinculada.l + "º círculo" : "truque"})`] : null,
+      org ? ["Origem", org] : null,
+    ].filter(Boolean);
+    return `<div class="inv-det"><div class="inv-det-topo">${im ? `<img class="inv-det-img" src="${esc(im.src)}" alt="Imagem de ${esc(it.nome || "item")}" referrerpolicy="no-referrer" data-titulo="${esc(it.nome || "")}">` : `<span class="inv-det-img vazio">${window.ico ? window.ico(II.ICONE[t] || "bag") : ""}</span>`}
+        <div><h3>${esc(it.nome || "Item sem nome")}</h3><p class="muted">${esc(IV.TIPOS[t] || t)}${pr.raridade ? " · " + esc(pr.raridade) : ""} · ${kg(num(it.peso, 0))} kg</p></div></div>
+      ${it.desc ? `<h4 class="sub">Descrição</h4><p class="descricao-regra inv-det-desc">${esc(it.desc)}</p>` : ""}
+      ${efs.length ? `<h4 class="sub">Efeitos</h4><ul class="inv-det-efeitos">${efs.map((e) => `<li>${esc(descreverEfeito(e))}</li>`).join("")}</ul>` : (it.desc ? "" : '<p class="muted">Este item não tem descrição nem efeitos registrados.</p>')}
+      <dl class="inv-det-dados">${linhas.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
+      <div class="row inv-det-acoes">${usavel ? `<button type="button" class="small primary" data-det-usar="${i}">Usar</button>` : ""}${souMestre ? `<button type="button" class="small" data-det-config="${i}">Configurar efeitos (mestre)</button>` : ""}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div></div>`;
+  }
+  function abrirDetalhes(i) {
+    const it = itemPor(i); if (!it) return;
+    const { ov, fim } = modalInv("Detalhes do item", htmlDetalhes(it, i));
+    ov.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-det-usar],[data-det-config]"); if (!b) return;
+      fim();
+      if (b.dataset.detUsar !== undefined) { abrirUso(+b.dataset.detUsar); $("#uso-box")?.scrollIntoView({ block: "center" }); }
+      else { abrirEditor(+b.dataset.detConfig); $("#ef-box")?.scrollIntoView({ block: "center" }); }
+    });
+  }
+  /* Descartar: escolhe quantas unidades; registra no histórico; zerar tira o item da lista (com confirmação extra) */
+  function abrirDescartar(i) {
+    const it = itemPor(i); if (!it) return; const total = Math.floor(num(it.qtd, 0));
+    if (total < 1) { aviso("Este item não tem unidades para descartar. Use Excluir item para tirá-lo da lista.", true); return; }
+    const { ov, fim } = modalInv("Descartar item", `<h3>Descartar: ${esc(it.nome || "item")}</h3><p class="muted">Você tem ${total} unidade${total === 1 ? "" : "s"}. O descarte fica registrado no histórico de movimentações.</p>
+      <label>Quantas unidades<input id="dsc-qtd" class="num" type="number" min="1" max="${total}" step="1" value="1"></label>
+      <label>Observação (opcional)<input id="dsc-nota" maxlength="80" placeholder="Ex.: jogado fora, perdido"></label>
+      <p id="dsc-aviso" class="err" role="alert"></p>
+      <div class="row"><button type="button" class="danger" id="dsc-ok">Descartar</button><button type="button" class="small subtle" data-modal-fechar>Cancelar</button></div>`);
+    let confirmando = false; const ok = ov.querySelector("#dsc-ok"), q = ov.querySelector("#dsc-qtd"), av = ov.querySelector("#dsc-aviso");
+    q.addEventListener("input", () => { confirmando = false; ok.textContent = "Descartar"; av.textContent = ""; });
+    ok.addEventListener("click", () => {
+      const n = Math.floor(num(q.value, 0)); if (!(n >= 1) || n > total) { av.textContent = `Informe de 1 a ${total}.`; return; }
+      if (n === total && !confirmando) { confirmando = true; ok.textContent = "Confirmar: descartar todas"; av.textContent = `Isso descarta todas as ${total} unidades e tira o item da lista.`; return; }
+      try { IV.retirar(cont(), it.uid, n, { tipo: "descarte", nota: ov.querySelector("#dsc-nota").value.trim() }); } catch (err) { av.textContent = err.message; return; }
+      fim(); salvarInv(); redesenharInv(); aviso(`${n} unidade${n === 1 ? "" : "s"} de ${it.nome || "item"} descartada${n === 1 ? "" : "s"}.`);
+    });
+  }
+  /* Excluir: correção administrativa (cadastro errado); não é descarte nem uso, e fica marcada no histórico como exclusão */
+  function abrirExcluir(i) {
+    const it = itemPor(i); if (!it) return;
+    const { ov, fim } = modalInv("Excluir item", `<h3>Excluir: ${esc(it.nome || "item")}</h3><p>Remove o item da lista <b>sem</b> contar como descarte ou uso, como a correção de um cadastro errado. A exclusão fica marcada no histórico e não pode ser desfeita.</p>
+      <div class="row"><button type="button" class="danger" id="exc-ok">Excluir item</button><button type="button" class="small subtle" data-modal-fechar>Cancelar</button></div>`);
+    ov.querySelector("#exc-ok").addEventListener("click", () => {
+      const k = INV().indexOf(it); if (k < 0) { fim(); return; }
+      IV.registrar(cont(), { tipo: "exclusao", uid: it.uid, nome: it.nome, qtd: num(it.qtd, 0), nota: "Excluído do inventário" }); INV().splice(k, 1);
+      fim(); salvarInv(); redesenharInv(); aviso(`${it.nome || "Item"} excluído do inventário.`);
+    });
+  }
+  /* quantidade: + e −, ou valor digitado; só ajusta (não é uso nem descarte); nunca negativa */
+  function ajustarQtd(i, delta) {
+    const it = itemPor(i); if (!it) return; it.qtd = Math.max(0, Math.floor(num(it.qtd, 0)) + delta);
+    const card = document.querySelector(`#inv [data-i="${i}"]`); const inp = card && card.querySelector('input[data-inv="qtd"]'); if (inp) inp.value = it.qtd;
+    if (card) { card.classList.toggle("zerado", it.qtd <= 0); const m = card.querySelector("[data-inv-qtd-menos]"); if (m) m.disabled = it.qtd <= 0; }
+    atualizarCarga(); agendar({ inventario: P.inventario });
+  }
+  document.addEventListener("click", (e) => { document.querySelectorAll("details.inv-mais[open]").forEach((d) => { if (!d.contains(e.target)) d.removeAttribute("open"); }); });
+  document.addEventListener("change", (e) => { const t = e.target; if (!t || !t.matches || !t.matches('input[data-inv="qtd"]')) return; const c = t.closest(".item-inv"), it = c && INV()[+c.dataset.i]; if (it) { t.value = it.qtd; c.classList.toggle("zerado", it.qtd <= 0); const m = c.querySelector("[data-inv-qtd-menos]"); if (m) m.disabled = it.qtd <= 0; } });
   function histInv() {
     const l = (F().movimentos || []).slice(-20).reverse();
     return l.length ? `<ul class="hist-inv">${l.map((m) => `<li><b>${esc(IV.ROTULO_MOV[m.tipo] || (m.tipo === "uso-efeito" ? "Uso" : m.tipo))}</b> · ${esc(m.nome || "")}${m.qtd ? " ×" + m.qtd : ""}${m.alvo && m.tipo === "uso-efeito" ? " em " + esc(m.alvo) : ""}${m.resultado && m.resultado.length ? " — " + esc(m.resultado.join("; ")) : ""}${m.nota ? " (" + esc(m.nota) + ")" : ""} <span class="muted">${esc(String(m.quando || "").slice(0, 16).replace("T", " "))}</span></li>`).join("")}</ul>` : '<span class="muted">Nenhuma movimentação registrada.</span>';
@@ -735,7 +825,7 @@
     if (t.dataset.bonustemp) { const k = t.dataset.bonustemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))), f = F(); f.bonusTemp = { ...(f.bonusTemp || {}) }; if (v) f.bonusTemp[k] = v; else delete f.bonusTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.modtemp) { const k = t.dataset.modtemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))); const f = F(); f.modTemp = { ...(f.modTemp || {}) }; if (v) f.modTemp[k] = v; else delete f.modTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.atr) { const k = t.dataset.atr; A()[k] = num(t.value, 10); $("#mod-" + k).textContent = fm(mod(A()[k])); refrescar(); return; }
-    if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; INV()[i][k] = k === "nome" ? t.value : num(t.value, 0); atualizarCarga(); atualizarCartao(t.closest(".item-inv"), INV()[i]); agendar({ inventario: P.inventario }); return; }
+    if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; { const it_ = INV()[i]; if (k === "nome") it_.nome = t.value; else if (k === "desc") it_.desc = t.value.slice(0, 1500); else if (k === "qtd") it_.qtd = Math.max(0, Math.floor(num(t.value, 0))); else it_[k] = Math.max(0, num(t.value, 0)); } atualizarCarga(); atualizarCartao(t.closest(".item-inv"), INV()[i]); agendar({ inventario: P.inventario }); return; }
     if (t.dataset.din) { DIN()[t.dataset.din] = moeda(t.value); t.value = DIN()[t.dataset.din]; $("#total-po").textContent = totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); agendar({ dinheiro: P.dinheiro }); return; }
     if (t.dataset.cls) { const i = +t.closest("[data-ci]").dataset.ci, k = t.dataset.cls; if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; if (k === "n") CLS()[i].n = Math.max(1, Math.min(Math.max(1,20-R.nivelTotal(CLS().filter((_,j)=>j!==i))), Math.floor(num(t.value, 1)))); else if (k === "sub") { CLS()[i].sub = t.value; } else return; refrescar(); return; }
     if (t.dataset.atq && t.tagName === "INPUT" && t.type !== "checkbox") { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = ["magico", "extra"].includes(k) ? num(t.value, 0) : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
@@ -843,6 +933,11 @@
     if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0 })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector("input").focus(); agendar({ inventario: P.inventario }); return; }
     if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; IV.adicionar(cont(), IV.novoItem({ nome: p[0], qtd: 1, peso: p[1], origem: { tipo: "jogo" } })); redesenharInv(); salvarInv(); return; }
     if ((b = c("[data-rm-item]"))) { const it = itemPor(+b.dataset.rmItem); if (!it) return; if (num(it.qtd, 0) >= 1) IV.retirar(cont(), it.uid, null, { tipo: "descarte" }); else INV().splice(+b.dataset.rmItem, 1); salvarInv(); redesenharInv(); return; }
+    if ((b = c("[data-inv-qtd-mais]"))) { ajustarQtd(+b.dataset.invQtdMais, 1); return; }
+    if ((b = c("[data-inv-qtd-menos]"))) { ajustarQtd(+b.dataset.invQtdMenos, -1); return; }
+    if ((b = c("[data-inv-detalhes]"))) { abrirDetalhes(+b.dataset.invDetalhes); return; }
+    if ((b = c("[data-inv-descartar]"))) { b.closest("details")?.removeAttribute("open"); abrirDescartar(+b.dataset.invDescartar); return; }
+    if ((b = c("[data-inv-excluir]"))) { b.closest("details")?.removeAttribute("open"); abrirExcluir(+b.dataset.invExcluir); return; }
     if ((b = c("[data-inv-img]"))) { const it = INV()[+b.dataset.invImg], im = it && II.obter(F(), it); if (im && window.VISUALIZADOR) window.VISUALIZADOR.abrir({ src: im.src, titulo: it.nome || "Item", origem: b }); else abrirImagemItem(+b.dataset.invImg); return; }
     if ((b = c("[data-inv-img-gerir]"))) { abrirImagemItem(+b.dataset.invImgGerir); return; }
     if ((b = c("[data-inv-vista]"))) { vistaInv = b.dataset.invVista === "grade" ? "grade" : "lista"; try { localStorage.setItem("dnd5e_inv_vista", vistaInv); } catch (_) { /* segue sem guardar */ } const inv = $("#inv"); if (inv) inv.classList.toggle("inv-grade", vistaInv === "grade"); document.querySelectorAll("[data-inv-vista]").forEach((x) => { const on = x.dataset.invVista === vistaInv; x.classList.toggle("ativo", on); x.setAttribute("aria-pressed", String(on)); }); return; }

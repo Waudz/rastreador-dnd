@@ -106,5 +106,7 @@
   const pesoTotal = (itens) => (itens || []).reduce((s, i) => s + num(i.qtd, 0) * num(i.peso, 0), 0);
   const ROTULO_MOV = { entrada: "Entrada", saida: "Saída", uso: "Uso", descarte: "Descarte", carga: "Carga usada", copia: "Pergaminho copiado", "transferencia-entrada": "Recebido", "transferencia-saida": "Entregue", compra: "Compra", venda: "Venda", saque: "Saque" };
 
+  ROTULO_MOV.exclusao = "Item excluído";
+
   window.INVENTARIO = { TIPOS, LIMITE_SINTONIA, novoItem, normalizar, conteinerDe, adicionar, retirar, consumir, transferir, criarPergaminho, sintonizar, sintonizados, usarCarga, pesoTotal, registrar, ROTULO_MOV };
 })();
