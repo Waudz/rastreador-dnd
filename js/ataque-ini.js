@@ -60,6 +60,9 @@
     total = Math.max(0, total); const bruto = total; if (metade) total = Math.floor(total / 2);
     return { bruto, total, detalhe, critico: !!critico, metade: !!metade, ajustes };
   }
+  /* dano informado à mão (rolagem automática desligada): o total digitado vale como está */
+  const danoManual = (total, critico = false) => { const t = Math.max(0, Math.floor(num(total, 0))); return { bruto: t, total: t, detalhe: [{ rolls: [], b: 0, tipo: "", sub: t, ajuste: "" }], critico: !!critico, metade: false, ajustes: [], manual: true }; };
+  const rngDe = (valores) => { let i = 0; return () => ((num(valores[i++], 1) - 0.5) / 20); };   // faz d(20) devolver exatamente o número informado
   const descreverDano = (r) => r.detalhe.map((x) => `${x.rolls.length ? "[" + x.rolls.join("+") + "]" : ""}${x.b ? (x.b > 0 && x.rolls.length ? "+" : "") + x.b : ""}${x.tipo ? " " + x.tipo : ""}${x.ajuste ? " (" + x.ajuste + ")" : ""}`.trim()).join(" + ") + (r.critico ? " (crítico: dados em dobro)" : "") + (r.metade ? " (metade)" : "");
   const textoD20 = (a) => `${a.nat}${a.dados.length > 1 ? " (" + a.dados.join(", ") + ", " + (a.modo === "vantagem" ? "vantagem" : "desvantagem") + ")" : ""} ${a.bonus >= 0 ? "+" : "-"} ${Math.abs(a.bonus)} = ${a.total}`;
   const ROTULO = { critico: "CRÍTICO! Acertou", "falha-critica": "Falha crítica: errou", acerto: "Acertou", erro: "Errou", "sem-alvo": "Sem alvo (sem CA para comparar)" };
@@ -109,7 +112,7 @@
     return ((f && f.magias) || []).filter((m) => m.ativa !== false && (Number(m.l) === 0 || m.prep || m.semprePreparada || m.fonte === "mestre" || m.fonte === "raca" || m.origem === "Raça" || (MJ && MJ.tipoClasse(m.classeConj || "") === "known")));
   }
 
-  window.ATAQUE_INI = { tipoEn, parseExpressao, rolarAtaque, rolarSalvaguarda, rolarDano, descreverDano, textoAtaque: textoD20, ROTULO, analisarMagia, danoSugerido, estatisticasMagia, conjuraveis, NOME_ATR };
+  window.ATAQUE_INI = { danoManual, rngDe, tipoEn, parseExpressao, rolarAtaque, rolarSalvaguarda, rolarDano, descreverDano, textoAtaque: textoD20, ROTULO, analisarMagia, danoSugerido, estatisticasMagia, conjuraveis, NOME_ATR };
 
   /* ---------------- interface única: faixa "Vez de ..." (com "Outras opções" para ataque manual, magias e controles avançados) ---------------- */
   const faixa = typeof document !== "undefined" && document.getElementById("acoes-da-vez");
@@ -120,6 +123,7 @@
   const estado = () => window.__ini.__atk || (window.__ini.__atk = {});
   const papel = () => (window.__ini.papel ? window.__ini.papel() : "sem-campanha");
   const treinoTravado = () => papel() !== "mestre";                       // jogador e quem não está numa campanha como mestre: sempre treino
+  const auto = () => (window.__ini.rolagemAuto ? window.__ini.rolagemAuto() : true);
   const emTreino = () => treinoTravado() || !!estado().treino;
   function fontesDe(c) {
     const fx = [];
@@ -136,7 +140,7 @@
   /* quem ataca: a escolha manual (botão Atacar do cartão ou seletor) ou, sem escolha, quem está na vez */
   function atacanteAtual() {
     const l = lista(), sel = estado(), cur = window.__ini.atual?.();
-    if (sel.manualAtacante && l.some((c) => c.id === sel.atacante)) return l.find((c) => c.id === sel.atacante);
+    if (sel.manualAtacante && (sel.manualPara ?? null) === (cur ?? null) && l.some((c) => c.id === sel.atacante)) return l.find((c) => c.id === sel.atacante);
     return l.find((c) => c.id === cur) || null;
   }
   const alvoPadrao = (l, atk) => { const grupo = (c) => (c.kind === "Personagem" ? "p" : "m"); return (l.find((c) => c.id !== atk.id && grupo(c) !== grupo(atk) && num(c.hp) > 0) || l.find((c) => c.id !== atk.id && num(c.hp) > 0) || l.find((c) => c.id !== atk.id) || atk); };
@@ -148,7 +152,8 @@
   function desenharVez() {
     const l = lista(), atk = atacanteAtual();
     if (!atk || l.length < 2) { faixa.hidden = true; $("#vez-topo").innerHTML = ""; $("#vez-avancado").hidden = true; $("#vez-res").innerHTML = ""; return; }
-    const sel = estado(), cur = window.__ini.atual?.();
+    const sel = estado(), cur = window.__ini.atual?.() ?? null;
+    if ((sel.vezDe ?? null) !== cur) { sel.vezDe = cur; sel.manualAtacante = false; sel.idx = null; sel.circulo = null; sel.alvo = null; ultimo = null; $("#vez-res").innerHTML = ""; $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null; }   // mudou o turno: a faixa acompanha quem está na vez e limpa o resultado anterior
     sel.atacante = atk.id; fontes = fontesDe(atk);
     if (!l.some((c) => c.id === sel.alvo) || sel.alvo === atk.id) sel.alvo = alvoPadrao(l, atk).id;
     faixa.hidden = false;
@@ -191,6 +196,7 @@
       const { atacante, alvo, a, modo, metade } = escolhido(opts), res = $("#vez-res");
       if (!atacante || !alvo || !a) return;
       let atq = null, dano = null, salva = null, linhas = [], partes = a.dmg, critico = false, metadeFinal = metade;
+      const man = opts.manual || null, rngK = (k) => (man && man.d20 && man.d20[k] ? rngDe(man.d20[k]) : aleatorioPadrao);
       if (a.tipo === "magia") {
         const sel = estado(), circulo = opts.rapido ? (Number(a.m.l) || null) : (Number($("#atk-circulo")?.value) || Number(a.m.l) || null), expr = opts.rapido ? danoSugerido(a.m, a.an, { circulo, nivelTotal: a.st.nivelTotal }) : ($("#atk-dano-magia")?.value || "");
         if (!opts.rapido) { sel.circulo = circulo; sel.danoMagia = expr; sel.danoMagiaDe = a.m.en + "|" + circulo; if (sel.salvaManual) sel.salvaBonus = num($("#atk-salva-bonus")?.value, 0); }
@@ -201,14 +207,15 @@
           if (!g.ok) { res.innerHTML = `<span class="err">${esc(g.msg)}</span>`; return; }
           if (g.msg) linhas.push(`<p class="muted">${esc(g.msg)}</p>`);
         }
-        if (parte !== "dano" && a.an.tipo === "ataque") { atq = rolarAtaque({ bonus: a.st.ataque, modo, ca: num(alvo.ac) }); critico = atq.resultado === "critico"; linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}:</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`); }
+        if (parte !== "dano" && a.an.tipo === "ataque") { atq = rolarAtaque({ bonus: a.st.ataque, modo, ca: num(alvo.ac), rng: rngK(0) }); critico = atq.resultado === "critico"; linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}:</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`); }
         else if (parte !== "dano" && a.an.tipo === "salvaguarda") {
-          const auto = salvaDo(alvo, a.an.atributoSalva); salva = rolarSalvaguarda({ bonus: estado().salvaManual ? num(estado().salvaBonus, 0) : (auto ?? 0), cd: a.st.cd, modo: "normal" });
+          if (man && Number.isFinite(man.salva)) salva = { dados: [man.salva], nat: man.salva, bonus: 0, total: man.salva, cd: a.st.cd, modo: "normal", passou: man.salva >= a.st.cd };
+          else { const autoSalva = salvaDo(alvo, a.an.atributoSalva); salva = rolarSalvaguarda({ bonus: estado().salvaManual ? num(estado().salvaBonus, 0) : (autoSalva ?? 0), cd: a.st.cd, modo: "normal" }); }
           linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}</b> (CD ${a.st.cd}, ${esc(NOME_ATR[a.an.atributoSalva])}). Salvaguarda de ${esc(alvo.name)}: ${esc(textoD20(salva))} → <b>${salva.passou ? "passou" : "falhou"}</b></p>`);
           if (salva.passou) metadeFinal = a.an.metadeNaSalva ? true : "nada";
         } else if (parte !== "dano") linhas.push(`<p><b>${esc(atacante.name)} conjura ${esc(a.nome)}.</b></p>`);
         const acertou = parte === "dano" || !atq || atq.acertou;
-        if (partes && partes.length && acertou && metadeFinal !== "nada") { dano = rolarDano(partes, { critico, metade: metadeFinal === true, defesas: defesasDo(alvo) }); linhas.push(`<p><b>Dano:</b> ${dano.total}${dano.metade ? " (de " + dano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(dano))}${a.an.tipoDano ? " " + esc(a.an.tipoDano) : ""}</span></p>`); }
+        if (partes && partes.length && acertou && metadeFinal !== "nada") { dano = man && Number.isFinite(man.dano && man.dano[0]) ? danoManual(man.dano[0], critico) : rolarDano(partes, { critico, metade: metadeFinal === true, defesas: defesasDo(alvo) }); linhas.push(`<p><b>Dano:</b> ${dano.total}${dano.metade ? " (de " + dano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(dano))}${a.an.tipoDano ? " " + esc(a.an.tipoDano) : ""}</span></p>`); }
         else if (partes && partes.length && !acertou) linhas.push('<p class="muted">Errou: sem dano.</p>');
         else if (partes && partes.length && metadeFinal === "nada") linhas.push("<p class=\"muted\">Passou na salvaguarda: sem dano.</p>");
       } else {
@@ -217,12 +224,12 @@
           const rot = N > 1 ? ` ${k}/${N}` : "";
           if (parte !== "dano") {
             if (a.hit == null) { res.innerHTML = '<span class="err">Este ataque não tem bônus de acerto; use "Só o dano" em Outras opções.</span>'; return; }
-            atq = rolarAtaque({ bonus: a.hit, modo, ca: num(alvo.ac) }); critico = atq.resultado === "critico";
+            atq = rolarAtaque({ bonus: a.hit, modo, ca: num(alvo.ac), rng: rngK(k - 1) }); critico = atq.resultado === "critico";
             linhas.push(`<p><b>Ataque${rot} de ${esc(atacante.name)} (${esc(a.nome)}):</b> ${esc(textoD20(atq))} contra CA ${num(alvo.ac)} → <b>${esc(ROTULO[atq.resultado])}</b></p>`);
           }
           if (parte !== "ataque") {
             if (!partes || !partes.length) { if (!atq) { res.innerHTML = '<span class="err">Dano inválido. Use algo como 1d8+3.</span>'; return; } }
-            else if (parte === "dano" || (atq && atq.acertou)) { ultimoDano = rolarDano(partes, { critico, metade, defesas }); somaDano += ultimoDano.total; houveDano = true; linhas.push(`<p><b>Dano${rot}:</b> ${ultimoDano.total}${ultimoDano.metade ? " (de " + ultimoDano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(ultimoDano))}</span></p>`); }
+            else if (parte === "dano" || (atq && atq.acertou)) { ultimoDano = man && Number.isFinite(man.dano && man.dano[k - 1]) ? danoManual(man.dano[k - 1], critico) : rolarDano(partes, { critico, metade, defesas }); somaDano += ultimoDano.total; houveDano = true; linhas.push(`<p><b>Dano${rot}:</b> ${ultimoDano.total}${ultimoDano.metade ? " (de " + ultimoDano.bruto + ")" : ""} <span class="muted">${esc(descreverDano(ultimoDano))}</span></p>`); }
             else linhas.push(`<p class="muted">Errou${rot}: sem dano.</p>`);
           }
         }
@@ -234,6 +241,34 @@
       res.innerHTML = linhas.join("");
     } finally { gastando = false; }
   }
+  /* Rolagem automática desligada: em vez de rolar, a faixa pede os valores (d20 natural, salvaguarda do alvo, dano) e calcula o resultado com as mesmas regras */
+  let manualPend = null;
+  function pedirManual(parte, opts = {}) {
+    const { atacante, alvo, a, modo } = escolhido(opts), area = $("#vez-manual");
+    if (!atacante || !alvo || !a) return;
+    const magia = a.tipo === "magia", N = magia ? 1 : Math.max(1, Math.min(8, Math.round(num(estado().vezes, 1))));
+    const pedeD20 = parte !== "dano" && (magia ? a.an.tipo === "ataque" : true), pedeSalva = magia && parte !== "dano" && a.an.tipo === "salvaguarda";
+    const temDano = parte !== "ataque" && (magia ? !!a.an.dado || !!(estado().danoMagia) : !!(a.dmg && a.dmg.length) || a.hit == null);
+    if (pedeD20 && !magia && a.hit == null) { $("#vez-res").innerHTML = '<span class="err">Este ataque não tem bônus de acerto; use "Só o dano" em Outras opções.</span>'; return; }
+    manualPend = { parte, opts, N, pedeD20, pedeSalva, temDano, dois: modo !== "normal" };
+    const linhas = [];
+    for (let k = 1; k <= N; k++) linhas.push(`<div class="row vez-manual-linha">${N > 1 ? `<b>Ataque ${k}/${N}</b>` : ""}${pedeD20 ? `<label>d20${manualPend.dois ? " (1º dado)" : ""}<input type="number" class="num" min="1" max="20" step="1" data-man-d20="${k - 1}-0" aria-label="Resultado do d20 do ataque ${k}"></label>${manualPend.dois ? `<label>d20 (2º dado)<input type="number" class="num" min="1" max="20" step="1" data-man-d20="${k - 1}-1" aria-label="Segundo d20 do ataque ${k}"></label>` : ""}` : ""}${temDano ? `<label>Dano (total)<input type="number" class="num" min="0" step="1" data-man-dano="${k - 1}" aria-label="Dano total do ataque ${k}"></label>` : ""}</div>`);
+    if (pedeSalva) linhas.push(`<div class="row vez-manual-linha"><label>Salvaguarda de ${esc(alvo.name)} (resultado final, CD ${a.st.cd})<input type="number" class="num" step="1" data-man-salva aria-label="Resultado final da salvaguarda do alvo"></label></div>`);
+    area.hidden = false;
+    area.innerHTML = `<p class="muted"><b>${esc(atacante.name)}</b> → <b>${esc(alvo.name)}</b> (CA ${num(alvo.ac)}): rolagem automática desligada, informe os valores dos seus dados.</p>${linhas.join("")}<div class="row"><button type="button" class="primary" id="man-ok">Confirmar valores</button><button type="button" class="small subtle" id="man-cancelar">Cancelar</button></div><p class="err" id="man-erro" role="alert"></p>`;
+  }
+  function confirmarManual() {
+    if (!manualPend) return; const area = $("#vez-manual"), M = manualPend, lerN = (sel) => { const e = area.querySelector(sel); return e && e.value !== "" ? Number(e.value) : NaN; };
+    const d20 = [], dano = []; let salva;
+    for (let k = 0; k < M.N; k++) {
+      if (M.pedeD20) { const v = [lerN(`[data-man-d20="${k}-0"]`)]; if (M.dois) v.push(lerN(`[data-man-d20="${k}-1"]`)); if (v.some((x) => !Number.isInteger(x) || x < 1 || x > 20)) { $("#man-erro").textContent = "Informe o resultado do d20 (de 1 a 20)."; return; } d20.push(v); }
+      if (M.temDano) { const x = lerN(`[data-man-dano="${k}"]`); dano.push(x); if (M.parte === "dano" && !Number.isInteger(x)) { $("#man-erro").textContent = "Informe o dano total (número inteiro)."; return; } if (Number.isFinite(x) && (!Number.isInteger(x) || x < 0)) { $("#man-erro").textContent = "O dano deve ser um número inteiro, 0 ou maior."; return; } }
+    }
+    if (M.pedeSalva) { salva = lerN("[data-man-salva]"); if (!Number.isInteger(salva)) { $("#man-erro").textContent = "Informe o resultado final da salvaguarda do alvo."; return; } }
+    area.hidden = true; area.innerHTML = ""; manualPend = null;
+    rolar(M.parte, { ...M.opts, manual: { d20, dano, salva } });
+  }
+  const dispara = (parte, opts) => (auto() ? rolar(parte, opts) : pedirManual(parte, opts));
   function aplicarUltimo(b) {
     const U = ultimo; ultimo = null;                                   // um clique aplica uma vez só
     window.__ini.aplicarDano(U.alvoId, U.dano.total, U.atacanteId);
@@ -244,7 +279,7 @@
   }
   faixa.addEventListener("change", (e) => {
     const sel = estado(), id = e.target.id;
-    if (id === "vez-atacante") { sel.atacante = e.target.value; sel.manualAtacante = true; sel.idx = null; sel.circulo = null; ultimo = null; $("#vez-res").innerHTML = ""; desenharVez(); }
+    if (id === "vez-atacante") { sel.atacante = e.target.value; sel.manualAtacante = true; sel.manualPara = window.__ini.atual?.() ?? null; sel.idx = null; sel.circulo = null; ultimo = null; $("#vez-res").innerHTML = ""; desenharVez(); }
     else if (id === "vez-alvo") { sel.alvo = e.target.value; sel.salvaManual = false; }
     else if (id === "vez-vezes") sel.vezes = Math.max(1, Math.min(8, Math.round(num(e.target.value, 1))));
     else if (id === "atk-salva-bonus") { sel.salvaManual = true; sel.salvaBonus = num(e.target.value, 0); }
@@ -256,17 +291,20 @@
   });
   faixa.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
-    if (b.dataset.vez !== undefined) rolar("tudo", { rapido: true, idx: +b.dataset.vez });
+    if (b.id === "man-ok") confirmarManual();
+    else if (b.id === "man-cancelar") { $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null; }
+    else if (b.dataset.vez !== undefined) dispara("tudo", { rapido: true, idx: +b.dataset.vez });
     else if (b.dataset.vezAvancado !== undefined) { const sel = estado(); sel.avancado = !sel.avancado; desenharVez(); }
-    else if (b.id === "atk-rolar") rolar("tudo"); else if (b.id === "atk-so-ataque") rolar("ataque"); else if (b.id === "atk-so-dano") rolar("dano");
+    else if (b.id === "atk-rolar") dispara("tudo"); else if (b.id === "atk-so-ataque") dispara("ataque"); else if (b.id === "atk-so-dano") dispara("dano");
     else if (b.id === "atk-aplicar" && ultimo && ultimo.dano) aplicarUltimo(b);
   });
   /* botão "Atacar" do cartão do combatente: abre esta mesma interface com ele como atacante */
   window.addEventListener?.("ini:atacar", (e) => {
     const sel = estado(), id = e.detail && e.detail.id; if (!id) return;
-    sel.atacante = id; sel.manualAtacante = true; sel.idx = null; sel.circulo = null; ultimo = null; $("#vez-res").innerHTML = "";
+    sel.atacante = id; sel.manualAtacante = true; sel.manualPara = window.__ini.atual?.() ?? null; sel.idx = null; sel.circulo = null; ultimo = null; $("#vez-res").innerHTML = "";
     desenharVez(); faixa.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
   });
+  window.addEventListener?.("ini:rolagem", () => { $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null; desenharVez(); });
   window.__ini.aoAlterar?.(() => { if (!document.activeElement?.closest?.("#acoes-da-vez")) desenharVez(); });
   desenharVez();
 })();

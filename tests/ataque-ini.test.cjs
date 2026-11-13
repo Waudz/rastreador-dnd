@@ -76,13 +76,13 @@ function ambiente({papelAtual='jogador',fichaConj=null}={}){
   const caches=new Map(),el=()=>{const o={innerHTML:'',hidden:false,listeners:{},dataset:{},style:{},addEventListener(n,f){(o.listeners[n]??=[]).push(f);},querySelector:q=>{if(!caches.has(q))caches.set(q,el());return caches.get(q);},scrollIntoView(){},closest:()=>null,insertAdjacentHTML(_,h){o.innerHTML+=h;}};return o;};
   const faixa=el(),docEls={'acoes-da-vez':faixa},document={getElementById:id=>docEls[id],activeElement:null};
   const lista=[{id:'a',name:'Goblin',kind:'Monstro',hp:7,maxHp:7,ac:13,key:'gob'},{id:'b',name:'Herói',kind:'Personagem',hp:20,maxHp:20,ac:15,pid:'p'}],aplicados=[],espacos=[];let vez='a';
-  const ini={list:()=>lista,atual:()=>vez,papel:()=>papelAtual,aoAlterar(){},aplicarDano:(id,n,q)=>{aplicados.push([id,n,q]);lista.find(c=>c.id===id).hp-=n;return true;},
+  const ouvintes=[],ini={rolagemAuto:()=>w.auto!==false,list:()=>lista,atual:()=>vez,papel:()=>papelAtual,aoAlterar(fn){ouvintes.push(fn);},aplicarDano:(id,n,q)=>{aplicados.push([id,n,q]);lista.find(c=>c.id===id).hp-=n;return true;},
    acoesDe:k=>k==='gob'?[{nome:'Cimitarra',hit:4,dmg:[{n:1,f:6,b:2,t:'cortante'}]},{nome:'Sopro',hit:null,dmg:[{n:2,f:6,b:0,t:'fogo'}]}]:[],ataquesDe:()=>[{nome:'Espada longa',hit:5,dmg:[{n:1,f:8,b:3,t:'cortante'}]}],
    fichaDe:()=>fichaConj,gastarEspaco:async(pid,c)=>{espacos.push([pid,c]);return {ok:true,msg:'Gastou 1 espaço de '+c+'º círculo.'};}};
   const w={__ini:ini,addEventListener(n,f){(w.ev??={})[n]=f;},crypto:{getRandomValues:a=>{a[0]=w.valorDado===undefined?0xFFFFFFFF:Math.floor(w.valorDado*4294967295);return a;}}};
   const c=vm.createContext({window:w,document,crypto:w.crypto,Event:function(){}});for(const n of ['origens','regras','magias-jogo','ataque-ini'])vm.runInContext(ler('js/'+n+'.js'),c);
   const q=s=>faixa.querySelector(s),dispara=(tipo,alvo)=>(faixa.listeners[tipo]||[]).forEach(f=>f({target:{closest:()=>alvo,...alvo}}));
-  return {faixa,q,lista,aplicados,espacos,w,ini,setVez:id=>{vez=id;ini.atual=()=>id;},clique:(dataset,id='')=>dispara('click',{dataset,id}),muda:(id,value,checked)=>dispara('change',{id,value,checked}),espera:()=>new Promise(r=>setTimeout(r,5)),
+  return {faixa,q,lista,aplicados,espacos,w,ini,setVez:id=>{vez=id;ini.atual=()=>id;ouvintes.forEach(f=>f());},clique:(dataset,id='')=>dispara('click',{dataset,id}),muda:(id,value,checked)=>dispara('change',{id,value,checked}),espera:()=>new Promise(r=>setTimeout(r,5)),
     texto:()=>q('#vez-topo').innerHTML,res:()=>q('#vez-res').innerHTML,avanc:()=>q('#vez-avancado-corpo').innerHTML};
 }
 test('faixa unificada: aparece com atacante e alvo; resultado e Aplicar só depois de um ataque; Aplicar atua uma vez só',async()=>{
@@ -157,4 +157,39 @@ test('re-rolar iniciativa: botão d20 em cada cartão usa o bônus do combatente
   const ini=ler('js/iniciativa.js'),app=ler('js/app.js'),ci=ler('js/campanha-ini.js');
   assert.match(ini,/data-reroll="\$\{c\.id\}"/);assert.match(ini,/window\.ROLAGENS\.rolar\("1d20", mod\)/);assert.match(ini,/alvo\.initiative = r\.total; render\(\)/);assert.match(ini,/window\.__ini\.bonusIniciativaDe/);
   assert.match(app,/window\.__ini\.bonusIniciativaDe = \(c\) =>/);assert.match(app,/window\.__ini\.salvaDe = /);assert.match(app,/window\.__ini\.defesasDe = /);assert.match(ci,/window\.__ini\.salvaPersonagem = /);assert.match(ci,/window\.__ini\.defesasPersonagem = /);
+});
+
+test('o ataque é fixo em quem está na vez: ao mudar o turno a faixa acompanha o novo combatente, limpa o resultado e descarta a escolha manual do turno anterior',async()=>{
+  const t=ambiente();t.clique({vez:'0'});await t.espera();assert.match(t.res(),/Ataque de Goblin/);
+  t.muda('vez-atacante','b');assert.match(t.texto(),/Ataque de<\/b><select id="vez-atacante"[\s\S]*<option value="b" selected>/,'escolha manual durante o turno do Goblin (reação)');
+  t.setVez('b');assert.match(t.texto(),/Vez de<\/b><select id="vez-atacante"[\s\S]*<option value="b" selected>Herói/,'novo turno: atacante = quem está na vez');assert.equal(t.res(),'','resultado do turno anterior some');
+  t.muda('vez-atacante','a');t.setVez('a');assert.match(t.texto(),/Vez de<\/b><select id="vez-atacante"[\s\S]*<option value="a" selected>Goblin/,'a escolha manual não "gruda" no turno seguinte');
+  assert.match(t.texto(),/Cimitarra/);
+});
+
+test('rolagem automática desligada: os botões pedem os valores (d20, dano) em vez de rolar, e o resultado segue as mesmas regras',async()=>{
+  const t=ambiente();t.w.auto=false;
+  t.clique({vez:'0'});assert.equal(t.res(),'','nada é rolado');assert.equal(t.q('#vez-manual').hidden,false);assert.match(t.q('#vez-manual').innerHTML,/data-man-d20="0-0"/);assert.match(t.q('#vez-manual').innerHTML,/data-man-dano="0"/);assert.match(t.q("#vez-manual").innerHTML,/rolagem automática desligada/);
+  t.clique({},'man-ok');assert.match(t.q('#man-erro').textContent,/Informe o resultado do d20/);
+  t.q('[data-man-d20="0-0"]').value='15';t.q('[data-man-dano="0"]').value='9';t.clique({},'man-ok');await t.espera();
+  assert.match(t.res(),/15 \+ 4 = 19 contra CA 15 → <b>Acertou/);assert.match(t.res(),/<b>Dano:<\/b> 9/);assert.equal(t.q('#vez-manual').hidden,true);
+  t.clique({},'atk-aplicar');assert.equal(t.aplicados[0][1],9,'aplica exatamente o dano digitado');
+  t.clique({vez:'0'});t.q('[data-man-d20="0-0"]').value='20';t.q('[data-man-dano="0"]').value='14';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/CRÍTICO/);assert.match(t.res(),/<b>Dano:<\/b> 14/);
+  t.clique({vez:'0'});t.q('[data-man-d20="0-0"]').value='1';t.q('[data-man-dano="0"]').value='7';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/Falha crítica/);assert.ok(!/Dano:/.test(t.res()),'errou: o dano digitado é ignorado');assert.ok(!/atk-aplicar/.test(t.res()));
+  t.clique({vez:'0'});t.clique({},'man-cancelar');assert.equal(t.q('#vez-manual').hidden,true);
+});
+test('rolagem desligada: vantagem pede dois d20, multiataque pede uma linha por ataque, só dano pede só o dano e magia com salvaguarda pede o resultado do alvo',async()=>{
+  const f={classes:[{c:'Wizard',n:5,sub:''}],atributos:{int:16,des:12,con:12,for:10,sab:10,car:10},magias:[{n:'Bola de Fogo',en:'Fireball',l:3,prep:true,classeConj:'Wizard',d:'Cada criatura faz uma salvaguarda de Destreza. Se falhar, sofre 8d6 pontos de dano ígneo, ou metade do dano se passar.'}]};
+  const t=ambiente({papelAtual:'jogador',fichaConj:f});t.w.auto=false;
+  t.muda('vez-modo','vantagem');t.clique({vez:'0'});assert.match(t.q('#vez-manual').innerHTML,/data-man-d20="0-1"/);t.q('[data-man-d20="0-0"]').value='3';t.q('[data-man-d20="0-1"]').value='18';t.q('[data-man-dano="0"]').value='6';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/18 \(3, 18, vantagem\) \+ 4 = 22/);
+  t.muda('vez-modo','normal');t.muda('vez-vezes','2');t.clique({vez:'0'});assert.match(t.q('#vez-manual').innerHTML,/Ataque 1\/2/);assert.match(t.q('#vez-manual').innerHTML,/Ataque 2\/2/);t.q('[data-man-d20="0-0"]').value='12';t.q('[data-man-dano="0"]').value='5';t.q('[data-man-d20="1-0"]').value='9';t.q('[data-man-dano="1"]').value='5';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/Dano total:<\/b> 5/,'só o primeiro acertou (12+4=16; 9+4=13 erra)');
+  t.muda('vez-vezes','1');t.clique({},'atk-so-dano');
+  t.muda('vez-atacante','b');t.clique({vez:'1'});assert.match(t.q('#vez-manual').innerHTML,/data-man-salva/);assert.ok(!/data-man-d20/.test(t.q('#vez-manual').innerHTML),'magia de salvaguarda não pede d20');t.q('[data-man-salva]').value='9';t.q('[data-man-dano="0"]').value='20';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/falhou/);assert.match(t.res(),/<b>Dano:<\/b> 20/);
+  t.clique({vez:'1'});t.q('[data-man-salva]').value='15';t.q('[data-man-dano="0"]').value='20';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/passou/);
+});
+test('chave "Rolagem automática": guardada no aparelho, desativa os botões d20 e o re-rolar, e a faixa liga o modo manual',()=>{
+  const ini=ler('js/iniciativa.js'),html=ler('iniciativa.html'),app=ler('js/app.js'),ci=ler('js/campanha-ini.js'),j=ler('js/ataque-ini.js');
+  assert.match(html,/id="rolagem-auto"[^>]*checked/);assert.match(html,/Rolagem automática de dados: <b id="rolagem-auto-estado">ligada/);
+  assert.match(ini,/localStorage\.getItem\(CHAVE_ROLAGEM\) !== "0"/);assert.match(ini,/new CustomEvent\("ini:rolagem"\)/);assert.match(ini,/rolagemAuto,[\s\S]{0,12}list:/);assert.match(ini,/data-reroll="\$\{c\.id\}" \$\{rolagemAuto\(\) \? "" : "disabled"\}/);assert.match(ini,/!alvo \|\| !rolagemAuto\(\)/);
+  assert.match(app,/b\.disabled = !on/);assert.match(app,/Rolagem automática desligada: digite a iniciativa\./);assert.match(ci,/Adicionar \(\$1\)/);assert.match(ci,/rolagem automática desligada: digite o valor na ordem do combate/);assert.match(j,/const dispara = \(parte, opts\) => \(auto\(\) \? rolar\(parte, opts\) : pedirManual\(parte, opts\)\)/);
 });

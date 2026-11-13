@@ -188,7 +188,10 @@
       p.innerHTML = `${av(m, 56)}<div class="add-previa-info"><b>${esc(pt(m) || m.name)}</b>${pt(m) ? `<span class="muted">${esc(m.name)}</span>` : ""}<span>CA <b>${m.armor_class}</b></span><span>PV <b>${m.hit_points}</b></span><span>Iniciativa <b>${sinal(iniBonus(m))}</b></span></div>`;
     }
     /* d20 + modificador: usa a rolagem compartilhada (js/rolagens.js) e mostra a conta; o resultado continua editável */
+    const sincRolagem = () => { const on = window.__ini.rolagemAuto ? window.__ini.rolagemAuto() : true, b = $("#add-d20"); b.disabled = !on; b.title = on ? "Rolar 1d20 + modificador" : "Rolagem automática desligada: digite a iniciativa"; };
+    window.addEventListener("ini:rolagem", sincRolagem); sincRolagem();
     $("#add-d20").addEventListener("click", () => {
+      if (window.__ini.rolagemAuto && !window.__ini.rolagemAuto()) { $("#add-conta").textContent = "Rolagem automática desligada: digite a iniciativa."; return; }
       const mod = Math.round(Number($("#ini-mod").value) || 0), r = window.ROLAGENS.rolar("1d20", mod);
       $("#initiative").value = r.total; $("#add-conta").textContent = `d20 ${r.dados[0]} ${sinal(mod).replace("+", "+ ").replace("-", "- ")} = ${r.total}`;
     });

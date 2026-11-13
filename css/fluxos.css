@@ -154,3 +154,27 @@ body.ficha-embutida { padding-top:0!important; padding-bottom:0!important; }
 #add-form .add-conta { flex:1 1 140px; align-self:center; min-width:0; font-size:13px; }
 #add-form .add-wrap button { width:100%; min-height:46px; font-size:15px; font-weight:700; }
 @media (max-width:460px) { #add-form.add-form-novo { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+/* Iniciativa: quem está na vez fica no topo, em destaque; o próximo aparece logo abaixo e quem acabou de jogar vai para o fim */
+.combatant.active { border-width:2px; border-color:var(--gold); box-shadow:inset 6px 0 0 var(--gold), 0 0 0 1px var(--gold-dark, var(--gold)); background:linear-gradient(90deg,#D4AE7229,var(--panel) 70%); }
+.combatant.active .name .nome-texto { font-size:1.12em; }
+.combatant.proximo { border-style:dashed; border-color:var(--gold-dark, var(--line)); }
+.proximo-badge { color:var(--gold); font-weight:700; }
+
+/* Chave "Rolagem automática de dados" e valores digitados */
+.rolagem-auto-bar { display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; margin:6px 0 10px; }
+.rolagem-auto { display:inline-flex; align-items:center; gap:10px; cursor:pointer; min-height:44px; margin:0; }
+.rolagem-auto input { position:absolute; opacity:0; width:44px; height:44px; margin:0; cursor:pointer; }
+.rolagem-auto-chave { position:relative; flex:0 0 46px; width:46px; height:26px; border-radius:26px; background:var(--line); border:1px solid var(--gold-dark, var(--line)); transition:background .15s; }
+.rolagem-auto-chave::after { content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--muted, #999); transition:left .15s, background .15s; }
+.rolagem-auto input:checked + .rolagem-auto-chave { background:#D4AE7244; border-color:var(--gold); }
+.rolagem-auto input:checked + .rolagem-auto-chave::after { left:22px; background:var(--gold); }
+.rolagem-auto input:focus-visible + .rolagem-auto-chave { outline:2px solid var(--gold); outline-offset:2px; }
+.rolagem-auto-texto b { color:var(--gold); }
+.rolagem-auto-dica { margin:0; font-size:12px; flex:1 1 220px; }
+.vez-manual { margin:8px 0; padding:10px 12px; border:1px dashed var(--gold-dark, var(--line)); border-radius:10px; }
+.vez-manual[hidden] { display:none; }
+.vez-manual .row { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 12px; margin:6px 0; }
+.vez-manual input.num { width:84px; text-align:center; }
+@media (max-width:760px), (pointer:coarse) { .vez-manual input.num { min-height:44px; } .vez-manual .row button { min-height:44px; } }
+body.rolagem-manual [data-reroll][disabled], body.rolagem-manual [data-ci-rolar][disabled], body.rolagem-manual #add-d20[disabled] { opacity:.45; cursor:not-allowed; }

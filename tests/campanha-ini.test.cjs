@@ -182,3 +182,11 @@ test('ganchos de ataque dos personagens: salvaguarda (proficiência da classe in
  f.window.ATAQUE_INI={tipoEn:t=>({fogo:'fire',cortante:'slashing'}[t]||'')};const d=I.defesasPersonagem('p');assert.deepEqual(JSON.parse(JSON.stringify(d.resistencias.sort())),['fire','slashing']);
  assert.equal(typeof I.bonusIniciativaDe({pid:'p'}),'number');assert.equal(I.bonusIniciativaDe({pid:'p'}),2+1*0+(I.bonusIniciativaDe({pid:'p'})-2),'usa a rotina compartilhada do grupo');
 });
+test('rolagem automática desligada: o botão Rolar d20 do cartão fica desativado, o lote vira "Adicionar" e quem não tem número digitado entra sem iniciativa',async()=>{
+ const f=await fixture({search:'?campanha=atual'});f.window.__ini.rolagemAuto=()=>f.window.__auto!==false;f.window.__auto=false;f.eventos['ini:rolagem']();
+ const h=f.document.el('ci-lista').innerHTML;assert.match(h,/data-ci-rolar="p" disabled title="Rolagem automática desligada/);
+ const box=f.document.el('camp-ini');box.events.click({target:{closest:s=>s==='[data-ci-rolar]'?{dataset:{ciRolar:'p'}}:null}});assert.match(f.document.el('ci-msg').innerHTML,/Rolagem automática desligada/);assert.ok(!/ci-ini-res" role="status">d20/.test(f.document.el('ci-lista').innerHTML),'nada é rolado');
+ box.events.change({target:{dataset:{ciSel:'p'},checked:true}});assert.match(f.document.el('ci-selecao').innerHTML,/Adicionar \(1\)/);assert.ok(!/Rolar iniciativa/.test(f.document.el('ci-selecao').innerHTML));
+ box.events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();assert.equal(f.lista.length,1);assert.equal(f.lista[0].initiative,null);assert.match(f.document.el('ci-resultado').innerHTML,/sem iniciativa \(rolagem automática desligada/);
+ const g=await fixture({search:'?campanha=atual'});g.window.__ini.rolagemAuto=()=>false;const b2=g.document.el('camp-ini');b2.events.input({target:{dataset:{ciIni:'p'},value:'14'}});b2.events.change({target:{dataset:{ciSel:'p'},checked:true}});b2.events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();assert.equal(g.lista[0].initiative,14,'o número digitado é usado');assert.match(g.document.el('ci-resultado').innerHTML,/Herói: 14 \(informado por você\)/);
+});

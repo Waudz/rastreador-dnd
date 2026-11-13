@@ -48,6 +48,8 @@
       return { ok: true, msg: texto };
     } catch (e) { return { ok: false, msg: "Não foi possível gastar o espaço: " + e.message }; }
   };
+  const rolagemAuto=()=>window.__ini.rolagemAuto?window.__ini.rolagemAuto():true;
+  window.addEventListener?.('ini:rolagem',()=>{ultimaGrade=null;desenhar();});
   const selecionados=new Set(), digitadas = {}, resultadosCartao = {};   // digitadas: iniciativa informada à mão (dado físico) por personagem
   const ocupadas = new Set();
   const basesPV = new Map();
@@ -59,8 +61,8 @@
     const G=window.GRUPO_PERSONAGENS;
     for(const pid of selecionados)if(!pers.some(p=>p.id===pid&&!emCombate(p)))selecionados.delete(pid);
     window.__ini.selecaoPendente?.(selecionados.size,()=>adicionarSelecionados([...selecionados]));
-    const barra=G.barra('ci',selecionados.size);if($('#ci-selecao').innerHTML!==barra)$('#ci-selecao').innerHTML=barra;
-    const html=pers.length?pers.map(p=>'<article class="ci-cartao grupo-cartao ci-cartao-ini"><div class="ci-topo">'+G.checkbox(p,selecionados.has(p.id),'ci-sel',emCombate(p))+G.identidade(p,{resumo:true,vida:true})+'</div>'+(emCombate(p)?'<span class="muted ci-no-combate">No combate</span>':'<div class="ci-acoes"><label class="ci-ini"><span>Ini.</span><input type="number" step="1" data-ci-ini="'+esc(p.id)+'" placeholder="d20" title="Digite o resultado final do dado físico, ou use Rolar d20" aria-label="Iniciativa de '+esc(p.nome)+'"></label><button type="button" class="small" data-ci-rolar="'+esc(p.id)+'" title="Rola 1d20 mais o bônus de iniciativa e preenche o campo">Rolar d20</button><button type="button" class="small primary" data-ci="'+esc(p.id)+'" title="Adicionar à iniciativa" aria-label="Adicionar '+esc(p.nome)+' à iniciativa">Adicionar</button></div><p class="ci-ini-res" role="status">'+esc(resultadosCartao[p.id]||'')+'</p>')+'</article>').join(''):'<span class="muted">Esta campanha ainda não tem personagens. Importe ou crie as fichas dentro da campanha.</span>';
+    let barra=G.barra('ci',selecionados.size);if(!rolagemAuto())barra=barra.replace(/Rolar iniciativa \((\d+)\)/,'Adicionar ($1)');if($('#ci-selecao').innerHTML!==barra)$('#ci-selecao').innerHTML=barra;
+    const html=pers.length?pers.map(p=>'<article class="ci-cartao grupo-cartao ci-cartao-ini"><div class="ci-topo">'+G.checkbox(p,selecionados.has(p.id),'ci-sel',emCombate(p))+G.identidade(p,{resumo:true,vida:true})+'</div>'+(emCombate(p)?'<span class="muted ci-no-combate">No combate</span>':'<div class="ci-acoes"><label class="ci-ini"><span>Ini.</span><input type="number" step="1" data-ci-ini="'+esc(p.id)+'" placeholder="d20" title="Digite o resultado final do dado físico, ou use Rolar d20" aria-label="Iniciativa de '+esc(p.nome)+'"></label><button type="button" class="small" data-ci-rolar="'+esc(p.id)+'" '+(rolagemAuto()?'':'disabled ')+'title="'+(rolagemAuto()?'Rola 1d20 mais o bônus de iniciativa e preenche o campo':'Rolagem automática desligada: digite a iniciativa no campo')+'">Rolar d20</button><button type="button" class="small primary" data-ci="'+esc(p.id)+'" title="Adicionar à iniciativa" aria-label="Adicionar '+esc(p.nome)+' à iniciativa">Adicionar</button></div><p class="ci-ini-res" role="status">'+esc(resultadosCartao[p.id]||'')+'</p>')+'</article>').join(''):'<span class="muted">Esta campanha ainda não tem personagens. Importe ou crie as fichas dentro da campanha.</span>';
     if(ultimaGrade!==html){$("#ci-lista").innerHTML=html;ultimaGrade=html;}
     document.querySelectorAll?.('[data-ci-ini]').forEach(i=>{if(digitadas[i.dataset.ciIni]!==undefined&&i.value!==String(digitadas[i.dataset.ciIni]))i.value=digitadas[i.dataset.ciIni];});
   }
@@ -99,6 +101,7 @@
       const n=numeroDe(p.id);
       if(Number.isNaN(n)){invalidos.push(p.nome);continue;}
       if(n!==undefined){adicionar(p,false,n);linhas.push(p.nome+': '+n+' (informado por você)');}
+      else if(!rolagemAuto()){adicionar(p,false,undefined);linhas.push(p.nome+': sem iniciativa (rolagem automática desligada: digite o valor na ordem do combate)');}
       else{const r=window.GRUPO_PERSONAGENS.rolarDetalhe(p);adicionar(p,false,r.total);linhas.push(p.nome+': '+(r.d20===null?'':'d20 '+r.d20+(r.bonus?(r.bonus>0?' + ':' - ')+Math.abs(r.bonus):'')+' = ')+r.total+' (rolado)');}
       delete digitadas[p.id];delete resultadosCartao[p.id];
     }
@@ -178,7 +181,7 @@
     const resumo=e.target.closest("[data-ci-resumo]");if(resumo){const p=pers.find(p=>p.id===resumo.dataset.ciResumo);if(p)abrirResumo(p);return;}
     const b=e.target.closest("[data-ci]");
     const rl=e.target.closest("[data-ci-rolar]");
-    if(rl){const p=pers.find(p=>p.id===rl.dataset.ciRolar);if(p&&!emCombate(p)){const r=window.GRUPO_PERSONAGENS.rolarDetalhe(p);digitadas[p.id]=String(r.total);resultadosCartao[p.id]=(r.d20===null?'':'d20 '+r.d20+(r.bonus?(r.bonus>0?' + ':' - ')+Math.abs(r.bonus):'')+' = ')+r.total;desenhar();}return;}
+    if(rl){if(!rolagemAuto()){msg('Rolagem automática desligada: digite a iniciativa no campo.');return;}const p=pers.find(p=>p.id===rl.dataset.ciRolar);if(p&&!emCombate(p)){const r=window.GRUPO_PERSONAGENS.rolarDetalhe(p);digitadas[p.id]=String(r.total);resultadosCartao[p.id]=(r.d20===null?'':'d20 '+r.d20+(r.bonus?(r.bonus>0?' + ':' - ')+Math.abs(r.bonus):'')+' = ')+r.total;desenhar();}return;}
     if(b){const p=pers.find(p=>p.id===b.dataset.ci);if(p){const n=numeroDe(p.id);if(Number.isNaN(n)){msg('Iniciativa inválida para '+p.nome+'. Use um número inteiro ou deixe vazio.',true);return;}adicionar(p,false,n);delete digitadas[p.id];delete resultadosCartao[p.id];desenhar();mostrarResultados([n===undefined?p.nome+' entrou sem iniciativa: preencha o número na ordem do combate ou use Rolar iniciativa.':p.nome+': '+n+' (informado por você)']);}return;}
     if(e.target.closest('#ci-todos')){if(!podeUsar())return;pers.filter(p=>!emCombate(p)).forEach(p=>selecionados.add(p.id));desenhar();return;}
     if(e.target.closest('#ci-nenhum')){selecionados.clear();desenhar();return;}

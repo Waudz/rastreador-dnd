@@ -154,6 +154,19 @@
       }
 
       /* dano a um combatente (botão Dano, painel Atacar): reduz PV, conta dano causado/sofrido e abates; quemId opcional atribui o dano a outro atacante */
+      /* chave "Rolagem automática de dados" (guardada no aparelho): ligada = os botões rolam; desligada = o usuário digita todos os valores */
+      const CHAVE_ROLAGEM = "ini_rolagem_auto";
+      const rolagemAuto = () => { try { return localStorage.getItem(CHAVE_ROLAGEM) !== "0"; } catch (_) { return true; } };
+      function aplicarRolagemAuto() {
+        const on = rolagemAuto(), caixa = $("rolagem-auto"), est = $("rolagem-auto-estado");
+        if (caixa) caixa.checked = on; if (est) est.textContent = on ? "ligada" : "desligada";
+        if (document.body && document.body.classList && document.body.classList.toggle) document.body.classList.toggle("rolagem-manual", !on);
+      }
+      if ($("rolagem-auto")) $("rolagem-auto").addEventListener("change", () => {
+        try { localStorage.setItem(CHAVE_ROLAGEM, $("rolagem-auto").checked ? "1" : "0"); } catch (_) {}
+        aplicarRolagemAuto(); render(true);
+        if (window.dispatchEvent && typeof CustomEvent === "function") window.dispatchEvent(new CustomEvent("ini:rolagem"));
+      });
       function aplicarDano(id, amount, quemId) {
         const alvo = combatants.find((c) => c.id === id), n = Math.max(0, Math.floor(Number(amount) || 0));
         if (!alvo || !n) return false;
@@ -212,6 +225,8 @@
         if(!force&&document.activeElement?.matches?.('#combatants [data-iniciativa]')){save();return;}
         const list = $("combatants");
         const ordered = sorted();
+        const posVez = currentId ? ordered.findIndex((c) => c.id === currentId) : -1;
+        const exibicao = posVez > 0 ? [...ordered.slice(posVez), ...ordered.slice(0, posVez)] : ordered;   // lista rotacionada: vez primeiro, quem acabou de jogar por último
         $("round").textContent = round;
         document.querySelector(".round-box").hidden = !currentId;
         renderDmgBy(ordered);
@@ -233,20 +248,20 @@
           return;
         }
 
-        list.innerHTML = ordered.map((c) => {
+        list.innerHTML = exibicao.map((c, posicao) => {
           if (c.id === editId) return editTpl(c);
           const isActive = c.id === currentId;
           const isDefeated = Number(c.hp) <= 0;
           const pct = Math.max(0, Math.min(100, (Number(c.hp) / Number(c.maxHp)) * 100));
           const hpClass = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
           return `
-            <article class="combatant ${isActive ? "active" : ""} ${isDefeated ? "defeated" : ""}" aria-current="${isActive?'step':'false'}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
+            <article class="combatant ${isActive ? "active" : ""} ${currentId && posicao === 1 ? "proximo" : ""} ${isDefeated ? "defeated" : ""}" aria-current="${isActive?'step':'false'}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
               <input class="initiative iniciativa-valor" type="number" step="1" data-iniciativa="${c.id}" value="${pendente(c) ? "" : Number(c.initiative)}" placeholder=" " aria-label="Iniciativa de ${escapeText(c.name)}" title="Iniciativa pendente: informe o resultado da rolagem, já com o modificador">
               <div class="id-bloco">
                 <span class="avfx">${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 40, c.foto) : ""}</span>
                 <div class="id-texto">
                 <div class="name"><span class="nome-texto">${escapeText(c.name)}</span>${isActive ? ` <span aria-label="turno atual" class="turn-mark">${ico("turn")}</span>` : ""}</div>
-                <div class="kind">${isActive?'<span class="turno-badge">Turno atual</span> · ':''}${escapeText(c.kind)}${isDefeated ? " · Inconsciente/derrotado" : ""}${pendente(c) ? " · iniciativa pendente" : ""}</div>
+                <div class="kind">${isActive?'<span class="turno-badge">Turno atual</span> · ':currentId && posicao === 1 ? '<span class="proximo-badge">Próximo</span> · ':''}${escapeText(c.kind)}${isDefeated ? " · Inconsciente/derrotado" : ""}${pendente(c) ? " · iniciativa pendente" : ""}</div>
                 ${c.effects && c.effects.length ? `<div class="fxbar">${c.effects.map((e) => `<span class="fxchip" style="--c:${e.color}" data-fxtip="${escapeText(fxTip(e))}">${fxIcon(e.type)}${escapeText(e.name)} <b>${fxLeft(e)}</b><button type="button" data-fxdel="${c.id}|${e.id}" aria-label="Remover ${escapeText(e.name)}">${ico("x")}</button></span>`).join("")}</div>` : ""}
               </div>
               </div>
@@ -263,7 +278,7 @@
                   <button class="small danger" type="button" data-damage="${c.id}">${ico("minus")}Dano</button>
                   <button class="small" type="button" data-heal="${c.id}">${ico("plus")}Cura</button>
                   <button class="small primary" type="button" data-atacar="${c.id}">${ico("swords")}Atacar</button>
-                  <button class="small" type="button" data-reroll="${c.id}" title="Rolar a iniciativa de novo (d20 + modificador)" aria-label="Rolar a iniciativa de ${escapeText(c.name)} de novo">${ico("d20")}</button>
+                  <button class="small" type="button" data-reroll="${c.id}" ${rolagemAuto() ? "" : "disabled"} title="${rolagemAuto() ? "Rolar a iniciativa de novo (d20 + modificador)" : "Rolagem automática desligada: digite a iniciativa no campo"}" aria-label="Rolar a iniciativa de ${escapeText(c.name)} de novo">${ico("d20")}</button>
                 </div>
               </div>
               <div class="row-actions">
@@ -338,7 +353,7 @@
         }
 
         if (button.dataset.reroll) {                          // re-rolar: d20 + modificador do combatente; a ordem é recalculada e o turno atual não muda
-          const alvo = combatants.find((c) => c.id === button.dataset.reroll); if (!alvo) return;
+          const alvo = combatants.find((c) => c.id === button.dataset.reroll); if (!alvo || !rolagemAuto()) return;
           const mod = Math.round(Number(window.__ini.bonusIniciativaDe && window.__ini.bonusIniciativaDe(alvo)) || 0), r = window.ROLAGENS.rolar("1d20", mod);
           alvo.initiative = r.total; render();
           window.FEEDBACK && window.FEEDBACK.mostrar(`${alvo.name}: d20 ${r.dados[0]} ${mod >= 0 ? "+" : "-"} ${Math.abs(mod)} = ${r.total}`);
@@ -486,6 +501,7 @@
         importarCombate,
         aoAlterar:fn=>ouvintes.push(fn),
         render: () => render(),
+        rolagemAuto,
         list: () => combatants,
         atual: () => currentId,
         aplicarDano,
@@ -495,5 +511,6 @@
       };
       try { const q = new URLSearchParams(location.search).get("campanha"), u = window.nuvem && window.nuvem.usuario && window.nuvem.usuario(); contexto = u ? (q || (window.CAMPANHAS_UI && window.CAMPANHAS_UI.ativaId()) || "") : ""; } catch (_) { contexto = ""; }
       load();
+      aplicarRolagemAuto();
       render();
     })();
