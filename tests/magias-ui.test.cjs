@@ -22,3 +22,10 @@ test('pesquisa de magias: lista de linhas como a de monstros (CSS) e painel da m
  const m=ler('css/magias.css'),i=ler('css/identidade.css'),f=ler('css/fluxos.css'),h=ler('iniciativa.html');
  assert.match(m,/#spells\.magias-resultados \{ display:block;/);assert.match(i,/#blist \.res, #spells \.res \{ flex-wrap:wrap; min-width:0; \}/);assert.match(f,/#spells \.res \.small \{ min-height:44px;/);assert.match(h,/id="spd-close">Fechar \(Esc\)<\/button>/);
 });
+test('ficha da magia no padrão das fichas: identidade com emblema do círculo, cartões de dados e seções em cartões com o título padrão; texto escapado',()=>{
+ const h=M.detalhes({nome:'Bola de Fogo',original:'Fireball',meta:[['Círculo','3º círculo'],['Escola','Evocação'],['Tempo de conjuração','Ação'],['Alcance','45 m'],['Componentes','V, S, M'],['Duração','Instantânea'],['Ritual',''],['Fonte','5e 2014 Rules']],descricao:'Texto.',materiais:'Guano',concentracao:false});
+ assert.match(h,/^<article class="magia-detalhe ficha-criatura magia-ficha"><header class="ficha-identidade">/);assert.match(h,/magia-selo-circulo"[^>]*>3º<\/span>/);assert.match(h,/<h3 class="ficha-nome">Bola de Fogo<\/h3>/);
+ assert.equal((h.match(/class="ficha-estatistica"/g)||[]).length,4,'tempo, alcance, componentes e duração em cartões');assert.match(h,/<div class="ficha-destaques magia-destaques">/);
+ assert.match(h,/<section class="panel "><h3 class="panel-title">Efeito da magia<\/h3>/);assert.match(h,/<section class="panel magia-materiais"><h3 class="panel-title">Materiais<\/h3>/);assert.match(h,/<footer class="magia-fonte">5e 2014 Rules<\/footer>/);assert.doesNotMatch(h,/undefined|null/);
+ const t=M.detalhes({nome:'Luz',meta:[['Círculo','Truque']],descricao:'x'});assert.match(t,/magia-selo-circulo"[^>]*>T<\/span>/);assert.ok(!/ficha-destaques/.test(t),'sem dados, sem cartões vazios');
+});

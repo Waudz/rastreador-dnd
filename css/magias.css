@@ -80,3 +80,15 @@
 }
 
 .catalogo-magias .magias-filtros[hidden] { display:none; }
+
+/* ficha da magia no padrão das fichas de monstro e de personagem */
+#spd .ficha-nome { font-size:23px; }
+.magia-ficha .magia-destaques { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:12px 0 8px; }
+.magia-ficha .ficha-estatistica strong { font-size:16px; font-weight:650; line-height:1.3; }
+.magia-ficha .magia-selo-circulo { display:inline-flex; align-items:center; justify-content:center; font:700 24px ui-sans-serif,system-ui,sans-serif; color:var(--gold); border-radius:12px; }
+.magia-ficha .ficha-identidade .magia-selos { margin-top:6px; }
+.magia-ficha .magia-nome-original { margin:2px 0 0; }
+.magia-ficha section.panel .magia-texto { font-size:13px; line-height:1.75; }
+.magia-ficha section.panel .magia-texto p { margin:0 0 12px; }
+.magia-ficha .magia-original { border:0; margin:0; padding:0; }
+.magia-ficha .magia-fonte { margin:4px 2px 0; }

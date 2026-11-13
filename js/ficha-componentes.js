@@ -1,7 +1,7 @@
 /* Componentes de apresentação. Os renderizadores mantêm os seus modelos e permissões. */
 (() => {
   const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const formas={defesa:'<path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/>',iniciativa:'<path d="m13 2-9 12h7l-1 8 10-12h-7z"/>',deslocamento:'<path d="M6 3v6m0 0 3 4-2 7M17 4l-2 5 3 4-1 8M3 12h5m6 3h6"/>'};
+  const formas={defesa:'<path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/>',iniciativa:'<path d="m13 2-9 12h7l-1 8 10-12h-7z"/>',deslocamento:'<path d="M6 3v6m0 0 3 4-2 7M17 4l-2 5 3 4-1 8M3 12h5m6 3h6"/>',tempo:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',alcance:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>',componentes:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/>',duracao:'<path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/>'};
   const icone=nome=>`<svg class="ficha-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">${formas[nome]||formas.defesa}</svg>`;
   function estatistica({rotulo,valor,id='',tipo='defesa'}) {
     return `<div class="ficha-estatistica"><small>${icone(tipo)}${esc(rotulo)}</small><strong${id?` id="${esc(id)}"`:''}>${esc(valor)}</strong></div>`;
