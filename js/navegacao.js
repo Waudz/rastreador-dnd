@@ -2,9 +2,9 @@
 (() => {
  const esc=nuvem.esc;
  const nav=document.createElement('header');nav.className='appheader';const ic=nome=>window.ico?window.ico(nome):'';
- const links=[['conta.html?aba=campanhas','Campanhas','book'],['iniciativa.html?aba=iniciativa','Iniciativa','swords'],['conta.html?aba=personagens','Personagens','users'],['iniciativa.html?aba=monstros','Monstros','skull'],['iniciativa.html?aba=magias','Magias','sparkles']];
+ const links=[['conta.html?aba=campanhas','Campanhas','book'],['iniciativa.html?aba=iniciativa','Iniciativa','swords'],['conta.html?aba=personagens','Personagens','users'],['iniciativa.html?aba=monstros','Monstros','skull'],['iniciativa.html?aba=magias','Magias','sparkles'],['itens.html','Itens','bag']];
  const rotaAtual=location.pathname.split('/').pop(),abaPedida=new URLSearchParams(location.search).get('aba'),abaAtual=abaPedida==='consulta'?'monstros':abaPedida;   // 'consulta' era o endereço antigo de Monstros e Magias
- const destinoAtual=rotaAtual==='iniciativa.html'?'iniciativa.html?aba='+(['monstros','magias'].includes(abaAtual)?abaAtual:'iniciativa'):'conta.html?aba='+(['personagem.html','criar-personagem.html'].includes(rotaAtual)?'personagens':rotaAtual==='campanha.html'?'campanhas':['conta','personagens'].includes(abaAtual)?abaAtual:'campanhas');
+ const destinoAtual=rotaAtual==='itens.html'?'itens.html':rotaAtual==='iniciativa.html'?'iniciativa.html?aba='+(['monstros','magias'].includes(abaAtual)?abaAtual:'iniciativa'):'conta.html?aba='+(['personagem.html','criar-personagem.html'].includes(rotaAtual)?'personagens':rotaAtual==='campanha.html'?'campanhas':['conta','personagens'].includes(abaAtual)?abaAtual:'campanhas');
  const contaAtual=destinoAtual==='conta.html?aba=conta',visitante=!nuvem.usuario();
  /* modo visitante: tudo o que não depende de conta funciona; o resto mostra o convite para entrar */
  for(const alvo of [document.documentElement,document.body].filter(Boolean))if(alvo.classList&&alvo.classList.toggle)alvo.classList.toggle('visitante',visitante);

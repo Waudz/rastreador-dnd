@@ -6,7 +6,7 @@
    Limite: a ficha tem teto de 300 KB no banco; as imagens usam no máximo ORCAMENTO caracteres. */
 (() => {
   "use strict";
-  const ORCAMENTO = 150000, MAX_UMA = 22000, MAX_URL = 500, BIB = "dnd5e_item_img_v1", BIB_MAX = 30;
+  const ORCAMENTO = 150000, MAX_UMA = 22000, MAX_URL = 500, BIB = "dnd5e_item_img_v1", BIB_MAX = 60;
   const ICONE = { equipamento: "bag", consumivel: "flask", magico: "sparkles", pergaminho: "book", outro: "clip" };
   const ehData = (v) => typeof v === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v) && v.length <= MAX_UMA;
   const ehUrl = (v) => { if (typeof v !== "string" || v.length > MAX_URL || /\s/.test(v)) return false; try { const u = new URL(v); return u.protocol === "https:" && !!u.hostname && !u.username && !u.password; } catch (_) { return false; } };
@@ -19,7 +19,7 @@
   function obter(f, it) {
     const k = chave(it), m = mapa(f), v = m && k ? m[k] : null;
     if (valida(v)) return { src: v, origem: "ficha" };
-    if (it && it.ref) { const b = lerBib()[it.ref]; if (valida(b)) return { src: b, origem: "aparelho" }; }
+    const rl = it && (it.catId || it.ref); if (rl) { const b = lerBib()[rl]; if (valida(b)) return { src: b, origem: "aparelho" }; }
     return null;
   }
   const usado = (f, exceto) => { const m = mapa(f) || {}; return Object.entries(m).reduce((s, [k, v]) => s + (k === exceto || !ehData(v) ? 0 : v.length), 0); };
@@ -28,12 +28,12 @@
     if (!valida(valor)) return { ok: false, erro: ehData(valor) || /^data:image/.test(String(valor)) ? "A imagem ficou grande demais. Escolha outra ou use uma URL." : "Use uma URL que comece com https:// ou envie um arquivo de imagem." };
     if (ehData(valor) && usado(f, k) + valor.length > ORCAMENTO) return { ok: false, erro: "O limite de imagens desta ficha foi atingido. Remova a imagem de outro item ou use uma URL." };
     f.imagensItens = mapa(f) || {}; f.imagensItens[k] = valor;
-    if (it.ref && ehData(valor)) { const b = lerBib(), ks = Object.keys(b); if (!(it.ref in b) && ks.length >= BIB_MAX) delete b[ks[0]]; b[it.ref] = valor; gravarBib(b); }
+    const rl = it.catId || it.ref; if (rl && ehData(valor)) { const b = lerBib(), ks = Object.keys(b); if (!(rl in b) && ks.length >= BIB_MAX) delete b[ks[0]]; b[rl] = valor; gravarBib(b); }
     return { ok: true };
   }
   function remover(f, it) {
     const k = chave(it), m = mapa(f); if (m && k) delete m[k];
-    if (it && it.ref) { const b = lerBib(); if (it.ref in b) { delete b[it.ref]; gravarBib(b); } }   // "Remover" também tira a sugestão deste aparelho
+    const rl = it && (it.catId || it.ref); if (rl) { const b = lerBib(); if (rl in b) { delete b[rl]; gravarBib(b); } }   // "Remover" também tira a sugestão deste aparelho
   }
   /* tira da ficha as imagens de itens que não existem mais (itens com a mesma chave continuam usando a imagem) */
   function limpar(f, itens) {
@@ -51,5 +51,11 @@
       im.src = dataUrl;
     });
   }
-  window.INV_IMG = { ORCAMENTO, ICONE, chave, valida, ehData, ehUrl, obter, definir, remover, limpar, reduzir, usado };
+  /* biblioteca deste aparelho, por referência do catálogo: a aba Itens guarda aqui a imagem de um item e todos os personagens do aparelho a veem como sugestão */
+  const biblioteca = {
+    obter: (ref) => { const b = lerBib()[ref]; return valida(b) ? b : null; },
+    definir(ref, v) { if (!ref) return { ok: false, erro: "Item sem identificação." }; if (!valida(v)) return { ok: false, erro: ehData(v) || /^data:image/.test(String(v)) ? "A imagem ficou grande demais." : "Use uma URL https:// ou um arquivo de imagem." }; const b = lerBib(), ks = Object.keys(b); if (!(ref in b) && ks.length >= BIB_MAX) delete b[ks[0]]; b[ref] = v; gravarBib(b); return { ok: true }; },
+    remover(ref) { const b = lerBib(); if (ref in b) { delete b[ref]; gravarBib(b); } },
+  };
+  window.INV_IMG = { biblioteca, ORCAMENTO, ICONE, chave, valida, ehData, ehUrl, obter, definir, remover, limpar, reduzir, usado };
 })();

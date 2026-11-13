@@ -340,7 +340,7 @@
   const cabecalhoInv = () => `<div class="inv-cab"><h3 class="sub inv-tit">Itens que você carrega</h3><button type="button" class="small primary" id="inv-add-abrir" aria-expanded="false" aria-controls="inv-add">+ Adicionar item</button><div class="inv-vista" role="group" aria-label="Modo de exibição do inventário">${[["lista", "Lista"], ["grade", "Grade"]].map(([k, n]) => `<button type="button" class="small${vistaInv === k ? " ativo" : ""}" data-inv-vista="${k}" aria-pressed="${vistaInv === k}">${n}</button>`).join("")}</div></div>`;
   function fecharAdd() { const p = document.getElementById("inv-add"); if (!p) return; p.hidden = true; p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = true; }); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", "false")); p.querySelectorAll("select").forEach((x) => { x.selectedIndex = 0; }); const n = document.getElementById("pg-nota"); if (n) n.value = ""; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "false"); b.textContent = "+ Adicionar item"; } }
   function abrirAdd() { const p = document.getElementById("inv-add"); if (!p) return; p.hidden = false; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "true"); b.textContent = "Fechar"; } p.querySelector("[data-inv-add-tipo]")?.focus(); }
-  function escolherAdd(tipo) { const p = document.getElementById("inv-add"); if (!p) return; p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.invAddTipo === tipo))); p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = x.dataset.addLinha !== tipo; }); const f = p.querySelector('[data-add-linha="' + tipo + '"] select, [data-add-linha="' + tipo + '"] button'); if (f) f.focus(); }
+  function escolherAdd(tipo) { const p = document.getElementById("inv-add"); if (!p) return; if (tipo === "cat") desenharCatAdd(); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.invAddTipo === tipo))); p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = x.dataset.addLinha !== tipo; }); const f = p.querySelector('[data-add-linha="' + tipo + '"] input, [data-add-linha="' + tipo + '"] select, [data-add-linha="' + tipo + '"] button'); if (f) f.focus(); }
   function atualizarCartao(card, it) {
     if (!card || !it) return; const n = card.querySelector(".inv-nome-txt"), q = card.querySelector(".inv-qtd-badge"), p = card.querySelector(".inv-peso-txt");
     if (n) n.textContent = (it.nome || "").trim() || "Item sem nome"; if (q) q.textContent = "×" + num(it.qtd, 1); if (p) p.textContent = kg(num(it.peso, 0)) + " kg cada";
@@ -358,10 +358,11 @@
     const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim(), qn = Math.max(0, num(it.qtd, 1));
     const thumb = `<button type="button" class="inv-thumb${im ? "" : " vazio"}" data-inv-detalhes="${i}" aria-label="Abrir os detalhes de ${nomeIt}" title="Ver detalhes">${im ? `<img class="inv-thumb-img" src="${esc(im.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : (window.ico ? window.ico(II.ICONE[t] || "bag") : "")}</button>`;
     const qtdCtl = `<span class="inv-qtd-ctl" role="group" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-menos="${i}" aria-label="Diminuir a quantidade de ${nomeIt}"${qn <= 0 ? " disabled" : ""}>−</button><input class="num" type="number" min="0" step="1" inputmode="numeric" data-inv="qtd" value="${qn}" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-mais="${i}" aria-label="Aumentar a quantidade de ${nomeIt}">+</button></span>`;
+    const qtdUI = it.conjunto ? `<span class="inv-conj-tag">Conjunto · ${it.conjunto.reduce((n, c) => n + Math.max(0, num(c.qtd, 0)), 0)} unidades</span>` : qtdCtl;
     const mais = `<details class="inv-mais"><summary class="small" aria-label="Mais ações de ${nomeIt}" title="Mais ações">${window.ico ? window.ico("more") : "…"}</summary><div class="inv-mais-menu"><button type="button" data-inv-editar-abrir="${i}">Editar…</button><button type="button" data-inv-descartar="${i}">Descartar…</button><button type="button" class="danger" data-inv-excluir="${i}">Excluir item…</button></div></details>`;
     return `<div class="item-inv inv-card${qn <= 0 ? " zerado" : ""}" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-inv-detalhes="${i}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></button></div>
       <div class="inv-meta muted"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span>${org}</div>
-      <div class="inv-acoes">${qtdCtl}${acoes.join(" ")}<button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</div></div>
+      <div class="inv-acoes">${qtdUI}${acoes.join(" ")}<button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</div></div>
       <div class="inv-edit" data-inv-uid="${esc(it.uid)}"${aberto ? "" : " hidden"}><div class="inv-edit-campos">
         <label class="inv-c-nome">Nome<input data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"></label>
         <label>Peso cada (kg)<input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}"></label>
@@ -427,35 +428,88 @@
     if (e.tipo === "pv-temp") return `Concede ${IE.formatarDados(e.dados)} pontos de vida temporários (média ${mediaDados(e.dados)}).${pas}`;
     return `${T.rotulo || e.tipo}: ${T.descrever ? T.descrever(e) : ""}.${dur}${pas}`;
   }
-  function htmlDetalhes(it, i) {
-    const t = it.tipo || "equipamento", pr = it.propriedades || {}, efs = IE.efeitosDe(it), im = II.obter(F(), it), qn = Math.max(0, num(it.qtd, 1));
+  /* ficha de leitura do item: a mesma de js/catalogo-itens.js (aba Itens), com o estado deste personagem (quantidade, sintonia, cargas) */
+  const CAT = () => window.CAT_ITENS || null;
+  function viewDoItem(it) {
+    const C = CAT(), cat = C && C.doInventario(it), t = it.tipo || "equipamento", pr = it.propriedades || {}, efs = IE.efeitosDe(it), im = II.obter(F(), it), qn = Math.max(0, num(it.qtd, 1));
     const consumo = pr.consumo || (t === "magico" ? "carga" : "unidade"), usavel = IE.temEfeitos(it) || t === "consumivel";
     const org = it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? (ROT_ORIGEM[it.origem.tipo] || it.origem.tipo) + (it.origem.nota ? ": " + it.origem.nota : "") : "";
-    const linhas = [
-      ["Tipo", IV.TIPOS[t] || t], pr.raridade ? ["Raridade", pr.raridade] : null,
-      ["Quantidade", String(qn)], ["Peso", `${kg(num(it.peso, 0))} kg cada · ${kg(qn * num(it.peso, 0))} kg no total`],
-      pr.sintonia && pr.sintonia.requer ? ["Sintonia", pr.sintonia.sintonizado ? "Exige sintonia · você está sintonizado" : "Exige sintonia · você não está sintonizado"] : null,
+    const raridade = pr.raridade || (cat && cat.raridade ? C.RARIDADES[cat.raridade] : ""), exigeSint = pr.sintonia ? !!pr.sintonia.requer : !!(cat && cat.sintonia);
+    const pesoLinha = it.conjunto ? `${kg(num(it.peso, 0))} kg no conjunto (soma dos componentes)` : `${kg(num(it.peso, 0))} kg cada · ${kg(qn * num(it.peso, 0))} kg no total`;
+    const doEstado = [
+      ["Tipo", IV.TIPOS[t] || t], raridade ? ["Raridade", raridade] : null, it.conjunto ? null : ["Quantidade", String(qn)], ["Peso", pesoLinha],
+      exigeSint ? ["Sintonia", pr.sintonia && pr.sintonia.sintonizado ? "Exige sintonia · você está sintonizado" : "Exige sintonia" + (pr.sintonia ? " · você não está sintonizado" : "")] : null,
       pr.cargas ? ["Cargas", `${num(pr.cargas.atual, 0)} de ${num(pr.cargas.max, 0)}${pr.cargas.recarga ? " · recarga: " + pr.cargas.recarga : ""}`] : null,
       usavel && efs.some((e) => !e.passivo) ? ["Ao usar", consumo === "carga" ? "Gasta carga(s) do item" : consumo === "nenhum" ? "Não gasta nada" : "Gasta 1 unidade"] : null,
       it.magiaVinculada ? ["Magia", `${it.magiaVinculada.n} (${Number(it.magiaVinculada.l) ? it.magiaVinculada.l + "º círculo" : "truque"})`] : null,
       org ? ["Origem", org] : null,
     ].filter(Boolean);
-    return `<div class="inv-det"><div class="inv-det-topo">${im ? `<img class="inv-det-img" src="${esc(im.src)}" alt="Imagem de ${esc(it.nome || "item")}" referrerpolicy="no-referrer" data-titulo="${esc(it.nome || "")}">` : `<span class="inv-det-img vazio">${window.ico ? window.ico(II.ICONE[t] || "bag") : ""}</span>`}
-        <div><h3>${esc(it.nome || "Item sem nome")}</h3><p class="muted">${esc(IV.TIPOS[t] || t)}${pr.raridade ? " · " + esc(pr.raridade) : ""} · ${kg(num(it.peso, 0))} kg</p></div></div>
-      ${it.desc ? `<h4 class="sub">Descrição</h4><p class="descricao-regra inv-det-desc">${esc(it.desc)}</p>` : ""}
-      ${efs.length ? `<h4 class="sub">Efeitos</h4><ul class="inv-det-efeitos">${efs.map((e) => `<li>${esc(descreverEfeito(e))}</li>`).join("")}</ul>` : (it.desc ? "" : '<p class="muted">Este item não tem descrição nem efeitos registrados.</p>')}
-      <dl class="inv-det-dados">${linhas.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
-      <div class="row inv-det-acoes">${usavel ? `<button type="button" class="small primary" data-det-usar="${i}">Usar</button>` : ""}${souMestre ? `<button type="button" class="small" data-det-config="${i}">Configurar efeitos (mestre)</button>` : ""}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div></div>`;
+    const doCatalogo = cat ? C.linhas(cat).filter(([k]) => !["Peso", "Raridade", "Sintonia"].includes(k)) : [];
+    return { usavel, v: { nome: it.nome || "Item sem nome", categoria: cat ? cat.categoria : t, imagem: im ? im.src : null, subtitulo: [IV.TIPOS[t] || t, raridade].filter(Boolean).join(" · ") + (cat ? " · " + C.rotuloCat(cat.categoria) : ""),
+      desc: it.desc || null, lacunaDesc: !!cat && !cat.custom && !it.desc && !efs.length, efeitos: efs.map(descreverEfeito), componentes: it.conjunto || null, acoesComponente: !!it.conjunto,
+      notaConjunto: it.conjunto ? "Conjunto agrupado: retire ou consuma cada componente aqui. O peso do conjunto é a soma do que resta, sem contar duas vezes." : null, dados: doEstado.concat(doCatalogo), rodape: cat ? "Dados básicos do catálogo (SRD 5.1)" + (cat.en ? `; original: ${cat.en}.` : ".") : "" } };
+  }
+  function htmlDetalhes(it, i) {
+    const C = CAT(); if (!C) return '<p class="err">Os detalhes do catálogo não carregaram. Recarregue a página.</p>';
+    const { usavel, v } = viewDoItem(it);
+    return C.fichaHTML(v) + `<div class="row inv-det-acoes">${usavel ? `<button type="button" class="small primary" data-det-usar="${i}">Usar</button>` : ""}${souMestre ? `<button type="button" class="small" data-det-config="${i}">Configurar efeitos (mestre)</button>` : ""}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div>`;
+  }
+  /* conjunto: retirar 1 unidade de um componente (vira item separado) ou consumi-la; o peso do conjunto é recalculado pela soma do que resta */
+  function acaoComponente(it, k, acao) {
+    const c = it.conjunto && it.conjunto[k]; if (!c || !(c.qtd >= 1)) return "Este componente acabou.";
+    const C = CAT(), cont_ = cont();
+    if (acao === "retirar") {
+      const cat = C && C.obter(c.ref), sep = cat ? C.paraInventario(cat, 1, { tipo: "jogo", nota: "Retirado de " + (it.nome || "conjunto") }) : IV.novoItem({ nome: c.nome, qtd: 1, peso: c.peso, origem: { tipo: "jogo", nota: "Retirado de " + (it.nome || "conjunto") } });
+      c.qtd -= 1; IV.adicionar(cont_, sep, { tipo: "entrada", nota: "Retirado de " + (it.nome || "conjunto") });
+      IV.registrar(cont_, { tipo: "retirada-componente", uid: it.uid, nome: it.nome, qtd: 1, nota: c.nome });
+    } else { c.qtd -= 1; IV.registrar(cont_, { tipo: "uso", uid: it.uid, nome: c.nome, qtd: 1, nota: "Consumido do conjunto " + (it.nome || "") }); }
+    it.peso = Math.round(C.pesoDoConjunto(it.conjunto) * 1000) / 1000;
+    if (it.conjunto.every((x) => !(x.qtd >= 1))) { const p = INV().indexOf(it); if (p >= 0) { IV.registrar(cont_, { tipo: "exclusao", uid: it.uid, nome: it.nome, qtd: 1, nota: "Conjunto esvaziado" }); INV().splice(p, 1); } return "esvaziou"; }
+    return "";
   }
   function abrirDetalhes(i) {
     const it = itemPor(i); if (!it) return;
     const { ov, fim } = modalInv("Detalhes do item", htmlDetalhes(it, i));
     ov.addEventListener("click", (e) => {
+      const comp = e.target.closest("[data-comp-retirar],[data-comp-consumir]");
+      if (comp) {
+        const retirar = comp.dataset.compRetirar !== undefined, r = acaoComponente(it, +(retirar ? comp.dataset.compRetirar : comp.dataset.compConsumir), retirar ? "retirar" : "consumir");
+        if (r && r !== "esvaziou") { aviso(r, true); return; }
+        salvarInv(); redesenharInv();
+        if (r === "esvaziou") { fim(); aviso(`${it.nome || "Conjunto"} esvaziado e removido da lista.`); return; }
+        ov.querySelector(".inv-modal-box").innerHTML = htmlDetalhes(it, INV().indexOf(it)); return;
+      }
       const b = e.target.closest("[data-det-usar],[data-det-config]"); if (!b) return;
       fim();
       if (b.dataset.detUsar !== undefined) { abrirUso(+b.dataset.detUsar); $("#uso-box")?.scrollIntoView({ block: "center" }); }
       else { abrirEditor(+b.dataset.detConfig); $("#ef-box")?.scrollIntoView({ block: "center" }); }
     });
+  }
+  /* ---------- adicionar do catálogo de itens ---------- */
+  let catAdd = { q: "", cat: "" };
+  function desenharCatAdd() {
+    const box = document.getElementById("ci-res"), C = CAT(); if (!box) return;
+    if (!C) { box.innerHTML = '<p class="muted">Catálogo de itens indisponível.</p>'; return; }
+    let todos; try { todos = C.todos(); } catch (_) { todos = []; }
+    if (!todos.length) { box.innerHTML = '<p class="muted">Carregando o catálogo…</p>'; C.carregar().then(desenharCatAdd).catch(() => { box.innerHTML = '<p class="err">Não foi possível carregar o catálogo de itens.</p>'; }); return; }
+    const l = C.filtrar(todos, { q: catAdd.q, cat: catAdd.cat }), mostra = l.slice(0, 30);
+    box.innerHTML = (mostra.length ? mostra.map((x) => { const im = x.custom ? x.imagem : (II.obter && II.obter({}, { ref: x.id }) || {}).src; return `<div class="inv-cat-item" data-cat-id="${esc(x.id)}"><button type="button" class="inv-thumb${im ? "" : " vazio"}" data-cat-det="${esc(x.id)}" aria-label="Ver detalhes de ${esc(x.nome)}">${im ? `<img class="inv-thumb-img" src="${esc(im)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : (window.ico ? window.ico(C.ICONE[x.categoria] || "bag") : "")}</button>
+      <div class="inv-corpo"><button type="button" class="inv-nome-btn" data-cat-det="${esc(x.id)}"><b class="inv-nome-txt">${esc(x.nome)}</b></button><div class="inv-meta muted">${esc([C.rotuloCat(x.categoria), C.custoTexto(x), C.pesoDe(x) > 0 ? kg(C.pesoDe(x)) + " kg" : ""].filter(Boolean).join(" · "))}</div></div>
+      <div class="inv-cat-add"><input class="num" type="number" min="1" max="99" step="1" value="1" aria-label="Quantidade de ${esc(x.nome)}"><button type="button" class="small primary" data-cat-add="${esc(x.id)}">Adicionar</button></div></div>`; }).join("") : '<p class="muted">Nenhum item encontrado.</p>') + (l.length > mostra.length ? `<p class="muted">Mostrando ${mostra.length} de ${l.length}. Refine a busca para ver os demais.</p>` : "");
+  }
+  function adicionarDoCatalogo(id, qtd) {
+    const C = CAT(), cat = C && C.obter(id); if (!cat) return;
+    const n = Math.max(1, Math.min(99, Math.floor(num(qtd, 1)))), origem = { tipo: souMestre ? "mestre" : "jogo" }, copias = cat.pacote ? n : 1;   // conjuntos não empilham: um item por pacote
+    let ultimo = null;
+    for (let k = 0; k < copias; k++) { ultimo = IV.adicionar(cont(), C.paraInventario(cat, cat.pacote ? 1 : n, origem), { tipo: "entrada" }); }
+    if (cat.custom && cat.imagem && ultimo) { const r = II.definir(F(), ultimo, cat.imagem); if (!r.ok) aviso("Item adicionado, mas a imagem não coube: " + r.erro, true); }
+    salvarInv(); redesenharInv(); fecharAdd(); if (!document.querySelector(".err")) aviso(`${n} × ${cat.nome} adicionado${n === 1 ? "" : "s"} ao inventário.`);
+  }
+  function detalhesCatalogoAdd(id) {
+    const C = CAT(), cat = C && C.obter(id); if (!cat) return;
+    const lib = cat.custom ? cat.imagem : (II.obter && II.obter({}, { ref: cat.id }) || {}).src;
+    const { ov, fim } = modalInv("Detalhes do item do catálogo", C.fichaHTML(C.viewDoCatalogo(cat, lib || null)) + `<div class="row inv-det-acoes"><label class="inline">Quantidade<input id="cat-det-qtd" class="num" type="number" min="1" max="99" value="1"></label><button type="button" class="small primary" id="cat-det-add">Adicionar ao inventário</button><button type="button" class="small subtle" data-modal-fechar>Fechar</button></div>`);
+    ov.querySelector("#cat-det-add").addEventListener("click", () => { const n = ov.querySelector("#cat-det-qtd").value; fim(); adicionarDoCatalogo(id, n); });
   }
   /* Descartar: escolhe quantas unidades; registra no histórico; zerar tira o item da lista (com confirmação extra) */
   function abrirDescartar(i) {
@@ -495,6 +549,9 @@
   }
   document.addEventListener("click", (e) => { document.querySelectorAll("details.inv-mais[open]").forEach((d) => { if (!d.contains(e.target)) d.removeAttribute("open"); }); });
   document.addEventListener("change", (e) => { const t = e.target; if (!t || !t.matches || !t.matches('input[data-inv="qtd"]')) return; const c = t.closest(".item-inv"), it = c && INV()[+c.dataset.i]; if (it) { t.value = it.qtd; c.classList.toggle("zerado", it.qtd <= 0); const m = c.querySelector("[data-inv-qtd-menos]"); if (m) m.disabled = it.qtd <= 0; } });
+  document.addEventListener("input", (e) => { if (e.target && e.target.id === "ci-q") { catAdd.q = e.target.value; desenharCatAdd(); } });
+  document.addEventListener("change", (e) => { if (e.target && e.target.id === "ci-cat") { catAdd.cat = e.target.value; desenharCatAdd(); } });
+  if (CAT()) CAT().carregar().then(() => { try { if (P && document.getElementById("inv")) redesenharInv(); } catch (_) { /* a ficha ainda não carregou */ } }).catch(() => {});
   function histInv() {
     const l = (F().movimentos || []).slice(-20).reverse();
     return l.length ? `<ul class="hist-inv">${l.map((m) => `<li><b>${esc(IV.ROTULO_MOV[m.tipo] || (m.tipo === "uso-efeito" ? "Uso" : m.tipo))}</b> · ${esc(m.nome || "")}${m.qtd ? " ×" + m.qtd : ""}${m.alvo && m.tipo === "uso-efeito" ? " em " + esc(m.alvo) : ""}${m.resultado && m.resultado.length ? " — " + esc(m.resultado.join("; ")) : ""}${m.nota ? " (" + esc(m.nota) + ")" : ""} <span class="muted">${esc(String(m.quando || "").slice(0, 16).replace("T", " "))}</span></li>`).join("")}</ul>` : '<span class="muted">Nenhuma movimentação registrada.</span>';
@@ -719,9 +776,8 @@
         ${souMestre ? '<div class="sub">Mestre</div><button type="button" class="small" id="ms-abrir">Conceder magia ao personagem</button><div id="mestre-box" class="panel" hidden></div>' : ""}</div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia. Magias de raça, talento ou item aparecem aqui quando o personagem as tiver.</span></div>`}
       </section><section id="secao-inventario" role="tabpanel" aria-labelledby="aba-inventario" data-ficha-secao="inventario" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
         ${cabecalhoInv()}<div class="inv-add panel" id="inv-add" hidden><div class="inv-add-cab"><h3 class="sub inv-tit">Adicionar ao inventário</h3><button type="button" class="small subtle" id="inv-add-fechar">Cancelar</button></div>
-          <div class="inv-add-tipos" role="group" aria-label="Tipo de item a adicionar"><button type="button" class="small" data-inv-add-tipo="pre" aria-pressed="false">Equipamento comum</button><button type="button" class="small" data-inv-add-tipo="cat" aria-pressed="false">Poção ou item mágico</button><button type="button" class="small" data-inv-add-tipo="perg" aria-pressed="false">Pergaminho de magia</button><button type="button" class="small" data-inv-add-tipo="livre" aria-pressed="false">Outro item</button></div>
-          <div class="inv-add-linha" data-add-linha="pre" hidden><label for="eq-pre">Equipamento comum</label><div class="row"><select id="eq-pre" style="flex:1 1 180px">${opt("", "Escolher equipamento…", true)}${presets().map((p, i) => opt(i, `${p[0]} (${p[1]} kg)`)).join("")}</select><button type="button" class="small" id="add-pre">Adicionar</button></div></div>
-          <div class="inv-add-linha" data-add-linha="cat" hidden><label for="it-cat">Poção ou item mágico</label><div class="row"><select id="it-cat" style="flex:1 1 200px">${opt("", "Escolher poção ou item mágico…", true)}${Object.entries(IE.CATALOGO).map(([k, m]) => opt(k, m.nome, false)).join("")}</select><button type="button" class="small" id="it-cat-add">Adicionar</button></div></div>
+          <div class="inv-add-tipos" role="group" aria-label="Tipo de item a adicionar"><button type="button" class="small" data-inv-add-tipo="cat" aria-pressed="false">Catálogo de itens</button><button type="button" class="small" data-inv-add-tipo="perg" aria-pressed="false">Pergaminho de magia</button><button type="button" class="small" data-inv-add-tipo="livre" aria-pressed="false">Outro item (em branco)</button></div>
+          <div class="inv-add-linha" data-add-linha="cat" hidden><label for="ci-q">Buscar no catálogo (armas, armaduras, equipamento, poções, itens mágicos, pacotes…)</label><div class="row"><input id="ci-q" type="search" placeholder="Nome do item…" autocomplete="off" style="flex:1 1 180px"><select id="ci-cat" aria-label="Categoria" style="flex:0 1 200px"><option value="">Todas as categorias</option>${(CAT() ? CAT().CATEGORIAS : []).map(([k, n]) => `<option value="${k}">${esc(n)}</option>`).join("")}</select></div><div id="ci-res" class="inv-cat-res"></div></div>
           <div class="inv-add-linha" data-add-linha="perg" hidden><label for="pg-mag">Pergaminho de magia</label><div class="row"><select id="pg-mag" style="flex:1 1 200px" aria-label="Magia do pergaminho">${opt("", "Escolher a magia…", true)}</select><input id="pg-nota" style="flex:1 1 140px" maxlength="80" placeholder="Onde foi encontrado (opcional)"><button type="button" class="small" id="pg-add">Adicionar pergaminho</button></div></div>
           <div class="inv-add-linha" data-add-linha="livre" hidden><label>Outro item (personalizado)</label><div class="row"><button type="button" class="small" id="add-item">Adicionar item em branco</button><span class="muted">Cria uma linha vazia na lista acima para você preencher nome, quantidade e peso.</span></div></div>
         </div><div id="inv" class="${vistaInv === "grade" ? "inv-grade" : ""}">${INV().map(linhaInv).join("")}</div>
@@ -940,6 +996,8 @@
     if (c("#inv-add-fechar")) { fecharAdd(); return; }
     if ((b = c("[data-inv-add-tipo]"))) { escolherAdd(b.dataset.invAddTipo); return; }
     if ((b = c("[data-inv-editar-abrir]"))) { const card = b.closest(".item-inv"), p = card && card.querySelector(".inv-edit"), it = INV()[+b.dataset.invEditarAbrir]; if (p && it) { const abre = p.hidden; p.hidden = !abre; abre ? invAbertos.add(it.uid) : invAbertos.delete(it.uid); card.querySelector(".inv-mais")?.removeAttribute("open"); if (abre) p.querySelector('input[data-inv="nome"]')?.focus(); } return; }
+    if ((b = c("[data-cat-add]"))) { const row = b.closest(".inv-cat-item"); adicionarDoCatalogo(b.dataset.catAdd, row && row.querySelector("input") ? row.querySelector("input").value : 1); return; }
+    if ((b = c("[data-cat-det]"))) { detalhesCatalogoAdd(b.dataset.catDet); return; }
     if ((b = c("[data-inv-qtd-mais]"))) { ajustarQtd(+b.dataset.invQtdMais, 1); return; }
     if ((b = c("[data-inv-qtd-menos]"))) { ajustarQtd(+b.dataset.invQtdMenos, -1); return; }
     if ((b = c("[data-inv-detalhes]"))) { abrirDetalhes(+b.dataset.invDetalhes); return; }

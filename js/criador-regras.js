@@ -286,7 +286,7 @@ window.CRIADOR = (() => {
   function equipamento(p) {
     const f=p.ficha,st=estado(f),d=classe(f.classes?.[0]?.c),bg=origem(f),itens=[],pendentes=[];
     if(!d)return {itens,pendentes:["Escolha uma classe."]};
-    const add=(id,qtd)=>{const i=D.items.find(x=>x.id===id);if(!i)return;const conteudo=i.data.gear?.contents;if(conteudo){conteudo.forEach(c=>add(c.item,c.quantity*qtd));return;}itens.push({id,nome:i.nome||i.en,qtd,peso:Math.round((i.data.weight||0)*0.453592*10)/10});};
+    const add=(id,qtd)=>{const i=D.items.find(x=>x.id===id);if(!i)return;const conteudo=i.data.gear?.contents;if(conteudo){conteudo.forEach(c=>add(c.item,c.quantity*qtd));return;}itens.push({id,catId:id,nome:i.nome||i.en,qtd,peso:Math.round((i.data.weight||0)*0.453592*10)/10});};
     for(const i of d.data.startingEquipment||[])add(i.item,i.quantity);
     (d.data.startingChoices||[]).forEach((g,i)=>{const o=g.options[Number(st.equipamento["op:"+i])];if(!o){pendentes.push("Equipamento: escolha a opção "+(i+1));return;}
       o.items.forEach((x,j)=>{if(x.item)add(x.item,x.quantity||1);else for(let k=0;k<(x.count||1);k++){const key="item:"+i+":"+j+":"+k,id=st.equipamento[key];if(!itemCategoria(x.category).some(x=>x.id===id))pendentes.push("Escolha "+x.category);else add(id,1);}});

@@ -1,11 +1,11 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {ler}=require('./helpers.cjs');
-test('cabeçalho é fixo, sem rolagem horizontal e com navegação em grade de cinco colunas no celular',()=>{
+test('cabeçalho é fixo, sem rolagem horizontal e com navegação em grade de seis colunas no celular',()=>{
  const css=ler('css/identidade.css'),base=ler('css/estilo.css');
  assert.match(css,/\.appheader\s*\{[^}]*position:sticky;[^}]*top:0/);
  const nav=[...css.matchAll(/\.appnav\s*\{([^}]+)\}/g)].map(m=>m[1]);
  assert.ok(nav.length>=1);
- assert.ok(nav[0].includes('display:grid')&&nav[0].includes('repeat(5,minmax(0,1fr))'));
+ assert.ok(nav[0].includes('display:grid')&&nav[0].includes('repeat(6,minmax(0,1fr))'));
  for(const r of nav)assert.doesNotMatch(r,/overflow-x:\s*(auto|scroll)/);
  assert.doesNotMatch(base,/\.appnav\s*\{[^}]*overflow-x:auto/);
  assert.match(css,/\.appnav a\s*\{[^}]*flex-direction:column/);          // ícone sobre a legenda no celular

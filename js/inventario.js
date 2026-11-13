@@ -24,6 +24,8 @@
       propriedades: d.propriedades && typeof d.propriedades === "object" ? copia(d.propriedades) : {},
       magiaVinculada: d.magiaVinculada ? { en: d.magiaVinculada.en, n: d.magiaVinculada.n, l: Number(d.magiaVinculada.l) } : null,
       desc: String(d.desc || "").slice(0, 1500),
+      ...(d.catId ? { catId: String(d.catId).slice(0, 120) } : {}),   // aponta para o catálogo de itens (dados básicos vêm de lá)
+      ...(Array.isArray(d.conjunto) && d.conjunto.length ? { conjunto: d.conjunto.slice(0, 40).map((c) => ({ ref: String(c.ref || "").slice(0, 120), nome: String(c.nome || "").slice(0, 120), qtd: Math.max(0, Math.floor(num(c.qtd, 0))), peso: Math.max(0, num(c.peso, 0)) })) } : {}),   // pacote: componentes agrupados
     };
   }
   /* Completa itens antigos (sem uid, tipo, origem). Os identificadores dos itens antigos são determinísticos (não mudam a cada carregamento)
@@ -52,8 +54,8 @@
     c.movimentos.push({ id: "mv_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), quando: agora(), ...ev });
     if (c.movimentos.length > LIMITE_LOG) c.movimentos.splice(0, c.movimentos.length - LIMITE_LOG);
   }
-  const mesmaPilha = (a, b) => a.ref && b.ref ? a.ref === b.ref && a.tipo === b.tipo && JSON.stringify(a.propriedades) === JSON.stringify(b.propriedades) && !a.magiaVinculada && !b.magiaVinculada
-    : !!(a.magiaVinculada && b.magiaVinculada && a.magiaVinculada.en === b.magiaVinculada.en && a.tipo === b.tipo);
+  const mesmaPilha = (a, b) => !a.conjunto && !b.conjunto && (a.ref && b.ref ? a.ref === b.ref && a.tipo === b.tipo && JSON.stringify(a.propriedades) === JSON.stringify(b.propriedades) && !a.magiaVinculada && !b.magiaVinculada
+    : !!(a.magiaVinculada && b.magiaVinculada && a.magiaVinculada.en === b.magiaVinculada.en && a.tipo === b.tipo));
   const acha = (c, id) => c.itens.find((i) => i.uid === id);
 
   /* Entra no contêiner. Itens idênticos do catálogo (e pergaminhos da mesma magia) somam na mesma pilha. */
@@ -107,6 +109,7 @@
   const ROTULO_MOV = { entrada: "Entrada", saida: "Saída", uso: "Uso", descarte: "Descarte", carga: "Carga usada", copia: "Pergaminho copiado", "transferencia-entrada": "Recebido", "transferencia-saida": "Entregue", compra: "Compra", venda: "Venda", saque: "Saque" };
 
   ROTULO_MOV.exclusao = "Item excluído";
+  ROTULO_MOV["retirada-componente"] = "Componente retirado";
 
   window.INVENTARIO = { TIPOS, LIMITE_SINTONIA, novoItem, normalizar, conteinerDe, adicionar, retirar, consumir, transferir, criarPergaminho, sintonizar, sintonizados, usarCarga, pesoTotal, registrar, ROTULO_MOV };
 })();

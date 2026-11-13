@@ -20,7 +20,7 @@
  :root{--nav-inferior:calc(66px + env(safe-area-inset-bottom,0px))}
  body{padding-bottom:calc(var(--nav-inferior) + 20px)}
  .appheader{grid-template-areas:'marca dir';padding-top:env(safe-area-inset-top,0px);padding-bottom:6px;min-height:56px}
- .appheader>.appnav{position:fixed;top:auto;bottom:0;left:0;right:0;z-index:90;width:100%;max-width:none;margin:0;border-top:1px solid var(--line);border-radius:0;background:var(--bg);padding:4px max(4px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));min-height:66px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+ .appheader>.appnav{position:fixed;top:auto;bottom:0;left:0;right:0;z-index:90;width:100%;max-width:none;margin:0;border-top:1px solid var(--line);border-radius:0;background:var(--bg);padding:4px max(4px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));min-height:66px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
  .appnav a{min-height:54px;font-size:10px;gap:4px}
  .personagem-card .grupo-identidade .av{width:72px!important;height:72px!important;min-width:72px}
  .personagem-card .grupo-cartao-topo{flex-wrap:nowrap;align-items:center;gap:8px}
@@ -47,3 +47,4 @@
  body.ficha-pagina .appnav{display:none}
  body.ficha-pagina{padding-bottom:16px}
 }
+@media(max-width:420px){.appnav a{font-size:9px;padding:4px 0;letter-spacing:-.1px}}

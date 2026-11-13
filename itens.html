@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://pdjzahpxjrlbqqtzkfdr.supabase.co; worker-src 'self'; base-uri 'self'; form-action 'self'">
+  <title>Itens — Compêndio 5e</title>
+  <meta name="theme-color" content="#101820">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="16x16" href="icones/compendio-favicon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icones/compendio-favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="icones/compendio-favicon-48.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icones/compendio-app-192.png">
+  <link rel="apple-touch-icon" href="icones/compendio-apple-touch.png">
+  <link rel="stylesheet" href="css/estilo.css">
+  <link rel="stylesheet" href="css/identidade.css">
+  <link rel="stylesheet" href="css/fichas.css">
+  <link rel="stylesheet" href="css/itens.css">
+  <script src="js/splash.js"></script>
+  <script src="js/icones.js" defer></script><script src="js/visualizador-imagem.js" defer></script>
+  <script src="js/config-nuvem.js" defer></script>
+  <script src="vendor/supabase/supabase.js" defer></script>
+  <script src="js/nuvem.js" defer></script>
+  <script src="js/feedback.js" defer></script>
+  <script src="js/navegacao.js" defer></script>
+  <script src="js/foto.js" defer></script>
+  <script src="js/inventario-imagens.js" defer></script>
+  <script src="js/catalogo-itens.js" defer></script>
+  <script src="js/itens.js" defer></script>
+  <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+  <main class="tracker">
+    <header class="header"><div><p class="eyebrow">D&amp;D 5e (2014) · SRD 5.1</p><h1>Itens</h1></div></header>
+    <section class="panel vista-itens">
+      <h2 class="panel-title"><i data-i="bag"></i>Catálogo de itens</h2>
+      <div class="row itens-busca">
+        <input id="it-q" type="search" name="busca-itens" data-lpignore="true" data-1p-ignore placeholder="Pesquisar por nome ou descrição…" autocomplete="off" style="flex:1 1 240px" aria-label="Pesquisar itens">
+        <button type="button" class="small primary" id="it-novo">+ Criar item</button>
+      </div>
+      <div class="row itens-filtros">
+        <select id="it-cat" aria-label="Categoria"></select>
+        <select id="it-sub" aria-label="Tipo" hidden></select>
+        <select id="it-rar" aria-label="Raridade"></select>
+        <select id="it-prop" aria-label="Propriedade de arma"></select>
+        <select id="it-sint" aria-label="Sintonia"><option value="">Sintonia: qualquer</option><option value="sim">Exige sintonia</option><option value="nao">Mágicos sem sintonia</option></select>
+        <button type="button" class="small subtle" id="it-limpar">Limpar filtros</button>
+        <span class="inv-vista" role="group" aria-label="Modo de exibição"><button type="button" class="small" data-it-vista="lista" aria-pressed="true">Lista</button><button type="button" class="small" data-it-vista="grade" aria-pressed="false">Grade</button></span>
+      </div>
+      <p id="it-status" class="muted" role="status"></p>
+      <div id="it-lista" class="itens-lista"></div>
+      <div class="row" style="justify-content:center"><button type="button" class="small" id="it-mais" hidden>Mostrar mais</button></div>
+    </section>
+  </main>
+</body>
+</html>

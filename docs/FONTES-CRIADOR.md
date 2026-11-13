@@ -36,3 +36,8 @@ A automação usa as 12 subclasses SRD 5.1 disponíveis no HeroQuill e oito subc
 js/regras.js centraliza traços raciais, descrições, perícias, percepção passiva e bônus de ataque. A ficha e o resumo do mestre consomem essas funções. js/origens.js contém as descrições raciais canônicas; valores antigos salvos não substituem essas descrições. O resumo omite seções vazias e mantém detalhes por foco/toque/mouse.
 
 A expansão de subclasses não automatiza toda decisão de mesa, a tabela de Magia Selvagem ou o histórico de substituições de magias em cada nível.
+
+
+## Catálogo de itens (aba Itens)
+
+`dados/itens-srd2014.json` (578 itens) é gerado por `node tools/gerar-itens.cjs` a partir dos itens de `dados/criacao-srd2014.json` (SRD 5.1, CC BY 4.0, via 5e-database/HeroQuill; ver acima) e dos nomes de `tools/itens-pt.txt`. Preços, pesos, dano, CA, propriedades, raridade, sintonia, espaço e conteúdo dos pacotes vêm do SRD; só mudam as unidades (libras em kg, ×0,5; pés em metros, ×0,3) e o idioma dos rótulos. Os nomes em português que não existiam nos dados são tradução do próprio projeto e podem diferir dos livros oficiais. **Lacuna:** esses dados do SRD não trazem descrição textual dos itens; a ficha mostra a lacuna em vez de inventar texto.
