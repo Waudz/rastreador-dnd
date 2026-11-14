@@ -50,7 +50,7 @@
     return new Promise((ok, no) => {
       const im = new Image();
       im.onerror = () => no(new Error("imagem inválida"));
-      im.onload = () => { const c = document.createElement("canvas"); c.width = c.height = lado; const x = c.getContext("2d"), s = Math.min(im.width, im.height); x.fillStyle = "#fff"; x.fillRect(0, 0, lado, lado); x.drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 0, 0, lado, lado); ok(c.toDataURL("image/jpeg", qualidade)); };
+      im.onload = () => { const c = document.createElement("canvas"); c.width = c.height = lado; const x = c.getContext("2d"), s = Math.min(im.width, im.height); if (!dataUrl.startsWith("data:image/png;")) { x.fillStyle = "#fff"; x.fillRect(0, 0, lado, lado); } x.drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 0, 0, lado, lado); ok(c.toDataURL(dataUrl.startsWith("data:image/png;") ? "image/png" : "image/jpeg", qualidade)); };
       im.src = dataUrl;
     });
   }
