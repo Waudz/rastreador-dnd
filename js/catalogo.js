@@ -10,8 +10,22 @@ window.CATALOGO=(()=>{
  function url(path){return path?window.NUVEM_CONFIG.url+'/storage/v1/object/public/'+BUCKET+'/'+path.split('/').map(encodeURIComponent).join('/'):null;}
  function imagem(tipo,chave){const r=registro(tipo,chave);return r?.imagemDefinida?url(r.imagem):undefined;}
  function avisar(){try{localStorage.setItem(CACHE,JSON.stringify({globais:dados.globais||{}}));}catch(_){}if(typeof CustomEvent!=='undefined')window.dispatchEvent?.(new CustomEvent('catalogo:atualizado'));}
+ /* Visitante sem conta: o JSON do catálogo continua fechado (catalogo_publicado não é legível por anon), mas os CAMINHOS das imagens públicas vêm de uma função mínima.
+    Só aceita caminhos no formato do bucket público; qualquer falha (função ainda não instalada, sem rede) deixa tudo como estava: ícones padrão. Nada vai para o localStorage. */
+ const CAMINHO=/^(itens|monstros)\/[0-9a-f-]{36}\.(jpg|png|webp)$/;
+ async function carregarPublico(){
+  if(pendente)return pendente;
+  pendente=(async()=>{
+   try{
+    const r=await nuvem.catalogoImagensPublicas?.(),lista=Array.isArray(r)?r:[],g={};
+    for(const x of lista)if(x&&(x.tipo==='item'||x.tipo==='monstro')&&typeof x.chave==='string'&&x.chave.length<=180&&typeof x.imagem==='string'&&CAMINHO.test(x.imagem))g[x.tipo+':'+x.chave]={tipo:x.tipo,chave:x.chave,imagem:x.imagem,imagemDefinida:true};
+    dados={globais:g};if(typeof CustomEvent!=='undefined')window.dispatchEvent?.(new CustomEvent('catalogo:atualizado'));
+   }catch(_){/* sem imagens públicas: os ícones padrão continuam */}
+   return dados;
+  })();try{return await pendente;}finally{pendente=null;}
+ }
  async function carregar(forcar=false){
-  if(!nuvem.usuario()){dados={globais:{}};marca='';try{localStorage.removeItem(CACHE);}catch(_){}return dados;}
+  if(!nuvem.usuario()){dados={globais:{}};marca='';try{localStorage.removeItem(CACHE);}catch(_){}return carregarPublico();}
   if(pendente)return pendente;
   pendente=(async()=>{
    const ler=campos=>nuvem.get('catalogo_publicado?select='+campos+'&id=eq.2014');

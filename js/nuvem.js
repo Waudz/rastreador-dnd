@@ -276,6 +276,8 @@
     get: (c) => rest("GET", c), post: (c, o, h) => rest("POST", c, o, h), patch: (c, o) => rest("PATCH", c, o), apagar: (c) => rest("DELETE", c),
     rpc: (nome, args) => rest("POST", "rpc/" + nome, args || {}),
     catalogoPublico: (campos) => http(`${base}/rest/v1/catalogo_publicado?select=${campos === 'atualizado_em' ? 'atualizado_em' : 'dados,atualizado_em'}&id=eq.2014`, {headers:{apikey:C.chave},cache:'no-store'}),
+    /* só caminhos de imagem do catálogo (itens e monstros), legíveis por visitantes sem conta; exige a função public.catalogo_imagens_publicas (docs/PLANO-IMAGENS-PUBLICAS.md) */
+    catalogoImagensPublicas: () => http(`${base}/rest/v1/rpc/catalogo_imagens_publicas`, { method: "POST", headers: { apikey: C.chave, "Content-Type": "application/json" }, body: "{}", cache: "no-store" }),
     enviarArquivo, urlDoArquivo, apagarArquivos, observar, esc, olhos, copiar
   };
 })();

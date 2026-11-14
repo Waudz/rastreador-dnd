@@ -146,6 +146,13 @@
   });
   window.addEventListener('catalogo:atualizado',()=>{if(!atual.length)return;montarFiltros();sincronizarSelects();desenhar();const aberto=document.querySelector('#it-modal [data-it-img]');if(aberto){/* próxima abertura usa o registro atualizado */}});
   window.ACESSO?.pronto.then(()=>{$('#it-novo').hidden=!CATALOGO.admin();});
+  /* imagem indisponível (arquivo removido, rede ou bloqueio): volta ao ícone padrão da categoria, na lista, na grade e nos detalhes */
+  document.addEventListener("error", (e) => {
+    const im = e.target; if (!im || im.tagName !== "IMG") return;
+    const ico = (cat) => (window.ico ? window.ico(C.ICONE[cat] || "bag") : "");
+    if (im.classList.contains("inv-thumb-img")) { const b = im.closest(".inv-thumb"), c = im.closest("[data-it]"), it = c && C.obter(c.dataset.it); if (b) { b.classList.add("vazio"); b.innerHTML = ico(it && it.categoria); } }
+    else if (im.classList.contains("inv-det-img")) { const sp = document.createElement("span"); sp.className = "inv-det-img vazio"; sp.setAttribute("aria-hidden", "true"); sp.innerHTML = ico("bag"); im.replaceWith(sp); }
+  }, true);
   window.CATALOGO?.iniciar();
   C.carregar().then(() => { montarFiltros(); desenhar(); const id = new URLSearchParams(location.search).get("item"); if (id && C.obter(id)) detalhes(id); }).catch(() => { $("#it-status").textContent = "Não foi possível carregar o catálogo de itens. Tente novamente."; });
 })();
