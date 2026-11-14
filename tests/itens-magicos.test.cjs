@@ -53,7 +53,9 @@ test('itens sem catálogo: tipo mágico, pergaminho com magia ou raridade escrit
   const m=A.C.infoMagica({nome:'Anel estranho',tipo:'magico',propriedades:{}});assert.equal(m.magico,true);assert.equal(m.raridade,null,'mágico sem raridade informada: sem indicador, sem inventar');
   for(const [txt,chave,rot] of [['Comum','comum','Comum'],['incomum','incomum','incomum'],['Raro','rara','Raro'],['Rara','rara','Rara'],['Muito raro','muito-rara','Muito raro'],['Lendário','lendaria','Lendário'],['LENDÁRIA','lendaria','LENDÁRIA'],['Artefato','artefato','Artefato']]){
     const x=A.C.infoMagica({nome:'x',tipo:'equipamento',propriedades:{raridade:txt}});
-    assert.equal(x.magico,true,txt);assert.equal(x.raridade.chave,chave,txt);assert.equal(x.raridade.rotulo,rot,'o texto do mestre é mantido: '+txt);
+    assert.equal(x.magico,false,'raridade preenchida não torna o item mágico: '+txt);assert.equal(x.raridade.chave,chave,txt);
+    assert.equal(A.C.infoMagica({nome:'x',tipo:'magico',propriedades:{raridade:txt}}).magico,true,'tipo mágico escolhido pelo mestre: '+txt);
+    assert.equal(A.C.infoMagica({nome:'Espada longa',tipo:'arma',catId:'srd51:item/longsword',propriedades:{raridade:txt}}).magico,false,'item mundano do catálogo com raridade escrita continua não mágico');assert.equal(x.raridade.rotulo,rot,'o texto do mestre é mantido: '+txt);
   }
   const estranha=A.C.infoMagica({nome:'x',tipo:'magico',propriedades:{raridade:'Épico'}});assert.equal(estranha.magico,true);assert.equal(estranha.raridade.chave,null);assert.equal(estranha.raridade.rotulo,'Épico');
   assert.ok(!/rar-/.test(A.C.seloRaridade(estranha.raridade)),'sem cor para raridade desconhecida');assert.match(A.C.seloRaridade(estranha.raridade),/>Épico</);
@@ -112,4 +114,14 @@ test('interface: lista, grade e barra lateral do inventário e o catálogo usam 
   assert.ok(t.includes('C.ehMagicoCatalogo(it) ? " item-magico" : ""')&&t.includes('<span class="inv-magico-tag">Mágico</span>')&&t.includes('C.seloRaridade('),'cartão do catálogo');
   assert.ok(!/class="inv-thumb[^"]*(magico|item-magico)/.test(p+t),'a miniatura não recebe classe nem símbolo extra');
   assert.ok(ler('personagem.html').includes('catalogo-itens.js')&&ler('itens.html').includes('catalogo-itens.js'));
+});
+
+test('pergaminhos do catálogo são mágicos com a raridade certa; item do mestre só é mágico por escolha explícita (tipo), nunca por ter raridade',()=>{
+  const A=amb();const esp={'cantrip':'comum','1st':'comum','2nd':'incomum','3rd':'incomum','4th':'rara','5th':'rara','6th':'muito-rara','7th':'muito-rara','8th':'muito-rara','9th':'lendaria'};
+  for(const [k,r] of Object.entries(esp)){const it=A.C.paraInventario(A.C.obter('srd51:item/spell-scroll-'+k),1,{tipo:'jogo'});const m=A.C.infoMagica(it);assert.equal(m.magico,true,k);assert.equal(m.raridade.chave,r,k);}
+  /* equipamento criado pelo mestre: raridade independente da classificação */
+  const livre=A.C.infoMagica({nome:'Espada do vilarejo',tipo:'arma',propriedades:{raridade:'Raro'}});assert.equal(livre.magico,false);assert.equal(livre.raridade.chave,'rara');
+  assert.equal(A.C.infoMagica({nome:'Anel do vilarejo',tipo:'magico',propriedades:{}}).magico,true);
+  assert.equal(A.C.infoMagica({nome:'Poção caseira',tipo:'consumivel',propriedades:{raridade:'Comum'}}).magico,false);
+  assert.equal(A.C.ehMagicoCatalogo({categoria:'personalizado',subtipo:'magico',custom:true,raridade:'rare'}),false,'item personalizado do catálogo local não vira mágico por raridade');
 });

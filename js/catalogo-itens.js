@@ -140,11 +140,10 @@
   /* item do inventário -> { magico, raridade: {chave, rotulo} | null } */
   function infoMagica(it) {
     const cat = it ? doInventario(it) : null, pr = (it && it.propriedades) || {}, doCat = ehMagicoCatalogo(cat);
-    const magico = doCat || !!(it && (it.tipo === "magico" || (it.tipo === "pergaminho" && it.magiaVinculada))) || !!chaveRaridade(pr.raridade);
-    if (!magico) return { magico: false, raridade: null };
+    const magico = doCat || !!(it && (it.tipo === "magico" || (it.tipo === "pergaminho" && it.magiaVinculada)));   // raridade preenchida NÃO torna o item mágico: são informações independentes
     const escrita = pr.raridade ? String(pr.raridade).trim() : "", chave = chaveRaridade(escrita) || (cat && cat.raridade ? RAR_CHAVE[cat.raridade] || null : null);
     const rotulo = escrita || (cat && cat.raridade ? RARIDADES[cat.raridade] || "" : "");
-    return { magico: true, raridade: rotulo ? { chave, rotulo: chave && !escrita ? RAR_ROTULO[chave] : rotulo } : null };
+    return { magico, raridade: rotulo ? { chave, rotulo: chave && !escrita ? RAR_ROTULO[chave] : rotulo } : null };
   }
   /* indicador da raridade: texto sempre presente (a cor nunca é a única pista) */
   const seloRaridade = (r) => (r && r.rotulo ? `<span class="inv-raridade${r.chave ? " rar-" + r.chave : ""}" data-raridade="${esc(r.chave || "")}">${esc(r.rotulo)}</span>` : "");

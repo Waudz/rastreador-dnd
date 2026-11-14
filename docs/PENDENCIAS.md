@@ -1,5 +1,7 @@
 # Pendências e próxima tarefa
 
+**Classificacao magica corrigida (14/11, cache v194):** raridade preenchida (item do mestre/personalizado) nao torna o item magico; magico = categoria do catalogo (magico/pocao/pergaminho), tipo magico ou pergaminho com magia. Raridade segue independente (aparece mesmo em item nao magico).
+
 **Grade e molduras (14/11, local, cache v193):** na grade, "Detalhes" e "..." ficam juntos na ultima linha de todos os cartoes (`.inv-fim`, so `#inv.inv-grade`; alturas, colunas e miniaturas iguais); moldura da miniatura: dourado discreto (magico) ou cinza-azulado (comum), nunca por raridade, em inventario e catalogo.
 
 **Identidade de item magico (14/11, local, cache v192):** magico (nome dourado suave + tag Magico) e raridade (ponto e rotulo coloridos) sao informacoes separadas; classificacao por categoria do catalogo (magico/pocao/pergaminho), tipo magico, pergaminho com magia ou raridade escrita, nao so por ter raridade (CAT_ITENS.infoMagica). Miniaturas, molduras e fundo do cartao intactos. Lista, grade, barra lateral e itens.html. Testes: itens-magicos.
