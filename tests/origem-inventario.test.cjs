@@ -362,3 +362,9 @@ test('os textos digitados são normalizados com \s+ (espaços), nunca removendo 
   assert.ok(ler('js/personagem.js').includes('e.value.replace(/\\s+/g, " ").trim()'));
   const A=amb(),it=A.I.novoItem({nome:'x'});A.I.definirOrigemTexto(it,'  Presente   de  Aldren   Thorne ');assert.equal(it.origem.texto,'Presente de Aldren Thorne');
 });
+
+test('item com efeito configurado não repete a cura na linha mecânica',()=>{
+  const A=amb(),p=A.C.obter('srd51:item/potion-of-healing');
+  assert.equal(A.W.INV_RESUMO.mecanico({},p,[]).includes('Cura'),true,'sem efeito configurado, a linha do catálogo aparece');
+  assert.equal(A.W.INV_RESUMO.mecanico({},p,['Recupera 2d4+2 pontos de vida']),'Recupera 2d4+2 pontos de vida');
+});

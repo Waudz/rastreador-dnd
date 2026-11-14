@@ -18,7 +18,7 @@ window.CATALOGO=(()=>{
   pendente=(async()=>{
    try{
     const r=await nuvem.catalogoImagensPublicas?.(),lista=Array.isArray(r)?r:[],g={};
-    for(const x of lista)if(x&&(x.tipo==='item'||x.tipo==='monstro')&&typeof x.chave==='string'&&x.chave.length<=180&&typeof x.imagem==='string'&&CAMINHO.test(x.imagem))g[x.tipo+':'+x.chave]={tipo:x.tipo,chave:x.chave,imagem:x.imagem,imagemDefinida:true};
+    for(const x of lista)if(x&&(x.tipo==='item'||x.tipo==='monstro')&&typeof x.chave==='string'&&/^[A-Za-z0-9_:/.-]{1,180}$/.test(x.chave)&&(x.imagem===null||(typeof x.imagem==='string'&&CAMINHO.test(x.imagem))))g[x.tipo+':'+x.chave]={tipo:x.tipo,chave:x.chave,imagem:x.imagem,imagemDefinida:true};   // imagem null = o administrador removeu a imagem (continua valendo para o visitante)
     dados={globais:g};if(typeof CustomEvent!=='undefined')window.dispatchEvent?.(new CustomEvent('catalogo:atualizado'));
    }catch(_){/* sem imagens públicas: os ícones padrão continuam */}
    return dados;

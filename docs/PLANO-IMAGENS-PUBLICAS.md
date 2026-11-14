@@ -1,47 +1,86 @@
-# Imagens do catálogo para visitantes sem conta — causa e plano (PARA APROVAÇÃO)
+# Imagens do catálogo para visitantes sem conta — causa, SQL revisado e plano (PARA APROVAÇÃO)
 
-Status: o código do aplicativo já foi ajustado (ver §4). **Falta uma função SQL mínima, que só o William aplica.** Nada foi aplicado ao Supabase. O SQL abaixo está em `docs/` de propósito, fora de `supabase/migrations/`.
+Status: **nada aplicado ao Supabase.** O código do aplicativo já está ajustado (§6). Falta só a função SQL abaixo, que o William aprova e aplica. O SQL está em `docs/` de propósito, fora de `supabase/migrations/`. Revisão do SQL: **estática** (não há PostgreSQL local; os testes de comportamento devem rodar no PostgreSQL descartável do projeto, §8).
 
 ## 1. Causa exata (verificada)
-As imagens do catálogo são arquivos no bucket **público** `catalogos` (Supabase Storage). Quem diz *qual arquivo pertence a qual item* é o JSON `public.catalogo_publicado` (registros `item:<id>` / `monstro:<chave>` com o campo `imagem`). Dois bloqueios impedem o visitante de ver as imagens:
-1. **Banco:** `supabase/catalogos-globais.sql` faz `revoke all on public.catalogo_publicado from public, anon` ("o catálogo exige conta autenticada; não abrir o JSON inteiro para visitantes"). Verificado ao vivo, sem login, com a chave publicável: `GET /rest/v1/catalogo_publicado` → **HTTP 401, código 42501, "permission denied for table catalogo_publicado"**.
-2. **Código:** `CATALOGO.carregar()` (js/catalogo.js) retornava logo no começo quando não há sessão (`if(!nuvem.usuario()) { dados={globais:{}}; return }`): nem tentava buscar. Resultado: `CATALOGO.imagem('item', id)` devolve `undefined` e a tela mostra só o ícone da categoria.
+As imagens são arquivos no bucket **público** `catalogos`. O mapa "qual arquivo é de qual item" está no JSON `public.catalogo_publicado` (`dados->'globais'`, chaves `tipo:chave`), bloqueado para visitantes:
+1. **Banco:** `revoke all on public.catalogo_publicado from public, anon` (`supabase/catalogos-globais.sql`). Verificado ao vivo, sem login: `GET /rest/v1/catalogo_publicado` → **401 / 42501 "permission denied for table catalogo_publicado"**.
+2. **Código:** `CATALOGO.carregar()` retornava sem tentar quando não há sessão.
 
-O que **não** é a causa (verificado): o bucket existe e é público (a URL pública de um arquivo inexistente responde "Object not found", enquanto um bucket inexistente responde "Bucket not found"); a CSP dos HTML permite `img-src https:`; o service worker ignora requisições de outra origem (`u.origin !== location.origin`), então não interfere; imagens padrão e personalizadas do catálogo falham igualmente (mesma tabela); as imagens enviadas pelos jogadores ficam dentro da ficha (`ficha.imagensItens`), que exige sessão e permissão, e não são afetadas.
+Não são a causa: o bucket existe e é público (objeto inexistente → "Object not found"; bucket inexistente → "Bucket not found"); a CSP permite `img-src https:`; o service worker ignora outras origens; o problema é igual para imagens padrão e personalizadas do catálogo (mesma tabela). Imagens enviadas por jogadores ficam em `ficha.imagensItens` (exigem sessão e permissão) e não são afetadas.
 
-## 2. Solução proposta (mínima e segura)
-Não abrir a tabela. Criar uma função que devolve **somente os caminhos de imagem** já públicos (qualquer pessoa com o caminho já consegue abrir o arquivo no bucket público): nada de nomes editados, descrições, traduções, itens excluídos ou dados de personagem.
+Forma real dos registros (de `salvar_catalogo_global`): `{tipo, chave, dados, imagem, imagemDefinida, excluido, versao, atualizado_em}`; `imagem` é string `itens/<uuid>.<ext>` / `monstros/<uuid>.<ext>` ou JSON `null` (administrador removeu a imagem); `chave` é o `id` do item (ex.: `srd51:item/dagger`) ou a `key` do monstro — a mesma chave que o aplicativo usa para procurar a imagem (`CATALOGO.imagem('item', it.id)`).
 
+## 2. SQL completo proposto
 ```sql
 begin;
 create or replace function public.catalogo_imagens_publicas()
 returns jsonb language sql stable security definer set search_path='' as $$
- select coalesce(jsonb_agg(jsonb_build_object('tipo',r.value->>'tipo','chave',r.value->>'chave','imagem',r.value->>'imagem')),'[]'::jsonb)
- from public.catalogo_publicado c, jsonb_each(coalesce(c.dados->'globais','{}'::jsonb)) r
+ select coalesce(jsonb_agg(jsonb_build_object(
+          'tipo',r.value->>'tipo',
+          'chave',r.value->>'chave',
+          'imagem',case when jsonb_typeof(r.value->'imagem')='string' then r.value->'imagem' else 'null'::jsonb end)),
+        '[]'::jsonb)
+ from public.catalogo_publicado c
+ cross join lateral jsonb_each(case when jsonb_typeof(c.dados->'globais')='object' then c.dados->'globais' else '{}'::jsonb end) r
  where c.id='2014'
-   and coalesce((r.value->>'imagemDefinida')::boolean,false)
-   and coalesce((r.value->>'excluido')::boolean,false)=false
+   and jsonb_typeof(r.value)='object'
+   and r.value->'imagemDefinida'='true'::jsonb                                     -- só registros em que o administrador decidiu sobre a imagem
+   and coalesce(r.value->'excluido','false'::jsonb)<>'true'::jsonb                 -- nunca itens/monstros excluídos
    and r.value->>'tipo' in ('item','monstro')
-   and r.value->>'imagem' ~ '^(itens|monstros)/[0-9a-f-]{36}\.(jpg|png|webp)$';
+   and r.value->>'chave' ~ '^[A-Za-z0-9_:/.-]{1,180}$'                             -- mesmo formato que salvar_catalogo_global exige
+   and (jsonb_typeof(r.value->'imagem') in ('null')                                -- imagem removida de propósito
+        or (jsonb_typeof(r.value->'imagem')='string'
+            and r.value->>'imagem' ~ ('^'||case r.value->>'tipo' when 'item' then 'itens' else 'monstros' end||'/[0-9a-f-]{36}\.(jpg|png|webp)$')));
 $$;
+comment on function public.catalogo_imagens_publicas() is 'Somente tipo, chave e caminho de imagem do catálogo global (bucket público). Não devolve dados, nomes nem registros excluídos.';
 revoke all on function public.catalogo_imagens_publicas() from public;
 grant execute on function public.catalogo_imagens_publicas() to anon, authenticated;
 commit;
 ```
-Rollback: `drop function public.catalogo_imagens_publicas();`.
+Rollback (sem tocar em dados): `drop function if exists public.catalogo_imagens_publicas();`
 
-Por que é seguro: só lê (`stable`); a saída é filtrada por formato de caminho do bucket público; não concede `select` em nenhuma tabela ao `anon`; não altera policies do Storage (o bucket já é público para leitura e continua sem `insert/update/delete` para anônimos); mantém `catalogo_publicado` fechada.
+## 3. Resposta às oito verificações
+| # | Pergunta | Conclusão |
+|---|---|---|
+| 1 | Só imagens de registros públicos e não excluídos? | Sim. Filtros no `where`: `imagemDefinida = true`, `excluido` diferente de `true`, tipo `item`/`monstro`, `chave` e caminho no formato do bucket **do mesmo tipo** (item só `itens/…`, monstro só `monstros/…`). Registro com imagem removida volta como `imagem: null` para o visitante respeitar a remoção. |
+| 2 | Itens privados, rascunhos ou dados de personagens podem aparecer? | Não. A função lê **uma única tabela** (`catalogo_publicado`, linha `2014`), sem joins com `personagens`, `campanhas`, `membros`, `acervos` ou Storage. Itens personalizados dos usuários vivem no navegador (localStorage) ou em tabelas de acervo, nunca nessa linha. O catálogo não tem conceito de rascunho: o que está em `globais` já é o publicado para todos os usuários logados. |
+| 3 | O identificador associa a imagem ao item certo? | Sim: `chave` é a mesma do mapa (`tipo:chave`) e a que o aplicativo usa para procurar (`it.id` do item; `key` do monstro). O cliente reconstrói `tipo:chave` e a URL pública do bucket; a mesma validação é refeita no navegador. |
+| 4 | `SECURITY DEFINER` seguro? | `set search_path=''` e todas as referências com esquema (`public.catalogo_publicado`); as funções/operadores usados (`jsonb_*`, `coalesce`, `->`, `->>`, `~`) estão em `pg_catalog`, sempre resolvido. Função `stable`, SQL puro (sem SQL dinâmico, sem parâmetros: não há o que injetar). `revoke all … from public` e `grant execute` só a `anon` e `authenticated`. Atenção: o Supabase concede execução por padrão a `anon/authenticated/service_role` em funções novas do esquema `public`; aqui isso coincide com o desejado. O `definer` é necessário porque `anon` não tem `select` na tabela. |
+| 5 | O visitante consegue consultar além do necessário? | Não pela função: não tem argumentos, devolve apenas `{tipo, chave, imagem}`. Não concede `select`, não altera policies nem o RLS e não mexe no Storage (o bucket já era público para leitura; continua sem escrita para anônimos). Quem já sabe um caminho de imagem sempre pôde abri-lo; a função só revela os caminhos que o catálogo já tornou públicos. |
+| 6 | A chave pública basta, sem autenticação? | Sim. Verificado ao vivo: com só o cabeçalho `apikey: sb_publishable_…` a requisição chega ao Postgres como papel `anon` (a resposta foi a negação de permissão da tabela, não erro de chave). O `catalogoImagensPublicas()` envia `apikey` e `Content-Type`; o Supabase já permite essa chamada de outra origem (GitHub Pages) como o restante do aplicativo. |
+| 7 | Funciona sem mudar permissões gerais da tabela? | Sim: `catalogo_publicado` continua com `revoke … from public, anon` (o teste `tests/catalogo-publico.test.cjs` confere o arquivo SQL) e a leitura completa continua só para `authenticated`. |
+| 8 | Devolve só o necessário, sem o JSON completo? | Sim: monta um array novo com 3 campos por registro; `dados` (nomes, traduções, descrições, edições) nunca é devolvido. |
 
-## 3. Alternativas descartadas
-- Reabrir `select` da tabela para `anon`: expõe o JSON inteiro (nomes, traduções, edições) — o que o projeto decidiu não fazer.
-- Arquivo estático `dados/imagens-catalogo.json` no repositório: funcionaria sem SQL, mas ficaria desatualizado a cada upload do administrador (exigiria commit manual).
+Robustez do SQL (revisada): sem `cast` que possa falhar com JSON inesperado (a comparação com `'true'::jsonb` substitui `::boolean`); `jsonb_each` só é aplicado quando `globais` é objeto; sem `globais` ou sem a linha `2014` o resultado é `[]`. Custo: leitura de uma linha por chave primária.
 
-## 4. O que o aplicativo já faz (local, sem depender do SQL)
-- `nuvem.catalogoImagensPublicas()` chama a função com a chave pública; `CATALOGO.carregar()` usa isso quando não há sessão, só aceita caminhos no formato `(itens|monstros)/<uuid>.(jpg|png|webp)`, não grava nada no `localStorage` e dispara `catalogo:atualizado`.
-- Se a função ainda não existir (404) ou não houver rede, nada quebra: continuam os ícones padrão.
-- Aba Itens: se um arquivo de imagem ficar indisponível, o cartão e os detalhes voltam ao ícone da categoria (antes ficava a imagem quebrada). Logado, o fluxo antigo não mudou.
+Riscos e limites: (a) endpoint anônimo → sujeito aos limites de taxa do Supabase; resposta pequena (um item por imagem cadastrada). (b) Itens "globais criados pelo administrador" têm imagem mapeada, mas o aplicativo só os mostra a quem tem conta (o JSON de `dados` segue fechado); não é regressão. (c) Itens excluídos continuam aparecendo ao visitante a partir do catálogo base local, como antes (a exclusão só é conhecida por quem lê a tabela). (d) Execução real ainda por validar (§8).
 
-## 5. Passos
-1. William aprova e aplica o SQL do §2 no painel.
-2. Conferir sem login (aba anônima): `https://…/rest/v1/rpc/catalogo_imagens_publicas` com a chave publicável devolve a lista; abrir `itens.html` e ver as imagens.
-3. Publicar o código (cache novo).
+## 4. Alternativas descartadas
+- Reabrir `select` da tabela para `anon`: expõe o JSON inteiro.
+- Arquivo estático no repositório: sem SQL, mas ficaria desatualizado a cada upload do administrador.
+- `security invoker` com policy de `anon`: exigiria policy por coluna/linha na tabela (mais permissões, não menos).
+
+## 5. Passos de implantação
+1. William aprova (e, se quiser, ajusta) o SQL do §2.
+2. Rodar os testes do §8 no PostgreSQL descartável.
+3. William aplica no painel do Supabase.
+4. Verificar **sem login** (aba anônima/`curl`): `POST /rest/v1/rpc/catalogo_imagens_publicas` com `apikey` devolve a lista; `GET /rest/v1/catalogo_publicado` continua 401; abrir `itens.html` e ver as imagens.
+5. Publicar o código (cache novo).
+Rollback: `drop function`; o aplicativo continua funcionando (volta aos ícones).
+
+## 6. O que o aplicativo já faz (local)
+- `nuvem.catalogoImagensPublicas()` e `CATALOGO.carregar()` (sem sessão) usam a função; só aceitam `tipo` item/monstro, `chave` no formato `[A-Za-z0-9_:/.-]{1,180}` e caminho `(itens|monstros)/<uuid>.(jpg|png|webp)` (ou `null`); nada vai para o `localStorage`; falha → ícones padrão.
+- Aba Itens: arquivo indisponível → ícone da categoria (lista, grade e detalhes).
+- Logado: caminho antigo inalterado.
+
+## 7. Testes já feitos
+Automatizados (`tests/catalogo-publico.test.cjs`): visitante com a função, caminhos inválidos ignorados, `imagem: null` preservada, função ausente/erro/resposta inválida, logado não usa a função, SQL sem grants em tabelas e sem policies. Navegador: site publicado sem login (0 imagens, tabela 401, o problema atual) e localhost sem login com a resposta da função simulada (URL pública montada; ícone de fallback quando o arquivo falha; 375 px sem rolagem horizontal).
+
+## 8. Testes a executar no PostgreSQL descartável (antes de aplicar)
+Com fixtures de `catalogo_publicado` contendo: item com imagem; monstro com imagem; registro excluído com imagem; registro com `imagemDefinida=false`; registro com `imagem` null definida; caminho inválido (`../x`, `.svg`, tipo trocado `itens/` em monstro); `globais` ausente / não objeto; `dados` com texto sigiloso.
+1. Como `anon`: `select public.catalogo_imagens_publicas()` devolve só os registros válidos, com apenas `tipo`, `chave`, `imagem`; nenhum texto de `dados`.
+2. Como `anon`: `select * from public.catalogo_publicado` → erro `42501` (continua fechada).
+3. Como `authenticated` não administrador: mesma saída; `salvar_catalogo_global` continua negada.
+4. `globais` ausente/não objeto → `[]` sem erro.
+5. `has_function_privilege('anon','public.catalogo_imagens_publicas()','execute')` verdadeiro; `has_table_privilege('anon','public.catalogo_publicado','select')` falso.

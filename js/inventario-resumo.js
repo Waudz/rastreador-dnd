@@ -26,7 +26,7 @@
       const alc = linha(rows, "Alcance"), arremesso = linha(rows, "Arremesso");
       if (alc) partes.push("Alcance " + alc);
       if (arremesso && arremesso !== alc) partes.push("Arremesso " + arremesso);   // não repete o mesmo alcance
-      const cura = linha(rows, "Cura ao usar"); if (cura) partes.push("Cura " + cura);
+      const cura = linha(rows, "Cura ao usar"); if (cura && !(efeitosTexto || []).length) partes.push("Cura " + cura);   // com efeito configurado, o texto do efeito já diz isso
       const ca = linha(rows, "Classe de Armadura"); if (ca) partes.push("CA " + ca);
       const forMin = linha(rows, "Força mínima"); if (forMin) partes.push("For " + forMin);
     }

@@ -66,3 +66,15 @@ test('imagem indisponível volta ao ícone padrão na aba Itens; o service worke
   assert.ok(ler('sw.js').includes('u.origin !== location.origin'),'requisições do Supabase vão direto pela rede');
   for(const h of ['itens.html','iniciativa.html','index.html'])assert.match(ler(h),/img-src [^;]*https:/,h+': a CSP permite imagens https');
 });
+
+test('imagem removida de propósito (null) vale para o visitante; o SQL revisado filtra excluídos, tipo/caminho e não faz cast que possa falhar',async()=>{
+  const v=visitante({rpc:()=>[{tipo:'monstro',chave:'goblin',imagem:null},{tipo:'item',chave:'a:b/c.d-e',imagem:'itens/'+UID+'.png'},{tipo:'item',chave:'tem espaço',imagem:'itens/'+UID+'.png'}]});
+  await v.C.carregar(true);
+  assert.equal(v.C.imagem('monstro','goblin'),null,'removida: não volta a foto padrão por engano de "indefinido"');
+  assert.ok(v.C.imagem('item','a:b/c.d-e'));assert.equal(v.C.imagem('item','tem espaço'),undefined,'chave fora do formato é ignorada');
+  const plano=ler('docs/PLANO-IMAGENS-PUBLICAS.md'),sql=plano.slice(plano.indexOf('```sql')+6,plano.indexOf('```',plano.indexOf('```sql')+6));
+  assert.match(sql,/r\.value->'imagemDefinida'='true'::jsonb/);assert.match(sql,/coalesce\(r\.value->'excluido','false'::jsonb\)<>'true'::jsonb/);
+  assert.match(sql,/case r\.value->>'tipo' when 'item' then 'itens' else 'monstros' end/);assert.match(sql,/jsonb_typeof\(c\.dados->'globais'\)='object'/);
+  assert.ok(!/::boolean|::integer|::bigint/.test(sql),'sem cast que quebre com JSON inesperado');
+  assert.match(sql,/from public\.catalogo_publicado c/);assert.ok(!/\bjoin\b[^;]*personagens|campanhas|membros|storage\./i.test(sql.replace('cross join lateral','')),'não toca em outras tabelas');
+});
