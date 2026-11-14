@@ -1,4 +1,4 @@
-    window.recortarFoto = function(file) {
+    window.recortarFoto = function(file, resolucao = 192) {
       return new Promise((ok, no) => {
         const url = URL.createObjectURL(file), im = new Image();
         im.onerror = () => { URL.revokeObjectURL(url); no(new Error("imagem inválida")); };
@@ -36,7 +36,7 @@
           ov.addEventListener("click", (e) => {
             const b = e.target.closest("[data-c]"); if (!b) return;
             if (b.dataset.c === "no") return fim(null); if(b.dataset.c === "center"){ox=oy=0;setZoom(1);return;}
-            const out = document.createElement("canvas"); out.width = out.height = 192; paint(out, 192); fim(out.toDataURL("image/jpeg", 0.85));
+            const out = document.createElement("canvas"); out.width = out.height = Math.min(1024,Math.max(192,resolucao)); paint(out, out.width); fim(out.toDataURL("image/jpeg", 0.85));
           });
           draw();
         };

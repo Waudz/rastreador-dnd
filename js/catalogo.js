@@ -1,21 +1,55 @@
-/* Apenas fotos/nomes de registros SRD são públicos. Criações nunca entram aqui. */
+/* Serviço único do catálogo global; mesma tabela, Storage para as imagens e RPC versionada. */
 window.CATALOGO=(()=>{
- async function atualizar({registros=[],magias=[],fotos=[],nomes={}}={}){
-  const usuario=nuvem.usuario()?.id;if(!usuario||!await ACESSO.pronto)return;
-  const base=registros.filter(m=>!m.custom&&m.document?.key==='srd-2014'),permitidos=new Set(base.map(m=>m.key)),nomesBase=new Set(base.map(m=>m.name.toLowerCase()));
-  const imagens=fotos.filter(i=>permitidos.has(i.key)&&(i.data===''||String(i.data).startsWith('data:image/'))),tr=Object.fromEntries(Object.entries(nomes).filter(([n])=>nomesBase.has(n)));
-  if(!imagens.length&&!Object.keys(tr).length)return;
-  for(let tentativa=0;tentativa<3;tentativa++){
-   if(nuvem.usuario()?.id!==usuario)throw Error('A conta mudou durante a sincronização.');
-   const rows=await nuvem.get('catalogo_publicado?select=dados,atualizado_em&id=eq.2014'),anterior=rows[0],d=anterior?.dados||{};
-   const porFoto=new Map((d.img||[]).map(i=>[i.key,i]));imagens.forEach(i=>porFoto.set(i.key,i));
-   const chavesPublicas=new Set([...(d.mon||[]).filter(m=>!m.custom&&m.document?.key==='srd-2014'),...base].map(m=>m.key));
-   const dados={...d,mon:(d.mon?.length?d.mon:base).filter(m=>!m.custom&&m.document?.key==='srd-2014'),spl:(d.spl||magias).filter(m=>!m.custom&&m.document?.key==='srd-2014'),img:[...porFoto.values()].filter(i=>chavesPublicas.has(i.key)),tr:{...(d.tr||{}),...tr}};
-   let resultado;
-   if(anterior)resultado=await nuvem.patch('catalogo_publicado?id=eq.2014&atualizado_em=eq.'+encodeURIComponent(anterior.atualizado_em),{dados,atualizado_em:new Date().toISOString()});
-   else try{resultado=await nuvem.post('catalogo_publicado',{id:'2014',dados,atualizado_em:new Date().toISOString()});}catch(e){if(e.status===409)continue;throw e;}
-   if(resultado?.length)return;
-  }throw Error('Outro aparelho alterou as fotos. Tente novamente.');
+ "use strict";
+ const BUCKET='catalogos',CACHE='dnd5e_catalogo_global_v1',clonar=o=>JSON.parse(JSON.stringify(o));
+ let dados={globais:{}},marca='',pendente=null,iniciado=false;
+ try{const c=nuvem.usuario()?JSON.parse(localStorage.getItem(CACHE)||'null'):null;if(c?.globais&&typeof c.globais==='object'&&!Array.isArray(c.globais))dados={globais:c.globais};}catch(_){}
+ const admin=()=>!!window.ACESSO?.admin?.();
+ const registros=tipo=>Object.values(dados.globais||{}).filter(r=>r&&r.tipo===tipo);
+ const registro=(tipo,chave)=>dados.globais?.[tipo+':'+chave]||null;
+ function url(path){return path?window.NUVEM_CONFIG.url+'/storage/v1/object/public/'+BUCKET+'/'+path.split('/').map(encodeURIComponent).join('/'):null;}
+ function imagem(tipo,chave){const r=registro(tipo,chave);return r?.imagemDefinida?url(r.imagem):undefined;}
+ function avisar(){try{localStorage.setItem(CACHE,JSON.stringify({globais:dados.globais||{}}));}catch(_){}if(typeof CustomEvent!=='undefined')window.dispatchEvent?.(new CustomEvent('catalogo:atualizado'));}
+ async function carregar(forcar=false){
+  if(!nuvem.usuario()){dados={globais:{}};marca='';try{localStorage.removeItem(CACHE);}catch(_){}return dados;}
+  if(pendente)return pendente;
+  pendente=(async()=>{
+   const ler=campos=>nuvem.get('catalogo_publicado?select='+campos+'&id=eq.2014');
+   const meta=await ler('atualizado_em'),nova=meta[0]?.atualizado_em||'';
+   if(!forcar&&marca&&nova===marca)return dados;
+   const rows=await ler('dados,atualizado_em'),row=rows[0];if(!row)return dados;
+   dados={...(row.dados||{}),globais:row.dados?.globais||{}};marca=row.atualizado_em||'';avisar();return dados;
+  })();try{return await pendente;}finally{pendente=null;}
  }
- return{atualizar};
+ function iniciar(){if(iniciado)return;iniciado=true;carregar(true).catch(e=>window.FEEDBACK?.mostrar('Catálogo: '+e.message,{erro:true}));nuvem.observar?.(()=>carregar(),5000);window.addEventListener?.('online',()=>carregar(true).catch(()=>{}));}
+ async function exigirAdmin(){if(!nuvem.usuario()||await window.ACESSO?.pronto!==true||!admin())throw Error('Somente administradores editam os catálogos globais.');}
+ function blobDe(src){
+  if(typeof Blob!=='undefined'&&src instanceof Blob)return src;
+  const m=/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(src||'');if(!m)throw Error('Envie uma imagem PNG, JPEG ou WebP.');
+  const b=atob(m[2]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return new Blob([a],{type:m[1]});
+ }
+ async function enviarImagem(tipo,src){
+  await exigirAdmin();const blob=blobDe(src),ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[blob.type];
+  if(!ext||!blob.size||blob.size>2097152)throw Error('Use uma imagem PNG, JPEG ou WebP de até 2 MB.');
+  const path=(tipo==='item'?'itens':'monstros')+'/'+crypto.randomUUID()+'.'+ext;
+  await nuvem.enviarArquivo(path,blob,BUCKET);return path;
+ }
+ async function salvar(tipo,chave,valor,opcoes={}){
+  await exigirAdmin();const uid=nuvem.usuario().id;await carregar(true);const anterior=registro(tipo,chave),versao=opcoes.versao??anterior?.versao??0;
+  const alterar=Object.prototype.hasOwnProperty.call(opcoes,'imagem');
+  const path=alterar&&opcoes.imagem?await enviarImagem(tipo,opcoes.imagem):null;
+  if(nuvem.usuario()?.id!==uid)throw Error('A conta mudou. Reabra o catálogo.');
+  const d=valor?clonar(valor):null;if(d){delete d.imagem;delete d.photo;delete d.global;}
+  const r=await nuvem.rpc('salvar_catalogo_global',{p_tipo:tipo,p_chave:chave,p_dados:d,p_alterar_imagem:alterar,p_imagem:path,p_excluido:!!opcoes.excluido,p_versao:versao});
+  const reg=Array.isArray(r)?r[0]:r;if(!reg||reg.chave!==chave||reg.versao!==versao+1)throw Error('O servidor não confirmou a alteração do catálogo.');
+  dados.globais={...(dados.globais||{}),[tipo+':'+chave]:reg};marca='';avisar();window.FEEDBACK?.mostrar('Catálogo atualizado para todos os usuários.');return reg;
+ }
+ function monstros(base){const mapa=new Map(base.map(m=>[m.key,m]));for(const r of registros('monstro')){if(r.excluido){mapa.delete(r.chave);continue;}if(r.dados)mapa.set(r.chave,{...clonar(r.dados),global:true});}return [...mapa.values()];}
+ async function atualizar({registros:mon=[],fotos=[],nomes={}}={}){
+  await exigirAdmin();await carregar(true);
+  const porChave=new Map(mon.map(m=>[m.key,m]));
+  for(const img of fotos){const m=porChave.get(img.key);if(m&&!m.custom)await salvar('monstro',m.key,null,{imagem:img.data||null});}
+  for(const [nome,traducao] of Object.entries(nomes)){const m=mon.find(x=>!x.custom&&x.name.toLowerCase()===nome);if(!m)continue;await salvar('monstro',m.key,{...m,nomeCatalogo:traducao||''});}
+ }
+ return{admin,carregar,iniciar,registros,registro,imagem,url,salvar,atualizar,monstros,legado:()=>dados};
 })();

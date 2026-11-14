@@ -37,8 +37,8 @@
     } catch (e) { msg(m, e.message, true); }
     $("#btn-login").disabled = false;
   }
-  $("#btn-login").onclick = enviarLogin;
-  $("#form-login").addEventListener("submit", (e) => { e.preventDefault(); enviarLogin(); });
+  $("#btn-login").onclick = (e) => { e?.preventDefault?.(); return enviarLogin(); };
+  $("#form-login").addEventListener("submit", (e) => { e.preventDefault(); if (!$("#btn-login").disabled) enviarLogin(); });
   function mostrarConfirmacao(email) {
     $("#confirmar-texto").textContent = "Enviamos um e-mail para " + email + ". Abra o link dele neste aparelho para ativar a conta. Se não chegou em alguns minutos, olhe a caixa de spam ou peça o reenvio.";
     $("#confirmar-email").hidden = false;

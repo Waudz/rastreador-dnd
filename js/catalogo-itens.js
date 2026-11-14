@@ -30,10 +30,10 @@
     if (!esperando) esperando = fetch("dados/itens-srd2014.json").then((r) => { if (!r.ok) throw new Error("catálogo de itens indisponível"); return r.json(); }).then((j) => { indexar(j.itens); return lista; }).catch((e) => { esperando = null; throw e; });
     return esperando;
   }
-  const todos = () => (lista || []).concat(personalizados.listar().map(deCustom));
-  const obter = (id) => porId.get(id) || personalizados.listar().map(deCustom).find((x) => x.id === id) || null;
+  const todos = () => {const m=new Map((lista||[]).concat(personalizados.listar().map(deCustom)).map(i=>[i.id,i]));for(const r of window.CATALOGO?.registros('item')||[]){if(r.excluido)m.delete(r.chave);else if(r.dados)m.set(r.chave,{...r.dados,global:true,imagem:window.CATALOGO.imagem('item',r.chave)||null});}return [...m.values()];};
+  const obter = id => {const base=porId.get(id),chave=base?.id||id;return todos().find(x=>x.id===chave||(x.alias||[]).includes(id))||null;};
   /* o item do inventário aponta para o catálogo por `catId` ou, nos antigos, pelo `ref` (srd51:item/...) */
-  const doInventario = (it) => (it ? (porId.get(it.catId) || porId.get(it.ref) || null) : null);
+  const doInventario = (it) => (it ? (obter(it.catId) || obter(it.ref) || null) : null);
 
   /* ---------- itens personalizados (neste aparelho, por conta) ---------- */
   const chaveCustom = () => "dnd5e_itens_custom_v1:" + ((window.nuvem && nuvem.usuario && nuvem.usuario() && nuvem.usuario().id) || "publico");
@@ -116,7 +116,7 @@
   function paraInventario(it, qtd, origem) {
     const IV = window.INVENTARIO, IE = window.ITENS_EFEITOS, n = Math.max(1, Math.floor(num(qtd, 1))), po = custoEmPO(it);
     if (it.efeitos && IE && IE.CATALOGO[it.efeitos]) { const x = IE.itemDoCatalogo(it.efeitos, origem); x.qtd = n; x.catId = it.id; x.nome = it.nome; if (it.peso != null) x.peso = it.peso; if (po != null) x.preco = po; return x; }
-    const x = IV.novoItem({ nome: it.nome, qtd: n, peso: pesoDe(it) || 0, tipo: it.custom ? "equipamento" : tipoInventario(it), ref: it.custom ? null : it.id, catId: it.custom ? null : it.id, origem: origem || { tipo: "jogo" }, preco: po, desc: it.custom ? it.desc || "" : "" });
+    const x = IV.novoItem({ nome: it.nome, qtd: n, peso: pesoDe(it) || 0, tipo: it.custom ? "equipamento" : tipoInventario(it), ref: it.custom&&!it.global ? null : it.id, catId: it.custom&&!it.global ? null : it.id, origem: origem || { tipo: "jogo" }, preco: po, desc: it.custom ? it.desc || "" : "" });
     if (it.pacote) x.conjunto = componentes(it).map((c) => ({ ref: c.id, nome: c.nome, qtd: c.qtd, peso: c.peso }));
     return x;
   }

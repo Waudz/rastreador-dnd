@@ -139,22 +139,22 @@
     const lvl = (m) => catOf(m) === "monster" ? "ND " + CRV(m) : "Nível " + (m.level ?? "—");
     const srcOf = (m) => m.document?.display_name || m.document?.key || "?";
     const illu = (m) => typeof m.illustration === "string" ? m.illustration : (m.illustration && (m.illustration.url || m.illustration.image)) || "";
-    const av = (m, size = 36) => { const src = m && ((PH[m.key]) || (!m.custom && PUB.has(m.key) ? pubName(m.key) : "") || illu(m)); const st = `width:${size}px;height:${size}px`; return src ? `<img class="av" style="${st}" src="${esc(src)}" alt="" loading="lazy">` : `<span class="av av0" style="${st};font-size:${Math.round(size * 0.45)}px">${esc(((m && (pt(m) || m.name)) || "?").charAt(0).toUpperCase())}</span>`; };
+    const av = (m, size = 36) => { const global=m&&window.CATALOGO?.imagem('monstro',m.key);const src = m && (global!==undefined?global:((PH[m.key]) || (!m.custom && PUB.has(m.key) ? pubName(m.key) : "") || illu(m))); const st = `width:${size}px;height:${size}px`; return src ? `<img class="av" style="${st}" src="${esc(src)}" alt="" loading="lazy">` : `<span class="av av0" style="${st};font-size:${Math.round(size * 0.45)}px">${esc(((m && (pt(m) || m.name)) || "?").charAt(0).toUpperCase())}</span>`; };
     const tsz = (m) => { const t = TP[m.type?.name] || m.type?.name || "", z = SZ[m.size?.name] || m.size?.name || ""; return t && z ? `${t} (${z})` : t || z; };
 
     let TR = {}; try { TR = JSON.parse(localStorage.getItem(acervo.chave("ini_tr")) || "{}"); } catch (_) {}
     const saveTR = () => { try { localStorage.setItem(acervo.chave("ini_tr"), JSON.stringify(TR)); } catch (_) {} };
-    const pt = (m) => { const k = m.name.toLowerCase(); return TR[k] || D.M[k] || ""; };
+    const pt = (m) => { const k = m.name.toLowerCase(); return window.CATALOGO?.registro('monstro',m.key)?.dados?.nomeCatalogo ?? TR[k] ?? D.M[k] ?? ""; };
 
     /* banco local (IndexedDB) */
-    let db, ALL = [], SP = [], PH = {}, BY = {}, ABI = new Map(), curSheet = null, phKey = null, formPhoto, shown = 40, showAll = false, editKey = null, cmSpells = [];
+    let db, ALL = [], SP = [], PH = {}, BY = {}, ABI = new Map(), curSheet = null, phKey = null, formPhoto, shown = 40, showAll = false, editKey = null, editGlobal = false, editVersion = 0, cmSpells = [];
     const rq = (r) => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
     const done = (t) => new Promise((ok, no) => { t.oncomplete = ok; t.onerror = () => no(t.error); });
     const put = async (store, arr) => { const t = db.transaction(store, "readwrite"); arr.forEach((x) => t.objectStore(store).put(x)); await done(t); };
     const del = async (store, key) => { const t = db.transaction(store, "readwrite"); t.objectStore(store).delete(key); await done(t); };
     const status = (h) => { $("#dl-status").innerHTML = h; };
     async function reload() {
-      ALL = (await rq(db.transaction("mon").objectStore("mon").getAll())).filter(EDICOES.catalogo2014);
+      ALL = window.CATALOGO?.monstros((await rq(db.transaction("mon").objectStore("mon").getAll())).filter(EDICOES.catalogo2014)) || [];
       SP = (await rq(db.transaction("spl").objectStore("spl").getAll())).filter(EDICOES.catalogo2014);
       PH = Object.fromEntries((await rq(db.transaction("img").objectStore("img").getAll())).map((x) => [x.key, x.data]));
       BY = Object.fromEntries(ALL.map((m) => [m.key, m]));
@@ -306,11 +306,24 @@
     function rowFull(m) {
       const p = pt(m), k = esc(m.key);
       return `<div class="res"><span class="lft">${av(m, 40)}<span><b>${esc(p || m.name)}</b>${p ? ` <span class="muted">(${esc(m.name)})</span>` : ""}${m.subtitle ? ` <span class="muted">— ${esc(m.subtitle)}</span>` : ""}<br><span class="muted">${CAT[catOf(m)]} · ${esc(tsz(m))} · ${lvl(m)} · CA ${m.armor_class} · PV ${m.hit_points} · ${esc(srcOf(m))}</span></span></span>
-        <span class="acts"><button class="small" data-view="${k}">Ver</button><button class="small" data-ph="${k}" title="Adicionar ou trocar a foto">${ico("camera")}</button><button class="small primary" data-add="${k}">Adicionar</button>${m.custom ? `<button class="small" data-edit="${k}">Editar</button><button class="small danger" data-del="${k}">Excluir</button>` : ""}</span></div>`;
+        <span class="acts"><button class="small" data-view="${k}">Ver</button><button class="small" data-ph="${k}" title="Adicionar ou trocar a foto">${ico("camera")}</button><button class="small primary" data-add="${k}">Adicionar</button>${(m.custom || window.CATALOGO?.admin()) ? `<button class="small" data-edit="${k}">Editar</button>${m.custom ? `<button class="small danger" data-del="${k}">Excluir</button>` : `<button class="small danger" data-global-del="${k}">Excluir do catálogo</button>`}` : ""}</span></div>`;
+    }
+    function renderGlobalDeleted() {
+      let box = document.getElementById('monstros-globais-excluidos');
+      if (!box) {
+        box = document.createElement('section'); box.id = 'monstros-globais-excluidos';
+        box.style.marginTop = '16px';
+        $('#blist').insertAdjacentElement('afterend', box);
+      }
+      if (!window.CATALOGO?.admin()) { box.hidden = true; box.innerHTML = ''; return; }
+      const lista = (window.CATALOGO.registros('monstro') || []).filter(r => r.excluido);
+      box.hidden = !lista.length;
+      box.innerHTML = lista.length ? `<details><summary>Monstros excluídos do catálogo global (${lista.length})</summary><div class="muted" style="margin:8px 0">Restaurar torna o monstro visível novamente para todos os usuários.</div>${lista.map(r => `<div class="res"><span>${esc(r.dados?.name || r.chave)}</span><button type="button" class="small" data-global-restore="${esc(r.chave)}">Restaurar</button></div>`).join('')}</details>` : '';
     }
     function renderBestiary() {
       const q = nz($("#bq").value.trim()), f = $("#bf").value;
       $("#ball").textContent = showAll ? "Ocultar lista" : "Mostrar tudo";
+      renderGlobalDeleted();
       if (!q && !f && !showAll) { $("#bcount").textContent = ALL.length ? `${ALL.length} fichas guardadas. Pesquise, escolha um filtro ou use “Mostrar tudo”.` : "Nenhuma ficha guardada ainda."; $("#blist").innerHTML = ""; return; }
       const ws = q.split(/\s+/).filter(Boolean), list = ALL.filter((m) => inF(m, f) && ws.every((w) => hay(m).includes(w)));
       $("#bcount").textContent = `${list.length} fichas`;
@@ -359,7 +372,7 @@
         atributos:ABIL.map(([k,n])=>({sigla:n,valor:m.ability_scores?.[k]??'—',modificador:mod(m.modifiers?.[k]??0),rolagem:'<button type="button" class="rolar-atributo" data-sheet-atributo="'+esc(n)+'" data-bonus="'+esc(m.modifiers?.[k]??0)+'" aria-label="Rolar '+esc(n)+'">Rolar d20</button>'})),
         informacoes:ln('Salvaguardas',saves)+ln('Perícias',skills)+ln('Resistências',tr(r.damage_resistances_display))+ln('Imunidades',tr(r.damage_immunities_display))+ln('Vulnerabilidades',tr(r.damage_vulnerabilities_display))+ln('Imunidades a condições',tr(r.condition_immunities_display))+ln('Sentidos',senses)+ln('Idiomas',tr(m.languages?.as_string)),
         tracos:(m.traits||[]).map(t=>habD(nm(t.name),descInfo(t.name,t.desc,m),rmBtn(m,'t',0,t.cf))).join(''),acoes:acts,magias:spl,
-        gerenciar:(m.custom?'<button class="small primary" data-edit="'+esc(m.key)+'">Editar ficha</button> ':'')+'<button class="small" data-ph="'+esc(m.key)+'">'+(PH[m.key]?'Trocar foto':'Adicionar foto')+'</button>'+(PH[m.key]?'<button class="small subtle" data-phx="'+esc(m.key)+'">'+(m.custom?'Remover foto':'Voltar à foto padrão')+'</button>':'')
+        gerenciar:((m.custom||window.CATALOGO?.admin())?'<button class="small primary" data-edit="'+esc(m.key)+'">Editar ficha</button> ':'')+'<button class="small" data-ph="'+esc(m.key)+'">'+(PH[m.key]?'Trocar foto':'Adicionar foto')+'</button>'+(PH[m.key]?'<button class="small subtle" data-phx="'+esc(m.key)+'">'+(m.custom?'Remover foto':'Voltar à foto padrão')+'</button>':'')
       });
       document.dispatchEvent(new Event('ficha:fechar-personagem'));
       window.PAINEL.mostrar("sheet"); $("#sheet").scrollTop = 0; $("#sheet-body").scrollTop = 0; $("#sh-close").focus();
@@ -495,14 +508,17 @@
     let cfPend = {};
     function resetForm() {
       cfPend = {}; setTimeout(refreshLineChips, 0); window.FICHA_CRIACAO.limparExtras();
-      editKey = null; cmSpells = []; formPhoto = undefined; chips();
+      editKey = null; editGlobal = false; editVersion = 0; cmSpells = []; formPhoto = undefined; chips();
       ["#cm-name", "#cm-sub", "#cm-traits", "#cm-acts"].forEach((s) => ($(s).value = "")); ABIL.forEach(([k]) => ($("#ab-" + k).value = 10));
       $("#cm-save").textContent = "Salvar ficha"; $("#cm-cancel").hidden = true; formPv();
     }
     function editCustom(k) {
       if (visitante()) return;
       const m = ALL.find((x) => x.key === k); if (!m) return;
-      resetForm(); editKey = k; cmSpells = (m.spells || []).slice(); chips(); formPv();
+      if (!m.custom && !window.CATALOGO?.admin()) return;
+      resetForm(); editKey = k; editGlobal = !m.custom;
+      editVersion = editGlobal ? (window.CATALOGO.registro('monstro', k)?.versao || 0) : 0;
+      cmSpells = (m.spells || []).slice(); chips(); formPv();
       $("#cm-cat").value = catOf(m); $("#cm-cat").onchange(); $("#cm-name").value = m.name; $("#cm-sub").value = m.subtitle || "";
       $("#cm-size").value = m.size?.name || "Medium"; $("#cm-type").value = m.type?.name || "Humanoid";
       $("#cm-cr").value = catOf(m) === "monster" ? cr(m.challenge_rating) : (m.level ?? 1); $("#cm-ac").value = m.armor_class; $("#cm-hp").value = m.hit_points;
@@ -510,7 +526,7 @@
       $("#cm-traits").value = m.raw?.traits ?? (m.traits || []).map((t) => `${t.name}: ${t.desc}`).join("\n");
       $("#cm-acts").value = m.raw?.actions ?? (m.actions || []).map((a) => `${a.name} | ${a.desc}`).join("\n");
       window.FICHA_CRIACAO.preencherExtras(window.FICHA_CRIACAO.extrasDeMonstro(m));
-      refreshLineChips(); $("#cm-save").textContent = "Salvar alterações"; $("#cm-cancel").hidden = false; $("#cm-msg").textContent = "";
+      refreshLineChips(); $("#cm-save").textContent = editGlobal ? "Publicar alterações globais" : "Salvar alterações"; $("#cm-cancel").hidden = false; $("#cm-msg").textContent = editGlobal ? "Edição global: as alterações serão vistas por todos os usuários." : "";
       $("#cm").open = true; $("#cm").scrollIntoView({ behavior: "smooth" });
     }
     $("#cm-cancel").onclick = () => { resetForm(); $("#cm-msg").textContent = "Edição cancelada."; };
@@ -564,7 +580,27 @@
         traits: lines("#cm-traits").map((l) => { const i = l.indexOf(":"), t = i < 0 ? { name: l, desc: "" } : { name: l.slice(0, i).trim(), desc: decP(l.slice(i + 1).trim()) }, ref = ((editKey && BY[editKey]?.traits) || []).find((x) => x.name === t.name && x.cf)?.cf || cfPend[t.name]; return ref ? { ...t, cf: ref } : t; }),
         actions: lines("#cm-acts").map(parseAct) };
       window.FICHA_CRIACAO.aplicarExtras(m, window.FICHA_CRIACAO.lerExtras());   // defesas, sentidos, perícias, salvaguardas, tipos de ação (tudo opcional)
-      const edited = !!editKey; await put("mon", [m]);
+      const edited = !!editKey;
+      if (editGlobal) {
+        if (!window.CATALOGO?.admin()) { $("#cm-msg").textContent = "Somente administradores podem editar fichas globais."; return; }
+        const original = BY[editKey];
+        if (!original || original.custom) { $("#cm-msg").textContent = "A ficha original não está disponível. Recarregue a página."; return; }
+        // O formulário não representa todos os campos SRD; preservar os campos que ele não edita.
+        const global = { ...original, ...m, key: original.key, custom: false, document: original.document,
+          updatedAt: Date.now(), global: true };
+        const opcoes = { versao: editVersion };
+        if (formPhoto !== undefined) opcoes.imagem = formPhoto;
+        const botao = $("#cm-save"); botao.disabled = true;
+        try {
+          await CATALOGO.salvar('monstro', original.key, global, opcoes);
+          resetForm(); await reload();
+          $("#cm-msg").textContent = `“${name}” atualizado no catálogo global.`;
+        } catch (e) {
+          $("#cm-msg").textContent = "Não foi possível publicar: " + e.message + " Atualize a página antes de tentar novamente se houve conflito.";
+        } finally { botao.disabled = false; }
+        return;
+      }
+      await put("mon", [m]);
       if (typeof formPhoto === "string") await put("img", [{ key: m.key, data: formPhoto }]); else if (formPhoto === null) await del("img", m.key);
       resetForm(); await reload(); queueSync();
       $("#cm-msg").textContent = `“${name}” ${edited ? "atualizado" : "salvo"} no bestiário.`;
@@ -597,7 +633,7 @@
       const ax = t.closest("[data-abix]"); if (ax) return openAbility(ax.dataset.l, +ax.dataset.abix);
       const fav = t.closest("#blist .av"); if (fav) { const v = fav.closest(".res")?.querySelector("[data-view]"); if (v) return openSheet(v.dataset.view); }
       const pb = t.closest("[data-ph]"); if (pb) return askPhoto(pb.dataset.ph);
-      const px = t.closest("[data-phx]"); if (px) { const k = px.dataset.phx; delete PH[k]; await del("img", k); touch(k); renderBestiary(); window.__ini.render(); return openSheet(k); }
+      const px = t.closest("[data-phx]"); if (px) { const k = px.dataset.phx; if(!BY[k]?.custom){if(!window.CATALOGO?.admin())return;try{await CATALOGO.salvar('monstro',k,null,{imagem:null});}catch(e){status(esc(e.message));return;}}else{delete PH[k];await del('img',k);touch(k);}renderBestiary();window.__ini.render();return openSheet(k); }
       const ck = t.closest("[data-cfk]"); if (ck) { const ix = CF.findIndex((f) => cfKey(f) === ck.dataset.cfk); if (ix >= 0) openClassFeature(ix, "sheet"); return; }
       const ct = t.closest("[data-cfto]"); if (ct) return cfAdicionar(+ct.dataset.cfto);
       const co = t.closest("[data-cfopen]"); if (co) return openClassFeature(+co.dataset.cfopen, t.closest("#sheet") ? "sheet" : "panel");
@@ -615,6 +651,30 @@
       if (d.edit) { if (innerWidth < 700) closeSheet(); return editCustom(d.edit); }
       if (d.add) { const m = ALL.find((x) => x.key === d.add); if (m) addMon(m, t.closest("[data-add]")); return; }
       if (d.tr) { const m = ALL.find((x) => x.key === d.tr), v = prompt("Nome em português para “" + m.name + "” (vazio remove):", pt(m) || m.name); if (v === null) return; v.trim() ? (TR[m.name.toLowerCase()] = v.trim()) : delete TR[m.name.toLowerCase()]; saveTR();if(!m.custom)try{await CATALOGO.atualizar({registros:ALL,magias:SP,nomes:{[m.name.toLowerCase()]:v.trim()}});}catch(e){status(esc(e.message));}return renderBestiary(); }
+      const globalDel = t.closest('[data-global-del]');
+      if (globalDel) {
+        if (!window.CATALOGO?.admin()) return;
+        const key = globalDel.dataset.globalDel, m = BY[key];
+        if (!m || m.custom) return;
+        if (!(await perguntar(`Excluir “${m.name}” do catálogo global? Ele deixará de aparecer para todos os usuários. Fichas e inventários existentes não serão apagados. Você poderá restaurá-lo depois.`, { titulo: 'Excluir monstro global', ok: 'Excluir', perigo: true }))) return;
+        globalDel.disabled = true;
+        try { await CATALOGO.salvar('monstro', key, null, { excluido: true }); if (curSheet === key) closeSheet(); if (editKey === key) resetForm(); await reload(); }
+        catch (e) { window.FEEDBACK?.mostrar(e.message, { erro: true }); }
+        finally { globalDel.disabled = false; }
+        return;
+      }
+      const globalRestore = t.closest('[data-global-restore]');
+      if (globalRestore) {
+        if (!window.CATALOGO?.admin()) return;
+        const key = globalRestore.dataset.globalRestore, r = CATALOGO.registro('monstro', key);
+        if (!r?.excluido) return;
+        if (!(await perguntar(`Restaurar “${r.dados?.name || key}” para todos os usuários?`, { titulo: 'Restaurar monstro', ok: 'Restaurar' }))) return;
+        globalRestore.disabled = true;
+        try { await CATALOGO.salvar('monstro', key, null, { excluido: false }); await reload(); }
+        catch (e) { window.FEEDBACK?.mostrar(e.message, { erro: true }); }
+        finally { globalRestore.disabled = false; }
+        return;
+      }
       if (d.del) {
         const m = ALL.find((x) => x.key === d.del); if (!m || !m.custom) return;   // monstros padrão do SRD não se excluem
         if (!(await perguntar(m.custom ? `Excluir “${m.name}” definitivamente?` : `Remover “${m.name}” do seu bestiário local? Você pode baixar de novo depois.`, { titulo: "Remover do bestiário", ok: "Remover", perigo: true }))) return;
@@ -639,13 +699,13 @@
     const toSquare = (file, size) => new Promise((ok, no) => { const url = URL.createObjectURL(file), im = new Image(); im.onload = () => { const c = document.createElement("canvas"); c.width = c.height = size; const q = Math.min(im.width, im.height); c.getContext("2d").drawImage(im, (im.width - q) / 2, (im.height - q) / 2, q, q, 0, 0, size, size); URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", 0.85)); }; im.onerror = () => no(new Error("imagem inválida")); im.src = url; });
 
     /* recorte da foto: zoom, arrastar e prévia do ícone redondo */
-    const cropPhoto = file => window.recortarFoto(file);
+    const cropPhoto = (file,global=false) => window.recortarFoto(file,global?1024:192);
     const visitante = () => !(window.nuvem && nuvem.usuario && nuvem.usuario());
-    const askPhoto = (k) => { if (visitante()) { alert("Entre na sua conta para adicionar ou trocar fotos."); return; } phKey = k; fileIn.value = ""; fileIn.click(); };
-    const formPv = () => { const m = editKey && BY[editKey]; const src = formPhoto === undefined ? (m && (PH[m.key])) : formPhoto; $("#cm-phv").innerHTML = src ? `<img class="av" style="width:48px;height:48px" src="${esc(src)}" alt="">` : '<span class="muted">sem foto</span>'; };
+    const askPhoto = (k) => { if (visitante()) { alert("Entre na sua conta para adicionar ou trocar fotos."); return; } if(k!=='form'&&!BY[k]?.custom&&!window.CATALOGO?.admin()){alert('Somente administradores alteram as fotos globais.');return;} phKey = k; fileIn.value = ""; fileIn.click(); };
+    const formPv = () => { const m = editKey && BY[editKey]; const src = formPhoto === undefined ? (m && (window.CATALOGO?.imagem('monstro', m.key) ?? PH[m.key])) : formPhoto; $("#cm-phv").innerHTML = src ? `<img class="av" style="width:48px;height:48px" src="${esc(src)}" alt="">` : '<span class="muted">sem foto</span>'; };
     fileIn.onchange = async () => {
       const f = fileIn.files[0]; if (!f) return;
-      try { const data = await cropPhoto(f); if (!data) return; if (phKey === "form") { formPhoto = data; formPv(); return; } PH[phKey] = data; await put("img", [{ key: phKey, data }]); touch(phKey); renderBestiary(); window.__ini.render(); if (curSheet === phKey) openSheet(phKey); } catch (e) { alert("Não consegui usar essa imagem: " + e.message); }
+      try { const data = await cropPhoto(f,(phKey==='form' ? editGlobal : !BY[phKey]?.custom)); if (!data) return; if (phKey === "form") { formPhoto = data; formPv(); return; } if(BY[phKey]?.custom){PH[phKey]=data;await put('img',[{key:phKey,data}]);await touch(phKey);}else{if(!window.CATALOGO?.admin())throw Error('Somente administradores editam as fotos globais.');await CATALOGO.salvar('monstro',phKey,null,{imagem:data});}renderBestiary(); window.__ini.render(); if (curSheet === phKey) openSheet(phKey); } catch (e) { alert("Não consegui usar essa imagem: " + e.message); }
     };
     $("#cm-ph").onclick = () => askPhoto("form");
     $("#cm-phx").onclick = () => { formPhoto = null; formPv(); };
@@ -677,7 +737,7 @@
     const saveTomb = () => { try { localStorage.setItem(acervo.chave("ini_tomb"), JSON.stringify(TOMB)); } catch (_) {} };
     const syMsg = h => {try{localStorage.setItem(acervo.chave("ini_sync_status"),JSON.stringify({mensagem:String(h).replace(/<[^>]*>/g,""),em:Date.now()}));}catch(_){}};
     window.addEventListener("online", () => queueSync());
-    const touch = async (k) => { const m=BY[k];if(!m)return;if(m.custom){m.updatedAt=Date.now();await put("mon",[m]);queueSync();}else try{await CATALOGO.atualizar({registros:ALL,magias:SP,fotos:[{key:k,data:PH[k]||""}]});}catch(e){status("Não consegui sincronizar a foto: "+esc(e.message));} };
+    const touch = async (k) => { const m=BY[k];if(!m)return;if(m.custom){m.updatedAt=Date.now();await put('mon',[m]);queueSync();} };
     function queueSync() { if (!window.nuvem?.usuario() || !acervo.ativo()) return; clearTimeout(syTimer); syTimer = setTimeout(syncNow, 1500); }
     async function syncNow() { if(window.nuvem?.usuario() && acervo.ativo()) return syncConta(); }
     document.addEventListener("visibilitychange", () => { if (!document.hidden) queueSync(); });
@@ -698,7 +758,7 @@
     async function carregarCatalogo() {
       if(!window.nuvem?.usuario())return;
       try {
-        const rows=await nuvem.get("catalogo_publicado?select=dados&id=eq.2014"),d=rows[0]?.dados;
+        const d=(await CATALOGO.carregar(true));
         if(!d)return;
         const mon=(d.mon||[]).filter(m=>!m.custom&&EDICOES.permitida(m)),keys=new Set(mon.map(m=>m.key));
         await put("mon",mon);await put("spl",(d.spl||[]).filter(m=>!m.custom&&EDICOES.permitida(m)));
@@ -716,6 +776,6 @@
     const o = indexedDB.open(acervo.banco(), 3);
     o.onupgradeneeded = () => { const d = o.result; ["mon", "spl", "img"].forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "key" }); }); };
     o.onblocked = () => status("Feche as outras abas do aplicativo e recarregue para atualizar o armazenamento.");
-    o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(syncNow).then(initPacks).then(carregarCatalogo).then(()=>window.ESTADO_SECAO?.restaurar()); };
+    o.onsuccess = () => { db = o.result; db.onversionchange = () => db.close(); reload().then(syncNow).then(initPacks).then(carregarCatalogo).then(()=>window.ESTADO_SECAO?.restaurar()); window.CATALOGO?.iniciar();window.addEventListener('catalogo:atualizado',()=>reload().catch(console.error)); };
     o.onerror = () => status("Este navegador bloqueou o armazenamento local.");
   })();

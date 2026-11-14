@@ -16,10 +16,13 @@
   const lerBib = () => { try { const o = JSON.parse(localStorage.getItem(BIB) || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (_) { return {}; } };
   const gravarBib = (o) => { try { localStorage.setItem(BIB, JSON.stringify(o)); } catch (_) { /* sem espaço ou bloqueado: segue sem a biblioteca */ } };
   /* imagem a mostrar: a da ficha; sem ela, a sugestão da biblioteca do aparelho (só itens do catálogo) */
+  const refCatalogo=it=>window.CAT_ITENS?.doInventario?.(it)?.id||it?.catId||it?.ref||'';
   function obter(f, it) {
+    const propria=mapa(f)?.[chave(it)];if(valida(propria))return {src:propria,origem:'ficha'};
+    const global=window.CATALOGO?.imagem('item',refCatalogo(it));if(global!==undefined)return global?{src:global,origem:'catalogo'}:null;
     const k = chave(it), m = mapa(f), v = m && k ? m[k] : null;
     if (valida(v)) return { src: v, origem: "ficha" };
-    const rl = it && (it.catId || it.ref); if (rl) { const b = lerBib()[rl]; if (valida(b)) return { src: b, origem: "aparelho" }; }
+    const rl = it && (it.catId || it.ref); if (rl&&window.CATALOGO?.imagem('item',rl)===undefined) { const b = lerBib()[rl]; if (valida(b)) return { src: b, origem: "aparelho" }; }
     return null;
   }
   const usado = (f, exceto) => { const m = mapa(f) || {}; return Object.entries(m).reduce((s, [k, v]) => s + (k === exceto || !ehData(v) ? 0 : v.length), 0); };
@@ -28,7 +31,7 @@
     if (!valida(valor)) return { ok: false, erro: ehData(valor) || /^data:image/.test(String(valor)) ? "A imagem ficou grande demais. Escolha outra ou use uma URL." : "Use uma URL que comece com https:// ou envie um arquivo de imagem." };
     if (ehData(valor) && usado(f, k) + valor.length > ORCAMENTO) return { ok: false, erro: "O limite de imagens desta ficha foi atingido. Remova a imagem de outro item ou use uma URL." };
     f.imagensItens = mapa(f) || {}; f.imagensItens[k] = valor;
-    const rl = it.catId || it.ref; if (rl && ehData(valor)) { const b = lerBib(), ks = Object.keys(b); if (!(rl in b) && ks.length >= BIB_MAX) delete b[ks[0]]; b[rl] = valor; gravarBib(b); }
+    const rl = it.catId || it.ref; if (rl && ehData(valor)&&!window.CATALOGO) { const b = lerBib(), ks = Object.keys(b); if (!(rl in b) && ks.length >= BIB_MAX) delete b[ks[0]]; b[rl] = valor; gravarBib(b); }
     return { ok: true };
   }
   function remover(f, it) {
@@ -53,9 +56,9 @@
   }
   /* biblioteca deste aparelho, por referência do catálogo: a aba Itens guarda aqui a imagem de um item e todos os personagens do aparelho a veem como sugestão */
   const biblioteca = {
-    obter: (ref) => { const b = lerBib()[ref]; return valida(b) ? b : null; },
+    obter: (ref) => { const global=window.CATALOGO?.imagem('item',ref);if(global!==undefined)return global;const b = lerBib()[ref]; return valida(b) ? b : null; },
     definir(ref, v) { if (!ref) return { ok: false, erro: "Item sem identificação." }; if (!valida(v)) return { ok: false, erro: ehData(v) || /^data:image/.test(String(v)) ? "A imagem ficou grande demais." : "Use uma URL https:// ou um arquivo de imagem." }; const b = lerBib(), ks = Object.keys(b); if (!(ref in b) && ks.length >= BIB_MAX) delete b[ks[0]]; b[ref] = v; gravarBib(b); return { ok: true }; },
     remover(ref) { const b = lerBib(); if (ref in b) { delete b[ref]; gravarBib(b); } },
   };
-  window.INV_IMG = { biblioteca, ORCAMENTO, ICONE, chave, valida, ehData, ehUrl, obter, definir, remover, limpar, reduzir, usado };
+  window.INV_IMG = { refCatalogo, biblioteca, ORCAMENTO, ICONE, chave, valida, ehData, ehUrl, obter, definir, remover, limpar, reduzir, usado };
 })();

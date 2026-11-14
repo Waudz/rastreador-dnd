@@ -381,22 +381,25 @@
         ${im && im.origem === "aparelho" ? '<p class="muted inv-img-nota">Sugestão deste aparelho (outro personagem usou esta imagem para o mesmo item). Envie ou escolha outra para guardá-la nesta ficha.</p>' : ""}
         ${editar ? `<div class="row inv-img-acoes"><button type="button" class="small primary" data-ii="arq">${im ? "Trocar por uma imagem do aparelho" : "Enviar imagem do aparelho"}</button>${im ? '<button type="button" class="small danger" data-ii="rm">Remover imagem</button>' : ""}</div>
         <div class="row inv-img-url"><input id="inv-img-url" type="url" inputmode="url" maxlength="500" placeholder="ou cole o endereço da imagem (https://…)" autocomplete="off" aria-label="Endereço da imagem"><button type="button" class="small" data-ii="url">Usar endereço</button></div>
-        <p class="muted inv-img-nota">Arquivos enviados são reduzidos e ficam guardados na ficha; vão junto com ela para outros aparelhos. Um endereço da internet só aparece com conexão.</p>` : ""}
+        <p class="muted inv-img-nota">Administradores atualizam a imagem global dos itens do catálogo. Outras imagens são pessoais desta ficha e sincronizam com ela. Um endereço da internet só aparece com conexão.</p>` : ""}
         <div class="inv-img-erro err" role="alert"></div>
         <div class="row" style="justify-content:flex-end;margin:6px 0 0"><button type="button" class="small subtle" data-ii="fechar">Fechar</button></div></div>`;
     };
     const fim = () => { document.removeEventListener("keydown", esc2, true); ov.remove(); };
     const esc2 = (e) => { if (e.key === "Escape") { e.stopPropagation(); fim(); } };
     const erro = (m) => { const e = ov.querySelector(".inv-img-erro"); if (e) e.textContent = m || ""; };
+    const globalRef=II.refCatalogo?.(it),editarGlobal=!!globalRef&&window.CATALOGO?.admin();
+    const itemFoto=globalRef&&!editarGlobal?{uid:it.uid}:it;
+    const gravarImagem=async src=>{if(editarGlobal){await CATALOGO.salvar('item',globalRef,null,{imagem:src});redesenharInv();pinta();}else aplicado(II.definir(F(),itemFoto,src));};
     const aplicado = (r) => { if (!r.ok) { erro(r.erro); return false; } salvarInv(); redesenharInv(); pinta(); return true; };
     ov.addEventListener("click", async (e) => {
       if (e.target === ov) return fim();
       const b = e.target.closest("[data-ii]"); if (!b || soLeitura && b.dataset.ii !== "fechar") return;
       const a = b.dataset.ii; erro("");
       if (a === "fechar") return fim();
-      if (a === "rm") { II.remover(F(), it); salvarInv(); redesenharInv(); pinta(); return; }
-      if (a === "url") { aplicado(II.definir(F(), it, (ov.querySelector("#inv-img-url").value || "").trim())); return; }
-      if (a === "arq") { const f = document.createElement("input"); f.type = "file"; f.accept = "image/*"; f.onchange = async () => { const file = f.files && f.files[0]; if (!file) return; try { const rec = await window.recortarFoto(file); if (!rec) return; aplicado(II.definir(F(), it, await II.reduzir(rec))); } catch (_) { erro("Não foi possível ler essa imagem."); } }; f.click(); }
+      if (a === "rm") { if(editarGlobal)await CATALOGO.salvar('item',globalRef,null,{imagem:null});else II.remover(F(),itemFoto);salvarInv();redesenharInv();pinta();return; }
+      if (a === "url") { if(editarGlobal){erro('Envie um arquivo para guardá-lo no catálogo global.');return;}await gravarImagem((ov.querySelector("#inv-img-url").value || "").trim()); return; }
+      if (a === "arq") { const f = document.createElement("input"); f.type = "file"; f.accept = "image/*"; f.onchange = async () => { const file = f.files && f.files[0]; if (!file) return; try { const rec = await window.recortarFoto(file); if (!rec) return; await gravarImagem(await II.reduzir(rec)); } catch (_) { erro("Não foi possível ler essa imagem."); } }; f.click(); }
     });
     ov.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.id === "inv-img-url") { e.preventDefault(); ov.querySelector('[data-ii="url"]').click(); } });
     pinta(); document.body.appendChild(ov); document.addEventListener("keydown", esc2, true); ov.querySelector("[data-ii]")?.focus();
@@ -452,7 +455,7 @@
   function htmlDetalhes(it, i) {
     const C = CAT(); if (!C) return '<p class="err">Os detalhes do catálogo não carregaram. Recarregue a página.</p>';
     const { usavel, v } = viewDoItem(it);
-    return C.fichaHTML(v) + `<div class="row inv-det-acoes">${usavel ? `<button type="button" class="small primary" data-det-usar="${i}">Usar</button>` : ""}${souMestre ? `<button type="button" class="small" data-det-config="${i}">Configurar efeitos (mestre)</button>` : ""}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div>`;
+    return C.fichaHTML(v) + `<div class="row inv-det-acoes"><button type="button" class="small" data-det-imagem="${i}">${v.imagem?"Trocar imagem":"Adicionar imagem"}</button>${usavel ? `<button type="button" class="small primary" data-det-usar="${i}">Usar</button>` : ""}${souMestre ? `<button type="button" class="small" data-det-config="${i}">Configurar efeitos (mestre)</button>` : ""}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div>`;
   }
   /* conjunto: retirar 1 unidade de um componente (vira item separado) ou consumi-la; o peso do conjunto é recalculado pela soma do que resta */
   function acaoComponente(it, k, acao) {
@@ -479,6 +482,7 @@
         if (r === "esvaziou") { fim(); aviso(`${it.nome || "Conjunto"} esvaziado e removido da lista.`); return; }
         ov.querySelector(".inv-modal-box").innerHTML = htmlDetalhes(it, INV().indexOf(it)); return;
       }
+      const foto=e.target.closest('[data-det-imagem]');if(foto){fim();abrirImagemItem(+foto.dataset.detImagem);return;}
       const b = e.target.closest("[data-det-usar],[data-det-config]"); if (!b) return;
       fim();
       if (b.dataset.detUsar !== undefined) { abrirUso(+b.dataset.detUsar); $("#uso-box")?.scrollIntoView({ block: "center" }); }
@@ -502,7 +506,7 @@
     const n = Math.max(1, Math.min(99, Math.floor(num(qtd, 1)))), origem = { tipo: souMestre ? "mestre" : "jogo" }, copias = cat.pacote ? n : 1;   // conjuntos não empilham: um item por pacote
     let ultimo = null;
     for (let k = 0; k < copias; k++) { ultimo = IV.adicionar(cont(), C.paraInventario(cat, cat.pacote ? 1 : n, origem), { tipo: "entrada" }); }
-    if (cat.custom && cat.imagem && ultimo) { const r = II.definir(F(), ultimo, cat.imagem); if (!r.ok) aviso("Item adicionado, mas a imagem não coube: " + r.erro, true); }
+    if (cat.custom && !cat.global && cat.imagem && ultimo) { const r = II.definir(F(), ultimo, cat.imagem); if (!r.ok) aviso("Item adicionado, mas a imagem não coube: " + r.erro, true); }
     salvarInv(); redesenharInv(); fecharAdd(); if (!document.querySelector(".err")) aviso(`${n} × ${cat.nome} adicionado${n === 1 ? "" : "s"} ao inventário.`);
   }
   function detalhesCatalogoAdd(id) {
@@ -1032,6 +1036,8 @@
     agendar({ ficha: P.ficha });
   }
 
+  window.addEventListener('catalogo:atualizado',()=>{if(P)redesenharInv();});
+  window.CATALOGO?.iniciar();
   /* ---------- foto ---------- */
 
   async function trocarFoto(file) {

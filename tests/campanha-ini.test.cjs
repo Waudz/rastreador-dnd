@@ -124,10 +124,13 @@ test('quem tem conta mas nenhuma campanha ativa usa o rastreador sozinho, sem de
  const g=await fixture({search:'?campanha=inexistente',papel:'jogador',user:{id:'jog'}});
  assert.equal(g.document.el('iniciativa-atual').hidden,false);assert.equal(g.document.el('adicionar-combatente').hidden,false);assert.equal(g.document.el('ini-sem-campanha').hidden,true);
 });
-test('monstros padrão do SRD não têm Excluir nem Traduzir; só as criações do usuário têm Editar e Excluir',()=>{
+test('monstros SRD permitem exclusão lógica administrativa e restauração; criações pessoais mantêm exclusão local',()=>{
  const fonte=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','js','app.js'),'utf8');
  assert.ok(!/data-tr="\$\{k\}"/.test(fonte),'sem botão Traduzir');
- assert.match(fonte,/m\.custom \? `<button class="small" data-edit="\$\{k\}">Editar<\/button><button class="small danger" data-del="\$\{k\}">Excluir<\/button>` : ""/);
+ assert.match(fonte,/m\.custom \|\| window\.CATALOGO\?\.admin\(\)/);
+ assert.match(fonte,/data-global-del/,'monstros globais têm ação administrativa de exclusão');
+ assert.match(fonte,/data-global-restore/,'registros globais excluídos podem ser restaurados');
+ assert.match(fonte,/m\.custom \? `<button class="small danger" data-del="\$\{k\}">Excluir<\/button>`/,'criações pessoais mantêm exclusão local');
  assert.match(fonte,/if \(!m \|\| !m\.custom\) return;/);
  const pt=JSON.parse(require('node:fs').readFileSync(require('node:path').join(__dirname,'..','dados','srd-pt.json'),'utf8')).M,b=JSON.parse(require('node:fs').readFileSync(require('node:path').join(__dirname,'..','dados','bestiario','srd-2014.json'),'utf8'));
  assert.deepEqual(b.monsters.filter(m=>!pt[m.name.toLowerCase()]).map(m=>m.name),[],'todo monstro do SRD tem nome em português');
