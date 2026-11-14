@@ -41,16 +41,16 @@ test('itens mundanos nunca são mágicos nem recebem raridade',()=>{
   const A=amb();let n=0;
   for(const i of A.dados.filter(x=>!A.C.CATEGORIAS_MAGICAS.includes(x.categoria))){
     const m=A.C.infoMagica(A.C.paraInventario(i.pacote?A.C.obter('srd51:item/backpack'):i,1,{tipo:'jogo'}));
-    assert.equal(m.magico,false,i.id);assert.equal(m.raridade,null,i.id);n++;
+    assert.equal(m.magico,false,i.id);assert.equal(m.raridade.chave,'comum',i.id);assert.equal(m.raridade.rotulo,'Comum',i.id);assert.equal(i.raridade,undefined,'o dado não é alterado');n++;
   }
   assert.equal(n,237);
   assert.equal(A.C.infoMagica({nome:'Corda',qtd:1,tipo:'equipamento',propriedades:{}}).magico,false);assert.equal(A.C.infoMagica(null).magico,false);
-  assert.equal(A.C.seloRaridade(null),'');
+  assert.equal(A.C.seloRaridade(null),'');assert.equal(A.C.infoMagica(null).raridade,null);
 });
 
 test('itens sem catálogo: tipo mágico, pergaminho com magia ou raridade escrita pelo mestre; raridade desconhecida não ganha cor',()=>{
   const A=amb();
-  const m=A.C.infoMagica({nome:'Anel estranho',tipo:'magico',propriedades:{}});assert.equal(m.magico,true);assert.equal(m.raridade,null,'mágico sem raridade informada: sem indicador, sem inventar');
+  const m=A.C.infoMagica({nome:'Anel estranho',tipo:'magico',propriedades:{}});assert.equal(m.magico,true);assert.equal(m.raridade.rotulo,'Comum','sem raridade cadastrada: Comum só na exibição');
   for(const [txt,chave,rot] of [['Comum','comum','Comum'],['incomum','incomum','incomum'],['Raro','rara','Raro'],['Rara','rara','Rara'],['Muito raro','muito-rara','Muito raro'],['Lendário','lendaria','Lendário'],['LENDÁRIA','lendaria','LENDÁRIA'],['Artefato','artefato','Artefato']]){
     const x=A.C.infoMagica({nome:'x',tipo:'equipamento',propriedades:{raridade:txt}});
     assert.equal(x.magico,false,'raridade preenchida não torna o item mágico: '+txt);assert.equal(x.raridade.chave,chave,txt);
@@ -148,4 +148,13 @@ test('Alabarda: "Alcance" não se repete na linha mecânica (propriedade + alcan
   const m=A.W.INV_RESUMO.mecanico({},A.C.obter('srd51:item/glaive')||A.C.obter('srd51:item/halberd'),[]);
   assert.equal((m.match(/Alcance/g)||[]).length,1,m);assert.match(m,/Alcance 3 m/);
   assert.match(A.W.INV_RESUMO.mecanico({},A.C.obter('srd51:item/dagger'),[]),/Arremesso 6 m \/ 18 m/);
+});
+
+test('raridade padrão "Comum" só na exibição: Adaga mundana = Comum cinza no catálogo e no inventário, continua mundana; raridades cadastradas e do mestre preservadas',()=>{
+  const A=amb(),adaga=A.C.obter('srd51:item/dagger'),inv=A.C.paraInventario(adaga,1,{tipo:'jogo'});
+  const m=A.C.infoMagica(inv);assert.equal(m.magico,false);assert.equal(m.raridade.chave,'comum');assert.match(A.C.seloRaridade(m.raridade),/inv-raridade rar-comum.*>Comum</);
+  assert.equal(adaga.raridade,undefined);assert.equal(inv.propriedades&&inv.propriedades.raridade,undefined,'nada é gravado no item');
+  assert.equal(A.C.infoMagica({nome:'x',tipo:'arma',propriedades:{raridade:'Épico'}}).raridade.rotulo,'Épico');
+  assert.equal(A.C.infoMagica(A.C.paraInventario(A.C.obter('srd51:item/potion-of-healing-supreme'),1,{tipo:'jogo'})).raridade.chave,'muito-rara');
+  const t=ler('js/itens.js');assert.ok(t.includes(': "Comum"')&&t.includes('"comum"'));
 });

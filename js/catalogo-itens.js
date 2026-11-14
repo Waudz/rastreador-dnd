@@ -138,12 +138,13 @@
   function chaveRaridade(x) { if (!x) return null; if (RAR_CHAVE[x]) return RAR_CHAVE[x]; return RAR_TEXTO[sem(x).trim().replace(/\s+/g, "-")] || null; }
   const ehMagicoCatalogo = (cat) => !!cat && !cat.custom && CATEGORIAS_MAGICAS.includes(cat.categoria);
   /* item do inventário -> { magico, raridade: {chave, rotulo} | null } */
+  const RAR_PADRAO = { chave: "comum", rotulo: "Comum" };   // raridade padrão de EXIBIÇÃO; não altera dados nem a classificação mágica
   function infoMagica(it) {
     const cat = it ? doInventario(it) : null, pr = (it && it.propriedades) || {}, doCat = ehMagicoCatalogo(cat);
     const magico = doCat || !!(it && (it.tipo === "magico" || (it.tipo === "pergaminho" && it.magiaVinculada)));   // raridade preenchida NÃO torna o item mágico: são informações independentes
     const escrita = pr.raridade ? String(pr.raridade).trim() : "", chave = chaveRaridade(escrita) || (cat && cat.raridade ? RAR_CHAVE[cat.raridade] || null : null);
     const rotulo = escrita || (cat && cat.raridade ? RARIDADES[cat.raridade] || "" : "");
-    return { magico, raridade: rotulo ? { chave, rotulo: chave && !escrita ? RAR_ROTULO[chave] : rotulo } : null };
+    return { magico, raridade: rotulo ? { chave, rotulo: chave && !escrita ? RAR_ROTULO[chave] : rotulo } : (it ? RAR_PADRAO : null) };   // sem raridade cadastrada: "Comum" só para exibir (nada é gravado)
   }
   /* indicador da raridade: texto sempre presente (a cor nunca é a única pista) */
   const seloRaridade = (r) => (r && r.rotulo ? `<span class="inv-raridade${r.chave ? " rar-" + r.chave : ""}" data-raridade="${esc(r.chave || "")}">${esc(r.rotulo)}</span>` : "");
