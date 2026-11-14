@@ -63,6 +63,11 @@ jobs:
       - name: Permissões de campanhas, documentos, Storage, convites e administradores
         run: psql -v ON_ERROR_STOP=1 -f tests/supabase-permissoes.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/admin.test.sql
+      - name: Imagens públicas do catálogo — proposta SQL (aplicar, reaplicar, testar, rollback) em banco descartável
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/propostas/catalogo-imagens-publicas.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/propostas/catalogo-imagens-publicas.sql
+          psql -v ON_ERROR_STOP=1 -f tests/catalogo-imagens-publicas.test.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/fase5-jogo-permissoes.test.sql
       - name: Concessões e itens — ataques diretos e estados reais dos motores
         run: |

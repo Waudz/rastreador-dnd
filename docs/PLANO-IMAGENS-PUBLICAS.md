@@ -93,3 +93,35 @@ Com fixtures de `catalogo_publicado` contendo: item com imagem; monstro com imag
 3. Como `authenticated` não administrador: mesma saída; `salvar_catalogo_global` continua negada.
 4. `globais` ausente/não objeto → `[]` sem erro.
 5. `has_function_privilege('anon','public.catalogo_imagens_publicas()','execute')` e `('authenticated', …)` verdadeiros; `has_table_privilege('anon','public.catalogo_publicado','select')` falso; `select grantee, privilege_type from information_schema.routine_privileges where routine_name='catalogo_imagens_publicas'` lista só `anon`, `authenticated` (e donos/`service_role` do Supabase), sem `PUBLIC`.
+
+## 9. Onde e como validar e aplicar (situação em 14/11)
+
+### 9.1 Ambiente de teste disponível?
+- **Projeto Supabase de desenvolvimento: não encontrado.** Em todo o repositório (código, docs, workflow, configs) só aparece UM projeto, o de produção (`pdjzahpxjrlbqqtzkfdr`). Não há `.env`, `supabase/config.toml`, nem outra URL. Eu não tenho acesso ao seu painel do Supabase, então não sei se você tem outro projeto fora do repositório; se tiver, use-o como "Opção B".
+- **PostgreSQL descartável: existe, no CI.** `.github/workflows/validar.yml` (job `postgres`) sobe `postgres:16` num contêiner do GitHub Actions, cria papéis `anon`/`authenticated` e os esquemas `auth`/`storage` (`tests/supabase-fixture.sql`), aplica `01`, `02`, `03` (esta cria `public.catalogo_publicado` e revoga o `anon`) e roda os testes `tests/*.test.sql`. Nunca toca no projeto real.
+- **Neste computador: não** (sem `psql`, Postgres, Docker, PGlite; WSL sem distribuição). Nada foi instalado.
+
+### 9.2 Opção A (recomendada): o CI, sem custo e sem risco para produção
+Já preparado localmente, **ainda não enviado ao GitHub**:
+- `supabase/propostas/catalogo-imagens-publicas.sql` (fonte única da função; idêntica ao bloco do §2) e `…rollback.sql`.
+- `tests/catalogo-imagens-publicas.test.sql` com os cenários do §8: lista só dos 3 registros válidos (item, monstro e imagem removida = `null`), apenas `tipo/chave/imagem`, nada de `dados`, sem excluídos/sem `imagemDefinida`/caminho inválido/tipo trocado/chave inválida/outro tipo/lixo; resultado igual para `anon` e `authenticated`; `anon` continua sem ler a tabela (42501); `globais` ausente/array/texto e linha `2014` ausente → `[]`; `security definer`, `stable`, `search_path` vazio; `execute` só para `anon` e `authenticated` (nenhum `PUBLIC`); reaplicação idempotente; rollback remove a função e a tabela continua fechada.
+- Um passo novo no job `postgres` do workflow aplica a proposta duas vezes e roda esse teste.
+**Para executar:** com a sua autorização, publico (ou abro um pull request só com esses arquivos; o CI roda no PR) e o resultado aparece na aba *Actions*. **Atenção:** o teste foi escrito sem poder executá-lo aqui; a primeira execução é a do CI e pode precisar de ajuste de sintaxe. Um push na `main` também publica o site, então prefiro um branch/PR para validar antes.
+
+### 9.3 Opção B: projeto Supabase novo só para teste (se quiser testar a API real)
+1. No painel, criar um projeto novo (plano gratuito), com outro nome (ex.: `compendio-teste`). Não reutilizar chaves nem dados do de produção.
+2. SQL Editor: aplicar `supabase/01-schema.sql`, `02-…`, `03-…` e `supabase/catalogos-globais.sql` (cria o bucket público e `salvar_catalogo_global`), depois `supabase/propostas/catalogo-imagens-publicas.sql`.
+3. Inserir um registro de teste em `public.catalogo_publicado` (id `2014`) com o JSON do fixture do teste SQL e subir uma imagem qualquer em `catalogos/itens/<uuid>.png`.
+4. De fora do navegador logado (aba anônima ou `curl`), com a chave publicável **do projeto de teste**: `POST …/rest/v1/rpc/catalogo_imagens_publicas` → lista; `GET …/rest/v1/catalogo_publicado` → 401; abrir `itens.html` apontando para o projeto de teste (editar `js/config-nuvem.js` localmente, sem commitar).
+5. Apagar o projeto de teste ao terminar.
+
+### 9.4 Opção C: aplicar direto em produção (só se A/B não forem possíveis)
+**Antes:** (a) conferir no SQL Editor que a função não existe: `select to_regprocedure('public.catalogo_imagens_publicas()');` → `null`; (b) conferir o estado atual: `select has_table_privilege('anon','public.catalogo_publicado','select');` → `false`; (c) ter o rollback à mão.
+**Aplicar:** colar o conteúdo de `supabase/propostas/catalogo-imagens-publicas.sql` (transação única `begin … commit`; só cria uma função, não altera tabelas, dados, policies nem Storage) e executar.
+**Verificar (sem login, `curl` ou aba anônima, chave publicável):** `POST https://pdjzahpxjrlbqqtzkfdr.supabase.co/rest/v1/rpc/catalogo_imagens_publicas` com `apikey` e corpo `{}` → HTTP 200 e um array só com `tipo/chave/imagem`; `GET …/rest/v1/catalogo_publicado?select=atualizado_em&id=eq.2014` → **continua 401**; `select grantee, privilege_type from information_schema.routine_privileges where routine_name='catalogo_imagens_publicas';` → só `anon`, `authenticated` (e donos/`service_role` do Supabase), nada de `PUBLIC`. Depois publicar o código (já pronto, com cache novo) e abrir `itens.html` em aba anônima.
+**Rollback (imediato, sem perda):** executar `supabase/propostas/catalogo-imagens-publicas.rollback.sql` (`drop function if exists public.catalogo_imagens_publicas();`). O aplicativo volta aos ícones; nada mais depende da função.
+**Riscos:** (1) erro de sintaxe na colagem → a transação não é confirmada e nada muda; (2) endpoint anônimo novo, sujeito aos limites de taxa do Supabase (resposta pequena); (3) a função só revela caminhos de imagem de arquivos que já estão em bucket público; (4) sem validação prévia em PostgreSQL, a primeira execução real seria a de produção — por isso A ou B antes.
+
+### 9.5 Ordem sugerida
+1. Autorizar o envio dos arquivos de teste para um **branch/PR** (não `main`) → CI valida (Opção A).
+2. Se o CI passar, aprovar a aplicação em produção (Opção C, com o rollback pronto) e só depois publicar o código das imagens na `main`.

@@ -89,3 +89,19 @@ test('permissões explícitas da função (sem depender do padrão) e envio ao b
   assert.match(g,/drop policy if exists catalogos_apagar/);assert.match(g,/drop policy if exists catalogos_atualizar/);
   assert.ok(!/create policy [^;]*for (update|delete)[^;]*catalogos/.test(g),'o bucket não aceita alteração nem remoção');
 });
+
+test('proposta SQL: arquivo único igual ao plano, teste SQL do §8 e passo no CI de banco descartável; nada em migrations',()=>{
+  const plano=ler('docs/PLANO-IMAGENS-PUBLICAS.md'),bloco=plano.slice(plano.indexOf('```sql')+6,plano.indexOf('```',plano.indexOf('```sql')+6)).trim();
+  const arq=ler('supabase/propostas/catalogo-imagens-publicas.sql'),corpo=arq.slice(arq.indexOf('begin;')).trim();
+  const norm=t=>t.replace(/\r\n/g,'\n').replace(/\s+/g,' ');
+  assert.equal(norm(corpo),norm(bloco),'o arquivo da proposta é idêntico ao SQL do plano');
+  assert.match(arq,/^-- PROPOSTA — NÃO aplicada/);
+  assert.match(ler('supabase/propostas/catalogo-imagens-publicas.rollback.sql'),/drop function if exists public\.catalogo_imagens_publicas\(\);/);
+  const t=ler('tests/catalogo-imagens-publicas.test.sql');
+  for(const c of ['set role anon','set role authenticated','insufficient_privilege','globais array','globais texto','sem a linha 2014','prosecdef','search_path=""','has_function_privilege','routine_privileges','rollback não removeu','SEGREDO'])assert.ok(t.includes(c),c);
+  assert.match(t,/\i supabase\/propostas\/catalogo-imagens-publicas\.rollback\.sql/);
+  const wf=ler('.github/workflows/validar.yml');
+  assert.match(wf,/supabase\/propostas\/catalogo-imagens-publicas\.sql/);assert.match(wf,/tests\/catalogo-imagens-publicas\.test\.sql/);
+  assert.ok(wf.indexOf('tests/admin.test.sql')<wf.indexOf('catalogo-imagens-publicas.test.sql'),'roda depois da criação de catalogo_publicado e do admin.test');
+  assert.ok(!require('node:fs').readdirSync(require('node:path').join(__dirname,'..','supabase/migrations')).some(n=>/imagens_publicas|catalogo_imagens/.test(n)),'nenhuma migração de produção foi criada');
+});
