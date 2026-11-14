@@ -105,3 +105,69 @@ test('proposta SQL: arquivo único igual ao plano, teste SQL do §8 e passo no C
   assert.ok(wf.indexOf('tests/admin.test.sql')<wf.indexOf('catalogo-imagens-publicas.test.sql'),'roda depois da criação de catalogo_publicado e do admin.test');
   assert.ok(!require('node:fs').readdirSync(require('node:path').join(__dirname,'..','supabase/migrations')).some(n=>/imagens_publicas|catalogo_imagens/.test(n)),'nenhuma migração de produção foi criada');
 });
+
+/* ---------- visitante sem polling: uma consulta ao abrir; novas só ao voltar a aba ou a conexão ---------- */
+function ambiente({logado=false,oculto=false,rpc,lento=false}={}){
+  let agora=1000000;const ev={janela:{},doc:{}},chamadas={rpc:0,get:0},timers=[];
+  const doc={hidden:oculto,addEventListener:(t,f)=>{(ev.doc[t]=ev.doc[t]||[]).push(f);}};
+  let observador=null;
+  const nuvem={usuario:()=>logado?{id:'u1'}:null,observar:(f,ms)=>{observador={f,ms};},
+    catalogoImagensPublicas:async()=>{chamadas.rpc++;if(lento)for(let i=0;i<40;i++)await new Promise(r=>setImmediate(r));return rpc?rpc():[];},
+    get:async()=>{chamadas.get++;return [{atualizado_em:'2026-01-01T00:00:00Z',dados:{globais:{}}}];}};
+  const ctx=vm.createContext({window:{NUVEM_CONFIG:{url:'https://projeto.supabase.co'},addEventListener:(t,f)=>{(ev.janela[t]=ev.janela[t]||[]).push(f);},dispatchEvent(){}},
+    nuvem,localStorage:armazenamento(),CustomEvent:class{constructor(t){this.type=t;}},console,document:doc,Date:{now:()=>agora},
+    setTimeout:(...a)=>{timers.push(a);return 1;},setInterval:(...a)=>{timers.push(a);return 1;}});
+  vm.runInContext(ler('js/catalogo.js'),ctx);
+  const sinal=async(onde,tipo)=>{for(const f of ev[onde][tipo]||[])f();await new Promise(r=>setImmediate(r));await new Promise(r=>setImmediate(r));};
+  return {C:ctx.window.CATALOGO,chamadas,timers,doc,avancar:ms=>{agora+=ms;},observador:()=>observador,
+    visivel:async()=>{doc.hidden=false;await sinal('doc','visibilitychange');},oculta:()=>{doc.hidden=true;},online:()=>sinal('janela','online'),
+    abrir:async()=>{ctx.window.CATALOGO.iniciar();await new Promise(r=>setImmediate(r));await new Promise(r=>setImmediate(r));}};
+}
+const IMG={tipo:'item',chave:'srd51:item/dagger',imagem:'itens/'+UID+'.png'};
+
+test('visitante: uma consulta ao abrir e nenhuma por temporizador (a atualização periódica não faz requisições)',async()=>{
+  const a=ambiente({rpc:()=>[IMG]});await a.abrir();
+  assert.equal(a.chamadas.rpc,1);assert.ok(a.C.imagem('item','srd51:item/dagger'));
+  const o=a.observador();assert.ok(o,'o mecanismo de atualização continua registrado');assert.equal(o.ms,5000);
+  for(let i=0;i<10;i++){a.avancar(5000);await o.f();}
+  assert.equal(a.chamadas.rpc,1,'10 ciclos de 5 s sem nova requisição');assert.equal(a.chamadas.get,0);
+  assert.equal(a.timers.length,0,'o catálogo não cria setTimeout/setInterval próprios');
+  assert.ok(!/setInterval|setTimeout/.test(ler('js/catalogo.js')),'sem temporizadores no arquivo');
+});
+
+test('visitante: aba oculta não consulta; ao ficar visível consulta uma vez; repetições em sequência não consultam',async()=>{
+  const a=ambiente({oculto:true,rpc:()=>[IMG]});await a.abrir();
+  assert.equal(a.chamadas.rpc,0,'aba oculta: nada é pedido');assert.equal(a.C.imagem('item','srd51:item/dagger'),undefined);
+  await a.visivel();assert.equal(a.chamadas.rpc,1,'ficou visível: pede');assert.ok(a.C.imagem('item','srd51:item/dagger'));
+  a.oculta();await a.visivel();a.oculta();await a.visivel();assert.equal(a.chamadas.rpc,1,'voltar várias vezes em menos de 30 s não repete');
+  a.avancar(31000);a.oculta();await a.visivel();assert.equal(a.chamadas.rpc,2,'depois de 30 s, voltar à aba atualiza uma vez');
+});
+
+test('visitante: conexão restabelecida consulta, sem duplicar quando já há consulta em andamento',async()=>{
+  const a=ambiente({rpc:()=>[IMG],lento:true});
+  a.C.iniciar();               // consulta inicial ainda em andamento
+  await a.online();await a.visivel();await a.online();
+  await new Promise(r=>setTimeout(r,60));
+  assert.equal(a.chamadas.rpc,1,'online e visibilidade durante a consulta inicial não geram outras');
+  await a.online();assert.equal(a.chamadas.rpc,2,'conexão restabelecida força uma nova consulta (mesmo dentro de 30 s)');
+  const b=ambiente({oculto:true,rpc:()=>[IMG]});await b.abrir();await b.online();assert.equal(b.chamadas.rpc,0,'online com a aba oculta fica adiado');await b.visivel();assert.equal(b.chamadas.rpc,1);
+});
+
+test('visitante: falha de rede não cria laço, mantém as imagens já carregadas e só tenta de novo por evento',async()=>{
+  let falha=false;const a=ambiente({rpc:()=>{if(falha)throw new Error('sem rede');return [IMG];}});
+  await a.abrir();assert.equal(a.chamadas.rpc,1);
+  falha=true;a.avancar(31000);await a.online();assert.equal(a.chamadas.rpc,2);assert.ok(a.C.imagem('item','srd51:item/dagger'),'imagens anteriores preservadas');
+  for(let i=0;i<10;i++){a.avancar(1000);await a.observador().f();}   // 10 s
+  assert.equal(a.chamadas.rpc,2,'sem repetição automática depois da falha');assert.equal(a.timers.length,0);
+  a.oculta();await a.visivel();assert.equal(a.chamadas.rpc,2,'dentro de 30 s da falha não insiste');
+  a.avancar(31000);a.oculta();await a.visivel();assert.equal(a.chamadas.rpc,3,'passado o intervalo, um evento tenta uma vez');
+  const b=ambiente({rpc:()=>{throw new Error('falha');}});await b.abrir();assert.equal(b.chamadas.rpc,1);assert.equal(b.C.imagem('item','x'),undefined,'falha inicial: ícones padrão, sem erro');
+});
+
+test('logado: o mecanismo de atualização continua ativo; o evento de visibilidade não usa a função pública',async()=>{
+  const a=ambiente({logado:true});await a.abrir();
+  assert.ok(a.chamadas.get>=1,'lê o catálogo completo ao abrir');const antes=a.chamadas.get;
+  await a.observador().f();assert.ok(a.chamadas.get>antes,'a atualização periódica consulta a tabela');
+  const depois=a.chamadas.get;a.oculta();await a.visivel();assert.equal(a.chamadas.rpc,0,'logado nunca chama a função pública');assert.equal(a.chamadas.get,depois);
+  await a.online();assert.equal(a.chamadas.rpc,0);assert.ok(a.chamadas.get>depois,'online reconsulta o catálogo completo');
+});

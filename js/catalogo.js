@@ -13,8 +13,16 @@ window.CATALOGO=(()=>{
  /* Visitante sem conta: o JSON do catálogo continua fechado (catalogo_publicado não é legível por anon), mas os CAMINHOS das imagens públicas vêm de uma função mínima.
     Só aceita caminhos no formato do bucket público; qualquer falha (função ainda não instalada, sem rede) deixa tudo como estava: ícones padrão. Nada vai para o localStorage. */
  const CAMINHO=/^(itens|monstros)\/[0-9a-f-]{36}\.(jpg|png|webp)$/;
- async function carregarPublico(){
+ /* Visitante: UMA consulta ao abrir; nova consulta só quando a aba volta a ficar visível ou a conexão volta, nunca por temporizador.
+    Evita consulta duplicada (pendente), consulta com a aba oculta (fica adiada até ficar visível) e repetição em sequência (mínimo de 30 s entre tentativas, sucesso ou falha).
+    Falha de rede não agenda nada: não há laço de requisições. As imagens já carregadas permanecem se uma consulta falhar. */
+ const PUBLICO_MIN_MS=30000;let ultimoPublico=0,adiado=false;
+ const aberta=()=>typeof document==='undefined'||!document.hidden;
+ async function carregarPublico(forcar=false){
   if(pendente)return pendente;
+  if(!aberta()){adiado=true;return dados;}
+  if(!forcar&&!adiado&&ultimoPublico&&Date.now()-ultimoPublico<PUBLICO_MIN_MS)return dados;
+  adiado=false;ultimoPublico=Date.now();
   pendente=(async()=>{
    try{
     const r=await nuvem.catalogoImagensPublicas?.(),lista=Array.isArray(r)?r:[],g={};
@@ -24,8 +32,9 @@ window.CATALOGO=(()=>{
    return dados;
   })();try{return await pendente;}finally{pendente=null;}
  }
+ let visitanteLimpo=false;
  async function carregar(forcar=false){
-  if(!nuvem.usuario()){dados={globais:{}};marca='';try{localStorage.removeItem(CACHE);}catch(_){}return carregarPublico();}
+  if(!nuvem.usuario()){if(!visitanteLimpo){visitanteLimpo=true;try{localStorage.removeItem(CACHE);}catch(_){}}return carregarPublico(forcar);}
   if(pendente)return pendente;
   pendente=(async()=>{
    const ler=campos=>nuvem.get('catalogo_publicado?select='+campos+'&id=eq.2014');
@@ -35,7 +44,14 @@ window.CATALOGO=(()=>{
    dados={...(row.dados||{}),globais:row.dados?.globais||{}};marca=row.atualizado_em||'';avisar();return dados;
   })();try{return await pendente;}finally{pendente=null;}
  }
- function iniciar(){if(iniciado)return;iniciado=true;carregar(true).catch(e=>window.FEEDBACK?.mostrar('Catálogo: '+e.message,{erro:true}));nuvem.observar?.(()=>carregar(),5000);window.addEventListener?.('online',()=>carregar(true).catch(()=>{}));}
+ function iniciar(){
+  if(iniciado)return;iniciado=true;
+  carregar(true).catch(e=>window.FEEDBACK?.mostrar('Catálogo: '+e.message,{erro:true}));
+  /* logado: o mecanismo de atualização periódica de sempre; visitante: nenhuma requisição por temporizador */
+  nuvem.observar?.(()=>nuvem.usuario()?carregar():undefined,5000);
+  window.addEventListener?.('online',()=>{(nuvem.usuario()?carregar(true):carregarPublico(true)).catch(()=>{});});
+  if(typeof document!=='undefined')document.addEventListener?.('visibilitychange',()=>{if(!document.hidden&&!nuvem.usuario())carregarPublico().catch(()=>{});});
+ }
  async function exigirAdmin(){if(!nuvem.usuario()||await window.ACESSO?.pronto!==true||!admin())throw Error('Somente administradores editam os catálogos globais.');}
  function blobDe(src){
   if(typeof Blob!=='undefined'&&src instanceof Blob)return src;

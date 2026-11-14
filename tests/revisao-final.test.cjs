@@ -10,7 +10,9 @@ test('Enter submete o formulário de login sem acionamento duplo',()=>{
 test('catálogo global não restaura cache quando não há usuário autenticado',()=>{
  const js=ler('js/catalogo.js');
  assert.match(js,/const c=nuvem\.usuario\(\)\?/);
- assert.match(js,/if\(!nuvem\.usuario\(\)\)\{dados=\{globais:\{\}\}/);
+ /* visitante: o cache local é removido (uma vez) e nunca restaurado; o estado começa vazio */
+ assert.match(js,/if\(!nuvem\.usuario\(\)\)\{if\(!visitanteLimpo\)\{visitanteLimpo=true;try\{localStorage\.removeItem\(CACHE\)/);
+ assert.match(js,/let dados=\{globais:\{\}\}/);
 });
 test('migração não concede exclusão ou atualização de imagens globais',()=>{
  const sql=ler('supabase/catalogos-globais.sql');
