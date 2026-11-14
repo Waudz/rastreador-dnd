@@ -59,8 +59,13 @@
     const f = (P.ficha = P.ficha || {}), e = equipF(f);
     if (tipo === "arma") {
       if (!(cat.arma && cat.arma.dano && cat.arma.dano.dado)) throw new Error("Esta arma não tem dano definido no catálogo.");
-      const L = ataquesF(f), linha = L.find((x) => x.itemUid === uid), nova = linhaDeArma(f, it, cat);
-      if (linha) Object.assign(linha, { nome: nova.nome, armaId: nova.armaId }); else L.push(nova);
+      const L = ataquesF(f), linha = L.find((x) => x.itemUid === uid), nova = linhaDeArma(f, it, cat), g = f.armasGuardadas && f.armasGuardadas[uid];
+      if (linha) Object.assign(linha, { nome: nova.nome, armaId: nova.armaId });
+      else {
+        /* ajustes guardados ao desequipar (bônus mágico, extra, atributo, proficiência marcada...) voltam, mas só para o MESMO item e a MESMA arma do catálogo */
+        L.push(g && g.armaId === cat.id ? { ...nova, ...g.linha, nome: nova.nome, armaId: nova.armaId, itemUid: uid } : nova);
+      }
+      if (g) { delete f.armasGuardadas[uid]; if (!Object.keys(f.armasGuardadas).length) delete f.armasGuardadas; }
     } else if (tipo === "armadura") {
       const chave = R().ARMADURA_POR_ITEM[slug(cat.id)]; if (!chave) throw new Error("Armadura sem correspondência na ficha.");
       if (e.armaduraUid && e.armaduraUid !== uid) desfazerArmadura(P);
@@ -74,7 +79,9 @@
   function desequipar(P, uid) {
     const it = porUid(P, uid), f = P.ficha || {};
     if (it) it.equipado = false;
-    f.ataques = ataquesF(f).filter((x) => x.itemUid !== uid);
+    const linha = ataquesF(f).find((x) => x.itemUid === uid);
+    if (linha) { const { itemUid, ...resto } = linha; (f.armasGuardadas = f.armasGuardadas || {})[uid] = { armaId: linha.armaId, linha: JSON.parse(JSON.stringify(resto)) }; }
+    f.ataques = f.ataques.filter((x) => x.itemUid !== uid);
     if (f.equip) { desfazerArmadura(P, uid); desfazerEscudo(P, uid); }
     return it;
   }
@@ -94,12 +101,43 @@
         return true;
       });
     }
+    if (f.armasGuardadas) {
+      for (const u of Object.keys(f.armasGuardadas)) if (!existe(porUid(P, u))) { delete f.armasGuardadas[u]; mudou = true; }
+      if (!Object.keys(f.armasGuardadas).length) delete f.armasGuardadas;
+    }
     if (f.equip) {
       for (const [campo, chave, desfaz] of [["armaduraUid", "armadura", desfazerArmadura], ["escudoUid", "escudo", desfazerEscudo]]) {
         const u = f.equip[campo]; if (u && !existe(porUid(P, u))) { removidos.push(chave); desfaz(P); delete f.equip[campo]; mudou = true; }
       }
     }
     return { mudou, removidos };
+  }
+
+  /* ---------- escolher na ficha: achar o item correspondente no INVENTÁRIO (nunca cria item) ---------- */
+  const idArmadura = (chave) => { const e = Object.entries(R().ARMADURA_POR_ITEM).find(([, k]) => k === chave); return e ? "srd51:item/" + e[0] : null; };
+  /* alvo: {tipo:"armadura", chave} | {tipo:"escudo"} | {tipo:"arma", nome | armaId}. Devolve {catId, itens:[itens do inventário]}; itens vazio = não há correspondência. */
+  function procurar(P, alvo) {
+    const C = CAT(); let catId = null;
+    if (alvo.tipo === "armadura") catId = idArmadura(alvo.chave);
+    else if (alvo.tipo === "escudo") catId = "srd51:item/shield";
+    else if (alvo.armaId) catId = alvo.armaId;
+    else if (C) { const k = C.sem(alvo.nome), a = C.todos().filter((c) => !c.custom && c.categoria === "arma" && C.sem(c.nome) === k); catId = a.length === 1 ? a[0].id : null; }
+    if (!catId) return { catId: null, itens: [] };
+    /* itens que já estão ligados a outro ataque/armadura/escudo não são oferecidos */
+    const f = P.ficha || {}, usados = new Set([...(f.ataques || []).map((x) => x.itemUid), f.equip && f.equip.armaduraUid, f.equip && f.equip.escudoUid].filter(Boolean));
+    return { catId, itens: candidatos(P, [catId], true).filter((i) => !usados.has(i.uid)) };
+  }
+  /* item ainda sem catId/ref (achado pelo nome único): recebe só os IDs que faltam */
+  function completarIds(it, catId) { if (!it.catId) it.catId = catId; if (!it.ref) it.ref = catId; }
+  /* armadura/escudo escolhido na ficha + item do inventário escolhido */
+  function vincularItem(P, uid, catId) { const it = porUid(P, uid); if (!existe(it)) throw new Error("Este item não está no inventário."); completarIds(it, catId); return equipar(P, uid); }
+  /* linha de ataque que já existe na ficha (adicionada pela lista de armas) + item do inventário */
+  function vincularLinha(P, indice, uid) {
+    const f = P.ficha, linha = f.ataques && f.ataques[indice], it = porUid(P, uid);
+    if (!linha || !existe(it)) throw new Error("Ataque ou item não encontrado.");
+    if (linha.itemUid && linha.itemUid !== uid) throw new Error("Este ataque já está ligado a outro item.");
+    const cat = catDoItem(it); if (!cat) { const k = linha.armaId; if (!k) throw new Error("Item sem vínculo com o catálogo."); completarIds(it, k); }
+    linha.itemUid = uid; linha.armaId = linha.armaId || (catDoItem(it) || {}).id; it.equipado = true; return linha;
   }
 
   /* ---------- diagnóstico (somente leitura) ---------- */
@@ -143,6 +181,19 @@
     for (const i of inv(P)) { const t = tipoEquipavel(catDoItem(i)); if (i && i.equipado && t && !vinculados.has(i.uid)) out.equipadosSemVinculo.push({ uid: i.uid, nome: i.nome, tipo: t }); }
     return out;
   }
+  /* Relatório em três grupos para quem vai decidir: seguros (um único candidato), ambíguos (precisa escolher) e sem correspondência. Só lê. */
+  function resumo(d) {
+    const seguros = [], ambiguos = [], semCorrespondencia = [], ok = [];
+    for (const i of d.itens) {
+      if (i.estado === "vinculo-incompleto" || i.estado === "nome-unico") seguros.push({ tipo: "item", nome: i.nome, uid: i.uid, vinculo: i.proposta.catId });
+      else if (i.estado === "contexto" || i.estado === "ambiguo") ambiguos.push({ tipo: "item", nome: i.nome, uid: i.uid, candidatos: i.candidatos, sugestao: i.proposta ? i.proposta.catId : null });
+    }
+    const grupo = (tipo, nome, x) => { if (x.estado === "vinculavel") seguros.push({ tipo, nome, vinculo: x.proposta.itemUid }); else if (x.estado === "ambiguo") ambiguos.push({ tipo, nome, candidatos: x.candidatos }); else if (x.estado === "sem-item" || x.estado === "item-removido") semCorrespondencia.push({ tipo, nome, motivo: x.estado }); else if (x.estado === "vinculado") ok.push({ tipo, nome }); };
+    d.ataques.forEach((a) => grupo("ataque", a.nome, a));
+    if (d.armadura) grupo("armadura", "armadura", d.armadura);
+    if (d.escudo) grupo("escudo", "escudo", d.escudo);
+    return { seguros, ambiguos, semCorrespondencia, ok, equipadosSemVinculo: d.equipadosSemVinculo };
+  }
   /* Correção segura e EXPLÍCITA (nunca chamada sozinha): só preenche catId/ref que faltam e o vínculo ficha<->item quando há UMA única correspondência.
      Não altera nome, quantidade, peso, descrição, origem, imagens nem o que já está vinculado. Devolve a lista do que mudou. */
   function aplicarVinculos(P, { catalogo = true, equipamento = true, contexto = false } = {}) {
@@ -157,5 +208,5 @@
     return mudancas;
   }
 
-  window.EQUIP_FICHA = { tipoEquipavel, proficiente, linhaDeArma, equipar, desequipar, alternar, reconciliar, diagnosticar, aplicarVinculos, catDoItem };
+  window.EQUIP_FICHA = { tipoEquipavel, proficiente, linhaDeArma, equipar, desequipar, alternar, reconciliar, diagnosticar, resumo, procurar, vincularItem, vincularLinha, aplicarVinculos, catDoItem };
 })();

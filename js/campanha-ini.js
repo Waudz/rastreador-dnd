@@ -16,8 +16,8 @@
   /* ataques da ficha (nome, bônus de acerto e dano já com atributo e proficiência) para o painel Atacar */
   window.__ini.ataquesDe = (pid) => {
     const p = pers.find((x) => x.id === pid), f = p && p.ficha, R = window.REGRAS, A = window.ATAQUE_INI;
-    if (!f || !R || !A || !Array.isArray(f.ataques)) return [];
-    return f.ataques.map((a) => { const v = R.valoresAtaque(f, a), partes = A.parseExpressao(a.dado || "1"); if (!partes) return null; partes[0].b = (partes[0].b || 0) + v.dano; partes[0].t = a.tipo || ""; return { nome: a.nome || "Ataque", hit: v.ataque, dmg: partes }; }).filter(Boolean);
+    if (!f || !R || !A) return [];
+    return R.ataquesDaFicha(f).map((a) => { const v = R.valoresAtaque(f, a), partes = A.parseExpressao(a.dado || "1"); if (!partes) return null; partes[0].b = (partes[0].b || 0) + v.dano; partes[0].t = a.tipo || ""; return { nome: a.nome || "Ataque", hit: v.ataque, dmg: partes }; }).filter(Boolean);
   };
   const TIPOS_PT = ["cortante", "perfurante", "contundente", "fogo", "frio", "ácido", "elétrico", "trovejante", "necrótico", "psíquico", "radiante", "venenoso", "veneno", "energia", "energético", "força"];
   window.__ini.salvaPersonagem = (pid, ab) => { const p = pers.find((x) => x.id === pid), f = p && p.ficha, R = window.REGRAS; if (!f || !R) return null; const c0 = f.classes && f.classes[0] && R.classe(f.classes[0].c); return R.mod(R.atributoEf(f, ab)) + (c0 && (c0.salv || []).includes(ab) ? R.prof(R.nivelTotal(f.classes || []) || 1) : 0) + R.bonusTemp(f, "salvaguardas"); };

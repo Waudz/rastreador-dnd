@@ -291,6 +291,14 @@
     const valores=R.valoresAtaque(F(),a),hit=valores.ataque,dm=valores.dano;
     return `Ataque ${fm(hit)} · Dano ${esc(a.dado || "—")}${dm ? fm(dm) : ""} ${esc(a.tipo || "")}`;
   }
+  /* ataque desarmado automático (derivado de REGRAS.ataqueDesarmado; não está na ficha nem no inventário). Some se o jogador já tem o seu, manual. */
+  const cartaoDesarmado = () => {
+    if (R.temDesarmadoManual(F())) return ""; const a = R.ataqueDesarmado(F());
+    const nota = a.artesMarciais ? `Artes Marciais (Monge ${a.nivelMonge}): usa o maior entre Força e Destreza e o dado ${a.dado}.` : a.nivelMonge ? "Artes Marciais não vale com armadura ou escudo: Força, dano 1 + Força." : "Força; dano 1 + Força; proficiente.";
+    return `<article class="panel2 ataque-ficha" data-ataque-auto="desarmado"><h3>${esc(a.nome)}</h3><p class="muted">${esc(nota)}</p><div class="atk-res" id="atk-res-auto"><b>${resAtq(a)}</b></div><div class="row"><button type="button" class="small" data-rolar-atq="auto">${window.ico?window.ico("d20"):""}Rolar ataque</button><button type="button" class="small" data-rolar-dano="auto">${window.ico?window.ico("d20"):""}Rolar dano</button></div></article>`;
+  };
+  const listaAtq = () => cartaoDesarmado() + ATQ().map(linhaAtq).join("");
+  const ataqueDe = (k) => (k === "auto" ? R.ataqueDesarmado(F()) : ATQ()[+k]);
   const linhaAtq = (a, i) => `<article class="panel2 ataque-ficha" data-ai="${i}"><h3>${esc(a.nome||"Ataque personalizado")}</h3><details class="ataque-editor"><summary>Ajustar arma e bônus</summary><div class="row" style="margin:0 0 6px"><input style="flex:1 1 160px" data-atq="nome" value="${esc(a.nome || "")}" placeholder="Nome do ataque" maxlength="60"><button type="button" class="small subtle" data-rm-atq="${i}" aria-label="Remover ataque">${window.ico ? window.ico("x") : "x"}</button></div>
       <div class="row" style="margin:0 0 6px"><div><label>Atributo</label><select data-atq="atr">${opt("for", "Força", (a.atr || "for") === "for")}${opt("des", "Destreza", a.atr === "des")}${opt("acuidade", "Acuidade (maior)", a.atr === "acuidade")}${opt("int", "Inteligência", a.atr === "int")}${opt("sab", "Sabedoria", a.atr === "sab")}${opt("car", "Carisma", a.atr === "car")}</select></div>
       <div><label>Dano</label><input class="num" data-atq="dado" value="${esc(a.dado || "1d6")}" maxlength="12"></div><div><label>Tipo de dano</label><select data-atq="tipo">${R.TIPOS_DANO.map((t) => opt(t, t, t === a.tipo)).join("")}</select></div>
@@ -337,7 +345,7 @@
   /* exibição do inventário: lista (padrão) ou grade de cartões; a escolha fica neste aparelho */
   const invAbertos = new Set();
   let vistaInv = "lista"; try { vistaInv = localStorage.getItem("dnd5e_inv_vista") === "grade" ? "grade" : "lista"; } catch (_) { /* sem armazenamento: lista */ }
-  const cabecalhoInv = () => `<div class="inv-cab"><h3 class="sub inv-tit">Itens que você carrega</h3><button type="button" class="small primary" id="inv-add-abrir" aria-expanded="false" aria-controls="inv-add">+ Adicionar item</button><div class="inv-vista" role="group" aria-label="Modo de exibição do inventário">${[["lista", "Lista"], ["grade", "Grade"]].map(([k, n]) => `<button type="button" class="small${vistaInv === k ? " ativo" : ""}" data-inv-vista="${k}" aria-pressed="${vistaInv === k}">${n}</button>`).join("")}</div></div>`;
+  const cabecalhoInv = () => `<div class="inv-cab"><h3 class="sub inv-tit">Itens que você carrega</h3><button type="button" class="small primary" id="inv-add-abrir" aria-expanded="false" aria-controls="inv-add">+ Adicionar item</button><button type="button" class="small subtle" id="inv-vinculos" title="Mostra, sem alterar nada, quais itens e equipamentos podem ser ligados ao catálogo">Verificar vínculos</button><div class="inv-vista" role="group" aria-label="Modo de exibição do inventário">${[["lista", "Lista"], ["grade", "Grade"]].map(([k, n]) => `<button type="button" class="small${vistaInv === k ? " ativo" : ""}" data-inv-vista="${k}" aria-pressed="${vistaInv === k}">${n}</button>`).join("")}</div></div>`;
   function fecharAdd() { const p = document.getElementById("inv-add"); if (!p) return; p.hidden = true; p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = true; }); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", "false")); p.querySelectorAll("select").forEach((x) => { x.selectedIndex = 0; }); const n = document.getElementById("pg-nota"); if (n) n.value = ""; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "false"); b.textContent = "+ Adicionar item"; } }
   function abrirAdd() { const p = document.getElementById("inv-add"); if (!p) return; p.hidden = false; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "true"); b.textContent = "Fechar"; } p.querySelector("[data-inv-add-tipo]")?.focus(); }
   function escolherAdd(tipo) { const p = document.getElementById("inv-add"); if (!p) return; if (tipo === "cat") desenharCatAdd(); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.invAddTipo === tipo))); p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = x.dataset.addLinha !== tipo; }); const f = p.querySelector('[data-add-linha="' + tipo + '"] input, [data-add-linha="' + tipo + '"] select, [data-add-linha="' + tipo + '"] button'); if (f) f.focus(); }
@@ -579,11 +587,47 @@
     const card = t.closest("[data-i]"), it = card && INV()[+card.dataset.i];
     if (vincularPorNome(it)) { salvarInv(); redesenharInv(); }
   });
+  /* Armadura, escudo ou arma escolhidos direto na ficha: procura o item no INVENTÁRIO. Um só → liga; vários → pergunta qual; nenhum → fica como está (sem vínculo)
+     e avisa. Nunca cria item. `aplicar(uid)` faz a ligação; `jaLigado` evita perguntar de novo para o item que já estava vestido. */
+  function escolherNoInventario(alvo, rotulo, aplicar) {
+    const E = EF(); if (!E) return;
+    const { catId, itens } = E.procurar(P, alvo);
+    const ligar = (uid) => {
+      try { if (aplicar) aplicar(uid); else E.vincularItem(P, uid, catId); } catch (err) { aviso(err.message, true); return; }
+      const l = $("#lista-atq"); if (l) l.innerHTML = listaAtq();
+      const sa = $("#eq-arm"), se = $("#eq-esc"); if (sa) sa.value = EQ().armadura || ""; if (se) se.checked = !!EQ().escudo;
+      salvarInv(); refrescar(); redesenharInv();
+    };
+    if (!itens.length) { aviso(`${rotulo}: não há item correspondente no inventário. A ficha usa a escolha sem vínculo; adicione o item ao inventário para ligá-lo (nada foi criado).`); return; }
+    if (itens.length === 1) { ligar(itens[0].uid); return; }
+    const { ov, fim } = modalInv("Escolher item", `<h3>${esc(rotulo)}: qual item do inventário?</h3><p class="muted">Há ${itens.length} itens correspondentes. Escolha o que você está usando; o outro continua no inventário.</p>
+      <div class="col">${itens.map((x, k) => `<label class="inline"><input type="radio" name="esc-item" value="${esc(x.uid)}" style="width:auto;height:auto" ${k === 0 ? "checked" : ""}> ${esc(x.nome || "Item")} · ${num(x.qtd, 1)}× · ${kg(num(x.peso, 0))} kg${x.origem && x.origem.nota ? " · " + esc(x.origem.nota) : ""}</label>`).join("")}</div>
+      <div class="row"><button type="button" data-esc-ok>Ligar este item</button><button type="button" class="subtle" data-modal-fechar>Não ligar</button></div>`);
+    ov.querySelector("[data-esc-ok]").addEventListener("click", () => { const v = ov.querySelector('input[name="esc-item"]:checked'); fim(); if (v) ligar(v.value); });
+  }
+  /* Relatório SOMENTE LEITURA dos vínculos com o catálogo e entre ficha e inventário. Aplicar os seguros é um segundo passo, com confirmação. */
+  function verificarVinculos() {
+    const E = EF(), C = window.CAT_ITENS; if (!E || !C) { aviso("Catálogo ainda não carregado.", true); return; }
+    const rs = E.resumo(E.diagnosticar(P)), nomeCat = (id) => (C.obter(id) || {}).nome || id, nomeUid = (u) => (INV().find((x) => x.uid === u) || {}).nome || u;
+    const lista = (arr, f) => (arr.length ? `<ul>${arr.map((x) => `<li>${f(x)}</li>`).join("")}</ul>` : '<p class="muted">Nenhum.</p>');
+    const botaoAplicar = rs.seguros.length ? `<button type="button" data-vinc-aplicar>Ligar os ${rs.seguros.length} seguros</button>` : "";
+    const { ov, fim } = modalInv("Vínculos", `<h3>Vínculos de equipamento</h3><p class="muted">Somente leitura: nada foi alterado.</p>
+      <h4>Podem ser ligados com segurança (${rs.seguros.length})</h4>${lista(rs.seguros, (x) => `${esc(x.tipo)} <b>${esc(x.nome)}</b> → ${esc(x.tipo === "item" ? nomeCat(x.vinculo) : nomeUid(x.vinculo))}`)}
+      <h4>Ambíguos: é preciso escolher (${rs.ambiguos.length})</h4>${lista(rs.ambiguos, (x) => `${esc(x.tipo)} <b>${esc(x.nome)}</b>: ${(x.candidatos || []).map((c) => esc(x.tipo === "item" ? nomeCat(c) : nomeUid(c))).join(" ou ")}${x.sugestao ? " (sugestão pelo contexto: " + esc(nomeCat(x.sugestao)) + ")" : ""}`)}
+      <h4>Sem correspondência (${rs.semCorrespondencia.length})</h4>${lista(rs.semCorrespondencia, (x) => `${esc(x.tipo)} <b>${esc(x.nome)}</b>: ${x.motivo === "item-removido" ? "o item vinculado não está mais no inventário" : "não há item correspondente no inventário"}`)}
+      <p class="muted">Já vinculados: ${rs.ok.length}. Equipados sem vínculo com a ficha: ${rs.equipadosSemVinculo.length}.</p>
+      <div class="row">${botaoAplicar}<button type="button" class="subtle" data-modal-fechar>Fechar</button></div>`);
+    const ap = ov.querySelector("[data-vinc-aplicar]");
+    if (ap) ap.addEventListener("click", async () => {
+      if (!(await perguntar(`Ligar ${rs.seguros.length} item(ns) ao catálogo/ficha? Só são preenchidos os vínculos (catId, ref, itemUid); nome, quantidade, peso e imagens não mudam.`, { titulo: "Ligar vínculos seguros", ok: "Ligar" }))) return;
+      fim(); const m = E.aplicarVinculos(P); salvarInv(); redesenharInv(); const l = $("#lista-atq"); if (l) l.innerHTML = listaAtq(); refrescar(); aviso(`${m.length} vínculo(s) preenchido(s).`);
+    });
+  }
   function blocoEfeitos() {
     const l = F().efeitosAtivos || [];
     return l.length ? `<h3 class="sub">Efeitos ativos</h3><ul class="efeitos-ativos">${l.map((e) => `<li><b>${esc(e.texto || e.tipo)}</b>${e.duracao && e.duracao.texto ? ` <span class="muted">· ${esc(e.duracao.texto)}</span>` : ""}${e.origem ? ` <span class="muted">· ${esc(e.origem.item)}</span>` : ""} ${e.passivo ? "" : `<button type="button" class="small subtle" data-enc-efeito="${esc(e.id)}">Encerrar</button>`}</li>`).join("")}</ul>` : "";
   }
-  function salvarInv(extra = {}) { if (EF() && EF().reconciliar(P).mudou) { const l = $("#lista-atq"); if (l) l.innerHTML = ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'; const sa = $("#eq-arm"), se = $("#eq-esc"); if (sa) sa.value = EQ().armadura || ""; if (se) se.checked = !!EQ().escudo; } IE.sincronizarPassivos(P); II.limpar(F(), INV()); agendar({ inventario: P.inventario, ficha: P.ficha, ...extra }); }
+  function salvarInv(extra = {}) { if (EF() && EF().reconciliar(P).mudou) { const l = $("#lista-atq"); if (l) l.innerHTML = listaAtq(); const sa = $("#eq-arm"), se = $("#eq-esc"); if (sa) sa.value = EQ().armadura || ""; if (se) se.checked = !!EQ().escudo; } IE.sincronizarPassivos(P); II.limpar(F(), INV()); agendar({ inventario: P.inventario, ficha: P.ficha, ...extra }); }
   /* --- usar item --- */
   function abrirUso(i) {
     const it = itemPor(i); if (!it) return;
@@ -785,7 +829,7 @@
           <div><label>Outros bônus</label><input class="num" type="number" id="eq-bonus" value="${num(EQ().bonus, 0)}" title="Armadura +1, anel de proteção, etc."></div>
           <label class="inline" style="margin:18px 0 0"><input type="checkbox" style="width:auto;height:auto" data-auto="caAuto" ${autoOn("caAuto") ? "checked" : ""}> CA automática</label></div>
         <div class="muted" id="aviso-arm"></div></div>
-<div class="panel"><h2 class="panel-title">Ataques</h2><div id="lista-atq">${ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'}</div>
+<div class="panel"><h2 class="panel-title">Ataques</h2><div id="lista-atq">${listaAtq()}</div>
         <div class="row" style="margin:8px 0 0"><select id="atq-arma" style="flex:1 1 180px">${opt("", "Adicionar arma comum…", true)}${R.ARMAS.map((a, i) => opt(i, `${a[0]} (${a[1]} ${a[2]})`)).join("")}</select><button type="button" class="small" id="add-atq-arma">Adicionar arma</button><button type="button" class="small" id="add-atq">Personalizado</button></div></div>
       <div id="estado-jogo">${JU.html(P,esc)}</div><details class="panel recursos-combate"><summary class="panel-title">Recursos e habilidades</summary><div id="recursos-combate">${recursosCombate()}</div><p class="muted">Condições da ficha ficam no Estado de jogo; combatentes da iniciativa mantêm seu próprio estado.</p></details>
       </section><section id="secao-magias" role="tabpanel" aria-labelledby="aba-magias" data-ficha-secao="magias" class="ficha-conteudo" tabindex="0">${mostraMag ? `<div class="panel" id="painel-mag"><h2 class="panel-title">Magias</h2><div id="bloco-slots">${blocoSlots()}</div>
@@ -858,6 +902,7 @@
     const nt = $("#nivel-total"); if (nt) nt.textContent = nivelTotal() || "—";
     const bs = $("#bloco-slots"); if (bs) bs.innerHTML = blocoSlots();
     const be = $("#bloco-efeitos"); if (be) be.innerHTML = blocoEfeitos();
+    { const ca = document.querySelector("[data-ataque-auto]"); if (ca) { const nv = cartaoDesarmado(); if (nv) ca.outerHTML = nv; else ca.remove(); } }
     ATQ().forEach((a, i) => { const e = $("#atk-res-" + i); if (e) e.innerHTML = `<b>${resAtq(a)}</b>`; });
     profTxt(); avisoArm(); atualizarCarga();
     if($("#resumo-pv"))$("#resumo-pv").textContent=P.pv_atual+" / "+P.pv_max;if($("#resumo-ca"))$("#resumo-ca").textContent=P.ca;
@@ -926,8 +971,8 @@
     if (t.dataset.auto) { F()[t.dataset.auto] = t.checked; refrescar(); return; }
     /* escolher à mão na lista de armaduras/escudo continua valendo; só solta o vínculo com o item que estava vestido (o item segue no inventário) */
     const soltar = (campo) => { const u = EQ()[campo]; if (!u) return false; const it = INV().find((x) => x.uid === u); if (it) it.equipado = false; delete EQ()[campo]; return true; };
-    if (t.id === "eq-arm") { EQ().armadura = t.value; if (soltar("armaduraUid")) { salvarInv(); redesenharInv(); } refrescar(); return; }
-    if (t.id === "eq-esc") { EQ().escudo = t.checked; if (soltar("escudoUid")) { salvarInv(); redesenharInv(); } refrescar(); return; }
+    if (t.id === "eq-arm") { EQ().armadura = t.value; if (soltar("armaduraUid")) { salvarInv(); redesenharInv(); } refrescar(); if (t.value) escolherNoInventario({ tipo: "armadura", chave: t.value }, `Armadura: ${(R.ARMADURAS.find((a) => a[0] === t.value) || [])[1] || ""}`); return; }
+    if (t.id === "eq-esc") { EQ().escudo = t.checked; if (soltar("escudoUid")) { salvarInv(); redesenharInv(); } refrescar(); if (t.checked) escolherNoInventario({ tipo: "escudo" }, "Escudo"); return; }
     if (t.id === "raca-sel") {
       const v = t.value, f = F(), antes=f.bonusRaca; f.perRaca=[]; f.atrRaca=[];
       if (v === "__custom") { f.raca = ""; f.racaCustom = true; $("#raca-txt-box").hidden = false; $("#raca-txt").focus(); }
@@ -936,7 +981,7 @@
     }
     if (t.dataset.prep) { const magia=MAG()[+t.dataset.prep],limites=R.preparacao(F()).filter(x=>x.pertence(magia)),disponivel=limites.find(x=>x.usadas<x.limite);if(t.checked&&!magia.prep&&!disponivel){t.checked=false;aviso("Limite de magias preparadas atingido. Desmarque uma magia antes de preparar outra.",true);return;}if(disponivel)magia.classePreparacao=disponivel.id; magia.prep = t.checked; $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.invTipo !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; it.tipo = t.value; salvarInv(); redesenharInv(); return; }
-    if (t.dataset.invEquip !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; if (equipavel(it)) { try { EF().alternar(P, it.uid, t.checked); } catch (err) { t.checked = !t.checked; aviso(err.message, true); return; } $("#lista-atq") && ($("#lista-atq").innerHTML = ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'); const sa = $("#eq-arm"), se = $("#eq-esc"); if (sa) sa.value = EQ().armadura || ""; if (se) se.checked = !!EQ().escudo; } else it.equipado = t.checked; salvarInv(); refrescar(); redesenharInv(); return; }
+    if (t.dataset.invEquip !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; if (equipavel(it)) { try { EF().alternar(P, it.uid, t.checked); } catch (err) { t.checked = !t.checked; aviso(err.message, true); return; } $("#lista-atq") && ($("#lista-atq").innerHTML = listaAtq()); const sa = $("#eq-arm"), se = $("#eq-esc"); if (sa) sa.value = EQ().armadura || ""; if (se) se.checked = !!EQ().escudo; } else it.equipado = t.checked; salvarInv(); refrescar(); redesenharInv(); return; }
     if (t.dataset.invSint !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; try { IV.sintonizar(cont(), it.uid, t.checked); } catch (e) { t.checked = !t.checked; aviso(e.message, true); return; } salvarInv(); refrescar(); redesenharInv(); return; }
     if (t.name === "uso-alvo" && uso) { uso.alvo = t.value; renderUso(); return; }
     if (t.dataset.usoDano !== undefined && uso) { uso.danos[+t.dataset.usoDano] = t.value; atualizaUso(); return; }
@@ -966,7 +1011,7 @@
         if(b.dataset.rolarSal){const k=b.dataset.rolarSal;nome="Salvaguarda de "+R.ATR_NOME[k];bonus=modA(k)+(salvaProf().includes(k)?bonusProf():0)+R.bonusTemp(F(),"salvaguardas");}
         if(b.dataset.rolarPer){const k=b.dataset.rolarPer;nome=R.PERICIAS.find(p=>p[0]===k)?.[1]||k;bonus=R.valorPericia(F(),k);}
         if(b.dataset.rolarAtq!==undefined || b.dataset.rolarDano!==undefined){
-          const dano=b.dataset.rolarDano!==undefined,a=ATQ()[+(dano?b.dataset.rolarDano:b.dataset.rolarAtq)],v=R.valoresAtaque(F(),a);
+          const dano=b.dataset.rolarDano!==undefined,a=ataqueDe(dano?b.dataset.rolarDano:b.dataset.rolarAtq),v=R.valoresAtaque(F(),a);
           nome=(dano?'Dano: ':'Ataque: ')+(a.nome||'Personalizado');expressao=dano?a.dado:'1d20';bonus=dano?v.dano:v.ataque;
         }
         const r=window.ROLAGENS.rolar(expressao,bonus);
@@ -998,9 +1043,9 @@
     if (c("#add-idi")) { const v = ($("#idi-txt").value.trim() || $("#idi-sel").value); if (v && !IDI().includes(v) && !IDX().includes(v)) { IDX().push(v); desenhar(); agendar({ ficha: P.ficha }); } return; }
     if(c("#editar-ficha")){location.href="criar-personagem.html?id="+encodeURIComponent(id)+"&modo=editar";return;}
     if(c("#excluir-personagem")){if(!(await perguntar("Excluir "+P.nome+" e sua ficha?", { titulo: "Excluir personagem", ok: "Excluir", perigo: true })))return;try{await nuvem.apagar("personagens?id=eq."+encodeURIComponent(id));location.href="campanha.html?id="+encodeURIComponent(P.campanha_id);}catch(e){aviso(e.message,true);}return;}
-    if (c("#add-atq")) { ATQ().push({ nome: "Personalizado", atr: "for", dado: "1d6", tipo: "cortante", magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); agendar({ ficha: P.ficha }); return; }
-    if (c("#add-atq-arma")) { const v = $("#atq-arma").value; if (v === "") return; const a = R.ARMAS[+v]; ATQ().push({ nome: a[0], atr: a[3], dado: a[1], tipo: a[2], magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join(""); $("#atq-arma").value = ""; agendar({ ficha: P.ficha }); return; }
-    if ((b = c("[data-rm-atq]"))) { const [ret] = ATQ().splice(+b.dataset.rmAtq, 1); const itv = ret && ret.itemUid && INV().find((x) => x.uid === ret.itemUid); if (itv) { itv.equipado = false; agendar({ inventario: P.inventario }); redesenharInv(); } $("#lista-atq").innerHTML = ATQ().map(linhaAtq).join("") || '<span class="muted">Nenhum ataque ainda.</span>'; agendar({ ficha: P.ficha }); return; }
+    if (c("#add-atq")) { ATQ().push({ nome: "Personalizado", atr: "for", dado: "1d6", tipo: "cortante", magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = listaAtq(); agendar({ ficha: P.ficha }); return; }
+    if (c("#add-atq-arma")) { const v = $("#atq-arma").value; if (v === "") return; const a = R.ARMAS[+v]; ATQ().push({ nome: a[0], atr: a[3], dado: a[1], tipo: a[2], magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = listaAtq(); $("#atq-arma").value = ""; agendar({ ficha: P.ficha }); const idx = ATQ().length - 1; escolherNoInventario({ tipo: "arma", nome: a[0] }, a[0], (uid) => EF().vincularLinha(P, idx, uid)); return; }
+    if ((b = c("[data-rm-atq]"))) { const [ret] = ATQ().splice(+b.dataset.rmAtq, 1); const itv = ret && ret.itemUid && INV().find((x) => x.uid === ret.itemUid); if (itv) { itv.equipado = false; agendar({ inventario: P.inventario }); redesenharInv(); } $("#lista-atq").innerHTML = listaAtq(); agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-mag]"))) { const i = +b.dataset.rmMag, m = MAG()[i]; if (!m || m.fonte !== "mestre" || !souMestre) return; if (!(await perguntar(`Retirar a concessão de “${m.n}”?`, { titulo: "Retirar concessão", ok: "Retirar", perigo: true }))) return; F().magiasMestre = (F().magiasMestre || []).filter((x) => x.en !== m.en); MAG().splice(i, 1); $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-usar-concedida]"))) { const m = MAG()[+b.dataset.usarConcedida]; try { MJ.usarConcedida(F(), m); } catch (e) { aviso(e.message, true); return; } $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
     if (c("#cp-abrir")) { abrirCopia(); return; }
@@ -1012,6 +1057,7 @@
     if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0 })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector('input[data-inv="nome"]').focus(); agendar({ inventario: P.inventario }); fecharAdd(); return; }
     if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; { const novo = IV.novoItem({ nome: p[0], qtd: 1, peso: p[1], origem: { tipo: "jogo" } }); vincularPorNome(novo); IV.adicionar(cont(), novo); } redesenharInv(); salvarInv(); fecharAdd(); return; }
     if ((b = c("[data-rm-item]"))) { const it = itemPor(+b.dataset.rmItem); if (!it) return; if (num(it.qtd, 0) >= 1) IV.retirar(cont(), it.uid, null, { tipo: "descarte" }); else INV().splice(+b.dataset.rmItem, 1); salvarInv(); redesenharInv(); return; }
+    if (c("#inv-vinculos")) { verificarVinculos(); return; }
     if (c("#inv-add-abrir")) { const p = $("#inv-add"); if (p && !p.hidden) fecharAdd(); else abrirAdd(); return; }
     if (c("#inv-add-fechar")) { fecharAdd(); return; }
     if ((b = c("[data-inv-add-tipo]"))) { escolherAdd(b.dataset.invAddTipo); return; }

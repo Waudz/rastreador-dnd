@@ -238,6 +238,17 @@ window.REGRAS = (() => {
   function valorPericia(f,k){const p=PERICIAS.find(p=>p[0]===k);return mod(atributoEf(f,p?.[2]))+bonusPericia(f,k)+bonusTemp(f,'testes');}
   function percepcaoPassiva(f){return 10+valorPericia(f,'percepcao');}
   function valoresAtaque(f,a){const at=a.atr==='acuidade'?Math.max(mod(atributoEf(f,'for')),mod(atributoEf(f,'des'))):mod(atributoEf(f,a.atr||'for')),mg=Number(a.magico)||0;return {ataque:at+(a.prof===false?0:prof(nivelTotal(f.classes||[])||f.nivel||1))+mg+bonusTemp(f,'ataques'),dano:at+mg+(Number(a.extra)||0)};}
+  /* ---- Ataque desarmado (2014): derivado da ficha, NUNCA gravado nem item do inventário. Atributo: Força; dano 1 + Força; proficiente.
+     Monge (Artes Marciais): sem armadura e sem escudo usa o maior entre Força e Destreza e o dado de artes marciais pelo nível de MONGE (não o total); caso contrário volta à regra comum. ---- */
+  const nivelMonge=f=>(f.classes||[]).filter(c=>c.c==='Monk').reduce((n,c)=>n+(Number(c.n)||0),0);
+  const dadoArtesMarciais=n=>n>=17?'1d10':n>=11?'1d8':n>=5?'1d6':n>=1?'1d4':null;
+  const temDesarmadoManual=f=>(f.ataques||[]).some(a=>/desarmad|unarmed/.test(String(a&&a.nome||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()));
+  function ataqueDesarmado(f){
+    const nm=nivelMonge(f),am=nm>0&&!(f.equip&&(f.equip.armadura||f.equip.escudo));
+    return {nome:'Ataque desarmado',dado:am?dadoArtesMarciais(nm):'1',tipo:'contundente',atr:am?'acuidade':'for',prof:true,magico:0,extra:0,auto:true,artesMarciais:am,nivelMonge:nm};
+  }
+  /* ataques que valem para a ficha: o desarmado automático (a não ser que o jogador já tenha o seu, manual) + os cadastrados */
+  const ataquesDaFicha=f=>temDesarmadoManual(f)?[...(f.ataques||[])]:[ataqueDesarmado(f),...(f.ataques||[])];
   function resumoMestre(f){const fontes=fontesPericias(f),tracos=tracosDaFicha(f);return {passiva:percepcaoPassiva(f),pericias:PERICIAS.filter(([k])=>fontes.basicas.includes(k)).map(([k,n])=>({id:k,nome:n,valor:valorPericia(f,k),especializada:fontes.especializadas.includes(k)})),tracos,resistencias:[...(Array.isArray(f.resistencias)?f.resistencias:f.resistencias?[f.resistencias]:[]),...tracos.filter(t=>/resistência|imunidade/i.test(t.desc)).map(t=>t.desc)],ataques:(f.ataques||[]).map(a=>({...a,...valoresAtaque(f,a)})),magias:f.magias||[],caracteristicas:f.caracteristicas||[]};}
-  return { atributoEf, bonusTemp, CATEGORIAS_TEMP, chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, resumoMestre, RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMADURA_POR_ITEM, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+  return { atributoEf, bonusTemp, CATEGORIAS_TEMP, chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, ataqueDesarmado, ataquesDaFicha, temDesarmadoManual, nivelMonge, dadoArtesMarciais, resumoMestre, RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMADURA_POR_ITEM, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();

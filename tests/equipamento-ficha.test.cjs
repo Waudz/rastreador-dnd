@@ -182,3 +182,84 @@ test('imagens: item vinculado depois continua achando a imagem enviada pelo uid 
   /* item que saiu do inventário perde a imagem própria (comportamento existente) */
   assert.equal(IMG.limpar({imagensItens:{x:dat}},[vinculado]),true);
 });
+
+/* ---------- configurações da arma preservadas ao desequipar ---------- */
+test('desequipar guarda os ajustes da arma e equipar de novo os devolve só para o mesmo item',()=>{
+  const {W,E}=ambiente(),P=pers(W,'Rogue',['srd51:item/dagger','srd51:item/dagger']),[a,b]=P.inventario;
+  E.equipar(P,a.uid);E.equipar(P,b.uid);
+  const la=P.ficha.ataques.find(x=>x.itemUid===a.uid);Object.assign(la,{magico:2,extra:1,atr:'des',prof:false,observacao:'prateada'});
+  E.desequipar(P,a.uid);
+  assert.equal(P.ficha.ataques.length,1,'a outra adaga segue equipada');assert.equal(P.ficha.ataques[0].magico,0,'o bônus não vazou para a outra adaga');
+  assert.equal(P.inventario.length,2);assert.equal(P.ficha.armasGuardadas[a.uid].linha.magico,2);
+  E.equipar(P,a.uid);
+  const volta=P.ficha.ataques.find(x=>x.itemUid===a.uid);
+  assert.equal(volta.magico,2);assert.equal(volta.extra,1);assert.equal(volta.atr,'des');assert.equal(volta.prof,false);assert.equal(volta.observacao,'prateada');
+  assert.equal(P.ficha.ataques.find(x=>x.itemUid===b.uid).magico,0);
+  assert.ok(!P.ficha.armasGuardadas,'guardado consumido ao restaurar');
+});
+
+test('ajustes guardados sobrevivem a salvar/reabrir e não valem para outra arma do catálogo nem para item removido',()=>{
+  const {W,E}=ambiente(),P=pers(W,'Fighter',['srd51:item/longsword']),it=P.inventario[0];
+  E.equipar(P,it.uid);P.ficha.ataques[0].magico=1;E.desequipar(P,it.uid);
+  const R2=J(P);E.equipar(R2,it.uid);assert.equal(R2.ficha.ataques[0].magico,1,'persistido');
+  /* o mesmo item passa a ser outra arma: o bônus não é aplicado */
+  const T=J(P);T.inventario[0].catId=T.inventario[0].ref='srd51:item/greatsword';E.equipar(T,it.uid);
+  assert.equal(T.ficha.ataques[0].magico,0);assert.equal(T.ficha.ataques[0].armaId,'srd51:item/greatsword');
+  /* item removido: o guardado some */
+  const U=J(P);U.inventario=[];E.reconciliar(U);assert.ok(!U.ficha.armasGuardadas);
+});
+
+/* ---------- escolher na ficha: procurar no inventário ---------- */
+test('armadura escolhida na ficha: um item liga, vários pedem escolha, nenhum não cria nada',()=>{
+  const {W,E}=ambiente();
+  const nenhum=pers(W,'Fighter',['srd51:item/backpack']);
+  assert.equal(E.procurar(nenhum,{tipo:'armadura',chave:'malha'}).itens.length,0);assert.equal(nenhum.inventario.length,1);
+  const um=pers(W,'Fighter',['srd51:item/chain-mail']);
+  const r=E.procurar(um,{tipo:'armadura',chave:'malha'});assert.equal(r.itens.length,1);assert.equal(r.catId,'srd51:item/chain-mail');
+  E.vincularItem(um,r.itens[0].uid,r.catId);assert.equal(um.ficha.equip.armaduraUid,um.inventario[0].uid);assert.equal(um.inventario[0].equipado,true);
+  const dois=pers(W,'Fighter',['srd51:item/chain-mail','srd51:item/chain-mail']);
+  const rr=E.procurar(dois,{tipo:'armadura',chave:'malha'});assert.equal(rr.itens.length,2);
+  E.vincularItem(dois,dois.inventario[1].uid,rr.catId);assert.equal(dois.ficha.equip.armaduraUid,dois.inventario[1].uid);assert.equal(dois.inventario[0].equipado,false);assert.equal(dois.inventario.length,2);
+});
+
+test('escudo e armas escolhidos na ficha seguem a mesma regra; item legado só com id/nome também é achado',()=>{
+  const {W,E,I}=ambiente();
+  const P=pers(W,'Fighter',['srd51:item/shield']);assert.equal(E.procurar(P,{tipo:'escudo'}).itens.length,1);
+  assert.equal(E.procurar(pers(W,'Fighter'),{tipo:'escudo'}).itens.length,0);
+  /* arma pelo nome da lista de armas: nome único entre as ARMAS do catálogo */
+  const A=pers(W,'Monk',[Q]);const ra=E.procurar(A,{tipo:'arma',nome:'Bastão'});assert.equal(ra.catId,Q,'Bastão = arma, mesmo havendo o bastão mágico');assert.equal(ra.itens.length,1);
+  A.ficha.ataques.push({nome:'Bastão',dado:'1d6',tipo:'contundente',atr:'for',prof:true,magico:1,extra:0});
+  E.vincularLinha(A,0,ra.itens[0].uid);assert.equal(A.ficha.ataques[0].itemUid,A.inventario[0].uid);assert.equal(A.ficha.ataques[0].magico,1,'ajustes da linha mantidos');assert.equal(A.inventario[0].equipado,true);
+  assert.throws(()=>E.vincularLinha(A,0,'x'),/não encontrado/);
+  assert.equal(E.procurar(pers(W,'Monk'),{tipo:'arma',nome:'Bastão'}).itens.length,0);
+  /* item digitado à mão com nome único ("Escudo") é achado e ganha os IDs que faltam ao ligar */
+  const L=pers(W,'Fighter');const manual=I.novoItem({nome:'Escudo',qtd:1,peso:3});L.inventario.push(manual);
+  const rl=E.procurar(L,{tipo:'escudo'});assert.equal(rl.itens.length,1);E.vincularItem(L,manual.uid,rl.catId);assert.equal(manual.catId,'srd51:item/shield');assert.equal(manual.peso,3);assert.equal(L.ficha.equip.escudoUid,manual.uid);
+});
+
+/* ---------- relatório para fichas antigas ---------- */
+test('resumo separa seguros, ambíguos e sem correspondência sem alterar a ficha',()=>{
+  const {W,E}=ambiente(),P=pedro(W),antes=JSON.stringify(P);
+  P.inventario.push({uid:'a6',nome:'Rod',qtd:1,peso:1,propriedades:{},origem:{tipo:'mestre'}});
+  const rs=E.resumo(E.diagnosticar(P));
+  assert.equal(JSON.stringify(P),JSON.stringify({...JSON.parse(antes),inventario:[...JSON.parse(antes).inventario,P.inventario[5]]}),'somente leitura');
+  assert.ok(rs.seguros.some(x=>x.tipo==='item'&&x.nome==='Dardo'));
+  assert.ok(rs.seguros.some(x=>x.tipo==='ataque'&&x.nome==='Bastão'));
+  assert.ok(rs.ambiguos.some(x=>x.tipo==='item'&&x.nome==='Bastão'&&x.sugestao===Q));
+  assert.ok(rs.semCorrespondencia.some(x=>x.tipo==='ataque'&&x.nome==='Clava'));
+  assert.ok(!rs.seguros.concat(rs.ambiguos,rs.semCorrespondencia).some(x=>x.nome==='Personalizado'),'ataque manual não é problema');
+});
+
+test('armadura e escudo antigos (só na ficha) aparecem como vinculáveis, ambíguos ou sem item',()=>{
+  const {W,E}=ambiente();
+  const mk=ids=>{const P=pers(W,'Fighter',ids);P.ficha.equip={armadura:'malha',escudo:true,bonus:0};return E.diagnosticar(P);};
+  let d=mk(['srd51:item/chain-mail','srd51:item/shield']);assert.equal(d.armadura.estado,'vinculavel');assert.equal(d.escudo.estado,'vinculavel');
+  d=mk(['srd51:item/chain-mail','srd51:item/chain-mail']);assert.equal(d.armadura.estado,'ambiguo');assert.equal(d.escudo.estado,'sem-item');
+  d=mk([]);assert.equal(d.armadura.estado,'sem-item');
+});
+
+test('procurar não oferece itens já ligados a outro ataque ou à armadura',()=>{
+  const {W,E}=ambiente(),P=pers(W,'Rogue',['srd51:item/dagger','srd51:item/dagger']);
+  E.equipar(P,P.inventario[0].uid);
+  const r=E.procurar(P,{tipo:'arma',nome:'Adaga'});assert.equal(r.itens.length,1);assert.equal(r.itens[0].uid,P.inventario[1].uid);
+});
