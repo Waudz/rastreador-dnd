@@ -91,7 +91,7 @@
   const subtituloDe = (it) => [it.custom ? rotuloCat(it.subtipo) : rotuloCat(it.categoria), it.raridade ? RARIDADES[it.raridade] : null, it.custom ? "Personalizado" : null].filter(Boolean).join(" · ");
   const rodapeFonte = (it) => (it.custom ? "Item personalizado, guardado neste aparelho." : "Fonte: SRD 5.1 (CC BY 4.0). Pesos em kg e distâncias em metros (conversão do Compêndio); o nome em português é tradução do projeto" + (it.en ? ` (original: ${it.en}).` : "."));
   function viewDoCatalogo(it, imagem) {
-    return { nome: it.nome, categoria: it.categoria, imagem, subtitulo: subtituloDe(it), desc: it.desc || null, lacunaDesc: !it.custom && !it.desc, dados: linhas(it), componentes: it.pacote ? componentes(it) : null, notaConjunto: it.pacote ? "Pacote com objetos independentes: ao adicionar ao inventário ele fica agrupado e você pode retirar ou consumir cada componente." : (it.categoria === "kit" ? "Kit: é um item único (as ferramentas e os suprimentos que o compõem não são itens separados)." : null), rodape: rodapeFonte(it) };
+    return { nome: it.nome, categoria: it.categoria, imagem, subtitulo: subtituloDe(it), desc: it.desc || null, lacunaDesc: !it.custom && !it.desc, dados: linhas(it), componentes: it.pacote ? componentes(it) : null, notaConjunto: it.pacote ? "Pacote de equipamentos: ao adicionar ao inventário, cada componente entra como item individual (com ID, peso e imagem próprios), identificado como parte deste pacote." : (it.categoria === "kit" ? "Kit: é um item único (as ferramentas e os suprimentos que o compõem não são itens separados)." : null), rodape: rodapeFonte(it) };
   }
 
   /* ---------- busca e filtros ---------- */
@@ -120,6 +120,13 @@
     if (it.pacote) x.conjunto = componentes(it).map((c) => ({ ref: c.id, nome: c.nome, qtd: c.qtd, peso: c.peso }));
     return x;
   }
+  /* Pacote de equipamentos -> lista de itens INDIVIDUAIS (um por componente, quantidade já multiplicada), cada um com origem {id:"pacote:<id>", nota:<nome do pacote>, pacote:{id,nome}}
+     e os dados do próprio item (ID, peso, tipo). Só pacotes: kits de ferramentas e demais itens devolvem null e continuam sendo um item único. */
+  function paraInventarioPacote(it, qtd, origem) {
+    if (!it || it.categoria !== "pacote" || !it.pacote) return null;
+    const n = Math.max(1, Math.floor(num(qtd, 1))), IV = window.INVENTARIO, orig = { ...(origem || { tipo: "jogo" }), id: "pacote:" + it.id, nota: it.nome, pacote: { id: it.id, nome: it.nome } };
+    return it.pacote.map((c) => { const x = obter(c.id); return x ? paraInventario(x, num(c.qtd, 1) * n, orig) : IV.novoItem({ nome: c.id, qtd: num(c.qtd, 1) * n, peso: 0, ref: c.id, catId: c.id, origem: orig }); });
+  }
   /* ID do catálogo para um nome digitado, só quando existe exatamente UM item com esse nome (ex.: "Bastão" é quarterstaff e rod: ambíguo, devolve null).
      Pacotes e itens personalizados ficam de fora; quem chama decide se usa o resultado. */
   function idPorNomeUnico(nome) {
@@ -129,5 +136,5 @@
   }
   const pesoDoConjunto = (conj) => (conj || []).reduce((s, c) => s + num(c.qtd) * num(c.peso, 0), 0);
 
-  window.CAT_ITENS = { CATEGORIAS, SUBTIPOS, ESPACOS, RARIDADES, PROPRIEDADES, ICONE, carregar, todos, obter, doInventario, personalizados, custoTexto, custoEmPO, pesoPacote, pesoDe, componentes, linhas, fichaHTML, viewDoCatalogo, filtrar, contagemPorCategoria, paraInventario, idPorNomeUnico, pesoDoConjunto, rotuloCat, sem, esc, kg, indexar, subtituloDe };
+  window.CAT_ITENS = { CATEGORIAS, SUBTIPOS, ESPACOS, RARIDADES, PROPRIEDADES, ICONE, carregar, todos, obter, doInventario, personalizados, custoTexto, custoEmPO, pesoPacote, pesoDe, componentes, linhas, fichaHTML, viewDoCatalogo, filtrar, contagemPorCategoria, paraInventario, paraInventarioPacote, idPorNomeUnico, pesoDoConjunto, rotuloCat, sem, esc, kg, indexar, subtituloDe };
 })();

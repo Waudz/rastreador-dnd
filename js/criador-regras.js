@@ -299,12 +299,12 @@ window.CRIADOR = (() => {
     const nomeDe=i=>doCatalogo(i.id)?.nome||i.nome||i.en;
     const put=e=>{const x=itens.find(y=>y.origem.id===e.origem.id);if(x){x.qtd+=e.qtd;return;}itens.push(e);};
     /* id do catálogo + quantidade; pacotes viram os itens que os compõem, cada um com a origem "Criação — Pacote de ..." */
-    const add=(id,qtd,chave,nota)=>{
+    const add=(id,qtd,chave,nota,pacote)=>{
       const i=D.items.find(x=>x.id===id);if(!i){ausentes.push(id);return;}
       const conteudo=i.data.gear?.contents;
-      if(conteudo){const rotulo="Criação — "+nomeDe(i);conteudo.forEach(c=>add(c.item,c.quantity*qtd,chave+":"+id,rotulo));return;}
+      if(conteudo){const rotulo="Criação — "+nomeDe(i);conteudo.forEach(c=>add(c.item,c.quantity*qtd,chave+":"+id,rotulo,{id,nome:nomeDe(i)}));return;}
       const cat=doCatalogo(id),peso=cat&&Number.isFinite(Number(cat.peso))?Number(cat.peso):kgDe(i);
-      put({id,catId:id,ref:id,nome:nomeDe(i),qtd,peso,origem:{tipo:"criacao",id:chave+":"+id,nota}});
+      put({id,catId:id,ref:id,nome:nomeDe(i),qtd,peso,origem:{tipo:"criacao",id:chave+":"+id,nota,...(pacote?{pacote}:{})}});
     };
     const notaClasse="Criação — Equipamento de "+(R.classe(f.classes[0].c)?.n||"classe");
     for(const i of d.data.startingEquipment||[])add(i.item,i.quantity,"classe:fixo",notaClasse);

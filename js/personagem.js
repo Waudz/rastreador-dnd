@@ -356,6 +356,8 @@
   /* arma, armadura ou escudo do catálogo: o "Equipado" do inventário liga o item à ficha (EQUIP_FICHA) */
   const EF = () => window.EQUIP_FICHA;
   const equipavel = (it) => { const E = EF(); return !!(E && E.tipoEquipavel(E.catDoItem(it))); };
+  /* "Faz parte do Pacote de X": origem do componente (não substitui a descrição do item). Itens antigos da criação trazem o nome do pacote só na nota. */
+  const pacoteDe = (it) => { const o = (it && it.origem) || {}; if (o.pacote && o.pacote.nome) return o.pacote.nome; const m = /(Pacote d[eao] [^—]+)$/.exec(o.nota || ""); return m ? m[1].trim() : ""; };
   function linhaInv(it, i) {
     const t = it.tipo || "equipamento", pr = it.propriedades || {}, sint = pr.sintonia && pr.sintonia.requer, passivo = IE.efeitosDe(it).some((e) => e.passivo);
     const acoes = [];
@@ -365,7 +367,7 @@
     if (sint) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-sint ${pr.sintonia.sintonizado ? "checked" : ""}> Sintonizado</label>`);
     if (pr.cargas) acoes.push(`<span class="muted">Cargas ${num(pr.cargas.atual, 0)}/${num(pr.cargas.max, 0)}</span>`);
     if (pr.raridade) acoes.push(`<span class="muted">${esc(pr.raridade)}</span>`);
-    const org = it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? ` · ${esc(ROT_ORIGEM[it.origem.tipo] || it.origem.tipo)}${it.origem.nota ? ": " + esc(it.origem.nota) : ""}` : "";
+    const pac = pacoteDe(it), org = pac ? ` · Faz parte do ${esc(pac)}` : it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? ` · ${esc(ROT_ORIGEM[it.origem.tipo] || it.origem.tipo)}${it.origem.nota ? ": " + esc(it.origem.nota) : ""}` : "";
     const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim(), qn = Math.max(0, num(it.qtd, 1));
     const thumb = `<button type="button" class="inv-thumb${im ? "" : " vazio"}" data-inv-detalhes="${i}" aria-label="Abrir os detalhes de ${nomeIt}" title="Ver detalhes">${im ? `<img class="inv-thumb-img" src="${esc(im.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : (window.ico ? window.ico(II.ICONE[t] || "bag") : "")}</button>`;
     const qtdCtl = `<span class="inv-qtd-ctl" role="group" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-menos="${i}" aria-label="Diminuir a quantidade de ${nomeIt}"${qn <= 0 ? " disabled" : ""}>−</button><input class="num" type="number" min="0" step="1" inputmode="numeric" data-inv="qtd" value="${qn}" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-mais="${i}" aria-label="Aumentar a quantidade de ${nomeIt}">+</button></span>`;
@@ -456,7 +458,8 @@
       pr.cargas ? ["Cargas", `${num(pr.cargas.atual, 0)} de ${num(pr.cargas.max, 0)}${pr.cargas.recarga ? " · recarga: " + pr.cargas.recarga : ""}`] : null,
       usavel && efs.some((e) => !e.passivo) ? ["Ao usar", consumo === "carga" ? "Gasta carga(s) do item" : consumo === "nenhum" ? "Não gasta nada" : "Gasta 1 unidade"] : null,
       it.magiaVinculada ? ["Magia", `${it.magiaVinculada.n} (${Number(it.magiaVinculada.l) ? it.magiaVinculada.l + "º círculo" : "truque"})`] : null,
-      org ? ["Origem", org] : null,
+      pacoteDe(it) ? ["Pacote", "Faz parte do " + pacoteDe(it)] : null,
+      org && !pacoteDe(it) ? ["Origem", org] : null,
     ].filter(Boolean);
     const doCatalogo = cat ? C.linhas(cat).filter(([k]) => !["Peso", "Raridade", "Sintonia"].includes(k)) : [];
     return { usavel, v: { nome: it.nome || "Item sem nome", categoria: cat ? cat.categoria : t, imagem: im ? im.src : null, subtitulo: [IV.TIPOS[t] || t, raridade].filter(Boolean).join(" · ") + (cat ? " · " + C.rotuloCat(cat.categoria) : ""),
@@ -514,9 +517,10 @@
   }
   function adicionarDoCatalogo(id, qtd) {
     const C = CAT(), cat = C && C.obter(id); if (!cat) return;
-    const n = Math.max(1, Math.min(99, Math.floor(num(qtd, 1)))), origem = { tipo: souMestre ? "mestre" : "jogo" }, copias = cat.pacote ? n : 1;   // conjuntos não empilham: um item por pacote
+    const n = Math.max(1, Math.min(99, Math.floor(num(qtd, 1)))), origem = { tipo: souMestre ? "mestre" : "jogo" }, copias = 1;
     let ultimo = null;
-    for (let k = 0; k < copias; k++) { ultimo = IV.adicionar(cont(), C.paraInventario(cat, cat.pacote ? 1 : n, origem), { tipo: "entrada" }); }
+    if (cat.pacote) { for (const x of C.paraInventarioPacote(cat, n, origem)) ultimo = IV.adicionar(cont(), x, { tipo: "entrada", nota: cat.nome }); }   // pacote: componentes individuais, sem item "pacote"
+    else { for (let k = 0; k < copias; k++) ultimo = IV.adicionar(cont(), C.paraInventario(cat, n, origem), { tipo: "entrada" }); }
     if (cat.custom && !cat.global && cat.imagem && ultimo) { const r = II.definir(F(), ultimo, cat.imagem); if (!r.ok) aviso("Item adicionado, mas a imagem não coube: " + r.erro, true); }
     salvarInv(); redesenharInv(); fecharAdd(); if (!document.querySelector(".err")) aviso(`${n} × ${cat.nome} adicionado${n === 1 ? "" : "s"} ao inventário.`);
   }

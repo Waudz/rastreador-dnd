@@ -54,7 +54,9 @@
     c.movimentos.push({ id: "mv_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), quando: agora(), ...ev });
     if (c.movimentos.length > LIMITE_LOG) c.movimentos.splice(0, c.movimentos.length - LIMITE_LOG);
   }
-  const mesmaPilha = (a, b) => !a.conjunto && !b.conjunto && (a.ref && b.ref ? a.ref === b.ref && a.tipo === b.tipo && JSON.stringify(a.propriedades) === JSON.stringify(b.propriedades) && !a.magiaVinculada && !b.magiaVinculada
+  /* itens com origem identificada (ex.: componente de um pacote) só empilham com o MESMO identificador de origem: a informação de origem nunca se perde e as quantidades seguem corretas */
+  const mesmaOrigem = (a, b) => ((a.origem && a.origem.id) || "") === ((b.origem && b.origem.id) || "");
+  const mesmaPilha = (a, b) => !a.conjunto && !b.conjunto && mesmaOrigem(a, b) && (a.ref && b.ref ? a.ref === b.ref && a.tipo === b.tipo && JSON.stringify(a.propriedades) === JSON.stringify(b.propriedades) && !a.magiaVinculada && !b.magiaVinculada
     : !!(a.magiaVinculada && b.magiaVinculada && a.magiaVinculada.en === b.magiaVinculada.en && a.tipo === b.tipo));
   const acha = (c, id) => c.itens.find((i) => i.uid === id);
 

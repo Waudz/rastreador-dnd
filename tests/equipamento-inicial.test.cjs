@@ -149,7 +149,8 @@ test('o item do criador é reconhecido como o mesmo item do catálogo, do mestre
   for(const k of ['ref','catId','nome','peso','tipo'])assert.equal(doCriador[k],doCatalogo[k],k);
   assert.equal(cat.doInventario(doCriador).id,'srd51:item/quarterstaff');
   const c=I.conteinerDe({inventario:[doCriador],ficha:{}});I.adicionar(c,I.novoItem(doCatalogo),{tipo:'entrada'});
-  assert.equal(c.itens.length,1,'do criador e do catálogo empilham na mesma pilha');assert.equal(c.itens[0].qtd,2);
+  assert.equal(c.itens.length,2,'a origem da criação é preservada: linhas separadas, cada uma com sua quantidade');assert.equal(c.itens[0].origem.tipo,'criacao');assert.equal(c.itens[1].qtd,1);
+  I.adicionar(c,I.novoItem(doCatalogo),{tipo:'entrada'});assert.equal(c.itens.length,2);assert.equal(c.itens[1].qtd,2,'itens do catálogo sem origem própria empilham entre si');
 });
 
 test('imagem cadastrada no catálogo aparece para o item entregue pelo criador',()=>{
