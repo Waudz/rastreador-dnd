@@ -101,7 +101,8 @@ test('CSS: moldura da miniatura depende só de ser mágico (dourado discreto x c
 
 test('grade: Detalhes e … juntos na última linha do cartão; lista e miniaturas/colunas intactas',()=>{
   const css=ler('css/fichas.css'),b=css.slice(css.indexOf('Grade: "Detalhes"')),p=ler('js/personagem.js');
-  assert.ok(p.includes('<span class="inv-fim"><button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</span>'));
+  assert.ok(p.includes('<span class="inv-fim"><button type="button" class="small subtle inv-info" data-inv-detalhes="${i}" aria-label="Detalhes de ${nomeIt}" title="Detalhes">')&&p.includes('window.ico("info")')&&p.includes('${mais}</span>'),'Detalhes é um botão com ícone (i) que abre o mesmo diálogo (data-inv-detalhes)');
+  assert.ok(ler('js/icones.js').includes('info: \''));
   assert.match(b,/#inv\.inv-grade \.inv-acoes\{margin-top:auto\}/);assert.match(b,/#inv\.inv-grade \.inv-fim\{flex:1 1 auto;justify-content:flex-end;order:3\}/);assert.match(b,/\.inv-ctl\{display:contents\}/);assert.match(b,/#inv:not\(\.inv-grade\) \.inv-mais\{position:absolute;top:6px;right:6px\}/);
   assert.ok(p.includes('<span class="inv-ctl">${qtdUI}${usar}</span>')&&p.includes('posicionarMenuMais'),'quantidade e Usar agrupados; menu … posicionado dentro da janela');
   assert.ok(!/\.inv-thumb|grid-template-columns|minmax/.test(b),'não muda miniatura nem colunas');
@@ -140,4 +141,11 @@ test('catálogo: cartão mostra a linha mecânica do inventário (dano, propried
   const t=ler('js/itens.js');assert.ok(t.includes('INV_RESUMO')&&t.includes('<span class="inv-mec">')&&t.includes('"Desvantagem em Furtividade"')&&t.includes('"Exige sintonia"'));
   assert.ok(ler('itens.html').includes('js/inventario-resumo.js'));
   for(const i of A.dados.filter(x=>!x.raridade))assert.equal(i.raridade,undefined);   // nenhum item mundano ganha raridade
+});
+
+test('Alabarda: "Alcance" não se repete na linha mecânica (propriedade + alcance de 3 m)',()=>{
+  const A=amb();vm.runInContext(ler('js/inventario-resumo.js'),vm.createContext({window:A.W,console}));
+  const m=A.W.INV_RESUMO.mecanico({},A.C.obter('srd51:item/glaive')||A.C.obter('srd51:item/halberd'),[]);
+  assert.equal((m.match(/Alcance/g)||[]).length,1,m);assert.match(m,/Alcance 3 m/);
+  assert.match(A.W.INV_RESUMO.mecanico({},A.C.obter('srd51:item/dagger'),[]),/Arremesso 6 m \/ 18 m/);
 });

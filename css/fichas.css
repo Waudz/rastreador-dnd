@@ -446,3 +446,15 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
   #inv:not(.inv-grade) .inv-mais>summary svg{width:16px;height:16px}
   #inv:not(.inv-grade) .inv-titulo{padding-right:30px}
 }
+
+/* Botão "Detalhes" como ícone (i): mesma aparência do "…", área de clique de 36 px (40 px no celular), sem mudar o tamanho dos cartões. */
+.inv-info{min-width:36px;min-height:36px;width:36px;height:36px;padding:0;display:inline-grid;place-items:center;flex:none;border:1px solid var(--line,#3a3548);border-radius:8px;background:rgba(255,255,255,.04)}
+.inv-info svg{width:18px;height:18px}
+@media(max-width:520px){
+  .inv-info{min-width:40px;min-height:40px;width:40px;height:40px}
+  #inv:not(.inv-grade) .inv-info{min-width:36px;min-height:36px;width:36px;height:36px}   /* lista estreita: cabe na linha de quantidade + Usar */
+}
+@media(max-width:400px){
+  #inv:not(.inv-grade) .inv-qtd-ctl button{min-width:36px}
+  #inv:not(.inv-grade) .inv-qtd-ctl input{width:44px}
+}

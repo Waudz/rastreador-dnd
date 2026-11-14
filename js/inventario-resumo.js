@@ -22,7 +22,7 @@
       const duas = cat.arma && cat.arma.danoDuasMaos && cat.arma.danoDuasMaos.dado;
       if (props && duas) props = props.replace(/Versátil/i, "Versátil (" + cat.arma.danoDuasMaos.dado + ")");
       const temAlcance = !!(linha(rows, "Alcance") || linha(rows, "Arremesso"));
-      if (props && temAlcance) props = props.split(/,\s*/).filter((p) => !/^Arremesso$/i.test(p)).join(", ");   // o alcance de arremesso já diz isso
+      if (props && temAlcance) props = props.split(/,\s*/).filter((p) => !/^(Arremesso|Alcance)$/i.test(p)).join(", ");   // o alcance (arremesso ou "Alcance 3 m") já diz isso
       if (props) partes.push(props.replace(/,\s*/g, " · "));
       const alc = linha(rows, "Alcance"), arremesso = linha(rows, "Arremesso");
       if (alc) partes.push("Alcance " + alc);
