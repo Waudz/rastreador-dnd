@@ -3,7 +3,7 @@
         const url = URL.createObjectURL(file), im = new Image();
         im.onerror = () => { URL.revokeObjectURL(url); no(new Error("imagem inválida")); };
         im.onload = () => {
-          const S = 260, base = S / Math.min(im.width, im.height);
+          const S = 260, base = S / Math.min(im.width, im.height), transparente = file.type === "image/png";
           let zoom = 1, ox = 0, oy = 0;
           const ov = document.createElement("div"); ov.className = "crop-ov";
           ov.innerHTML = `<div class="crop-box" role="dialog" aria-label="Ajustar foto">
@@ -16,7 +16,7 @@
           document.body.appendChild(ov);
           const stage = ov.querySelector(".crop-stage"), [p72, p34] = ov.querySelectorAll(".crop-prev canvas"), rg = ov.querySelector("input");
           const clamp = () => { const sc = base * zoom, mx = Math.max(0, (im.width * sc - S) / 2), my = Math.max(0, (im.height * sc - S) / 2); ox = Math.max(-mx, Math.min(mx, ox)); oy = Math.max(-my, Math.min(my, oy)); };
-          const paint = (cv, size) => { const c = cv.getContext("2d"), k = size / S, sc = base * zoom; c.clearRect(0, 0, size, size); c.fillStyle = "#000"; c.fillRect(0, 0, size, size); c.drawImage(im, (S / 2 + ox - im.width * sc / 2) * k, (S / 2 + oy - im.height * sc / 2) * k, im.width * sc * k, im.height * sc * k); };
+          const paint = (cv, size) => { const c = cv.getContext("2d"), k = size / S, sc = base * zoom; c.clearRect(0, 0, size, size); if (!transparente) { c.fillStyle = "#000"; c.fillRect(0, 0, size, size); } c.drawImage(im, (S / 2 + ox - im.width * sc / 2) * k, (S / 2 + oy - im.height * sc / 2) * k, im.width * sc * k, im.height * sc * k); };
           const draw = () => {
             clamp(); paint(stage, S);
             const c = stage.getContext("2d"); c.save(); c.fillStyle = "rgba(10,9,14,.62)"; c.beginPath(); c.rect(0, 0, S, S); c.arc(S / 2, S / 2, S / 2 - 2, 0, Math.PI * 2, true); c.fill("evenodd");
@@ -36,7 +36,18 @@
           ov.addEventListener("click", (e) => {
             const b = e.target.closest("[data-c]"); if (!b) return;
             if (b.dataset.c === "no") return fim(null); if(b.dataset.c === "center"){ox=oy=0;setZoom(1);return;}
-            const out = document.createElement("canvas"); out.width = out.height = Math.min(1024,Math.max(192,resolucao)); paint(out, out.width); fim(out.toDataURL("image/jpeg", 0.85));
+            const out = document.createElement("canvas");
+            let lado = Math.min(1024, Math.max(192, resolucao));
+            let data;
+            do {
+              out.width = out.height = lado;
+              paint(out, lado);
+              data = out.toDataURL(transparente ? "image/png" : "image/jpeg", 0.85);
+              if (!transparente || data.length <= 2700000 || lado <= 192) break;
+              lado = Math.max(192, Math.floor(lado * 0.75));
+            } while (true);
+            if (data.length > 2700000) { no(new Error("Imagem PNG muito grande. Use uma imagem menor.")); fim(null); return; }
+            fim(data);
           });
           draw();
         };
