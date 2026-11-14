@@ -86,7 +86,7 @@
       ${v.desc ? `<h4 class="sub">Descrição</h4><p class="descricao-regra inv-det-desc">${esc(v.desc)}</p>` : (v.lacunaDesc ? '<p class="muted inv-nota">O SRD 5.1 não traz descrição textual para este item nos dados do Compêndio. Você pode registrar a sua própria descrição ao editar o item no inventário.</p>' : "")}
       ${v.efeitos && v.efeitos.length ? `<h4 class="sub">Efeitos</h4><ul class="inv-det-efeitos">${v.efeitos.map((e) => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
       ${comp}
-      <dl class="inv-det-dados">${(v.dados || []).map(([k, x]) => `<div><dt>${esc(k)}</dt><dd>${esc(x)}</dd></div>`).join("")}</dl>${v.rodape ? `<p class="muted inv-nota">${esc(v.rodape)}</p>` : ""}</div>`;
+      <dl class="inv-det-dados">${(v.dados || []).map(([k, x]) => `<div><dt>${esc(k)}</dt><dd>${esc(x)}</dd></div>`).join("")}</dl>${v.extraHTML || ""}${v.rodape ? `<p class="muted inv-nota">${esc(v.rodape)}</p>` : ""}</div>`;
   }
   const subtituloDe = (it) => [it.custom ? rotuloCat(it.subtipo) : rotuloCat(it.categoria), it.raridade ? RARIDADES[it.raridade] : null, it.custom ? "Personalizado" : null].filter(Boolean).join(" · ");
   const rodapeFonte = (it) => (it.custom ? "Item personalizado, guardado neste aparelho." : "Fonte: SRD 5.1 (CC BY 4.0). Pesos em kg e distâncias em metros (conversão do Compêndio); o nome em português é tradução do projeto" + (it.en ? ` (original: ${it.en}).` : "."));

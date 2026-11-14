@@ -124,6 +124,19 @@
     return { mudou, removidos };
   }
 
+  /* Transferência entre dois personagens (dados já carregados dos dois). A Origem do item é preservada e a passagem fica em `transferencias` (ver INVENTARIO.transferir).
+     Depois de sair do remetente, a ficha dele deixa de tratar o item como equipado (reconciliar) e o registro que chega ao destinatário vem desequipado e sem vínculo.
+     Imagem enviada pelo jogador (guardada na ficha pelo uid) acompanha o item quando cabe no orçamento da ficha do destinatário. Quem chama grava as DUAS fichas. */
+  function transferir(Pa, Pb, uid, qtd, meta) {
+    const IVn = window.INVENTARIO; if (!IVn) throw new Error("Inventário indisponível.");
+    const it = porUid(Pa, uid); if (!existe(it)) throw new Error("Este item não está no inventário.");
+    const imagem = it.ref || it.catId ? null : ((Pa.ficha || {}).imagensItens || {})[it.uid] || null;
+    const novo = IVn.transferir(IVn.conteinerDe(Pa), IVn.conteinerDe(Pb), uid, qtd, meta || {});
+    reconciliar(Pa);
+    if (imagem && window.INV_IMG) { try { window.INV_IMG.definir(Pb.ficha, novo, imagem); } catch (_) { /* sem espaço: segue sem a imagem */ } }
+    return novo;
+  }
+
   /* ---------- escolher na ficha: achar o item correspondente no INVENTÁRIO (nunca cria item) ---------- */
   const idArmadura = (chave) => { const e = Object.entries(R().ARMADURA_POR_ITEM).find(([, k]) => k === chave); return e ? "srd51:item/" + e[0] : null; };
   /* alvo: {tipo:"armadura", chave} | {tipo:"escudo"} | {tipo:"arma", nome | armaId}. Devolve {catId, itens:[itens do inventário]}; itens vazio = não há correspondência. */
@@ -220,5 +233,5 @@
     return mudancas;
   }
 
-  window.EQUIP_FICHA = { tipoEquipavel, proficiente, linhaDeArma, equipar, desequipar, alternar, reconciliar, separarUnidade, diagnosticar, resumo, procurar, vincularItem, vincularLinha, aplicarVinculos, catDoItem };
+  window.EQUIP_FICHA = { tipoEquipavel, proficiente, linhaDeArma, equipar, desequipar, alternar, reconciliar, separarUnidade, transferir, diagnosticar, resumo, procurar, vincularItem, vincularLinha, aplicarVinculos, catDoItem };
 })();

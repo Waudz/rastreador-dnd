@@ -24,6 +24,7 @@
       propriedades: d.propriedades && typeof d.propriedades === "object" ? copia(d.propriedades) : {},
       magiaVinculada: d.magiaVinculada ? { en: d.magiaVinculada.en, n: d.magiaVinculada.n, l: Number(d.magiaVinculada.l) } : null,
       desc: String(d.desc || "").slice(0, 1500),
+      ...(Array.isArray(d.transferencias) && d.transferencias.length ? { transferencias: copia(d.transferencias).slice(-30) } : {}),   // histórico de transferências entre personagens (separado da origem)
       ...(d.catId ? { catId: String(d.catId).slice(0, 120) } : {}),   // aponta para o catálogo de itens (dados básicos vêm de lá)
       ...(Array.isArray(d.conjunto) && d.conjunto.length ? { conjunto: d.conjunto.slice(0, 40).map((c) => ({ ref: String(c.ref || "").slice(0, 120), nome: String(c.nome || "").slice(0, 120), qtd: Math.max(0, Math.floor(num(c.qtd, 0))), peso: Math.max(0, num(c.peso, 0)) })) } : {}),   // pacote: componentes agrupados
     };
@@ -48,7 +49,7 @@
   function conteinerDe(P) {
     P.inventario = Array.isArray(P.inventario) ? P.inventario : [];
     P.ficha = P.ficha || {}; P.ficha.movimentos = Array.isArray(P.ficha.movimentos) ? P.ficha.movimentos : [];
-    return { dono: { tipo: "personagem", id: P.id || null }, itens: P.inventario, movimentos: P.ficha.movimentos };
+    return { dono: { tipo: "personagem", id: P.id || null, nome: P.nome || "" }, itens: P.inventario, movimentos: P.ficha.movimentos };
   }
   function registrar(c, ev) {
     c.movimentos.push({ id: "mv_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), quando: agora(), ...ev });
@@ -56,7 +57,9 @@
   }
   /* itens com origem identificada (ex.: componente de um pacote) só empilham com o MESMO identificador de origem: a informação de origem nunca se perde e as quantidades seguem corretas */
   const mesmaOrigem = (a, b) => ((a.origem && a.origem.id) || "") === ((b.origem && b.origem.id) || "");
-  const mesmaPilha = (a, b) => !a.conjunto && !b.conjunto && mesmaOrigem(a, b) && (a.ref && b.ref ? a.ref === b.ref && a.tipo === b.tipo && JSON.stringify(a.propriedades) === JSON.stringify(b.propriedades) && !a.magiaVinculada && !b.magiaVinculada
+  /* a origem apresentada (texto) e o histórico de transferências também separam registros: nunca se perdem ao empilhar */
+  const mesmoTextoEHistorico = (a, b) => ((a.origem && a.origem.texto) || "") === ((b.origem && b.origem.texto) || "") && JSON.stringify(a.transferencias || []) === JSON.stringify(b.transferencias || []);
+  const mesmaPilha = (a, b) => !a.conjunto && !b.conjunto && mesmaOrigem(a, b) && mesmoTextoEHistorico(a, b) && (a.ref && b.ref ? a.ref === b.ref && a.tipo === b.tipo && JSON.stringify(a.propriedades) === JSON.stringify(b.propriedades) && !a.magiaVinculada && !b.magiaVinculada
     : !!(a.magiaVinculada && b.magiaVinculada && a.magiaVinculada.en === b.magiaVinculada.en && a.tipo === b.tipo));
   const acha = (c, id) => c.itens.find((i) => i.uid === id);
 
@@ -83,12 +86,41 @@
   /* Consome unidades (poção, pergaminho usado ou destruído). */
   const consumir = (c, id, qtd = 1, nota = "", tipo = "uso") => retirar(c, id, qtd, { tipo, nota });
   /* Passa de um contêiner a outro, sem duplicar nem perder item. Antes de mexer em qualquer um, confere tudo. */
+  /* ---------- Origem apresentada ao usuário ----------
+     `origem` guarda a parte TÉCNICA (tipo, id de controle da entrega, nota, pacote) e, opcionalmente, `texto`: o que o mestre pode corrigir à mão. Sem `texto`, a origem é deduzida dos dados técnicos
+     (inclusive de registros antigos). `texto` vazio ("") significa "limpa de propósito". Editar o texto nunca mexe nos identificadores. */
+  const ROT_TIPO = { inicial: "Inicial", criacao: "Criação", compra: "Compra", saque: "Saque", jogo: "Jogo", mestre: "Mestre", transferencia: "Transferência" };
+  function origemTexto(it) {
+    const o = it && it.origem; if (!o) return "";
+    if (typeof o.texto === "string") return o.texto.trim();
+    if (o.pacote && o.pacote.nome) return "Componente do " + o.pacote.nome;
+    const n = String(o.nota || ""); let m;
+    if ((m = /^Criação — (Pacote de .+)$/.exec(n))) return "Componente do " + m[1];
+    if ((m = /^Criação — Equipamento de (.+)$/.exec(n))) return "Equipamento inicial da classe " + m[1];
+    if ((m = /^Criação — Origem (.+)$/.exec(n))) return "Equipamento do antecedente " + m[1];
+    if (!o.tipo || o.tipo === "inicial") return "";
+    if (o.tipo === "jogo" && !n) return "";   // "Jogo" sozinho não informa nada
+    const t = ROT_TIPO[o.tipo] || o.tipo; return n ? t + ": " + n : t;
+  }
+  function definirOrigemTexto(it, texto) {
+    if (!it) throw new Error("Item não encontrado.");
+    const o = it.origem && it.origem.tipo ? it.origem : { tipo: "inicial" };
+    it.origem = { ...o, texto: String(texto == null ? "" : texto).replace(/\s+/g, " ").trim().slice(0, 120) };
+    return it;
+  }
+  /* Transfere n unidades de um registro para o contêiner de outro personagem. A ORIGEM do item é preservada; a passagem entre personagens vai para `transferencias` (lista que acompanha o registro),
+     sem inventar passagens antigas. Uma unidade que muda de dono chega desequipada (o vínculo com a ficha do remetente não vai junto). */
   function transferir(origem, destino, id, qtd, meta = {}) {
     const it = acha(origem, id); if (!it) throw new Error("Item não encontrado.");
     const n = qtd == null ? it.qtd : Math.floor(num(qtd, 0));
     if (!(n >= 1) || n > it.qtd) throw new Error("Quantidade inválida: há " + it.qtd + ".");
-    const saiu = retirar(origem, id, n, { tipo: "transferencia-saida", para: destino.dono, nota: meta.nota });
-    const entrou = { ...saiu, origem: { tipo: meta.origem || "transferencia", id: origem.dono && origem.dono.id, nota: meta.nota || "" } };
+    const pessoa = (d) => ({ tipo: (d && d.tipo) || "personagem", id: (d && d.id) || null, nome: (d && d.nome) || "" });
+    const passagem = { quando: agora(), tipo: "transferencia", de: pessoa(origem.dono), para: pessoa(destino.dono), qtd: n, ...(meta.nota ? { nota: String(meta.nota).slice(0, 120) } : {}) };
+    const antes = copia(it);
+    const saiu = retirar(origem, id, n, { tipo: "transferencia-saida", para: destino.dono, nota: meta.nota, extra: { origem: it.origem || null } });
+    const entrou = { ...copia(saiu), equipado: false, origem: antes.origem ? antes.origem : { tipo: "inicial" }, transferencias: [...(antes.transferencias || []), passagem] };
+    delete entrou.origemUid;
+    if (destino.itens.some((x) => x.uid === entrou.uid)) entrou.uid = uid();
     return adicionar(destino, entrou, { tipo: "transferencia-entrada", de: origem.dono, nota: meta.nota });
   }
   function criarPergaminho(magia, meta = {}) {
@@ -178,5 +210,5 @@
   ROTULO_MOV["retirada-componente"] = "Componente retirado";
 
   ROTULO_MOV.divisao = "Unidade separada"; ROTULO_MOV.ajuste = "Ajuste de quantidade";
-  window.INVENTARIO = { TIPOS, ajustarQuantidade, ehManual, LIMITE_SINTONIA, novoItem, normalizar, conteinerDe, adicionar, retirar, consumir, transferir, chaveGrupo, agrupar, totalDe, retirarDoGrupo, ajustarGrupo, criarPergaminho, sintonizar, sintonizados, usarCarga, pesoTotal, registrar, ROTULO_MOV };
+  window.INVENTARIO = { TIPOS, ajustarQuantidade, ehManual, LIMITE_SINTONIA, novoItem, normalizar, conteinerDe, adicionar, retirar, consumir, transferir, origemTexto, definirOrigemTexto, chaveGrupo, agrupar, totalDe, retirarDoGrupo, ajustarGrupo, criarPergaminho, sintonizar, sintonizados, usarCarga, pesoTotal, registrar, ROTULO_MOV };
 })();

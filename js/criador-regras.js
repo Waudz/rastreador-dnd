@@ -303,27 +303,30 @@ window.CRIADOR = (() => {
     const nomeDe=i=>doCatalogo(i.id)?.nome||i.nome||i.en;
     const put=e=>{const x=itens.find(y=>y.origem.id===e.origem.id);if(x){x.qtd+=e.qtd;return;}itens.push(e);};
     /* id do catálogo + quantidade; pacotes viram os itens que os compõem, cada um com a origem "Criação — Pacote de ..." */
-    const add=(id,qtd,chave,nota,pacote)=>{
+    /* `texto` = origem apresentada ao usuário (editável pelo mestre depois); `id`/`nota`/`pacote` continuam sendo os identificadores técnicos */
+    const add=(id,qtd,chave,nota,pacote,texto)=>{
       const i=D.items.find(x=>x.id===id);if(!i){ausentes.push(id);return;}
       const conteudo=i.data.gear?.contents;
-      if(conteudo){const rotulo="Criação — "+nomeDe(i);conteudo.forEach(c=>add(c.item,c.quantity*qtd,chave+":"+id,rotulo,{id,nome:nomeDe(i)}));return;}
+      if(conteudo){const rotulo="Criação — "+nomeDe(i);conteudo.forEach(c=>add(c.item,c.quantity*qtd,chave+":"+id,rotulo,{id,nome:nomeDe(i)},"Componente do "+nomeDe(i)));return;}
       const cat=doCatalogo(id),peso=cat&&Number.isFinite(Number(cat.peso))?Number(cat.peso):kgDe(i);
-      put({id,catId:id,ref:id,nome:nomeDe(i),qtd,peso,origem:{tipo:"criacao",id:chave+":"+id,nota,...(pacote?{pacote}:{})}});
+      put({id,catId:id,ref:id,nome:nomeDe(i),qtd,peso,origem:{tipo:"criacao",id:chave+":"+id,nota,...(pacote?{pacote}:{}),...(texto?{texto}:{})}});
     };
-    const notaClasse="Criação — Equipamento de "+(R.classe(f.classes[0].c)?.n||"classe");
-    for(const i of d.data.startingEquipment||[])add(i.item,i.quantity,"classe:fixo",notaClasse);
+    const nomeClasse=R.classe(f.classes[0].c)?.n||"classe",notaClasse="Criação — Equipamento de "+nomeClasse;
+    for(const i of d.data.startingEquipment||[])add(i.item,i.quantity,"classe:fixo",notaClasse,null,"Equipamento inicial da classe "+nomeClasse);
     (d.data.startingChoices||[]).forEach((g,i)=>{const o=g.options[Number(st.equipamento["op:"+i])];if(!o){pendentes.push("Equipamento: escolha a opção "+(i+1));return;}
-      o.items.forEach((x,j)=>{if(x.item)add(x.item,x.quantity||1,"classe:g"+i,notaClasse);else for(let k=0;k<(x.count||1);k++){const key="item:"+i+":"+j+":"+k,id=st.equipamento[key];if(!itemCategoria(x.category).some(x=>x.id===id))pendentes.push("Escolha "+x.category);else add(id,1,"classe:g"+i+":c"+j,notaClasse);}});
+      o.items.forEach((x,j)=>{if(x.item)add(x.item,x.quantity||1,"classe:g"+i,notaClasse,null,"Escolha de equipamento da classe · Grupo "+(i+1));else for(let k=0;k<(x.count||1);k++){const key="item:"+i+":"+j+":"+k,id=st.equipamento[key];if(!itemCategoria(x.category).some(x=>x.id===id))pendentes.push("Escolha "+x.category);else add(id,1,"classe:g"+i+":c"+j,notaClasse,null,"Escolha de equipamento da classe · Grupo "+(i+1));}});
     });
     /* Origem: usa o item do catálogo quando o nome corresponde a UM item; senão fica como item personalizado (sem peso inventado). */
     const notaOrigem="Criação — Origem "+(bg?.nome||""),bgId=bg?.id||"";
-    const deOrigem=(nome,tipo)=>{const id=idPorNomeUnico(nome);
-      if(id&&D.items.some(x=>x.id===id)){add(id,1,"origem:"+bgId+":"+tipo,notaOrigem);return;}
-      if(id){const cat=doCatalogo(id);put({id,catId:id,ref:id,nome:cat.nome,qtd:1,peso:Number(cat.peso)||0,origem:{tipo:"criacao",id:"origem:"+bgId+":"+tipo+":"+id,nota:notaOrigem}});return;}
-      put({nome,qtd:1,peso:0,origem:{tipo:"criacao",id:"origem:"+bgId+":"+tipo+":"+slugNome(nome),nota:notaOrigem}});};
-    for(const n of bg?.equip||[])deOrigem(n,"equip");
-    for(const n of [...(bg?.ferr||[]),...(grupos(f).find(g=>g.key==="background|ferramentas")?.selecionadas||[]).map(rotulo)].filter(n=>!/Veículos/.test(n)))if(!itens.some(i=>sem(i.nome)===sem(n)))deOrigem(n,"ferr");
-    return {itens,pendentes,ausentes,ouro:bg?.ouro||0};
+    const deOrigem=(nome,tipo,texto)=>{const id=idPorNomeUnico(nome);
+      if(id&&D.items.some(x=>x.id===id)){add(id,1,"origem:"+bgId+":"+tipo,notaOrigem,null,texto);return;}
+      if(id){const cat=doCatalogo(id);put({id,catId:id,ref:id,nome:cat.nome,qtd:1,peso:Number(cat.peso)||0,origem:{tipo:"criacao",id:"origem:"+bgId+":"+tipo+":"+id,nota:notaOrigem,texto}});return;}
+      put({nome,qtd:1,peso:0,origem:{tipo:"criacao",id:"origem:"+bgId+":"+tipo+":"+slugNome(nome),nota:notaOrigem,texto}});};
+    const nomeBg=bg?.nome||"";
+    for(const n of bg?.equip||[])deOrigem(n,"equip","Equipamento do antecedente "+nomeBg);
+    const escolhidas=new Set((grupos(f).find(g=>g.key==="background|ferramentas")?.selecionadas||[]).map(rotulo));
+    for(const n of [...(bg?.ferr||[]),...escolhidas].filter(n=>!/Veículos/.test(n)))if(!itens.some(i=>sem(i.nome)===sem(n)))deOrigem(n,"ferr",escolhidas.has(n)&&!(bg?.ferr||[]).includes(n)?"Escolha de ferramentas do antecedente "+nomeBg:"Equipamento do antecedente "+nomeBg);
+    return {itens,pendentes,ausentes,ouro:bg?.ouro||0,ouroOrigem:bg?"Dinheiro inicial do antecedente "+nomeBg:""};
   }
   /* Um só caminho do catálogo para o inventário: o mesmo item sai igual do criador, do mestre ou da aba Itens. */
   function itemInventario(e){

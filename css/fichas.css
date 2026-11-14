@@ -374,3 +374,17 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .inv-titulo .inv-nome-btn{min-height:0;width:auto;max-width:100%;padding:0;border:0;background:none;box-shadow:none;text-align:left;font:inherit;color:inherit;cursor:pointer}
 .inv-titulo .inv-nome-btn:hover .inv-nome-txt{text-decoration:underline;text-decoration-color:var(--gold,#c9a76a)}
 .inv-card .inv-edit{margin-top:8px}
+
+/* ---- Inventário: resumo mecânico, descrição curta e Origem (lista); grade compacta. Os textos se adaptam ao espaço: limite de linhas com reticências, sem alturas fixas nem fonte menor. ---- */
+.inv-mec,.inv-resumo,.inv-origem{min-width:0;margin:0 0 3px;font-size:.82rem;line-height:1.3;overflow-wrap:anywhere}
+.inv-mec,.inv-resumo{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.inv-mec{font-weight:600}
+.inv-origem{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden}
+#inv.inv-grade .inv-mec{-webkit-line-clamp:1}
+#inv.inv-grade .inv-resumo,#inv.inv-grade .inv-origem{display:none}
+.inv-det-origens,.inv-det-hist{list-style:none;margin:4px 0 10px;padding:0}
+.inv-det-origens li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 6px}
+.inv-det-origem-txt{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}
+.inv-det-origens input{flex:1 1 200px;min-width:0}
+.inv-det-hist li{margin:0 0 4px;font-size:.85rem;overflow-wrap:anywhere}
+.criador-equip-lista{padding-left:18px}.criador-equip-origem{display:block;overflow-wrap:anywhere}

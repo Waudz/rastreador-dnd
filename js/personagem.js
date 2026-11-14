@@ -374,19 +374,22 @@
     if (sint) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-sint ${pr.sintonia.sintonizado ? "checked" : ""}> Sintonizado</label>`);
     if (pr.cargas) acoes.push(`<span class="muted">Cargas ${num(pr.cargas.atual, 0)}/${num(pr.cargas.max, 0)}</span>`);
     if (pr.raridade) acoes.push(`<span class="muted">${esc(pr.raridade)}</span>`);
-    const pac = pacoteDe(it), org = membrosDe(it).length > 1 ? ` · ${membrosDe(it).length} origens (veja os detalhes)` : pac ? ` · Faz parte do ${esc(pac)}` : it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? ` · ${esc(ROT_ORIGEM[it.origem.tipo] || it.origem.tipo)}${it.origem.nota ? ": " + esc(it.origem.nota) : ""}` : "";
+    const nMem = membrosDe(it).length, orig = nMem > 1 ? `${nMem} origens (veja os detalhes)` : IV.origemTexto(it);
+    const catI = CAT() && CAT().doInventario(it), RS = window.INV_RESUMO, mec = RS ? RS.mecanico(it, catI, IE.efeitosDe(it).map(descreverEfeito)) : "", resumo = RS ? RS.descricao(it, catI) : "";
     const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim(), membros = membrosDe(it), agrup = membros.length > 1, qn = agrup ? IV.totalDe(membros) : Math.max(0, num(it.qtd, 1));
     const thumb = `<button type="button" class="inv-thumb${im ? "" : " vazio"}" data-inv-detalhes="${i}" aria-label="Abrir os detalhes de ${nomeIt}" title="Ver detalhes">${im ? `<img class="inv-thumb-img" src="${esc(im.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : (window.ico ? window.ico(II.ICONE[t] || "bag") : "")}</button>`;
     const qtdCtl = `<span class="inv-qtd-ctl" role="group" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-menos="${i}" aria-label="Diminuir a quantidade de ${nomeIt}"${qn <= 0 ? " disabled" : ""}>−</button><input class="num" type="number" min="0" step="1" inputmode="numeric" data-inv="qtd" value="${qn}" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-mais="${i}" aria-label="Aumentar a quantidade de ${nomeIt}">+</button></span>`;
     const qtdUI = it.conjunto ? `<span class="inv-conj-tag">Conjunto · ${it.conjunto.reduce((n, c) => n + Math.max(0, num(c.qtd, 0)), 0)} unidades</span>` : qtdCtl;
     const mais = `<details class="inv-mais"><summary class="small" aria-label="Mais ações de ${nomeIt}" title="Mais ações">${window.ico ? window.ico("more") : "…"}</summary><div class="inv-mais-menu"><button type="button" data-inv-editar-abrir="${i}">Editar…</button><button type="button" data-inv-descartar="${i}">Descartar…</button><button type="button" class="danger" data-inv-excluir="${i}">Excluir item…</button></div></details>`;
     return `<div class="item-inv inv-card${qn <= 0 ? " zerado" : ""}" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-inv-detalhes="${i}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></button></div>
-      <div class="inv-meta muted"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span>${org}</div>
+      <div class="inv-meta muted"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span></div>
+      ${mec ? `<div class="inv-mec">${esc(mec)}</div>` : ""}${resumo ? `<div class="inv-resumo">${esc(resumo)}</div>` : ""}${orig ? `<div class="inv-origem muted">Origem: ${esc(orig)}</div>` : ""}
       <div class="inv-acoes">${qtdUI}${acoes.join(" ")}<button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</div></div>
       <div class="inv-edit" data-inv-uid="${esc(it.uid)}"${aberto ? "" : " hidden"}><div class="inv-edit-campos">
         <label class="inv-c-nome">Nome<input data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"></label>
         <label>Peso cada (kg)<input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}"></label>
         <label>Tipo<select data-inv-tipo aria-label="Tipo do item">${Object.entries(IV.TIPOS).map(([k, n]) => opt(k, n, t === k)).join("")}</select></label>
+        ${souMestre ? `<label class="inv-c-nome">Origem<input data-inv-origem maxlength="120" value="${esc(typeof (it.origem && it.origem.texto) === "string" ? it.origem.texto : IV.origemTexto(it))}" placeholder="Ex.: Recompensa de missão"></label>` : ""}
         <label class="inv-c-nome">Descrição<textarea data-inv="desc" rows="3" maxlength="1500" placeholder="Aparência, história, funcionamento conhecido…">${esc(it.desc || "")}</textarea></label>
         <div class="inv-edit-botoes"><button type="button" class="small" data-inv-img-gerir="${i}">${im ? "Trocar ou remover imagem" : "Adicionar imagem"}</button><button type="button" class="small subtle" data-inv-editar-abrir="${i}">Concluir edição</button></div></div></div></div>`;
   }
@@ -453,6 +456,30 @@
   }
   /* ficha de leitura do item: a mesma de js/catalogo-itens.js (aba Itens), com o estado deste personagem (quantidade, sintonia, cargas) */
   const CAT = () => window.CAT_ITENS || null;
+  /* Origem e histórico de transferências nos detalhes. A origem é um texto por registro (lote); só o mestre edita (aqui e no servidor). O histórico só aparece quando existe. */
+  const dataBR = (q) => { const d = new Date(q); return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR"); };
+  function blocoOrigemHTML(it) {
+    const mem = membrosDe(it), multi = mem.length > 1;
+    const textos = mem.map((m) => IV.origemTexto(m));
+    const hist = mem.flatMap((m) => (m.transferencias || []).map((t) => ({ t, m })));
+    let html = "";
+    if (souMestre || textos.some(Boolean)) {
+      html += `<h4 class="sub">Origem</h4><ul class="inv-det-origens">${mem.map((m, k) => { const q = Math.max(0, num(m.qtd, 0)), txt = textos[k];
+        return `<li><span class="inv-det-origem-txt">${multi ? `<b>${q}×</b> · ` : ""}${txt ? esc(txt) : '<span class="muted">Sem origem informada</span>'}</span>${souMestre ? `<input data-lote-origem="${esc(m.uid)}" value="${esc(typeof (m.origem && m.origem.texto) === "string" ? m.origem.texto : txt)}" maxlength="120" placeholder="Origem" aria-label="Origem${multi ? " do lote de " + q + " unidades" : ""}">` : ""}</li>`; }).join("")}</ul>`;
+    }
+    if (hist.length) {
+      html += `<h4 class="sub">Histórico de transferências</h4><ul class="inv-det-hist">${hist.map(({ t, m }) => `<li>${[dataBR(t.quando), `${esc((t.de && t.de.nome) || "personagem")} → ${esc((t.para && t.para.nome) || "personagem")}`, `${num(t.qtd, 0)}×`, multi ? `lote de ${Math.max(0, num(m.qtd, 0))}` : "", t.nota ? esc(t.nota) : ""].filter(Boolean).join(" · ")}</li>`).join("")}</ul>`;
+    }
+    return html;
+  }
+  /* mestre corrige o texto da Origem de UM registro; nada além do texto muda (nome, quantidade, peso, imagem, propriedades, vínculos e id técnico ficam como estão) */
+  document.addEventListener("change", (e) => {
+    const t = e.target; if (!t || !t.matches || !t.matches("[data-lote-origem],[data-inv-origem]")) return;
+    if (!souMestre) { aviso("Somente o mestre pode alterar a origem.", true); return; }
+    const uid = t.dataset.loteOrigem || (t.closest(".inv-edit") && t.closest(".inv-edit").dataset.invUid), rec = INV().find((x) => x.uid === uid);
+    if (!rec) return;
+    IV.definirOrigemTexto(rec, t.value); salvarInv(); redesenharInv();
+  });
   function viewDoItem(it) {
     const C = CAT(), cat = C && C.doInventario(it), t = it.tipo || "equipamento", pr = it.propriedades || {}, efs = IE.efeitosDe(it), im = II.obter(F(), it), membros = membrosDe(it), qn = membros.length > 1 ? IV.totalDe(membros) : Math.max(0, num(it.qtd, 1));
     const consumo = pr.consumo || (t === "magico" ? "carga" : "unidade"), usavel = IE.temEfeitos(it) || t === "consumivel";
@@ -465,12 +492,11 @@
       pr.cargas ? ["Cargas", `${num(pr.cargas.atual, 0)} de ${num(pr.cargas.max, 0)}${pr.cargas.recarga ? " · recarga: " + pr.cargas.recarga : ""}`] : null,
       usavel && efs.some((e) => !e.passivo) ? ["Ao usar", consumo === "carga" ? "Gasta carga(s) do item" : consumo === "nenhum" ? "Não gasta nada" : "Gasta 1 unidade"] : null,
       it.magiaVinculada ? ["Magia", `${it.magiaVinculada.n} (${Number(it.magiaVinculada.l) ? it.magiaVinculada.l + "º círculo" : "truque"})`] : null,
-      ...(membros.length > 1 ? membros.map((m) => [`Origem · ${Math.max(0, num(m.qtd, 0))}×`, rotuloOrigemItem(m)]) : [pacoteDe(it) ? ["Pacote", "Faz parte do " + pacoteDe(it)] : null, org && !pacoteDe(it) ? ["Origem", org] : null]),
     ].filter(Boolean);
     const doCatalogo = cat ? C.linhas(cat).filter(([k]) => !["Peso", "Raridade", "Sintonia"].includes(k)) : [];
     return { usavel, v: { nome: it.nome || "Item sem nome", categoria: cat ? cat.categoria : t, imagem: im ? im.src : null, subtitulo: [IV.TIPOS[t] || t, raridade].filter(Boolean).join(" · ") + (cat ? " · " + C.rotuloCat(cat.categoria) : ""),
       desc: it.desc || null, lacunaDesc: !!cat && !cat.custom && !it.desc && !efs.length, efeitos: efs.map(descreverEfeito), componentes: it.conjunto || null, acoesComponente: !!it.conjunto,
-      notaConjunto: it.conjunto ? "Conjunto agrupado: retire ou consuma cada componente aqui. O peso do conjunto é a soma do que resta, sem contar duas vezes." : null, dados: doEstado.concat(doCatalogo), rodape: cat ? "Dados básicos do catálogo (SRD 5.1)" + (cat.en ? `; original: ${cat.en}.` : ".") : "" } };
+      notaConjunto: it.conjunto ? "Conjunto agrupado: retire ou consuma cada componente aqui. O peso do conjunto é a soma do que resta, sem contar duas vezes." : null, dados: doEstado.concat(doCatalogo), extraHTML: blocoOrigemHTML(it), rodape: cat ? "Dados básicos do catálogo (SRD 5.1)" + (cat.en ? `; original: ${cat.en}.` : ".") : "" } };
   }
   function htmlDetalhes(it, i) {
     const C = CAT(); if (!C) return '<p class="err">Os detalhes do catálogo não carregaram. Recarregue a página.</p>';

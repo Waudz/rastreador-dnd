@@ -27,7 +27,7 @@ test('transferir entre contêineres (personagem, NPC, loja, baú) não duplica n
   I.adicionar(a,I.novoItem({nome:'Espada longa',qtd:3,peso:1.5,ref:'srd51:item/longsword'}));const uid=a.itens[0].uid;
   I.transferir(a,b,uid,2,{nota:'guardado no baú'});
   assert.equal(a.itens[0].qtd,1);assert.equal(b.itens[0].qtd,2);assert.notEqual(b.itens[0].uid,uid,'a parte separada é uma nova instância');
-  assert.equal(b.itens[0].origem.tipo,'transferencia');assert.equal(b.itens[0].origem.id,'p1');
+  assert.equal(b.itens[0].origem.tipo,'jogo','a origem original é preservada (antes virava "transferencia")');assert.equal(b.itens[0].transferencias[0].de.id,'p1');assert.equal(b.itens[0].transferencias[0].tipo,'transferencia','a passagem fica no histórico, separado da origem');
   assert.equal(a.movimentos.at(-1).tipo,'transferencia-saida');assert.equal(b.movimentos.at(-1).tipo,'transferencia-entrada');assert.equal(b.movimentos.at(-1).de.id,'p1');
   assert.throws(()=>I.transferir(a,b,uid,5),/inválida/);assert.equal(a.itens[0].qtd,1,'recusa não altera nada');
   I.transferir(b,a,b.itens[0].uid,2);assert.equal(a.itens.reduce((s,i)=>s+i.qtd,0),3,'volta ao total original');
