@@ -103,8 +103,8 @@ test('editar a origem altera só o texto: nome, quantidade, peso, propriedades, 
 
 test('permissões: jogador e mestre editam a Origem da ficha que controlam; a visão somente leitura do grupo não; o banco não restringe a Origem',()=>{
   const src=ler('js/personagem.js');
-  assert.ok(src.includes('!soLeitura ? `<input data-lote-origem'),'detalhes: campo editável para quem edita a ficha (dono ou mestre)');
-  assert.ok(src.includes('!soLeitura ? `<label class="inv-c-nome">Origem<input data-inv-origem'),'painel de edição idem');
+  assert.ok(src.includes('!soLeitura ? `<span class="inv-origem-campo"><input data-lote-origem'),'detalhes: campo editável para quem edita a ficha (dono ou mestre)');
+  assert.ok(src.includes('!soLeitura ? `<label class="inv-c-nome">Origem<span class="inv-origem-campo"><input data-inv-origem'),'painel de edição idem');
   assert.ok(src.includes('if (soLeitura) return;   // visão somente leitura do grupo'),'o tratador só recusa na visão somente leitura');
   assert.ok(!/Somente o mestre pode alterar a origem/.test(src)&&!/souMestre \? `<input data-lote-origem/.test(src),'sem restrição de mestre na interface');
   assert.ok(!fs.existsSync(path.join(root,'supabase/migrations/20261114120000_proteger_origem_item.sql')),'a migração que bloqueava a Origem foi removida (nunca aplicada)');
@@ -181,13 +181,13 @@ test('nomes personalizados: não agrupam entre si, a separação de pilha e a tr
 test('a Origem é sempre neutra: nenhuma cor nem classe por categoria; raridade e efeitos continuam à frente',()=>{
   const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'));
   assert.ok(!/color\s*:/.test(bloco),'o bloco da lista não define nenhuma cor');
-  assert.ok(!/\.inv-origem-|\.origem-(classe|pacote|antecedente|compra|mestre)|border-left|background/.test(bloco),'nada colore o cartão pela origem');
+  assert.ok(!/\.inv-origem-(?!campo|modelo)|\.origem-(classe|pacote|antecedente|compra|mestre)|border-left|background/.test(bloco),'nada colore o cartão pela origem');
   const fonte=ler('js/personagem.js');
   assert.ok(fonte.includes('class="inv-origem muted"'),'texto secundário da paleta (muted)');
   assert.ok(!/inv-origem[^"]*\$\{/.test(fonte),'a classe da Origem não varia com a categoria');
   /* raridade e efeitos entram no resumo mecânico (negrito), antes da origem na ordem de leitura */
   const A=amb(),RS=A.W.INV_RESUMO,m=RS.mecanico({propriedades:{raridade:'Raro',cargas:{atual:2,max:3},bonus:1}},A.C.obter('srd51:item/longsword'),['Recupera 2d4+2 pontos de vida']);
-  assert.match(m,/\+1/);assert.match(m,/Recupera 2d4\+2/);assert.match(m,/Cargas 2\/3/);assert.match(m,/Raro$/);
+  assert.match(m,/\+1/);assert.match(m,/Recupera 2d4\+2/);assert.match(m,/Cargas 2\/3/);assert.ok(!/Raro/.test(m),'a raridade tem elemento próprio (não fica no fim da linha, onde as reticências a cortariam)');assert.ok(fonte.includes('class="muted inv-raridade"')&&fonte.includes('CAT().RARIDADES[catR.raridade]'),'raridade do catálogo na lista e na grade');
   assert.ok(fonte.indexOf('class="inv-mec"')<fonte.indexOf('class="inv-origem muted"'),'a mecânica vem antes da Origem');
   assert.ok(ler('css/itens.css').includes('.inv-selo'),'o selo existente (detalhes/catálogo) foi preservado');
 });
@@ -322,8 +322,8 @@ test('resumos: arma, arma mágica, item sem descrição e item personalizado usa
   assert.equal(RS.descricao({desc:'  Concede +1 nas jogadas   de ataque e dano.  '},el),'Concede +1 nas jogadas de ataque e dano.','a descrição escrita tem prioridade e é compactada');
   assert.equal(RS.mecanico({},C.obter('srd51:item/backpack'),[]),'');assert.equal(RS.descricao({},C.obter('srd51:item/backpack')),'','sem dado, sem linha');
   const custom={nome:'Amuleto estranho',propriedades:{raridade:'Raro',cargas:{atual:1,max:3},efeitos:[{tipo:'condicao'}]}};
-  assert.equal(RS.mecanico(custom,null,['Invisível por 1 hora']),'Invisível por 1 hora · Cargas 1/3 · Raro');
-  assert.equal(RS.mecanico({},C.obter('srd51:item/dart'),[]).split(' · ').filter(x=>/Arremesso|Alcance/.test(x)).length,2,'sem repetir o mesmo alcance');
+  assert.equal(RS.mecanico(custom,null,['Invisível por 1 hora']),'Invisível por 1 hora · Cargas 1/3');
+  assert.equal(RS.mecanico({},C.obter('srd51:item/dart'),[]).split(' · ').filter(x=>/Arremesso|Alcance/.test(x)).length,1,'o alcance de arremesso aparece uma vez só');
   assert.equal(RS.mecanico({},C.obter('srd51:item/chain-mail'),[]),'CA 16 · For 13');
 });
 

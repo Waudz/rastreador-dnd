@@ -379,7 +379,8 @@
     if (passivo || sint || t === "magico" || (equipavel(it) && qtdLinha(it) > 0)) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-equip ${it.equipado ? "checked" : ""}> Equipado</label>`);
     if (sint) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-sint ${pr.sintonia.sintonizado ? "checked" : ""}> Sintonizado</label>`);
     if (pr.cargas) acoes.push(`<span class="muted">Cargas ${num(pr.cargas.atual, 0)}/${num(pr.cargas.max, 0)}</span>`);
-    if (pr.raridade) acoes.push(`<span class="muted">${esc(pr.raridade)}</span>`);
+    const catR = CAT() && CAT().doInventario(it), rarI = pr.raridade || (catR && catR.raridade ? CAT().RARIDADES[catR.raridade] : "");
+    if (rarI) acoes.push(`<span class="muted inv-raridade">${esc(rarI)}</span>`);
     const nMem = membrosDe(it).length, orig = nMem > 1 ? `${nMem} origens (veja os detalhes)` : IV.origemTexto(it);
     const catI = CAT() && CAT().doInventario(it), RS = window.INV_RESUMO, mec = RS ? RS.mecanico(it, catI, IE.efeitosDe(it).map(descreverEfeito)) : "", resumo = RS ? RS.descricao(it, catI) : "";
     const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim(), membros = membrosDe(it), agrup = membros.length > 1, qn = agrup ? IV.totalDe(membros) : Math.max(0, num(it.qtd, 1));
@@ -394,7 +395,7 @@
         <label class="inv-c-nome">Nome<input data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"></label>
         <label>Peso cada (kg)<input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}"></label>
         <label>Tipo<select data-inv-tipo aria-label="Tipo do item">${Object.entries(IV.TIPOS).map(([k, n]) => opt(k, n, t === k)).join("")}</select></label>
-        ${!soLeitura ? `<label class="inv-c-nome">Origem<input data-inv-origem maxlength="120" value="${esc(typeof (it.origem && it.origem.texto) === "string" ? it.origem.texto : IV.origemTexto(it))}" placeholder="Ex.: Recompensa de missão"></label>` : ""}
+        ${!soLeitura ? `<label class="inv-c-nome">Origem<span class="inv-origem-campo"><input data-inv-origem maxlength="120" value="${esc(typeof (it.origem && it.origem.texto) === "string" ? it.origem.texto : IV.origemTexto(it))}" placeholder="Ex.: Recompensa de missão">${seletorModelos()}</span></label>` : ""}
         <label class="inv-c-nome">Descrição<textarea data-inv="desc" rows="3" maxlength="1500" placeholder="Aparência, história, funcionamento conhecido…">${esc(it.desc || "")}</textarea></label>
         <div class="inv-edit-botoes">${nomeDivergente(it) ? `<button type="button" class="small" data-inv-nome-restaurar="${i}">Restaurar nome do catálogo</button>` : ""}<button type="button" class="small" data-inv-img-gerir="${i}">${im ? "Trocar ou remover imagem" : "Adicionar imagem"}</button><button type="button" class="small subtle" data-inv-editar-abrir="${i}">Concluir edição</button></div></div></div></div>`;
   }
@@ -461,6 +462,25 @@
   }
   /* ficha de leitura do item: a mesma de js/catalogo-itens.js (aba Itens), com o estado deste personagem (quantidade, sintonia, cargas) */
   const CAT = () => window.CAT_ITENS || null;
+  /* ---------- Modelos de Origem: só SUGESTÕES de preenchimento ----------
+     Escolher um modelo escreve o texto no campo (o jogador altera o que quiser, ou escreve tudo do zero). Nunca é aplicado sozinho e nunca troca a Origem existente ao abrir o editor.
+     Só usa o que a ficha já sabe (classe, antecedente, pacote do próprio item); o resto fica para o jogador completar (sem inventar nome nem local). Não há tabela nem cor por categoria. */
+  const MODELOS_ORIGEM = [["inicial", "Equipamento inicial da classe [classe]"], ["escolha", "Escolha de equipamento da classe [classe]"], ["antecedente", "Equipamento do antecedente [antecedente]"], ["pacote", "Componente do [pacote]"],
+    ["comprado", "Comprado em [local]"], ["encontrado", "Encontrado em [local]"], ["recompensa", "Recompensa da missão [nome]"], ["presente", "Presente de [personagem]"], ["recebido", "Recebido de [personagem]"], ["fabricado", "Fabricado por [personagem]"], ["livre", "Origem personalizada"]];
+  function textoModelo(chave, rec) {
+    const c0 = CLS()[0], classe = c0 ? CLASSES[c0.c] || "" : "", ante = F().background || "", pac = (rec && rec.origem && rec.origem.pacote && rec.origem.pacote.nome) || "Pacote de ";
+    return ({ inicial: "Equipamento inicial da classe " + classe, escolha: "Escolha de equipamento da classe " + classe, antecedente: "Equipamento do antecedente " + ante, pacote: "Componente do " + pac,
+      comprado: "Comprado em ", encontrado: "Encontrado em ", recompensa: "Recompensa da missão ", presente: "Presente de ", recebido: "Recebido de ", fabricado: "Fabricado por " })[chave];
+  }
+  const seletorModelos = (uid) => `<select class="inv-origem-modelo" data-origem-modelo${uid ? ` data-modelo-uid="${esc(uid)}"` : ""} aria-label="Modelo de origem"><option value="">Modelos…</option>${MODELOS_ORIGEM.map(([k, r]) => `<option value="${k}">${esc(r)}</option>`).join("")}</select>`;
+  document.addEventListener("change", (e) => {
+    const s = e.target; if (!s || !s.matches || !s.matches("[data-origem-modelo]")) return;
+    const campo = s.parentElement && s.parentElement.querySelector("input"), chave = s.value; s.value = "";
+    if (!campo || !chave || soLeitura) return;
+    const uid = s.dataset.modeloUid || (s.closest(".inv-edit") && s.closest(".inv-edit").dataset.invUid), rec = uid ? INV().find((x) => x.uid === uid) : null, texto = chave === "livre" ? null : textoModelo(chave, rec);
+    campo.focus(); if (texto != null) campo.value = texto;   // foco antes: ao sair do campo o texto é salvo pelo tratador normal
+    try { campo.setSelectionRange(campo.value.length, campo.value.length); } catch (_) { /* tipo sem seleção */ }
+  });
   /* Origem e histórico de transferências nos detalhes. A origem é um texto por registro (lote); dono e mestre editam. O histórico só aparece quando existe. */
   const dataBR = (q) => { const d = new Date(q); return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR"); };
   function blocoOrigemHTML(it) {
@@ -470,7 +490,7 @@
     let html = "";
     if (!soLeitura || textos.some(Boolean)) {
       html += `<h4 class="sub">Origem</h4><ul class="inv-det-origens">${mem.map((m, k) => { const q = Math.max(0, num(m.qtd, 0)), txt = textos[k];
-        return `<li><span class="inv-det-origem-txt">${multi ? `<b>${q}×</b> · ` : ""}${txt ? esc(txt) : '<span class="muted">Sem origem informada</span>'}</span>${!soLeitura ? `<input data-lote-origem="${esc(m.uid)}" value="${esc(typeof (m.origem && m.origem.texto) === "string" ? m.origem.texto : txt)}" maxlength="120" placeholder="Origem" aria-label="Origem${multi ? " do lote de " + q + " unidades" : ""}">` : ""}</li>`; }).join("")}</ul>`;
+        return `<li><span class="inv-det-origem-txt">${multi ? `<b>${q}×</b> · ` : ""}${txt ? esc(txt) : '<span class="muted">Sem origem informada</span>'}</span>${!soLeitura ? `<span class="inv-origem-campo"><input data-lote-origem="${esc(m.uid)}" value="${esc(typeof (m.origem && m.origem.texto) === "string" ? m.origem.texto : txt)}" maxlength="120" placeholder="Origem" aria-label="Origem${multi ? " do lote de " + q + " unidades" : ""}">${seletorModelos(m.uid)}</span>` : ""}</li>`; }).join("")}</ul>`;
     }
     if (hist.length) {
       html += `<h4 class="sub">Histórico de transferências</h4><ul class="inv-det-hist">${hist.map(({ t, m }) => `<li>${[dataBR(t.quando), `${esc((t.de && t.de.nome) || "personagem")} → ${esc((t.para && t.para.nome) || "personagem")}`, `${num(t.qtd, 0)}×`, multi ? `lote de ${Math.max(0, num(m.qtd, 0))}` : "", t.nota ? esc(t.nota) : ""].filter(Boolean).join(" · ")}</li>`).join("")}</ul>`;
@@ -879,7 +899,7 @@
         ${souMestre ? '<div class="sub">Mestre</div><button type="button" class="small" id="ms-abrir">Conceder magia ao personagem</button><div id="mestre-box" class="panel" hidden></div>' : ""}</div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia. Magias de raça, talento ou item aparecem aqui quando o personagem as tiver.</span></div>`}
       </section><section id="secao-inventario" role="tabpanel" aria-labelledby="aba-inventario" data-ficha-secao="inventario" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
         ${cabecalhoInv()}<div class="inv-add panel" id="inv-add" hidden><div class="inv-add-cab"><h3 class="sub inv-tit">Adicionar ao inventário</h3><button type="button" class="small subtle" id="inv-add-fechar">Cancelar</button></div>
-          <div class="inv-add-linha inv-add-origem"><label for="add-origem">Origem (opcional)</label><input id="add-origem" maxlength="120" placeholder="Ex.: Recompensa da missão em Julkoun" autocomplete="off"></div>
+          <div class="inv-add-linha inv-add-origem"><label for="add-origem">Origem (opcional)</label><span class="inv-origem-campo"><input id="add-origem" maxlength="120" placeholder="Ex.: Recompensa da missão em Julkoun" autocomplete="off">${seletorModelos()}</span></div>
           <div class="inv-add-tipos" role="group" aria-label="Tipo de item a adicionar"><button type="button" class="small" data-inv-add-tipo="cat" aria-pressed="false">Catálogo de itens</button><button type="button" class="small" data-inv-add-tipo="perg" aria-pressed="false">Pergaminho de magia</button><button type="button" class="small" data-inv-add-tipo="livre" aria-pressed="false">Outro item (em branco)</button></div>
           <div class="inv-add-linha" data-add-linha="cat" hidden><label for="ci-q">Buscar no catálogo (armas, armaduras, equipamento, poções, itens mágicos, pacotes…)</label><div class="row"><input id="ci-q" type="search" placeholder="Nome do item…" autocomplete="off" style="flex:1 1 180px"><select id="ci-cat" aria-label="Categoria" style="flex:0 1 200px"><option value="">Todas as categorias</option>${(CAT() ? CAT().CATEGORIAS : []).map(([k, n]) => `<option value="${k}">${esc(n)}</option>`).join("")}</select></div><div id="ci-res" class="inv-cat-res"></div></div>
           <div class="inv-add-linha" data-add-linha="perg" hidden><label for="pg-mag">Pergaminho de magia</label><div class="row"><select id="pg-mag" style="flex:1 1 200px" aria-label="Magia do pergaminho">${opt("", "Escolher a magia…", true)}</select><input id="pg-nota" style="flex:1 1 140px" maxlength="80" placeholder="Onde foi encontrado (opcional)"><button type="button" class="small" id="pg-add">Adicionar pergaminho</button></div></div>

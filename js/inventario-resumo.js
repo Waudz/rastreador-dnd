@@ -20,6 +20,8 @@
       let props = linha(rows, "Propriedades");
       const duas = cat.arma && cat.arma.danoDuasMaos && cat.arma.danoDuasMaos.dado;
       if (props && duas) props = props.replace(/Versátil/i, "Versátil (" + cat.arma.danoDuasMaos.dado + ")");
+      const temAlcance = !!(linha(rows, "Alcance") || linha(rows, "Arremesso"));
+      if (props && temAlcance) props = props.split(/,\s*/).filter((p) => !/^Arremesso$/i.test(p)).join(", ");   // o alcance de arremesso já diz isso
       if (props) partes.push(props.replace(/,\s*/g, " · "));
       const alc = linha(rows, "Alcance"), arremesso = linha(rows, "Arremesso");
       if (alc) partes.push("Alcance " + alc);
@@ -31,7 +33,6 @@
     if (pr.bonus != null && Number(pr.bonus)) partes.push((Number(pr.bonus) > 0 ? "+" : "") + Number(pr.bonus));
     for (const e of (efeitosTexto || []).slice(0, 2)) { const t = limpa(e); if (t) partes.push(t); }
     if (pr.cargas) partes.push("Cargas " + num(pr.cargas.atual) + "/" + num(pr.cargas.max));
-    if (pr.raridade) partes.push(String(pr.raridade));
     const vistos = new Set();
     return partes.filter((p) => { const k = p.toLowerCase(); if (!p || vistos.has(k)) return false; vistos.add(k); return true; }).join(" · ");
   }
