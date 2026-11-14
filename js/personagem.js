@@ -346,7 +346,9 @@
   const invAbertos = new Set();
   let vistaInv = "lista"; try { vistaInv = localStorage.getItem("dnd5e_inv_vista") === "grade" ? "grade" : "lista"; } catch (_) { /* sem armazenamento: lista */ }
   const cabecalhoInv = () => `<div class="inv-cab"><h3 class="sub inv-tit">Itens que você carrega</h3><button type="button" class="small primary" id="inv-add-abrir" aria-expanded="false" aria-controls="inv-add">+ Adicionar item</button><button type="button" class="small subtle" id="inv-vinculos" title="Mostra, sem alterar nada, quais itens e equipamentos podem ser ligados ao catálogo">Verificar vínculos</button><div class="inv-vista" role="group" aria-label="Modo de exibição do inventário">${[["lista", "Lista"], ["grade", "Grade"]].map(([k, n]) => `<button type="button" class="small${vistaInv === k ? " ativo" : ""}" data-inv-vista="${k}" aria-pressed="${vistaInv === k}">${n}</button>`).join("")}</div></div>`;
-  function fecharAdd() { const p = document.getElementById("inv-add"); if (!p) return; p.hidden = true; p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = true; }); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", "false")); p.querySelectorAll("select").forEach((x) => { x.selectedIndex = 0; }); const n = document.getElementById("pg-nota"); if (n) n.value = ""; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "false"); b.textContent = "+ Adicionar item"; } }
+  /* Origem informada ao adicionar manualmente (qualquer tipo de item): vira `origem.texto`; os ids técnicos do item (catálogo, pacote) não mudam */
+  const origemAdd = (base) => { const e = document.getElementById("add-origem"), t = e ? e.value.replace(/\s+/g, " ").trim().slice(0, 120) : ""; return t ? { ...base, texto: t } : base; };
+  function fecharAdd() { const oa = document.getElementById("add-origem"); if (oa) oa.value = ""; const p = document.getElementById("inv-add"); if (!p) return; p.hidden = true; p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = true; }); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", "false")); p.querySelectorAll("select").forEach((x) => { x.selectedIndex = 0; }); const n = document.getElementById("pg-nota"); if (n) n.value = ""; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "false"); b.textContent = "+ Adicionar item"; } }
   function abrirAdd() { const p = document.getElementById("inv-add"); if (!p) return; p.hidden = false; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "true"); b.textContent = "Fechar"; } p.querySelector("[data-inv-add-tipo]")?.focus(); }
   function escolherAdd(tipo) { const p = document.getElementById("inv-add"); if (!p) return; if (tipo === "cat") desenharCatAdd(); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.invAddTipo === tipo))); p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = x.dataset.addLinha !== tipo; }); const f = p.querySelector('[data-add-linha="' + tipo + '"] input, [data-add-linha="' + tipo + '"] select, [data-add-linha="' + tipo + '"] button'); if (f) f.focus(); }
   function atualizarCartao(card, it) {
@@ -365,6 +367,10 @@
   const qtdLinha = (it) => { const m = membrosDe(it); return m.length > 1 ? IV.totalDe(m) : Math.max(0, num(it.qtd, 1)); };
   const rotuloOrigemItem = (it) => { const p = pacoteDe(it), o = (it && it.origem) || {}; return p ? "Faz parte do " + p : !o.tipo || o.tipo === "inicial" ? "Inicial" : (ROT_ORIGEM[o.tipo] || o.tipo) + (o.nota ? ": " + o.nota : ""); };
   const listaInvHTML = () => { const gs = gruposInv(); return INV().map((it, i) => { const g = gs.get(it.uid); return g && g.principal !== it ? "" : linhaInv(it, i); }).join(""); };
+  /* O nome é só o rótulo apresentado: o vínculo com o catálogo é o catId/ref, que o renomear nunca toca. */
+  const nomeDoCatalogo = (it) => { const C = CAT(), cat = C && C.doInventario(it); return cat && !cat.custom && cat.nome ? cat.nome : ""; };
+  const nomeDivergente = (it) => { const n = nomeDoCatalogo(it); return !!n && nz(n) !== nz(it.nome || ""); };
+  function restaurarNomeCatalogo(it) { const n = nomeDoCatalogo(it); if (!n) return false; it.nome = n; salvarInv(); redesenharInv(); return true; }
   function linhaInv(it, i) {
     const t = it.tipo || "equipamento", pr = it.propriedades || {}, sint = pr.sintonia && pr.sintonia.requer, passivo = IE.efeitosDe(it).some((e) => e.passivo);
     const acoes = [];
@@ -381,17 +387,16 @@
     const qtdCtl = `<span class="inv-qtd-ctl" role="group" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-menos="${i}" aria-label="Diminuir a quantidade de ${nomeIt}"${qn <= 0 ? " disabled" : ""}>−</button><input class="num" type="number" min="0" step="1" inputmode="numeric" data-inv="qtd" value="${qn}" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-mais="${i}" aria-label="Aumentar a quantidade de ${nomeIt}">+</button></span>`;
     const qtdUI = it.conjunto ? `<span class="inv-conj-tag">Conjunto · ${it.conjunto.reduce((n, c) => n + Math.max(0, num(c.qtd, 0)), 0)} unidades</span>` : qtdCtl;
     const mais = `<details class="inv-mais"><summary class="small" aria-label="Mais ações de ${nomeIt}" title="Mais ações">${window.ico ? window.ico("more") : "…"}</summary><div class="inv-mais-menu"><button type="button" data-inv-editar-abrir="${i}">Editar…</button><button type="button" data-inv-descartar="${i}">Descartar…</button><button type="button" class="danger" data-inv-excluir="${i}">Excluir item…</button></div></details>`;
-    return `<div class="item-inv inv-card${qn <= 0 ? " zerado" : ""}" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-inv-detalhes="${i}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></button></div>
-      <div class="inv-meta muted"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span></div>
-      ${mec ? `<div class="inv-mec">${esc(mec)}</div>` : ""}${resumo ? `<div class="inv-resumo">${esc(resumo)}</div>` : ""}${orig ? `<div class="inv-origem muted">Origem: ${esc(orig)}</div>` : ""}
+    return `<div class="item-inv inv-card${qn <= 0 ? " zerado" : ""}" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-inv-detalhes="${i}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></button>${mec ? `<span class="inv-mec">${esc(mec)}</span>` : ""}</div>
+      <div class="inv-meta muted"><span class="inv-base"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span></span>${resumo ? `<span class="inv-resumo">${esc(resumo)}</span>` : ""}${orig ? `<span class="inv-origem muted">Origem: ${esc(orig)}</span>` : ""}</div>
       <div class="inv-acoes">${qtdUI}${acoes.join(" ")}<button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</div></div>
       <div class="inv-edit" data-inv-uid="${esc(it.uid)}"${aberto ? "" : " hidden"}><div class="inv-edit-campos">
         <label class="inv-c-nome">Nome<input data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"></label>
         <label>Peso cada (kg)<input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}"></label>
         <label>Tipo<select data-inv-tipo aria-label="Tipo do item">${Object.entries(IV.TIPOS).map(([k, n]) => opt(k, n, t === k)).join("")}</select></label>
-        ${souMestre ? `<label class="inv-c-nome">Origem<input data-inv-origem maxlength="120" value="${esc(typeof (it.origem && it.origem.texto) === "string" ? it.origem.texto : IV.origemTexto(it))}" placeholder="Ex.: Recompensa de missão"></label>` : ""}
+        ${!soLeitura ? `<label class="inv-c-nome">Origem<input data-inv-origem maxlength="120" value="${esc(typeof (it.origem && it.origem.texto) === "string" ? it.origem.texto : IV.origemTexto(it))}" placeholder="Ex.: Recompensa de missão"></label>` : ""}
         <label class="inv-c-nome">Descrição<textarea data-inv="desc" rows="3" maxlength="1500" placeholder="Aparência, história, funcionamento conhecido…">${esc(it.desc || "")}</textarea></label>
-        <div class="inv-edit-botoes"><button type="button" class="small" data-inv-img-gerir="${i}">${im ? "Trocar ou remover imagem" : "Adicionar imagem"}</button><button type="button" class="small subtle" data-inv-editar-abrir="${i}">Concluir edição</button></div></div></div></div>`;
+        <div class="inv-edit-botoes">${nomeDivergente(it) ? `<button type="button" class="small" data-inv-nome-restaurar="${i}">Restaurar nome do catálogo</button>` : ""}<button type="button" class="small" data-inv-img-gerir="${i}">${im ? "Trocar ou remover imagem" : "Adicionar imagem"}</button><button type="button" class="small subtle" data-inv-editar-abrir="${i}">Concluir edição</button></div></div></div></div>`;
   }
   /* Imagem do item: ver maior, enviar do aparelho, usar URL https, trocar ou remover (o retrato usa o mesmo recorte) */
   function abrirImagemItem(i) {
@@ -456,26 +461,26 @@
   }
   /* ficha de leitura do item: a mesma de js/catalogo-itens.js (aba Itens), com o estado deste personagem (quantidade, sintonia, cargas) */
   const CAT = () => window.CAT_ITENS || null;
-  /* Origem e histórico de transferências nos detalhes. A origem é um texto por registro (lote); só o mestre edita (aqui e no servidor). O histórico só aparece quando existe. */
+  /* Origem e histórico de transferências nos detalhes. A origem é um texto por registro (lote); dono e mestre editam. O histórico só aparece quando existe. */
   const dataBR = (q) => { const d = new Date(q); return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR"); };
   function blocoOrigemHTML(it) {
     const mem = membrosDe(it), multi = mem.length > 1;
     const textos = mem.map((m) => IV.origemTexto(m));
     const hist = mem.flatMap((m) => (m.transferencias || []).map((t) => ({ t, m })));
     let html = "";
-    if (souMestre || textos.some(Boolean)) {
+    if (!soLeitura || textos.some(Boolean)) {
       html += `<h4 class="sub">Origem</h4><ul class="inv-det-origens">${mem.map((m, k) => { const q = Math.max(0, num(m.qtd, 0)), txt = textos[k];
-        return `<li><span class="inv-det-origem-txt">${multi ? `<b>${q}×</b> · ` : ""}${txt ? esc(txt) : '<span class="muted">Sem origem informada</span>'}</span>${souMestre ? `<input data-lote-origem="${esc(m.uid)}" value="${esc(typeof (m.origem && m.origem.texto) === "string" ? m.origem.texto : txt)}" maxlength="120" placeholder="Origem" aria-label="Origem${multi ? " do lote de " + q + " unidades" : ""}">` : ""}</li>`; }).join("")}</ul>`;
+        return `<li><span class="inv-det-origem-txt">${multi ? `<b>${q}×</b> · ` : ""}${txt ? esc(txt) : '<span class="muted">Sem origem informada</span>'}</span>${!soLeitura ? `<input data-lote-origem="${esc(m.uid)}" value="${esc(typeof (m.origem && m.origem.texto) === "string" ? m.origem.texto : txt)}" maxlength="120" placeholder="Origem" aria-label="Origem${multi ? " do lote de " + q + " unidades" : ""}">` : ""}</li>`; }).join("")}</ul>`;
     }
     if (hist.length) {
       html += `<h4 class="sub">Histórico de transferências</h4><ul class="inv-det-hist">${hist.map(({ t, m }) => `<li>${[dataBR(t.quando), `${esc((t.de && t.de.nome) || "personagem")} → ${esc((t.para && t.para.nome) || "personagem")}`, `${num(t.qtd, 0)}×`, multi ? `lote de ${Math.max(0, num(m.qtd, 0))}` : "", t.nota ? esc(t.nota) : ""].filter(Boolean).join(" · ")}</li>`).join("")}</ul>`;
     }
     return html;
   }
-  /* mestre corrige o texto da Origem de UM registro; nada além do texto muda (nome, quantidade, peso, imagem, propriedades, vínculos e id técnico ficam como estão) */
+  /* quem edita a ficha (dono ou mestre) corrige o texto da Origem de UM registro; nada além do texto muda (nome, quantidade, peso, imagem, propriedades, vínculos e id técnico ficam como estão) */
   document.addEventListener("change", (e) => {
     const t = e.target; if (!t || !t.matches || !t.matches("[data-lote-origem],[data-inv-origem]")) return;
-    if (!souMestre) { aviso("Somente o mestre pode alterar a origem.", true); return; }
+    if (soLeitura) return;   // visão somente leitura do grupo: nada é gravado
     const uid = t.dataset.loteOrigem || (t.closest(".inv-edit") && t.closest(".inv-edit").dataset.invUid), rec = INV().find((x) => x.uid === uid);
     if (!rec) return;
     IV.definirOrigemTexto(rec, t.value); salvarInv(); redesenharInv();
@@ -487,7 +492,7 @@
     const raridade = pr.raridade || (cat && cat.raridade ? C.RARIDADES[cat.raridade] : ""), exigeSint = pr.sintonia ? !!pr.sintonia.requer : !!(cat && cat.sintonia);
     const pesoLinha = it.conjunto ? `${kg(num(it.peso, 0))} kg no conjunto (soma dos componentes)` : `${kg(num(it.peso, 0))} kg cada · ${kg(qn * num(it.peso, 0))} kg no total`;
     const doEstado = [
-      ["Tipo", IV.TIPOS[t] || t], raridade ? ["Raridade", raridade] : null, it.conjunto ? null : ["Quantidade", String(qn)], ["Peso", pesoLinha],
+      ["Tipo", IV.TIPOS[t] || t], cat && !cat.custom && nz(cat.nome) !== nz(it.nome) ? ["Item do catálogo", cat.nome + (cat.en ? ` (${cat.en})` : "")] : null, raridade ? ["Raridade", raridade] : null, it.conjunto ? null : ["Quantidade", String(qn)], ["Peso", pesoLinha],
       exigeSint ? ["Sintonia", pr.sintonia && pr.sintonia.sintonizado ? "Exige sintonia · você está sintonizado" : "Exige sintonia" + (pr.sintonia ? " · você não está sintonizado" : "")] : null,
       pr.cargas ? ["Cargas", `${num(pr.cargas.atual, 0)} de ${num(pr.cargas.max, 0)}${pr.cargas.recarga ? " · recarga: " + pr.cargas.recarga : ""}`] : null,
       usavel && efs.some((e) => !e.passivo) ? ["Ao usar", consumo === "carga" ? "Gasta carga(s) do item" : consumo === "nenhum" ? "Não gasta nada" : "Gasta 1 unidade"] : null,
@@ -501,7 +506,7 @@
   function htmlDetalhes(it, i) {
     const C = CAT(); if (!C) return '<p class="err">Os detalhes do catálogo não carregaram. Recarregue a página.</p>';
     const { usavel, v } = viewDoItem(it);
-    return C.fichaHTML(v) + `<div class="row inv-det-acoes"><button type="button" class="small" data-det-imagem="${i}">${v.imagem?"Trocar imagem":"Adicionar imagem"}</button>${usavel ? `<button type="button" class="small primary" data-det-usar="${i}">Usar</button>` : ""}${souMestre ? `<button type="button" class="small" data-det-config="${i}">Configurar efeitos (mestre)</button>` : ""}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div>`;
+    return C.fichaHTML(v) + `<div class="row inv-det-acoes">${nomeDivergente(it) && !soLeitura ? `<button type="button" class="small subtle" data-det-restaurar="${i}">Restaurar nome do catálogo</button>` : ""}<button type="button" class="small" data-det-imagem="${i}">${v.imagem?"Trocar imagem":"Adicionar imagem"}</button>${usavel ? `<button type="button" class="small primary" data-det-usar="${i}">Usar</button>` : ""}${souMestre ? `<button type="button" class="small" data-det-config="${i}">Configurar efeitos (mestre)</button>` : ""}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div>`;
   }
   /* conjunto: retirar 1 unidade de um componente (vira item separado) ou consumi-la; o peso do conjunto é recalculado pela soma do que resta */
   function acaoComponente(it, k, acao) {
@@ -528,6 +533,7 @@
         if (r === "esvaziou") { fim(); aviso(`${it.nome || "Conjunto"} esvaziado e removido da lista.`); return; }
         ov.querySelector(".inv-modal-box").innerHTML = htmlDetalhes(it, INV().indexOf(it)); return;
       }
+      const rest = e.target.closest('[data-det-restaurar]'); if (rest) { if (restaurarNomeCatalogo(it)) ov.querySelector(".inv-modal-box").innerHTML = htmlDetalhes(it, INV().indexOf(it)); return; }
       const foto=e.target.closest('[data-det-imagem]');if(foto){fim();abrirImagemItem(+foto.dataset.detImagem);return;}
       const b = e.target.closest("[data-det-usar],[data-det-config]"); if (!b) return;
       fim();
@@ -549,7 +555,7 @@
   }
   function adicionarDoCatalogo(id, qtd) {
     const C = CAT(), cat = C && C.obter(id); if (!cat) return;
-    const n = Math.max(1, Math.min(99, Math.floor(num(qtd, 1)))), origem = { tipo: souMestre ? "mestre" : "jogo" }, copias = 1;
+    const n = Math.max(1, Math.min(99, Math.floor(num(qtd, 1)))), origem = origemAdd({ tipo: souMestre ? "mestre" : "jogo" }), copias = 1;
     let ultimo = null;
     if (cat.pacote) { for (const x of C.paraInventarioPacote(cat, n, origem)) ultimo = IV.adicionar(cont(), x, { tipo: "entrada", nota: cat.nome }); }   // pacote: componentes individuais, sem item "pacote"
     else { for (let k = 0; k < copias; k++) ultimo = IV.adicionar(cont(), C.paraInventario(cat, n, origem), { tipo: "entrada" }); }
@@ -773,7 +779,7 @@
   function adicionarPergaminho() {
     const en = $("#pg-mag").value; if (!en || !magiasCat) return;
     const m = magiasCat.find((x) => x.en === en); if (!m) return;
-    IV.adicionar(cont(), IV.criarPergaminho(m, { origem: { tipo: souMestre ? "mestre" : "jogo", nota: $("#pg-nota").value.trim().slice(0, 80) } }), { nota: $("#pg-nota").value.trim().slice(0, 80) });
+    IV.adicionar(cont(), IV.criarPergaminho(m, { origem: origemAdd({ tipo: souMestre ? "mestre" : "jogo", nota: $("#pg-nota").value.trim().slice(0, 80) }) }), { nota: $("#pg-nota").value.trim().slice(0, 80) });
     $("#pg-nota").value = ""; salvarInv(); redesenharInv(); fecharAdd();
   }
   /* ---------- grimório: copiar magia (Mago) ---------- */
@@ -873,6 +879,7 @@
         ${souMestre ? '<div class="sub">Mestre</div><button type="button" class="small" id="ms-abrir">Conceder magia ao personagem</button><div id="mestre-box" class="panel" hidden></div>' : ""}</div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia. Magias de raça, talento ou item aparecem aqui quando o personagem as tiver.</span></div>`}
       </section><section id="secao-inventario" role="tabpanel" aria-labelledby="aba-inventario" data-ficha-secao="inventario" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
         ${cabecalhoInv()}<div class="inv-add panel" id="inv-add" hidden><div class="inv-add-cab"><h3 class="sub inv-tit">Adicionar ao inventário</h3><button type="button" class="small subtle" id="inv-add-fechar">Cancelar</button></div>
+          <div class="inv-add-linha inv-add-origem"><label for="add-origem">Origem (opcional)</label><input id="add-origem" maxlength="120" placeholder="Ex.: Recompensa da missão em Julkoun" autocomplete="off"></div>
           <div class="inv-add-tipos" role="group" aria-label="Tipo de item a adicionar"><button type="button" class="small" data-inv-add-tipo="cat" aria-pressed="false">Catálogo de itens</button><button type="button" class="small" data-inv-add-tipo="perg" aria-pressed="false">Pergaminho de magia</button><button type="button" class="small" data-inv-add-tipo="livre" aria-pressed="false">Outro item (em branco)</button></div>
           <div class="inv-add-linha" data-add-linha="cat" hidden><label for="ci-q">Buscar no catálogo (armas, armaduras, equipamento, poções, itens mágicos, pacotes…)</label><div class="row"><input id="ci-q" type="search" placeholder="Nome do item…" autocomplete="off" style="flex:1 1 180px"><select id="ci-cat" aria-label="Categoria" style="flex:0 1 200px"><option value="">Todas as categorias</option>${(CAT() ? CAT().CATEGORIAS : []).map(([k, n]) => `<option value="${k}">${esc(n)}</option>`).join("")}</select></div><div id="ci-res" class="inv-cat-res"></div></div>
           <div class="inv-add-linha" data-add-linha="perg" hidden><label for="pg-mag">Pergaminho de magia</label><div class="row"><select id="pg-mag" style="flex:1 1 200px" aria-label="Magia do pergaminho">${opt("", "Escolher a magia…", true)}</select><input id="pg-nota" style="flex:1 1 140px" maxlength="80" placeholder="Onde foi encontrado (opcional)"><button type="button" class="small" id="pg-add">Adicionar pergaminho</button></div></div>
@@ -1089,9 +1096,10 @@
     if (c("#ms-abrir")) { abrirMestre(); return; }
     if (c("#ms-fechar")) { $("#mestre-box").hidden = true; return; }
     if (c("#ms-ok")) { concederMagia(); return; }
-    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0 })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector('input[data-inv="nome"]').focus(); agendar({ inventario: P.inventario }); fecharAdd(); return; }
-    if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; { const novo = IV.novoItem({ nome: p[0], qtd: 1, peso: p[1], origem: { tipo: "jogo" } }); vincularPorNome(novo); IV.adicionar(cont(), novo); } redesenharInv(); salvarInv(); fecharAdd(); return; }
+    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0, origem: origemAdd({ tipo: "jogo" }) })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector('input[data-inv="nome"]').focus(); agendar({ inventario: P.inventario }); fecharAdd(); return; }
+    if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; { const novo = IV.novoItem({ nome: p[0], qtd: 1, peso: p[1], origem: origemAdd({ tipo: "jogo" }) }); vincularPorNome(novo); IV.adicionar(cont(), novo); } redesenharInv(); salvarInv(); fecharAdd(); return; }
     if ((b = c("[data-rm-item]"))) { const it = itemPor(+b.dataset.rmItem); if (!it) return; if (num(it.qtd, 0) >= 1) IV.retirar(cont(), it.uid, null, { tipo: "descarte" }); else INV().splice(+b.dataset.rmItem, 1); salvarInv(); redesenharInv(); return; }
+    if ((b = c("[data-inv-nome-restaurar]"))) { const it = itemPor(+b.dataset.invNomeRestaurar); if (it && !soLeitura) { restaurarNomeCatalogo(it); aviso("Nome do catálogo restaurado."); } return; }
     if (c("#inv-vinculos")) { verificarVinculos(); return; }
     if (c("#inv-add-abrir")) { const p = $("#inv-add"); if (p && !p.hidden) fecharAdd(); else abrirAdd(); return; }
     if (c("#inv-add-fechar")) { fecharAdd(); return; }
@@ -1113,7 +1121,7 @@
     if (c("#uso-cancel")) { uso = null; $("#uso-box").hidden = true; return; }
     if ((b = c("[data-uso-rolar]"))) { const k = +b.dataset.usoRolar, it = INV().find((x) => x.uid === uso.uid), p = it && IE.plano(it).find((x) => x.i === k); if (!p) return; const r = IE.rolar(p.dados, window.crypto && crypto.getRandomValues ? () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296 : Math.random); uso.rolagens[k] = r.total; uso.textoRolagem[k] = "rolou " + r.rolls.join(" + ") + (r.bonus ? (r.bonus > 0 ? " + " : " - ") + Math.abs(r.bonus) : "") + " = " + r.total; renderUso(); return; }
     if ((b = c("[data-enc-efeito]"))) { try { IE.encerrarEfeito(P, b.dataset.encEfeito); } catch (e) { aviso(e.message, true); return; } agendar({ ficha: P.ficha }); refrescar(); return; }
-    if (c("#it-cat-add")) { const k = $("#it-cat").value; if (!k) return; IV.adicionar(cont(), IE.itemDoCatalogo(k, { tipo: souMestre ? "mestre" : "jogo" })); salvarInv(); redesenharInv(); fecharAdd(); return; }
+    if (c("#it-cat-add")) { const k = $("#it-cat").value; if (!k) return; IV.adicionar(cont(), IE.itemDoCatalogo(k, origemAdd({ tipo: souMestre ? "mestre" : "jogo" }))); salvarInv(); redesenharInv(); fecharAdd(); return; }
     if (c("#pg-add")) { adicionarPergaminho(); return; }
     if ((b = c("[data-inv-editar]"))) { abrirEditor(+b.dataset.invEditar); return; }
     if (c("#ef-add")) { addEfeito(); return; }

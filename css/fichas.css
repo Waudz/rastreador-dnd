@@ -375,13 +375,25 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .inv-titulo .inv-nome-btn:hover .inv-nome-txt{text-decoration:underline;text-decoration-color:var(--gold,#c9a76a)}
 .inv-card .inv-edit{margin-top:8px}
 
-/* ---- Inventário: resumo mecânico, descrição curta e Origem (lista); grade compacta. Os textos se adaptam ao espaço: limite de linhas com reticências, sem alturas fixas nem fonte menor. ---- */
-.inv-mec,.inv-resumo,.inv-origem{min-width:0;margin:0 0 3px;font-size:.82rem;line-height:1.3;overflow-wrap:anywhere}
-.inv-mec,.inv-resumo{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.inv-mec{font-weight:600}
-.inv-origem{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden}
+/* ---- Inventário: resumo mecânico, descrição curta e Origem. Na lista larga cada informação ocupa o espaço que já existia ao lado do nome e na linha de tipo/peso, então o cartão não cresce além da miniatura;
+   em telas estreitas e na grade o texto quebra em poucas linhas com reticências. Sem alturas fixas, sem fonte menor, sem cor nova (a Origem usa o texto secundário da paleta). ---- */
+.inv-titulo{flex-wrap:wrap}
+.inv-mec{flex:1 1 100%;min-width:0;font-size:.82rem;line-height:1.3;font-weight:600;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.inv-meta .inv-base{display:inline}
+.inv-resumo{display:none}
+.inv-origem{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;overflow-wrap:anywhere;min-width:0}
 #inv.inv-grade .inv-mec{-webkit-line-clamp:1}
-#inv.inv-grade .inv-resumo,#inv.inv-grade .inv-origem{display:none}
+#inv.inv-grade .inv-origem{display:none}
+@media(max-width:519px){#inv .inv-origem{display:none}}   /* celular estreito: a Origem fica nos detalhes (é a de menor prioridade) */
+@media(min-width:700px){
+  #inv:not(.inv-grade) .inv-titulo{flex-wrap:nowrap}
+  #inv:not(.inv-grade) .inv-titulo .inv-nome-btn{flex:0 1 auto;max-width:55%}
+  #inv:not(.inv-grade) .inv-mec{display:block;flex:1 1 0;white-space:nowrap;text-overflow:ellipsis}
+  #inv:not(.inv-grade) .inv-meta{display:flex;align-items:baseline;gap:0 14px;min-width:0}
+  #inv:not(.inv-grade) .inv-meta .inv-base{flex:none}
+  #inv:not(.inv-grade) .inv-resumo{display:block;flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #inv:not(.inv-grade) .inv-origem{display:block;flex:0 1 auto;max-width:45%;margin-left:auto;white-space:nowrap;text-overflow:ellipsis}
+}
 .inv-det-origens,.inv-det-hist{list-style:none;margin:4px 0 10px;padding:0}
 .inv-det-origens li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 6px}
 .inv-det-origem-txt{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}

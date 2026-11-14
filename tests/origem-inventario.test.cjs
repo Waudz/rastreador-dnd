@@ -1,6 +1,7 @@
 /* Origem dos equipamentos (criador e inventário), edição pelo mestre, lotes agrupados e transferências com histórico. */
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {vm,ler}=require('./helpers.cjs');
+const fs=require('node:fs'),path=require('node:path');
+const {vm,ler,root}=require('./helpers.cjs');
 function amb(){
   const ctx=vm.createContext({window:{},console});
   for(const n of ['origens','regras','magias-jogo','subclasses-2014','inventario','catalogo-itens','equipamento-ficha','inventario-imagens','inventario-resumo','criador-regras'])vm.runInContext(ler('js/'+n+'.js'),ctx);
@@ -100,19 +101,95 @@ test('editar a origem altera só o texto: nome, quantidade, peso, propriedades, 
   assert.throws(()=>A.I.definirOrigemTexto(null,'x'),/não encontrado/);
 });
 
-test('permissões: só o mestre vê o campo editável; jogador só lê; o servidor recusa a alteração por quem não é o mestre',()=>{
+test('permissões: jogador e mestre editam a Origem da ficha que controlam; a visão somente leitura do grupo não; o banco não restringe a Origem',()=>{
   const src=ler('js/personagem.js');
-  assert.ok(src.includes('souMestre ? `<input data-lote-origem'),'detalhes: o campo editável só existe para o mestre');
-  assert.ok(src.includes('souMestre ? `<label class="inv-c-nome">Origem<input data-inv-origem'),'painel de edição idem');
-  assert.ok(/if \(!souMestre\) \{ aviso\("Somente o mestre pode alterar a origem\.", true\); return; \}/.test(src),'o tratador também recusa sem confiar na interface');
-  const sql=ler('supabase/migrations/20261114120000_proteger_origem_item.sql').replace(/--[^\n]*/g,'');
-  assert.match(sql,/c\.mestre_id=ator\) then return new/);
-  assert.match(sql,/item->'origem'.*is distinct from.*prev->'origem'/s);assert.match(sql,/errcode='42501'/);
-  assert.match(sql,/transferencias/);assert.match(sql,/security definer set search_path=''/);
-  assert.match(sql,/revoke all on function private\.personagens_proteger_origem_item\(\) from public,anon,authenticated/);
-  assert.ok(!/\bgrant\b/i.test(sql)&&!/drop table|delete from|update public\.personagens/i.test(sql),'sem permissões novas nem alteração de dados');
-  assert.match(sql,/before update of inventario on public\.personagens/);
-  assert.match(ler('supabase/rollback/origem-item.sql'),/zz_personagens_origem_item/);
+  assert.ok(src.includes('!soLeitura ? `<input data-lote-origem'),'detalhes: campo editável para quem edita a ficha (dono ou mestre)');
+  assert.ok(src.includes('!soLeitura ? `<label class="inv-c-nome">Origem<input data-inv-origem'),'painel de edição idem');
+  assert.ok(src.includes('if (soLeitura) return;   // visão somente leitura do grupo'),'o tratador só recusa na visão somente leitura');
+  assert.ok(!/Somente o mestre pode alterar a origem/.test(src)&&!/souMestre \? `<input data-lote-origem/.test(src),'sem restrição de mestre na interface');
+  assert.ok(!fs.existsSync(path.join(root,'supabase/migrations/20261114120000_proteger_origem_item.sql')),'a migração que bloqueava a Origem foi removida (nunca aplicada)');
+  assert.ok(!fs.existsSync(path.join(root,'supabase/rollback/origem-item.sql')));
+  /* o gatilho existente só protege propriedades/efeitos do item e concessões; nada sobre origem nem nome */
+  const trig=ler('supabase/migrations/20261112171652_proteger_campos_mestre.sql');
+  const semComentario=trig.split(String.fromCharCode(10)).map(l=>l.replace(/--.*$/,'')).join(String.fromCharCode(10));
+  assert.ok(!/item->'origem'|item#>[^;]*origem|transferencias|item->'nome'/.test(semComentario),'o banco não impede o jogador de editar a Origem nem o nome do item');
+});
+
+test('o jogador altera a Origem do próprio item sem tocar nos dados técnicos, e o histórico de transferências não tem edição',()=>{
+  const A=amb(),it=item(A,'srd51:item/longsword',1,{tipo:'criacao',id:'classe:g0:srd51:item/longsword',nota:'Criação — Equipamento de Guerreiro',texto:'Equipamento inicial da classe Guerreiro'});
+  it.propriedades={raridade:'Incomum'};it.transferencias=[{quando:'2026-11-01T10:00:00.000Z',tipo:'transferencia',de:{nome:'A'},para:{nome:'B'},qtd:1}];
+  const antes=J(it);A.I.definirOrigemTexto(it,'Recompensa da missão em Julkoun');
+  assert.equal(A.I.origemTexto(it),'Recompensa da missão em Julkoun');
+  assert.equal(it.origem.id,antes.origem.id);assert.equal(it.origem.tipo,'criacao');assert.equal(it.origem.nota,antes.origem.nota);
+  for(const k of ['uid','nome','qtd','peso','propriedades','catId','ref','equipado','transferencias'])assert.equal(JSON.stringify(it[k]),JSON.stringify(antes[k]),k);
+  A.I.definirOrigemTexto(it,'');assert.equal(A.I.origemTexto(it),'','limpar');A.I.definirOrigemTexto(it,'Presente de Aldren Thorne');assert.equal(A.I.origemTexto(it),'Presente de Aldren Thorne');
+  const src=ler('js/personagem.js');assert.ok(!/data-[a-z-]*(hist|transfer)[a-z-]*=.*<input|<input[^>]*transferencias/.test(src),'nenhum campo edita o histórico');
+});
+
+test('adicionar manualmente: a Origem informada vira o texto do registro, para catálogo, pacote, item em branco, lista rápida, efeitos e pergaminho',()=>{
+  const src=ler('js/personagem.js');
+  assert.ok(src.includes('id="add-origem"')&&src.includes('placeholder="Ex.: Recompensa da missão em Julkoun"'));
+  assert.ok(src.includes('origem = origemAdd({ tipo: souMestre ? "mestre" : "jogo" })'),'catálogo e pacotes');
+  assert.ok(src.includes('IV.novoItem({ nome: "", qtd: 1, peso: 0, origem: origemAdd({ tipo: "jogo" }) })'),'item em branco');
+  assert.ok(src.includes('origem: origemAdd({ tipo: "jogo" }) })'),'lista rápida');
+  assert.ok(src.includes('IE.itemDoCatalogo(k, origemAdd('),'item com efeitos');assert.ok(src.includes('origem: origemAdd({ tipo: souMestre ? "mestre" : "jogo", nota: $("#pg-nota")'),'pergaminho');
+  /* a mesma montagem em dados: o texto acompanha o registro e os ids técnicos do catálogo e do pacote ficam */
+  const A=amb(),origem={tipo:'jogo',texto:'Comprado em Daggerford'};
+  const c={dono:{},itens:[],movimentos:[]};
+  A.I.adicionar(c,A.C.paraInventario(A.C.obter('srd51:item/longsword'),1,origem),{tipo:'entrada'});
+  for(const x of A.C.paraInventarioPacote(A.C.obter('srd51:item/explorers-pack'),1,origem))A.I.adicionar(c,x,{tipo:'entrada'});
+  const esp=c.itens.find(i=>i.catId==='srd51:item/longsword');assert.equal(A.I.origemTexto(esp),'Comprado em Daggerford');assert.equal(esp.ref,'srd51:item/longsword');
+  const tocha=c.itens.find(i=>i.catId==='srd51:item/torch');assert.equal(A.I.origemTexto(tocha),'Comprado em Daggerford');assert.equal(tocha.origem.pacote.id,'srd51:item/explorers-pack');assert.equal(tocha.origem.id,'pacote:srd51:item/explorers-pack','id técnico do pacote preservado');
+  /* o mesmo item sem texto e com texto são registros distintos (agrupam só na tela) */
+  A.I.adicionar(c,A.C.paraInventario(A.C.obter('srd51:item/longsword'),1,{tipo:'jogo'}),{tipo:'entrada'});
+  assert.equal(c.itens.filter(i=>i.catId==='srd51:item/longsword').length,2);
+});
+
+/* ---------- Nome personalizado ---------- */
+test('nome personalizado: só o rótulo muda; catId, mecânica, ataque e peso continuam; restaurar volta ao nome do catálogo',()=>{
+  const A=amb(),P={id:'p1',nome:'Aldric',inventario:[],ficha:{classes:[{c:'Fighter',n:1}],equip:{armadura:'',escudo:false,bonus:0},ataques:[]}};
+  const e=item(A,'srd51:item/longsword',1,{tipo:'jogo',texto:'Recompensa da missão em Julkoun'});P.inventario.push(e);
+  const catNome=A.C.obter('srd51:item/longsword').nome;assert.equal(catNome,'Espada longa');
+  A.E.equipar(P,e.uid);const dano0=J(P.ficha.ataques[0]);
+  e.nome='Espada de Aldren';A.E.reconciliar(P);
+  assert.equal(A.C.obter('srd51:item/longsword').nome,'Espada longa','o catálogo global não muda');
+  assert.equal(e.catId,'srd51:item/longsword');assert.equal(e.ref,'srd51:item/longsword');assert.equal(A.C.doInventario(e).nome,'Espada longa','continua vinculado ao catálogo');
+  assert.equal(P.ficha.ataques[0].nome,'Espada de Aldren');
+  for(const k of ['dado','tipo','atr','prof','armaId','itemUid','magico','extra'])assert.equal(P.ficha.ataques[0][k],dano0[k],'ataque: '+k);
+  assert.equal(A.W.INV_RESUMO.mecanico(e,A.C.doInventario(e),[]),'1d8 cortante · Versátil (1d10)','a mecânica vem do catálogo, não do nome');
+  assert.equal(A.I.origemTexto(e),'Recompensa da missão em Julkoun');
+  /* restaurar: o nome volta ao do catálogo (função do inventário), sem mexer no resto */
+  const src=ler('js/personagem.js');assert.ok(src.includes('Restaurar nome do catálogo')&&src.includes('function restaurarNomeCatalogo'));assert.ok(src.includes('data-inv-nome-restaurar')&&src.includes('data-det-restaurar'));
+  e.nome=A.C.doInventario(e).nome;A.E.reconciliar(P);assert.equal(P.ficha.ataques[0].nome,'Espada longa');assert.equal(e.catId,'srd51:item/longsword');
+  assert.ok(src.includes('["Item do catálogo", cat.nome'),'detalhes: o item do catálogo continua identificável');
+});
+
+test('nomes personalizados: não agrupam entre si, a separação de pilha e a transferência levam o nome',()=>{
+  const A=amb(),mk=(id,nome)=>({id,nome,inventario:[],ficha:{classes:[{c:'Rogue',n:1}],equip:{armadura:'',escudo:false,bonus:0},ataques:[]}});
+  const a=mk('a','Pedro'),b=mk('b','Lydia'),d1=item(A,'srd51:item/dagger',3,{tipo:'jogo'}),d2=item(A,'srd51:item/dagger',2,{tipo:'jogo',id:'x'});
+  d1.nome='Presa de Aldren';a.inventario.push(d1,d2);
+  assert.equal(A.I.agrupar(a.inventario).size,0,'mesmo item do catálogo com nomes diferentes não agrupa');
+  d2.nome='Presa de Aldren';A.I.definirOrigemTexto(d2,'Presente de um NPC');assert.equal(A.I.agrupar(a.inventario).size,2,'mesmo nome personalizado agrupa (origens distintas seguem separadas)');
+  const eq=A.E.equipar(a,d1.uid);assert.equal(eq.nome,'Presa de Aldren','a unidade separada para equipar leva o nome');assert.equal(eq.catId,'srd51:item/dagger');
+  const novo=A.E.transferir(a,b,d2.uid,1,{});assert.equal(novo.nome,'Presa de Aldren');assert.equal(novo.catId,'srd51:item/dagger');assert.equal(A.I.origemTexto(novo),'Presente de um NPC');
+  assert.equal(novo.transferencias.length,1);
+  /* persistência: gravar e reabrir mantém nome, vínculo e origem */
+  const volta=J(b.inventario[0]);assert.equal(volta.nome,'Presa de Aldren');assert.equal(A.C.doInventario(volta).nome,'Adaga');
+});
+
+/* ---------- Origem neutra e itens mágicos ---------- */
+test('a Origem é sempre neutra: nenhuma cor nem classe por categoria; raridade e efeitos continuam à frente',()=>{
+  const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'));
+  assert.ok(!/color\s*:/.test(bloco),'o bloco da lista não define nenhuma cor');
+  assert.ok(!/\.inv-origem-|\.origem-(classe|pacote|antecedente|compra|mestre)|border-left|background/.test(bloco),'nada colore o cartão pela origem');
+  const fonte=ler('js/personagem.js');
+  assert.ok(fonte.includes('class="inv-origem muted"'),'texto secundário da paleta (muted)');
+  assert.ok(!/inv-origem[^"]*\$\{/.test(fonte),'a classe da Origem não varia com a categoria');
+  /* raridade e efeitos entram no resumo mecânico (negrito), antes da origem na ordem de leitura */
+  const A=amb(),RS=A.W.INV_RESUMO,m=RS.mecanico({propriedades:{raridade:'Raro',cargas:{atual:2,max:3},bonus:1}},A.C.obter('srd51:item/longsword'),['Recupera 2d4+2 pontos de vida']);
+  assert.match(m,/\+1/);assert.match(m,/Recupera 2d4\+2/);assert.match(m,/Cargas 2\/3/);assert.match(m,/Raro$/);
+  assert.ok(fonte.indexOf('class="inv-mec"')<fonte.indexOf('class="inv-origem muted"'),'a mecânica vem antes da Origem');
+  assert.ok(ler('css/itens.css').includes('.inv-selo'),'o selo existente (detalhes/catálogo) foi preservado');
 });
 
 /* ---------- Agrupamento e lotes ---------- */
@@ -250,17 +327,26 @@ test('resumos: arma, arma mágica, item sem descrição e item personalizado usa
   assert.equal(RS.mecanico({},C.obter('srd51:item/chain-mail'),[]),'CA 16 · For 13');
 });
 
-test('lista e grade: nomes e textos longos são limitados por linhas, sem altura fixa, rolagem horizontal nem fonte menor',()=>{
+test('lista e grade: textos longos limitados por linhas, sem altura fixa, sem rolagem horizontal e sem fonte menor; na lista larga ocupam o espaço já existente',()=>{
   const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'));
-  assert.match(bloco,/\.inv-mec,\.inv-resumo\{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden\}/);
-  assert.match(bloco,/\.inv-origem\{[^}]*-webkit-line-clamp:1/);assert.match(bloco,/#inv\.inv-grade \.inv-mec\{-webkit-line-clamp:1\}/);
-  assert.match(bloco,/#inv\.inv-grade \.inv-resumo,#inv\.inv-grade \.inv-origem\{display:none\}/);
+  const larga=bloco.slice(bloco.indexOf('@media(min-width:700px)'),bloco.indexOf('.inv-det-origens,.inv-det-hist'));
+  const base=bloco.replace(larga,'');
+  assert.match(base,/\.inv-mec\{[^}]*-webkit-line-clamp:2[^}]*overflow:hidden\}/);assert.match(base,/\.inv-origem\{[^}]*-webkit-line-clamp:1/);
+  assert.match(base,/\.inv-resumo\{display:none\}/,'fora da lista larga o resumo da descrição não aparece');
+  assert.match(base,/#inv\.inv-grade \.inv-mec\{-webkit-line-clamp:1\}/);assert.match(base,/#inv\.inv-grade \.inv-origem\{display:none\}/,'grade: origem só nos detalhes');
+  assert.match(base,/@media\(max-width:519px\)\{#inv \.inv-origem\{display:none\}\}/,'celular estreito: origem só nos detalhes');
+  /* lista larga: nome e mecânica na mesma linha; tipo/peso, resumo e origem na mesma linha (o cartão não passa da altura da miniatura) */
+  assert.match(larga,/#inv:not\(\.inv-grade\) \.inv-titulo\{flex-wrap:nowrap\}/);assert.match(larga,/#inv:not\(\.inv-grade\) \.inv-meta\{display:flex/);
+  assert.match(larga,/\.inv-resumo\{display:block;flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/);
+  assert.match(larga,/\.inv-origem\{[^}]*max-width:45%[^}]*text-overflow:ellipsis\}/);
   assert.match(bloco,/overflow-wrap:anywhere/);assert.match(bloco,/min-width:0/);
-  assert.ok(!/(?:^|[;{\s])height\s*:|max-height|white-space\s*:\s*nowrap|overflow-x\s*:\s*scroll/.test(bloco),'nenhuma altura fixa, nowrap ou rolagem horizontal');
-  assert.ok(!/font-size:\s*(\.[0-7]\d*|0\.[0-7]\d*)rem/.test(bloco.replace(/\.inv-origem\{[^}]*\}/,'')),'sem reduzir a fonte do texto principal');
+  assert.ok(!/(?:^|[;{\s])height\s*:|max-height|overflow-x\s*:\s*scroll/.test(bloco),'nenhuma altura fixa nem rolagem horizontal');
+  assert.ok(!/white-space\s*:\s*nowrap/.test(base),'nowrap só na lista larga, sempre com reticências');
+  assert.ok(!/font-size:\s*0?\.[0-7]\d*rem/.test(bloco),'nenhuma fonte reduzida');
   const fonte=ler('js/personagem.js');
   assert.ok(fonte.includes('class="inv-mec"')&&fonte.includes('class="inv-resumo"')&&fonte.includes('class="inv-origem muted"'));
   assert.ok(fonte.includes('${mec ?')&&fonte.includes('${resumo ?')&&fonte.includes('${orig ?'),'linhas vazias não são renderizadas');
+  assert.ok(fonte.indexOf('class="inv-mec"')<fonte.indexOf('class="inv-resumo"')&&fonte.indexOf('class="inv-resumo"')<fonte.indexOf('class="inv-origem muted"'),'prioridade: mecânica, descrição, origem');
 });
 
 test('detalhes: origem por lote e histórico só quando existem registros',()=>{
@@ -269,4 +355,10 @@ test('detalhes: origem por lote e histórico só quando existem registros',()=>{
   assert.ok(fonte.includes('Histórico de transferências')&&fonte.includes('<h4 class="sub">Origem</h4>'));
   assert.ok(!/Recebido de: —|Recebido de: -/.test(fonte),'sem campos vazios');
   assert.ok(ler('js/catalogo-itens.js').includes('${v.extraHTML || ""}'));
+});
+
+test('os textos digitados são normalizados com \s+ (espaços), nunca removendo letras',()=>{
+  for(const f of ['js/personagem.js','js/inventario.js','js/inventario-resumo.js','js/equipamento-ficha.js'])assert.ok(!/replace\(\/s\+\/g/.test(ler(f)),f);
+  assert.ok(ler('js/personagem.js').includes('e.value.replace(/\\s+/g, " ").trim()'));
+  const A=amb(),it=A.I.novoItem({nome:'x'});A.I.definirOrigemTexto(it,'  Presente   de  Aldren   Thorne ');assert.equal(it.origem.texto,'Presente de Aldren Thorne');
 });
