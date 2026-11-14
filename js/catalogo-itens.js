@@ -120,7 +120,14 @@
     if (it.pacote) x.conjunto = componentes(it).map((c) => ({ ref: c.id, nome: c.nome, qtd: c.qtd, peso: c.peso }));
     return x;
   }
+  /* ID do catálogo para um nome digitado, só quando existe exatamente UM item com esse nome (ex.: "Bastão" é quarterstaff e rod: ambíguo, devolve null).
+     Pacotes e itens personalizados ficam de fora; quem chama decide se usa o resultado. */
+  function idPorNomeUnico(nome) {
+    const k = sem(nome).trim(); if (!k) return null;
+    let a; try { a = todos().filter((i) => !i.custom && i.categoria !== "pacote" && sem(i.nome).trim() === k); } catch (_) { return null; }
+    return a.length === 1 ? a[0].id : null;
+  }
   const pesoDoConjunto = (conj) => (conj || []).reduce((s, c) => s + num(c.qtd) * num(c.peso, 0), 0);
 
-  window.CAT_ITENS = { CATEGORIAS, SUBTIPOS, ESPACOS, RARIDADES, PROPRIEDADES, ICONE, carregar, todos, obter, doInventario, personalizados, custoTexto, custoEmPO, pesoPacote, pesoDe, componentes, linhas, fichaHTML, viewDoCatalogo, filtrar, contagemPorCategoria, paraInventario, pesoDoConjunto, rotuloCat, sem, esc, kg, indexar, subtituloDe };
+  window.CAT_ITENS = { CATEGORIAS, SUBTIPOS, ESPACOS, RARIDADES, PROPRIEDADES, ICONE, carregar, todos, obter, doInventario, personalizados, custoTexto, custoEmPO, pesoPacote, pesoDe, componentes, linhas, fichaHTML, viewDoCatalogo, filtrar, contagemPorCategoria, paraInventario, idPorNomeUnico, pesoDoConjunto, rotuloCat, sem, esc, kg, indexar, subtituloDe };
 })();

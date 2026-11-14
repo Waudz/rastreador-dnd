@@ -231,7 +231,7 @@ window.CRIADOR = (() => {
   function salvamento(qDerivado,{modo,original}={}){
     let q=copiar(qDerivado),pv_max=q.pv_max,pv_atual=q.pv_atual;
     const f0=()=>q.ficha;
-    if(modo==="criacao"){if(!estado(f0()).equipAplicado)q=aplicarEquipamento(q);pv_max=pvTotal(q.ficha);pv_atual=pv_max;}
+    if(modo==="criacao"){if(!estado(f0()).equipAplicado&&!estado(f0()).concluido)q=aplicarEquipamento(q);pv_max=pvTotal(q.ficha);pv_atual=pv_max;}
     else if(modo==="editar"){
       const antes=derivar(iniciar(original,"criacao")).ficha,delta=pvTotal(q.ficha)-pvTotal(antes);
       pv_max=Math.max(1,Number(original.pv_max)+delta);pv_atual=Math.min(Number(original.pv_atual),pv_max);
@@ -283,17 +283,58 @@ window.CRIADOR = (() => {
     f.magias=[...mapa.values()];f.progressao=construirProgressao(f);return q;
   }
   function itemCategoria(cat){return D.items.filter(i=>{const w=i.data.weapon,g=i.data.gear;return cat==="simple-weapons"?w?.category==="simple":cat==="simple-melee-weapons"?w?.category==="simple"&&w.kind==="melee":cat==="martial-weapons"?w?.category==="martial":cat==="martial-melee-weapons"?w?.category==="martial"&&w.kind==="melee":cat==="musical-instruments"?i.data.tool?.category==="musical-instrument":g?.category===cat;});}
+  /* ---------- Equipamento inicial ----------
+     Cada item entregue carrega origem {tipo:"criacao", id:<chave estável>, nota}. A chave descreve DE ONDE o item veio (classe, grupo de escolha, pacote, origem),
+     nunca o nome: serve para reconhecer o que já foi entregue sem depender de tradução e sem apagar nada do inventário existente. */
+  const sem=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+  const slugNome=s=>sem(s).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  const catalogo=()=>window.CAT_ITENS||null;
+  const doCatalogo=id=>{try{return id&&catalogo()?.obter?.(id)||null;}catch(_){return null;}};
+  /* Correspondência por nome só quando é única (ex.: "Bastão" é quarterstaff E rod no catálogo; ambíguo, não adivinhamos). */
+  const idPorNomeUnico=nome=>{try{return catalogo()?.idPorNomeUnico?.(nome)||null;}catch(_){return null;}};
+  const kgDe=i=>Math.round((i?.data?.weight||0)*0.453592*10)/10;
   function equipamento(p) {
-    const f=p.ficha,st=estado(f),d=classe(f.classes?.[0]?.c),bg=origem(f),itens=[],pendentes=[];
-    if(!d)return {itens,pendentes:["Escolha uma classe."]};
-    const add=(id,qtd)=>{const i=D.items.find(x=>x.id===id);if(!i)return;const conteudo=i.data.gear?.contents;if(conteudo){conteudo.forEach(c=>add(c.item,c.quantity*qtd));return;}itens.push({id,catId:id,nome:i.nome||i.en,qtd,peso:Math.round((i.data.weight||0)*0.453592*10)/10});};
-    for(const i of d.data.startingEquipment||[])add(i.item,i.quantity);
+    const f=p.ficha,st=estado(f),d=classe(f.classes?.[0]?.c),bg=origem(f),itens=[],pendentes=[],ausentes=[];
+    if(!d)return {itens,pendentes:["Escolha uma classe."],ausentes};
+    const nomeDe=i=>doCatalogo(i.id)?.nome||i.nome||i.en;
+    const put=e=>{const x=itens.find(y=>y.origem.id===e.origem.id);if(x){x.qtd+=e.qtd;return;}itens.push(e);};
+    /* id do catálogo + quantidade; pacotes viram os itens que os compõem, cada um com a origem "Criação — Pacote de ..." */
+    const add=(id,qtd,chave,nota)=>{
+      const i=D.items.find(x=>x.id===id);if(!i){ausentes.push(id);return;}
+      const conteudo=i.data.gear?.contents;
+      if(conteudo){const rotulo="Criação — "+nomeDe(i);conteudo.forEach(c=>add(c.item,c.quantity*qtd,chave+":"+id,rotulo));return;}
+      const cat=doCatalogo(id),peso=cat&&Number.isFinite(Number(cat.peso))?Number(cat.peso):kgDe(i);
+      put({id,catId:id,ref:id,nome:nomeDe(i),qtd,peso,origem:{tipo:"criacao",id:chave+":"+id,nota}});
+    };
+    const notaClasse="Criação — Equipamento de "+(R.classe(f.classes[0].c)?.n||"classe");
+    for(const i of d.data.startingEquipment||[])add(i.item,i.quantity,"classe:fixo",notaClasse);
     (d.data.startingChoices||[]).forEach((g,i)=>{const o=g.options[Number(st.equipamento["op:"+i])];if(!o){pendentes.push("Equipamento: escolha a opção "+(i+1));return;}
-      o.items.forEach((x,j)=>{if(x.item)add(x.item,x.quantity||1);else for(let k=0;k<(x.count||1);k++){const key="item:"+i+":"+j+":"+k,id=st.equipamento[key];if(!itemCategoria(x.category).some(x=>x.id===id))pendentes.push("Escolha "+x.category);else add(id,1);}});
+      o.items.forEach((x,j)=>{if(x.item)add(x.item,x.quantity||1,"classe:g"+i,notaClasse);else for(let k=0;k<(x.count||1);k++){const key="item:"+i+":"+j+":"+k,id=st.equipamento[key];if(!itemCategoria(x.category).some(x=>x.id===id))pendentes.push("Escolha "+x.category);else add(id,1,"classe:g"+i+":c"+j,notaClasse);}});
     });
-    for(const n of bg?.equip||[])itens.push({nome:n,qtd:1,peso:0});
-    for(const n of [...(bg?.ferr||[]),...(grupos(f).find(g=>g.key==="background|ferramentas")?.selecionadas||[]).map(rotulo)].filter(n=>!/Veículos/.test(n)))if(!itens.some(i=>i.nome===n))itens.push({nome:n,qtd:1,peso:0});
-    return {itens,pendentes,ouro:bg?.ouro||0};
+    /* Origem: usa o item do catálogo quando o nome corresponde a UM item; senão fica como item personalizado (sem peso inventado). */
+    const notaOrigem="Criação — Origem "+(bg?.nome||""),bgId=bg?.id||"";
+    const deOrigem=(nome,tipo)=>{const id=idPorNomeUnico(nome);
+      if(id&&D.items.some(x=>x.id===id)){add(id,1,"origem:"+bgId+":"+tipo,notaOrigem);return;}
+      if(id){const cat=doCatalogo(id);put({id,catId:id,ref:id,nome:cat.nome,qtd:1,peso:Number(cat.peso)||0,origem:{tipo:"criacao",id:"origem:"+bgId+":"+tipo+":"+id,nota:notaOrigem}});return;}
+      put({nome,qtd:1,peso:0,origem:{tipo:"criacao",id:"origem:"+bgId+":"+tipo+":"+slugNome(nome),nota:notaOrigem}});};
+    for(const n of bg?.equip||[])deOrigem(n,"equip");
+    for(const n of [...(bg?.ferr||[]),...(grupos(f).find(g=>g.key==="background|ferramentas")?.selecionadas||[]).map(rotulo)].filter(n=>!/Veículos/.test(n)))if(!itens.some(i=>sem(i.nome)===sem(n)))deOrigem(n,"ferr");
+    return {itens,pendentes,ausentes,ouro:bg?.ouro||0};
+  }
+  /* Um só caminho do catálogo para o inventário: o mesmo item sai igual do criador, do mestre ou da aba Itens. */
+  function itemInventario(e){
+    const C=catalogo(),cat=e.id?doCatalogo(e.id):null;
+    if(cat&&C?.paraInventario&&window.INVENTARIO){const x=C.paraInventario(cat,e.qtd,e.origem);x.origem={...e.origem};if(!x.catId)x.catId=cat.id;if(!x.ref)x.ref=cat.id;return x;}
+    const base={ref:e.ref||null,nome:e.nome,qtd:e.qtd,peso:e.peso||0,tipo:"equipamento",origem:e.origem,...(e.catId?{catId:e.catId}:{})};
+    if(window.INVENTARIO?.novoItem)return window.INVENTARIO.novoItem(base);
+    return {uid:"it_"+Date.now().toString(36)+Math.random().toString(36).slice(2,10),preco:null,equipado:false,propriedades:{},magiaVinculada:null,desc:"",...base};
+  }
+  const TIPO_DANO_PT={bludgeoning:"contundente",piercing:"perfurante",slashing:"cortante"};
+  /* Ataque derivado dos dados da própria arma (id estável), não do nome traduzido. */
+  function ataqueDaArma(id){
+    const i=D.items.find(x=>x.id===id),w=i?.data.weapon;if(!w?.damage?.dice)return null;
+    const props=(w.properties||[]).map(p=>p.split("/").pop());
+    return {nome:doCatalogo(id)?.nome||i.nome||i.en,dado:w.damage.dice,tipo:TIPO_DANO_PT[w.damage.type]||w.damage.type,atr:props.includes("finesse")?"acuidade":w.kind==="ranged"?"des":"for",prof:true,magico:0,extra:0,distancia:w.kind==="ranged",armaId:id};
   }
   function requisitosMulti(f){
     if((f.classes||[]).filter(c=>c.c).length<2)return [];
@@ -303,13 +344,24 @@ window.CRIADOR = (() => {
   function aplicarEquipamento(p){
     const q=copiar(p),f=q.ficha,st=estado(f);if(st.equipAplicado)return q;
     const eq=equipamento(q);if(eq.pendentes.length)throw new Error(eq.pendentes.join(' · '));
-    q.inventario=[...(q.inventario||[]),...eq.itens];q.dinheiro={...(q.dinheiro||{}),po:Number(q.dinheiro?.po||0)+eq.ouro};
+    /* o que já veio da criação (mesma chave de origem) não entra de novo, mesmo que a marcação tenha se perdido; o resto do inventário não é tocado */
+    const jaEntregues=new Set((q.inventario||[]).filter(i=>i?.origem?.tipo==="criacao"&&i.origem.id).map(i=>i.origem.id));
+    const novos=eq.itens.filter(e=>!jaEntregues.has(e.origem.id));
+    const criados=novos.map(itemInventario);
+    q.inventario=[...(q.inventario||[]),...criados];
+    const ouro=jaEntregues.size?0:eq.ouro;   // já houve entrega da criação: o ouro da Origem também já veio
+q.dinheiro={...(q.dinheiro||{}),po:Number(q.dinheiro?.po||0)+ouro};
     f.equip ||= {armadura:'',escudo:false,bonus:0};f.ataques ||= [];
-    for(const i of eq.itens){const d=D.items.find(x=>x.id===i.id);if(!d)continue;
-      if(d.id.endsWith('/shield'))f.equip.escudo=true;
-      else if(d.data.armor&&!f.equip.armadura){const ids={"padded-armor":"acolchoada","leather-armor":"couro","studded-leather-armor":"couro-batido","hide-armor":"gibao","chain-shirt":"camisao","scale-mail":"escamas","breastplate":"peitoral","half-plate-armor":"meia","ring-mail":"anel","chain-mail":"malha","splint-armor":"talas","plate-armor":"placas"};const a=R.ARMADURAS.find(a=>a[0]===ids[d.id.split("/").pop()]||a[1]===i.nome);if(a)f.equip.armadura=a[0];}
-      const a=R.ARMAS.find(a=>a[0]===i.nome);if(a&&!f.ataques.some(x=>x.nome===a[0]))f.ataques.push({nome:a[0],dado:a[1],tipo:a[2],atr:a[3],prof:true,magico:0,extra:0,distancia:d.data.weapon?.kind==='ranged'});
-    }
+    /* o que veio da criação já nasce equipado e VINCULADO ao item do inventário (uid): todas as armas, a primeira armadura e o primeiro escudo */
+    const EF=window.EQUIP_FICHA;
+    novos.forEach((i,k)=>{const d=D.items.find(x=>x.id===i.id);if(!d)return;
+      const escudo=d.id.endsWith('/shield'),armadura=!escudo&&!!d.data.armor;
+      if((escudo&&(f.equip.escudo||f.equip.escudoUid))||(armadura&&(f.equip.armadura||f.equip.armaduraUid)))return;
+      if(EF){try{EF.equipar(q,criados[k].uid);return;}catch(_){/* sem catálogo carregado: segue pelo caminho direto abaixo */}}
+      if(escudo)f.equip.escudo=true;
+      else if(armadura){const a=R.ARMADURAS.find(a=>a[0]===R.ARMADURA_POR_ITEM[d.id.split("/").pop()]);if(a)f.equip.armadura=a[0];}
+      const atq=ataqueDaArma(i.id);if(atq&&!f.ataques.some(x=>x.armaId===atq.armaId||x.nome===atq.nome))f.ataques.push(atq);
+    });
     st.equipAplicado=true;return q;
   }
   function validar(p,{evolucao=false}={}) {
@@ -332,7 +384,7 @@ window.CRIADOR = (() => {
       if(!origem(f))erros.push({etapa:2,texto:"Escolha a Origem."});
       if((st.metodo==="pointbuy"||st.baseEditada)&&custo(st.base)!==27)erros.push({etapa:3,texto:"Distribua os 27 pontos de atributos (valores base entre 8 e 15)."});
       if((new Set((f.atrRaca||[]).filter(k=>ATR.includes(k)&&!(k in R.racial(f.raca).bonus)))).size<R.racial(f.raca).atributos)erros.push({etapa:1,texto:"Complete as escolhas de atributos da raça."});
-      if(!st.equipAplicado)for(const texto of equipamento(p).pendentes)erros.push({etapa:6,texto});
+      if(st.modo!=="editar"&&!st.equipAplicado&&!st.concluido)for(const texto of equipamento(p).pendentes)erros.push({etapa:6,texto});
     }
     if(!evolucao&&st.baseEditada&&ATR.some(k=>!Number.isInteger(st.base[k])||st.base[k]<1||st.base[k]>20||(Number(f.atributos?.[k])||0)>20))erros.push({etapa:3,texto:"Ajuste os atributos base para valores inteiros de 1 a 20, respeitando o limite 20 após os bônus."});
     for(const m of R.melhoriasDisponiveis(f.classes)){if(st.talentos?.[m.id]){if((f.melhorias?.[m.id]||[]).some(k=>ATR.includes(k)))erros.push({etapa:3,texto:"Escolha atributos ou talento, nunca ambos na mesma melhoria."});if(st.talentos[m.id].id==="srd51:feat/grappler"&&(Number(f.atributos?.for)||0)<13)erros.push({etapa:3,texto:"Imobilizador (Grappler) exige Força 13."});if(!st.talentos[m.id].nome?.trim())erros.push({etapa:3,texto:"Informe o talento escolhido no nível "+m.n});}else if((f.melhorias?.[m.id]||[]).filter(k=>ATR.includes(k)).length!==2)erros.push({etapa:3,texto:"Escolha a melhoria de atributos de "+m.classe+" no nível "+m.n+"."});}
@@ -353,6 +405,6 @@ window.CRIADOR = (() => {
     return q;
   }
   function diferenca(antes,depois){const a=caracteristicas(antes.ficha),b=caracteristicas(depois.ficha),ids=new Set(a.map(h=>h.id));return {nivel:[R.nivelTotal(antes.ficha.classes),R.nivelTotal(depois.ficha.classes)],pv:[antes.pv_max,depois.pv_max],prof:[R.prof(R.nivelTotal(antes.ficha.classes)),R.prof(R.nivelTotal(depois.ficha.classes))],novas:b.filter(h=>!ids.has(h.id)),espacos:R.conjuracao(depois.ficha.classes),escolhas:validar(depois,{evolucao:true})};}
-  const api={vagasMagias,registrarVagas,definirVagaLivre,reconciliarNiveis,pvTotal,ganhoPV,construirProgressao,salvamento,configurar,estado,origem,requisitosMulti,classe,subclasse,nivelSub,caracteristicas,requisitos,grupos,gruposMagias,perfilMagias,rotulo,per,magiasConcedidas,magiaId,magiaPorId,custo,CUSTOS,iniciar,derivar,equipamento,aplicarEquipamento,itemCategoria,validar,subir,diferenca,idiomasRaca,copiar,get dados(){return D;}};
+  const api={vagasMagias,registrarVagas,definirVagaLivre,reconciliarNiveis,pvTotal,ganhoPV,construirProgressao,salvamento,configurar,estado,origem,requisitosMulti,classe,subclasse,nivelSub,caracteristicas,requisitos,grupos,gruposMagias,perfilMagias,rotulo,per,magiasConcedidas,magiaId,magiaPorId,custo,CUSTOS,iniciar,derivar,equipamento,aplicarEquipamento,itemInventario,ataqueDaArma,itemCategoria,validar,subir,diferenca,idiomasRaca,copiar,get dados(){return D;}};
   return api;
 })();

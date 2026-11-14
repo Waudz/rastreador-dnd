@@ -19,6 +19,8 @@
   const refCatalogo=it=>window.CAT_ITENS?.doInventario?.(it)?.id||it?.catId||it?.ref||'';
   function obter(f, it) {
     const propria=mapa(f)?.[chave(it)];if(valida(propria))return {src:propria,origem:'ficha'};
+    /* imagem enviada quando o item ainda não tinha vínculo com o catálogo (guardada pelo uid): continua valendo depois de vinculado */
+    const antiga=it&&it.uid?mapa(f)?.[it.uid]:null;if(valida(antiga))return {src:antiga,origem:'ficha'};
     const global=window.CATALOGO?.imagem('item',refCatalogo(it));if(global!==undefined)return global?{src:global,origem:'catalogo'}:null;
     const k = chave(it), m = mapa(f), v = m && k ? m[k] : null;
     if (valida(v)) return { src: v, origem: "ficha" };
@@ -40,7 +42,7 @@
   }
   /* tira da ficha as imagens de itens que não existem mais (itens com a mesma chave continuam usando a imagem) */
   function limpar(f, itens) {
-    const m = mapa(f); if (!m) return false; const vivas = new Set((itens || []).map(chave)); let mudou = false;
+    const m = mapa(f); if (!m) return false; const vivas = new Set((itens || []).flatMap((i) => [chave(i), i && i.uid].filter(Boolean))); let mudou = false;
     for (const k of Object.keys(m)) if (!vivas.has(k) || !valida(m[k])) { delete m[k]; mudou = true; }
     if (!Object.keys(m).length) { delete f.imagensItens; mudou = true; }
     return mudou;

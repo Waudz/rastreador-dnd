@@ -82,6 +82,9 @@ window.REGRAS = (() => {
     ["anel", "Cota de anéis", "pesada", 14, 0, true, 20], ["malha", "Cota de malha", "pesada", 16, 13, true, 27.5], ["talas", "Cota de talas", "pesada", 17, 15, true, 30], ["placas", "Armadura de placas", "pesada", 18, 15, true, 32.5]
   ];
 
+  /* id do catálogo de itens (srd51:item/<slug>) -> id da armadura acima; a CA da ficha usa só este vínculo, nunca o nome */
+  const ARMADURA_POR_ITEM = { "padded-armor": "acolchoada", "leather-armor": "couro", "studded-leather-armor": "couro-batido", "hide-armor": "gibao", "chain-shirt": "camisao", "scale-mail": "escamas", "breastplate": "peitoral", "half-plate-armor": "meia", "ring-mail": "anel", "chain-mail": "malha", "splint-armor": "talas", "plate-armor": "placas" };
+
   /* armas comuns: [nome, dado, tipo de dano, atributo (for | des | acuidade), peso kg] */
   const ARMAS = [
     ["Adaga", "1d4", "perfurante", "acuidade", 0.5], ["Bastão", "1d6", "contundente", "for", 2], ["Clava", "1d4", "contundente", "for", 1], ["Lança", "1d6", "perfurante", "for", 1.5],
@@ -236,5 +239,5 @@ window.REGRAS = (() => {
   function percepcaoPassiva(f){return 10+valorPericia(f,'percepcao');}
   function valoresAtaque(f,a){const at=a.atr==='acuidade'?Math.max(mod(atributoEf(f,'for')),mod(atributoEf(f,'des'))):mod(atributoEf(f,a.atr||'for')),mg=Number(a.magico)||0;return {ataque:at+(a.prof===false?0:prof(nivelTotal(f.classes||[])||f.nivel||1))+mg+bonusTemp(f,'ataques'),dano:at+mg+(Number(a.extra)||0)};}
   function resumoMestre(f){const fontes=fontesPericias(f),tracos=tracosDaFicha(f);return {passiva:percepcaoPassiva(f),pericias:PERICIAS.filter(([k])=>fontes.basicas.includes(k)).map(([k,n])=>({id:k,nome:n,valor:valorPericia(f,k),especializada:fontes.especializadas.includes(k)})),tracos,resistencias:[...(Array.isArray(f.resistencias)?f.resistencias:f.resistencias?[f.resistencias]:[]),...tracos.filter(t=>/resistência|imunidade/i.test(t.desc)).map(t=>t.desc)],ataques:(f.ataques||[]).map(a=>({...a,...valoresAtaque(f,a)})),magias:f.magias||[],caracteristicas:f.caracteristicas||[]};}
-  return { atributoEf, bonusTemp, CATEGORIAS_TEMP, chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, resumoMestre, RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
+  return { atributoEf, bonusTemp, CATEGORIAS_TEMP, chaveTexto, tituloTexto, tracosDaFicha, valorPericia, percepcaoPassiva, valoresAtaque, resumoMestre, RACAS_BASE, preparacao, tracosRaciais, resumoClasses, bonusPericia, bonusSemProf, melhoriasDisponiveis, aplicarMelhorias, racial, fontesPericias, limiteEspecializacao, aplicarRaca, habilidadesAutomaticas, ATR, ATR_NOME, PERICIAS, CLASSES, classe, RACAS, ARMADURAS, ARMADURA_POR_ITEM, ARMAS, TIPOS_DANO, IDIOMAS, SLOTS, PACTO, mod, prof, nivelTotal, conjuracao };
 })();
