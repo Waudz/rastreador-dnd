@@ -133,3 +133,14 @@ test('interface: o + e a edição direta usam ajustarQuantidade, e equipar escol
   assert.match(src,/membrosDe\(it\)\.find\(\(m\) => num\(m\.qtd, 0\) >= 1\)/);
   assert.ok(!/else if \(k === "qtd"\) it_\.qtd/.test(src),'digitar não altera o primeiro registro');
 });
+
+test('registro com quantidade zero não é equipável nem fica ligado à ficha, e o histórico continua',()=>{
+  const A=amb();A_I=A.I;const P=pers(A);P.inventario.push(item(A,DARDO,2,{tipo:'criacao',id:'z',nota:'Criação'}));
+  const eq=A.E.equipar(P,P.inventario[0].uid);
+  A.I.ajustarQuantidade(A.I.conteinerDe(P),[P.inventario[0]],-1);assert.equal(P.inventario[0].qtd,0);
+  assert.throws(()=>A.E.equipar(P,P.inventario[0].uid),/não está no inventário/);
+  eq.qtd=0;assert.equal(A.E.reconciliar(P).mudou,true);assert.equal(P.ficha.ataques.length,0,'unidade zerada deixa de ser tratada como equipada');
+  assert.ok(P.ficha.movimentos.some(m=>m.tipo==='divisao')&&P.ficha.movimentos.some(m=>m.tipo==='ajuste'),'o histórico foi preservado');
+  assert.equal(P.inventario[0].origem.nota,'Criação','o registro zerado mantém a origem');
+  assert.ok(ler('js/personagem.js').includes('equipavel(it) && qtdLinha(it) > 0'),'sem caixa Equipado para quantidade zero');
+});

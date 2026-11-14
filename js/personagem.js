@@ -370,7 +370,7 @@
     const acoes = [];
     if (t === "pergaminho" && it.magiaVinculada) { acoes.push(`<span class="muted">Contém ${esc(it.magiaVinculada.n)} (${it.magiaVinculada.l}º círculo)</span>`); if (wizard()) acoes.push(`<button type="button" class="small" data-inv-copiar="${i}">Copiar para o grimório</button>`); acoes.push(`<button type="button" class="small" data-inv-usar="${i}">Usar o pergaminho</button>`); }
     else if (IE.temEfeitos(it) || t === "consumivel") acoes.push(`<button type="button" class="small" data-inv-usar="${i}">Usar</button>`);
-    if (passivo || sint || t === "magico" || equipavel(it)) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-equip ${it.equipado ? "checked" : ""}> Equipado</label>`);
+    if (passivo || sint || t === "magico" || (equipavel(it) && qtdLinha(it) > 0)) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-equip ${it.equipado ? "checked" : ""}> Equipado</label>`);
     if (sint) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-sint ${pr.sintonia.sintonizado ? "checked" : ""}> Sintonizado</label>`);
     if (pr.cargas) acoes.push(`<span class="muted">Cargas ${num(pr.cargas.atual, 0)}/${num(pr.cargas.max, 0)}</span>`);
     if (pr.raridade) acoes.push(`<span class="muted">${esc(pr.raridade)}</span>`);
