@@ -84,8 +84,25 @@ test('CSS: seis raridades com cores distintas só no indicador; mágico = nome d
   assert.ok(m.lendaria>=30&&m.lendaria<=45,'lendária dourado '+m.lendaria);assert.ok(m.artefato<20||m.artefato>340,'artefato coral/vermelho, distinto '+m.artefato);
   assert.match(bloco,/\.item-magico \.inv-nome-txt\{color:color-mix\(in srgb,var\(--gold,#D4AE72\) 82%,var\(--text,#F3E9D5\)\)\}/);
   assert.match(bloco,/\.inv-magico-tag::before\{content:"✦"/);
-  assert.ok(!/\.item-magico\s*\{|\.item-magico[^{]*(background|border)|\.inv-thumb|\.itens-card\s*\{/.test(bloco),'miniatura, moldura e fundo do cartão não foram alterados');
-  assert.ok(!/(?:^|[;{\s])height\s*:|max-height/.test(bloco.replace(/\.inv-raridade::before\{[^}]*\}/,'')),'sem alturas fixas (o ponto do indicador tem 8 px; os cartões não)');
+  const nome=bloco.slice(0,bloco.indexOf('Moldura da miniatura'));
+  assert.ok(!/\.item-magico\s*\{|\.item-magico[^{]*(background|border)|\.inv-thumb|\.itens-card\s*\{/.test(nome),'o bloco de nome/tag/raridade não mexe em miniatura nem em fundo do cartão');
+  assert.ok(!/(?:^|[;{\s])height\s*:|max-height/.test(nome.replace(/\.inv-raridade::before\{[^}]*\}/,'')),'sem alturas fixas (o ponto do indicador tem 8 px; os cartões não)');
+});
+
+test('CSS: moldura da miniatura depende só de ser mágico (dourado discreto x cinza-azulado), nunca da raridade; tamanhos intactos',()=>{
+  const css=ler('css/fichas.css'),b=css.slice(css.indexOf('Moldura da miniatura'));
+  assert.match(b,/\.inv-card \.inv-thumb\{border-color:#56667A\}/);
+  assert.match(b,/\.inv-card\.item-magico \.inv-thumb\{border-color:var\(--gold-dark,#947345\)\}/);
+  assert.ok(!/rar-/.test(b),'nenhuma regra de moldura usa a raridade');
+  assert.ok(!/shadow|glow|filter|(?:^|[;{\s])(width|height)\s*:/.test(b.replace(/#inv\.inv-grade[^\n]*/g,'')),'sem brilho, sombra nem tamanho novo na moldura');
+});
+
+test('grade: Detalhes e … juntos na última linha do cartão; lista e miniaturas/colunas intactas',()=>{
+  const css=ler('css/fichas.css'),b=css.slice(css.indexOf('Grade: "Detalhes"')),p=ler('js/personagem.js');
+  assert.ok(p.includes('<span class="inv-fim"><button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</span>'));
+  assert.match(b,/#inv\.inv-grade \.inv-acoes\{margin-top:auto\}/);assert.match(b,/#inv\.inv-grade \.inv-fim\{flex:1 1 100%;order:99\}/);
+  assert.ok(!/\.inv-thumb|grid-template-columns|minmax/.test(b),'não muda miniatura nem colunas');
+  assert.ok(b.split('\n').filter(l=>/inv-fim|inv-acoes|inv-corpo|grid-template-rows/.test(l)&&!/^\.inv-fim\{/.test(l)).every(l=>l.startsWith('#inv.inv-grade')),'regras de posição só na grade');
 });
 
 test('interface: lista, grade e barra lateral do inventário e o catálogo usam a mesma classificação',()=>{

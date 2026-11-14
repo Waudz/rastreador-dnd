@@ -414,3 +414,13 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .inv-raridade::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--rar,var(--muted));flex:none}
 .inv-meta .inv-selos{flex:none;display:inline-flex;align-items:center;gap:6px;vertical-align:middle}.inv-meta .inv-base{margin-right:8px}
 .rar-comum{--rar:#A3ACB5}.rar-incomum{--rar:#5CB584}.rar-rara{--rar:#6FA3E8}.rar-muito-rara{--rar:#A98AE6}.rar-lendaria{--rar:#D4AE72}.rar-artefato{--rar:#E5806A}
+
+/* Moldura da miniatura: depende só de ser mágico ou não (nunca da raridade). Mágico = o dourado discreto que o compêndio já usa; comum = cinza-azulado discreto do tema escuro. Sem brilho, sombra ou efeito; tamanhos inalterados. */
+.inv-card .inv-thumb{border-color:#56667A}
+.inv-card.item-magico .inv-thumb{border-color:var(--gold-dark,#947345)}
+/* Grade: "Detalhes" e "…" ficam juntos, sempre na última linha do cartão, no mesmo lugar em todos os itens (controles de quantidade, Usar, Equipado e cargas ocupam as linhas de cima). Só reorganiza o espaço interno: mesma largura, mesmas colunas, mesma miniatura. */
+.inv-fim{display:inline-flex;align-items:center;gap:6px;flex:none}
+#inv.inv-grade .inv-card{grid-template-rows:auto 1fr auto}
+#inv.inv-grade .inv-corpo{display:flex;flex-direction:column;min-height:0;align-self:stretch}
+#inv.inv-grade .inv-acoes{margin-top:auto}
+#inv.inv-grade .inv-fim{flex:1 1 100%;order:99}
