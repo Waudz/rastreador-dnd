@@ -34,7 +34,8 @@ returns jsonb language sql stable security definer set search_path='' as $$
             and r.value->>'imagem' ~ ('^'||case r.value->>'tipo' when 'item' then 'itens' else 'monstros' end||'/[0-9a-f-]{36}\.(jpg|png|webp)$')));
 $$;
 comment on function public.catalogo_imagens_publicas() is 'Somente tipo, chave e caminho de imagem do catálogo global (bucket público). Não devolve dados, nomes nem registros excluídos.';
-revoke all on function public.catalogo_imagens_publicas() from public;
+-- permissões explícitas: zera TUDO (inclusive os grants automáticos do Supabase) e concede só o necessário
+revoke all on function public.catalogo_imagens_publicas() from public, anon, authenticated;
 grant execute on function public.catalogo_imagens_publicas() to anon, authenticated;
 commit;
 ```
@@ -46,7 +47,7 @@ Rollback (sem tocar em dados): `drop function if exists public.catalogo_imagens_
 | 1 | Só imagens de registros públicos e não excluídos? | Sim. Filtros no `where`: `imagemDefinida = true`, `excluido` diferente de `true`, tipo `item`/`monstro`, `chave` e caminho no formato do bucket **do mesmo tipo** (item só `itens/…`, monstro só `monstros/…`). Registro com imagem removida volta como `imagem: null` para o visitante respeitar a remoção. |
 | 2 | Itens privados, rascunhos ou dados de personagens podem aparecer? | Não. A função lê **uma única tabela** (`catalogo_publicado`, linha `2014`), sem joins com `personagens`, `campanhas`, `membros`, `acervos` ou Storage. Itens personalizados dos usuários vivem no navegador (localStorage) ou em tabelas de acervo, nunca nessa linha. O catálogo não tem conceito de rascunho: o que está em `globais` já é o publicado para todos os usuários logados. |
 | 3 | O identificador associa a imagem ao item certo? | Sim: `chave` é a mesma do mapa (`tipo:chave`) e a que o aplicativo usa para procurar (`it.id` do item; `key` do monstro). O cliente reconstrói `tipo:chave` e a URL pública do bucket; a mesma validação é refeita no navegador. |
-| 4 | `SECURITY DEFINER` seguro? | `set search_path=''` e todas as referências com esquema (`public.catalogo_publicado`); as funções/operadores usados (`jsonb_*`, `coalesce`, `->`, `->>`, `~`) estão em `pg_catalog`, sempre resolvido. Função `stable`, SQL puro (sem SQL dinâmico, sem parâmetros: não há o que injetar). `revoke all … from public` e `grant execute` só a `anon` e `authenticated`. Atenção: o Supabase concede execução por padrão a `anon/authenticated/service_role` em funções novas do esquema `public`; aqui isso coincide com o desejado. O `definer` é necessário porque `anon` não tem `select` na tabela. |
+| 4 | `SECURITY DEFINER` seguro? | `set search_path=''` e todas as referências com esquema (`public.catalogo_publicado`); as funções/operadores usados (`jsonb_*`, `coalesce`, `->`, `->>`, `~`) estão em `pg_catalog`, sempre resolvido. Função `stable`, SQL puro (sem SQL dinâmico, sem parâmetros: não há o que injetar). Permissões explícitas: `revoke all … from public, anon, authenticated` (zera inclusive os grants automáticos do Supabase, que dão execução a `anon/authenticated/service_role` em funções novas do esquema `public`) seguido de `grant execute … to anon, authenticated`; nada depende do padrão do PostgreSQL. `service_role` (chave secreta, nunca no navegador) mantém o acesso padrão do Supabase. O `definer` é necessário porque `anon` não tem `select` na tabela. |
 | 5 | O visitante consegue consultar além do necessário? | Não pela função: não tem argumentos, devolve apenas `{tipo, chave, imagem}`. Não concede `select`, não altera policies nem o RLS e não mexe no Storage (o bucket já era público para leitura; continua sem escrita para anônimos). Quem já sabe um caminho de imagem sempre pôde abri-lo; a função só revela os caminhos que o catálogo já tornou públicos. |
 | 6 | A chave pública basta, sem autenticação? | Sim. Verificado ao vivo: com só o cabeçalho `apikey: sb_publishable_…` a requisição chega ao Postgres como papel `anon` (a resposta foi a negação de permissão da tabela, não erro de chave). O `catalogoImagensPublicas()` envia `apikey` e `Content-Type`; o Supabase já permite essa chamada de outra origem (GitHub Pages) como o restante do aplicativo. |
 | 7 | Funciona sem mudar permissões gerais da tabela? | Sim: `catalogo_publicado` continua com `revoke … from public, anon` (o teste `tests/catalogo-publico.test.cjs` confere o arquivo SQL) e a leitura completa continua só para `authenticated`. |
@@ -56,10 +57,18 @@ Robustez do SQL (revisada): sem `cast` que possa falhar com JSON inesperado (a c
 
 Riscos e limites: (a) endpoint anônimo → sujeito aos limites de taxa do Supabase; resposta pequena (um item por imagem cadastrada). (b) Itens "globais criados pelo administrador" têm imagem mapeada, mas o aplicativo só os mostra a quem tem conta (o JSON de `dados` segue fechado); não é regressão. (c) Itens excluídos continuam aparecendo ao visitante a partir do catálogo base local, como antes (a exclusão só é conhecida por quem lê a tabela). (d) Execução real ainda por validar (§8).
 
+## 3.1 Imagens públicas × itens públicos × dados de personagens
+- **O que é público para o visitante hoje:** os itens do catálogo SRD (arquivo estático `dados/itens-srd2014.json`, servido pelo site) e o bestiário. A função **não** muda isso e não entrega nenhum item: devolve só `tipo`, `chave` e o caminho do arquivo de imagem, e o aplicativo só usa a imagem de itens que ele já mostra.
+- **Diferença que ainda existe:** o banco não conhece o catálogo estático, então a função também devolve caminhos de imagens de registros globais criados pelo administrador que o visitante não vê na tela. É só um caminho com UUID (não adivinhável, sem nome nem descrição) de um arquivo que já está em bucket público; o visitante não ganha nenhum dado do item. Se preferir zero diferença, a alternativa é a lista estática (§4), com o custo de manutenção.
+- **Dados de personagens não entram:** a função não lê `personagens`, `campanhas`, `membros` nem acervos; imagens de itens dos jogadores ficam em `ficha.imagensItens` (RLS por dono/mestre) e **não podem estar no bucket `catalogos`**, porque o envio para esse bucket só é permitido a administradores (`catalogos_enviar … private.conta_admin()`, caminho `itens|monstros/<uuid>`) e o bucket não aceita UPDATE/DELETE. Tokens, e-mails e chaves nunca passam pela função.
+
 ## 4. Alternativas descartadas
 - Reabrir `select` da tabela para `anon`: expõe o JSON inteiro.
 - Arquivo estático no repositório: sem SQL, mas ficaria desatualizado a cada upload do administrador.
 - `security invoker` com policy de `anon`: exigiria policy por coluna/linha na tabela (mais permissões, não menos).
+
+## 4.1 Testes SQL em ambiente descartável — situação
+**Não foi possível executar.** Procurei: não há `psql`/`postgres`/`initdb`, nem Docker, nem PGlite instalados neste computador; o WSL não tem distribuição instalada. Não instalei nada por conta própria. O que foi feito no lugar: revisão estática linha a linha, teste automatizado do texto do SQL (`tests/catalogo-publico.test.cjs`: sem casts, filtros de excluído/tipo/caminho, `security definer`, `search_path` vazio, revoke explícito, sem grant em tabela, sem policy) e o teste do cliente com respostas simuladas. Os cenários do §8 continuam sendo a validação de comportamento e devem rodar no PostgreSQL descartável do projeto (ou em um projeto Supabase de teste) antes da aplicação.
 
 ## 5. Passos de implantação
 1. William aprova (e, se quiser, ajusta) o SQL do §2.
@@ -83,4 +92,4 @@ Com fixtures de `catalogo_publicado` contendo: item com imagem; monstro com imag
 2. Como `anon`: `select * from public.catalogo_publicado` → erro `42501` (continua fechada).
 3. Como `authenticated` não administrador: mesma saída; `salvar_catalogo_global` continua negada.
 4. `globais` ausente/não objeto → `[]` sem erro.
-5. `has_function_privilege('anon','public.catalogo_imagens_publicas()','execute')` verdadeiro; `has_table_privilege('anon','public.catalogo_publicado','select')` falso.
+5. `has_function_privilege('anon','public.catalogo_imagens_publicas()','execute')` e `('authenticated', …)` verdadeiros; `has_table_privilege('anon','public.catalogo_publicado','select')` falso; `select grantee, privilege_type from information_schema.routine_privileges where routine_name='catalogo_imagens_publicas'` lista só `anon`, `authenticated` (e donos/`service_role` do Supabase), sem `PUBLIC`.

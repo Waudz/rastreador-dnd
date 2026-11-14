@@ -466,11 +466,11 @@
      Escolher um modelo escreve o texto no campo (o jogador altera o que quiser, ou escreve tudo do zero). Nunca é aplicado sozinho e nunca troca a Origem existente ao abrir o editor.
      Só usa o que a ficha já sabe (classe, antecedente, pacote do próprio item); o resto fica para o jogador completar (sem inventar nome nem local). Não há tabela nem cor por categoria. */
   const MODELOS_ORIGEM = [["inicial", "Equipamento inicial da classe [classe]"], ["escolha", "Escolha de equipamento da classe [classe]"], ["antecedente", "Equipamento do antecedente [antecedente]"], ["pacote", "Componente do [pacote]"],
-    ["comprado", "Comprado em [local]"], ["encontrado", "Encontrado em [local]"], ["recompensa", "Recompensa da missão [nome]"], ["presente", "Presente de [personagem]"], ["recebido", "Recebido de [personagem]"], ["fabricado", "Fabricado por [personagem]"], ["livre", "Origem personalizada"]];
+    ["comprado", "Comprado"], ["encontrado", "Encontrado"], ["recompensa", "Recompensa de missão"], ["presente", "Presente"], ["recebido", "Recebido"], ["fabricado", "Fabricado"], ["livre", "Origem personalizada"]];
   function textoModelo(chave, rec) {
     const c0 = CLS()[0], classe = c0 ? CLASSES[c0.c] || "" : "", ante = F().background || "", pac = (rec && rec.origem && rec.origem.pacote && rec.origem.pacote.nome) || "Pacote de ";
     return ({ inicial: "Equipamento inicial da classe " + classe, escolha: "Escolha de equipamento da classe " + classe, antecedente: "Equipamento do antecedente " + ante, pacote: "Componente do " + pac,
-      comprado: "Comprado em ", encontrado: "Encontrado em ", recompensa: "Recompensa da missão ", presente: "Presente de ", recebido: "Recebido de ", fabricado: "Fabricado por " })[chave];
+      comprado: "Comprado", encontrado: "Encontrado", recompensa: "Recompensa de missão", presente: "Presente", recebido: "Recebido", fabricado: "Fabricado" })[chave];
   }
   const seletorModelos = (uid) => `<select class="inv-origem-modelo" data-origem-modelo${uid ? ` data-modelo-uid="${esc(uid)}"` : ""} aria-label="Modelo de origem"><option value="">Modelos…</option>${MODELOS_ORIGEM.map(([k, r]) => `<option value="${k}">${esc(r)}</option>`).join("")}</select>`;
   document.addEventListener("change", (e) => {
@@ -934,7 +934,6 @@
     document.title = P.nome + " — Compêndio 5e"; profTxt(); avisoArm();
     document.querySelectorAll(".atributos-ficha input,.atributos-ficha select").forEach(el=>{el.disabled=!editandoFicha;});
   }
-  const presets = () => R.ARMADURAS.map((a) => [a[1], a[6]]).concat([["Escudo", 3], ["Mochila", 2.5], ["Saco de dormir", 3.5], ["Corda de cânhamo (15 m)", 5], ["Tocha", 0.5], ["Ração (1 dia)", 1], ["Cantil", 2.5], ["Kit de curandeiro", 1.5], ["Poção de cura", 0.25], ["Ferramentas de ladrão", 0.5], ["Foco arcano", 0.5], ["Símbolo sagrado", 0.5], ["Grimório", 1.5]]);
 
   function profTxt() { const e = $("#prof-txt"); if (e) e.textContent = `Bônus de proficiência ${fm(bonusProf())} · Iniciativa ${fm(modA("des")+R.bonusSemProf(F()))}`; }
   function avisoArm() {
@@ -1117,7 +1116,6 @@
     if (c("#ms-fechar")) { $("#mestre-box").hidden = true; return; }
     if (c("#ms-ok")) { concederMagia(); return; }
     if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0, origem: origemAdd({ tipo: "jogo" }) })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector('input[data-inv="nome"]').focus(); agendar({ inventario: P.inventario }); fecharAdd(); return; }
-    if (c("#add-pre")) { const v = $("#eq-pre").value; if (v === "") return; const p = presets()[+v]; { const novo = IV.novoItem({ nome: p[0], qtd: 1, peso: p[1], origem: origemAdd({ tipo: "jogo" }) }); vincularPorNome(novo); IV.adicionar(cont(), novo); } redesenharInv(); salvarInv(); fecharAdd(); return; }
     if ((b = c("[data-rm-item]"))) { const it = itemPor(+b.dataset.rmItem); if (!it) return; if (num(it.qtd, 0) >= 1) IV.retirar(cont(), it.uid, null, { tipo: "descarte" }); else INV().splice(+b.dataset.rmItem, 1); salvarInv(); redesenharInv(); return; }
     if ((b = c("[data-inv-nome-restaurar]"))) { const it = itemPor(+b.dataset.invNomeRestaurar); if (it && !soLeitura) { restaurarNomeCatalogo(it); aviso("Nome do catálogo restaurado."); } return; }
     if (c("#inv-vinculos")) { verificarVinculos(); return; }
@@ -1141,7 +1139,6 @@
     if (c("#uso-cancel")) { uso = null; $("#uso-box").hidden = true; return; }
     if ((b = c("[data-uso-rolar]"))) { const k = +b.dataset.usoRolar, it = INV().find((x) => x.uid === uso.uid), p = it && IE.plano(it).find((x) => x.i === k); if (!p) return; const r = IE.rolar(p.dados, window.crypto && crypto.getRandomValues ? () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296 : Math.random); uso.rolagens[k] = r.total; uso.textoRolagem[k] = "rolou " + r.rolls.join(" + ") + (r.bonus ? (r.bonus > 0 ? " + " : " - ") + Math.abs(r.bonus) : "") + " = " + r.total; renderUso(); return; }
     if ((b = c("[data-enc-efeito]"))) { try { IE.encerrarEfeito(P, b.dataset.encEfeito); } catch (e) { aviso(e.message, true); return; } agendar({ ficha: P.ficha }); refrescar(); return; }
-    if (c("#it-cat-add")) { const k = $("#it-cat").value; if (!k) return; IV.adicionar(cont(), IE.itemDoCatalogo(k, origemAdd({ tipo: souMestre ? "mestre" : "jogo" }))); salvarInv(); redesenharInv(); fecharAdd(); return; }
     if (c("#pg-add")) { adicionarPergaminho(); return; }
     if ((b = c("[data-inv-editar]"))) { abrirEditor(+b.dataset.invEditar); return; }
     if (c("#ef-add")) { addEfeito(); return; }

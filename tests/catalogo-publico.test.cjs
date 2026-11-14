@@ -78,3 +78,14 @@ test('imagem removida de propósito (null) vale para o visitante; o SQL revisado
   assert.ok(!/::boolean|::integer|::bigint/.test(sql),'sem cast que quebre com JSON inesperado');
   assert.match(sql,/from public\.catalogo_publicado c/);assert.ok(!/\bjoin\b[^;]*personagens|campanhas|membros|storage\./i.test(sql.replace('cross join lateral','')),'não toca em outras tabelas');
 });
+
+test('permissões explícitas da função (sem depender do padrão) e envio ao bucket só por administradores',()=>{
+  const plano=ler('docs/PLANO-IMAGENS-PUBLICAS.md'),sql=plano.slice(plano.indexOf('```sql')+6,plano.indexOf('```',plano.indexOf('```sql')+6));
+  assert.match(sql,/revoke all on function public\.catalogo_imagens_publicas\(\) from public, anon, authenticated;/);
+  assert.ok(sql.indexOf('revoke all')<sql.indexOf('grant execute'),'zera antes de conceder');
+  assert.equal((sql.match(/grant execute/g)||[]).length,1);assert.ok(!/to public\b|to service_role/i.test(sql));
+  const g=ler('supabase/catalogos-globais.sql');
+  assert.match(g,/create policy catalogos_enviar on storage\.objects for insert to authenticated\s*with check\(bucket_id='catalogos' and \(select private\.conta_admin\(\)\)/);
+  assert.match(g,/drop policy if exists catalogos_apagar/);assert.match(g,/drop policy if exists catalogos_atualizar/);
+  assert.ok(!/create policy [^;]*for (update|delete)[^;]*catalogos/.test(g),'o bucket não aceita alteração nem remoção');
+});

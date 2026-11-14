@@ -12,6 +12,7 @@
 
   /* efeitos: lista de textos já prontos (quem chama traduz os efeitos do item com as regras da ficha) */
   function mecanico(it, cat, efeitosTexto) {
+    const efs = (efeitosTexto || []).map(limpa).filter(Boolean);
     const c = C(), pr = (it && it.propriedades) || {}, partes = [];
     if (cat && c && !cat.custom) {
       const rows = c.linhas(cat);
@@ -26,12 +27,14 @@
       const alc = linha(rows, "Alcance"), arremesso = linha(rows, "Arremesso");
       if (alc) partes.push("Alcance " + alc);
       if (arremesso && arremesso !== alc) partes.push("Arremesso " + arremesso);   // não repete o mesmo alcance
-      const cura = linha(rows, "Cura ao usar"); if (cura && !(efeitosTexto || []).length) partes.push("Cura " + cura);   // com efeito configurado, o texto do efeito já diz isso
+      /* a cura do catálogo só some quando um efeito configurado JÁ diz que recupera PV; outros efeitos (resistência, condição...) não escondem nada */
+      const curaNoEfeito = efs.some((t) => /recupera|pontos de vida/i.test(t)), cura = linha(rows, "Cura ao usar"); if (cura && !curaNoEfeito) partes.push("Cura " + cura);
       const ca = linha(rows, "Classe de Armadura"); if (ca) partes.push("CA " + ca);
       const forMin = linha(rows, "Força mínima"); if (forMin) partes.push("For " + forMin);
     }
     if (pr.bonus != null && Number(pr.bonus)) partes.push((Number(pr.bonus) > 0 ? "+" : "") + Number(pr.bonus));
-    for (const e of (efeitosTexto || []).slice(0, 2)) { const t = limpa(e); if (t) partes.push(t); }
+    for (const t of efs.slice(0, 2)) partes.push(t);
+    if (efs.length > 2) partes.push("+" + (efs.length - 2) + (efs.length - 2 === 1 ? " efeito" : " efeitos"));   // o resto está nos detalhes
     if (pr.cargas) partes.push("Cargas " + num(pr.cargas.atual) + "/" + num(pr.cargas.max));
     const vistos = new Set();
     return partes.filter((p) => { const k = p.toLowerCase(); if (!p || vistos.has(k)) return false; vistos.add(k); return true; }).join(" · ");

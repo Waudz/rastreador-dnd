@@ -126,13 +126,13 @@ test('o jogador altera a Origem do próprio item sem tocar nos dados técnicos, 
   const src=ler('js/personagem.js');assert.ok(!/data-[a-z-]*(hist|transfer)[a-z-]*=.*<input|<input[^>]*transferencias/.test(src),'nenhum campo edita o histórico');
 });
 
-test('adicionar manualmente: a Origem informada vira o texto do registro, para catálogo, pacote, item em branco, lista rápida, efeitos e pergaminho',()=>{
+test('adicionar manualmente: a Origem informada vira o texto do registro, para catálogo, pacote, item em branco, itens com efeitos e pergaminho',()=>{
   const src=ler('js/personagem.js');
   assert.ok(src.includes('id="add-origem"')&&src.includes('placeholder="Ex.: Recompensa da missão em Julkoun"'));
   assert.ok(src.includes('origem = origemAdd({ tipo: souMestre ? "mestre" : "jogo" })'),'catálogo e pacotes');
   assert.ok(src.includes('IV.novoItem({ nome: "", qtd: 1, peso: 0, origem: origemAdd({ tipo: "jogo" }) })'),'item em branco');
-  assert.ok(src.includes('origem: origemAdd({ tipo: "jogo" }) })'),'lista rápida');
-  assert.ok(src.includes('IE.itemDoCatalogo(k, origemAdd('),'item com efeitos');assert.ok(src.includes('origem: origemAdd({ tipo: souMestre ? "mestre" : "jogo", nota: $("#pg-nota")'),'pergaminho');
+  assert.ok(!/#add-pre|#it-cat-add|const presets|eq-pre/.test(src),'a lista rápida e o formulário de efeitos separados saíram da interface (código morto removido); poções e itens mágicos entram pelo Catálogo de itens');
+  assert.ok(src.includes('origem: origemAdd({ tipo: souMestre ? "mestre" : "jogo", nota: $("#pg-nota")'),'pergaminho');
   /* a mesma montagem em dados: o texto acompanha o registro e os ids técnicos do catálogo e do pacote ficam */
   const A=amb(),origem={tipo:'jogo',texto:'Comprado em Daggerford'};
   const c={dono:{},itens:[],movimentos:[]};
@@ -367,4 +367,28 @@ test('item com efeito configurado não repete a cura na linha mecânica',()=>{
   const A=amb(),p=A.C.obter('srd51:item/potion-of-healing');
   assert.equal(A.W.INV_RESUMO.mecanico({},p,[]).includes('Cura'),true,'sem efeito configurado, a linha do catálogo aparece');
   assert.equal(A.W.INV_RESUMO.mecanico({},p,['Recupera 2d4+2 pontos de vida']),'Recupera 2d4+2 pontos de vida');
+});
+
+test('vários efeitos: nenhum efeito importante some; só a cura duplicada do catálogo é omitida e o excedente é contado',()=>{
+  const A=amb(),RS=A.W.INV_RESUMO,p=A.C.obter('srd51:item/potion-of-healing');
+  const cura='Recupera 2d4+2 pontos de vida (média 7), sem passar do máximo.',res='Resistência a fogo por 1 hora',cond='Condição: Invisível';
+  /* efeito de cura configurado: a linha de cura do catálogo não repete, os outros efeitos aparecem */
+  assert.equal(RS.mecanico({},p,[cura,res]),cura+' · '+res);
+  /* efeitos SEM cura: a cura do catálogo continua visível (não é escondida por outros efeitos) */
+  const so=RS.mecanico({},p,[res,cond]);assert.ok(so.includes('Cura ')&&so.includes(res)&&so.includes(cond),so);
+  /* três ou mais: os dois primeiros e a contagem do resto; os detalhes seguem com todos */
+  assert.equal(RS.mecanico({},null,[cura,res,cond]),cura+' · '+res+' · +1 efeito');
+  assert.equal(RS.mecanico({},null,['a','b','c','d']),'a · b · +2 efeitos');
+  assert.equal(RS.mecanico({},null,['','  ',null]),'','efeitos vazios não geram texto');
+  assert.ok(ler('js/personagem.js').includes('efeitos: efs.map(descreverEfeito)'),'os detalhes continuam listando todos os efeitos');
+});
+
+test('modelos de Origem: os manuais são curtos e genéricos; os automáticos mantêm classe, antecedente e pacote',()=>{
+  const src=ler('js/personagem.js');
+  for(const m of ['["comprado", "Comprado"]','["encontrado", "Encontrado"]','["recompensa", "Recompensa de missão"]','["presente", "Presente"]','["recebido", "Recebido"]','["fabricado", "Fabricado"]','["livre", "Origem personalizada"]'])assert.ok(src.includes(m),m);
+  assert.ok(src.includes('comprado: "Comprado", encontrado: "Encontrado", recompensa: "Recompensa de missão", presente: "Presente", recebido: "Recebido", fabricado: "Fabricado"'),'o campo recebe só esse texto');
+  assert.ok(!/Comprado em|Encontrado em|Presente de \[|Recebido de|Fabricado por|Recompensa da missão/.test(src.slice(src.indexOf('MODELOS_ORIGEM ='),src.indexOf('const seletorModelos'))),'sem frases a completar');
+  for(const m of ['"Equipamento inicial da classe [classe]"','"Escolha de equipamento da classe [classe]"','"Equipamento do antecedente [antecedente]"','"Componente do [pacote]"'])assert.ok(src.includes(m),m);
+  assert.ok(src.includes('inicial: "Equipamento inicial da classe " + classe')&&src.includes('antecedente: "Equipamento do antecedente " + ante')&&src.includes('pacote: "Componente do " + pac'));
+  assert.ok(!/inv-origem-modelo\s*\{[^}]*color/.test(ler('css/fichas.css')),'apresentação visual neutra, inalterada');
 });
