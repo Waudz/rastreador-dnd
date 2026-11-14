@@ -2,7 +2,7 @@ name: Validar fichas e banco
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, validar-imagens-publicas]   # TEMPORÁRIO: validação da função de imagens públicas; remover antes de qualquer merge
 permissions:
   contents: read
 jobs:
