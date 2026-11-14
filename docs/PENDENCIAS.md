@@ -1,5 +1,7 @@
 # Pendências e próxima tarefa
 
+**Inventario compacto e catalogo com mecanica (14/11, local, cache v195, nao publicado):** grade: quantidade agrupada, Usar + (Detalhes e ...) juntos na ultima linha (o par desce se nao couber nos 176/156 px), tag Magico + raridade sempre na mesma linha; lista estreita (<=520 px): quantidade e Usar na mesma linha, ... pequeno no canto, Detalhes ao lado quando cabe (em 375 px com Usar ele desce: proposta pendente); menu ... posicionado dentro da janela (js posicionarMenuMais). Catalogo (itens.html): linha mecanica (INV_RESUMO.mecanico + furtividade, sintonia, espaco, lote, velocidade), sem inventar descricao (o SRD do Compendio nao traz desc).
+
 **Classificacao magica corrigida (14/11, cache v194):** raridade preenchida (item do mestre/personalizado) nao torna o item magico; magico = categoria do catalogo (magico/pocao/pergaminho), tipo magico ou pergaminho com magia. Raridade segue independente (aparece mesmo em item nao magico).
 
 **Grade e molduras (14/11, local, cache v193):** na grade, "Detalhes" e "..." ficam juntos na ultima linha de todos os cartoes (`.inv-fim`, so `#inv.inv-grade`; alturas, colunas e miniaturas iguais); moldura da miniatura: dourado discreto (magico) ou cinza-azulado (comum), nunca por raridade, em inventario e catalogo.

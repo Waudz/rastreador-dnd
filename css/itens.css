@@ -25,3 +25,6 @@
 .inv-cat-item .inv-thumb,.inv-cat-item .inv-corpo{grid-area:auto}
 .inv-cat-item .inv-nome-btn{min-height:0;width:auto;max-width:100%;padding:0;border:0;background:none;box-shadow:none;text-align:left;font:inherit;color:inherit;cursor:pointer}
 .inv-cat-item .inv-nome-btn:hover .inv-nome-txt{text-decoration:underline;text-decoration-color:var(--gold,#c9a76a)}
+/* Catálogo: linha mecânica (dano, propriedades, CA...) logo abaixo do nome; categoria, preço e peso seguem como informação secundária na linha de baixo. Mesmo padrão do inventário. */
+.itens-lista .itens-card .inv-mec{-webkit-line-clamp:5}
+.itens-lista:not(.inv-grade) .itens-card .inv-mec{font-weight:400;font-size:.8rem;line-height:1.35;color:var(--muted);color:color-mix(in srgb,var(--muted) 72%,var(--text))}

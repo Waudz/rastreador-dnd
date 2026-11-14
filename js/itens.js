@@ -14,10 +14,24 @@
   const meta = (it) => { const p = C.pesoDe(it), c = C.custoTexto(it), mg = C.ehMagicoCatalogo(it), rar = it.raridade ? C.RARIDADES[it.raridade] : null;
     return [esc(C.rotuloCat(it.categoria)), mg ? '<span class="inv-magico-tag">Mágico</span>' : null, rar ? C.seloRaridade({ chave: C.chaveRaridade(it.raridade), rotulo: rar }) : null, c ? esc(c) : null, p != null && p > 0 ? esc(C.kg(p) + " kg") : null].filter(Boolean).join(" · "); };
 
+  /* linha mecânica do cartão: a mesma do inventário (INV_RESUMO.mecanico: dano, tipo de dano, propriedades, alcance, CA, cura) mais o que o catálogo já registra (furtividade, sintonia, espaço do corpo, lote, velocidade).
+     Só dados existentes: sem dado, não mostra nada e nunca inventa descrição. Itens personalizados mostram a descrição que o próprio usuário escreveu. */
+  const limpa = (s) => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
+  function mecanicaDe(it) {
+    if (it.custom) return limpa(it.desc);
+    const RS = window.INV_RESUMO, rows = C.linhas(it), L = (k) => { const r = rows.find((x) => x[0] === k); return r ? limpa(r[1]) : ""; };
+    const base = RS ? RS.mecanico({}, it, []) : "", extra = [];
+    if (it.armadura && L("Furtividade") === "Desvantagem") extra.push("Desvantagem em Furtividade");
+    if (it.sintonia === true) extra.push("Exige sintonia");
+    if (L("Espaço do corpo")) extra.push("Espaço: " + L("Espaço do corpo"));
+    if (it.lote) extra.push("Lote de " + it.lote);
+    if (it.velocidade) extra.push("Velocidade " + L("Velocidade"));
+    return [base, ...extra].filter(Boolean).join(" · ");
+  }
   function cartao(it) {
-    const id = esc(it.id);
+    const id = esc(it.id), mec = mecanicaDe(it);
     return `<div class="item-inv inv-card itens-card${C.ehMagicoCatalogo(it) ? " item-magico" : ""}" data-it="${id}"><button type="button" class="inv-thumb${imagemDe(it) ? "" : " vazio"}" data-it-det="${id}" aria-label="Abrir os detalhes de ${esc(it.nome)}" title="Ver detalhes">${miniatura(it)}</button>
-      <div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-it-det="${id}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome)}</b></button></div>
+      <div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-it-det="${id}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome)}</b></button>${mec ? `<span class="inv-mec">${esc(mec)}</span>` : ""}</div>
       <div class="inv-meta muted">${meta(it)}</div>${it.pacote ? '<div class="inv-meta muted">Conjunto de ' + it.pacote.length + " componentes</div>" : ""}</div></div>`;
   }
   function desenhar() {

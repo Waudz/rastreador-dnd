@@ -125,3 +125,19 @@ test('pergaminhos do catálogo são mágicos com a raridade certa; item do mestr
   assert.equal(A.C.infoMagica({nome:'Poção caseira',tipo:'consumivel',propriedades:{raridade:'Comum'}}).magico,false);
   assert.equal(A.C.ehMagicoCatalogo({categoria:'personalizado',subtipo:'magico',custom:true,raridade:'rare'}),false,'item personalizado do catálogo local não vira mágico por raridade');
 });
+
+test('catálogo: cartão mostra a linha mecânica do inventário (dano, propriedades, alcance, CA) só com dados existentes; sem raridade inventada',()=>{
+  const A=amb();vm.runInContext(ler('js/inventario-resumo.js'),A.W.CAT_ITENS?vm.createContext({window:A.W,console}):null);
+  const RS=A.W.INV_RESUMO;assert.ok(RS);
+  const mec=(id)=>RS.mecanico({},A.C.obter(id),[]);
+  assert.equal(mec('srd51:item/dagger'),'1d4 perfurante · Acuidade · Leve · Arma de monge · Arremesso 6 m / 18 m');
+  assert.match(mec('srd51:item/padded-armor'),/^CA 11 \+ modificador de Destreza$/);
+  assert.equal(mec('srd51:item/shield'),'CA +2');
+  assert.equal(mec('srd51:item/potion-of-healing-common'),'Cura 2d4+2');
+  /* consistência catálogo x inventário: o item levado ao inventário gera a mesma linha */
+  for(const id of ['srd51:item/dagger','srd51:item/quarterstaff','srd51:item/padded-armor','srd51:item/potion-of-healing-greater']){const inv=A.C.paraInventario(A.C.obter(id),1,{tipo:'jogo'});assert.equal(RS.mecanico(inv,A.C.doInventario(inv),[]),mec(id),id);}
+  assert.equal(mec('srd51:item/backpack'),'','sem dado mecânico: sem linha, sem inventar');
+  const t=ler('js/itens.js');assert.ok(t.includes('INV_RESUMO')&&t.includes('<span class="inv-mec">')&&t.includes('"Desvantagem em Furtividade"')&&t.includes('"Exige sintonia"'));
+  assert.ok(ler('itens.html').includes('js/inventario-resumo.js'));
+  for(const i of A.dados.filter(x=>!x.raridade))assert.equal(i.raridade,undefined);   // nenhum item mundano ganha raridade
+});
