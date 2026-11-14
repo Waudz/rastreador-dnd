@@ -373,9 +373,9 @@
   function restaurarNomeCatalogo(it) { const n = nomeDoCatalogo(it); if (!n) return false; it.nome = n; salvarInv(); redesenharInv(); return true; }
   function linhaInv(it, i) {
     const t = it.tipo || "equipamento", pr = it.propriedades || {}, sint = pr.sintonia && pr.sintonia.requer, passivo = IE.efeitosDe(it).some((e) => e.passivo);
-    const acoes = [];
-    if (t === "pergaminho" && it.magiaVinculada) { acoes.push(`<span class="muted">Contém ${esc(it.magiaVinculada.n)} (${it.magiaVinculada.l}º círculo)</span>`); if (wizard()) acoes.push(`<button type="button" class="small" data-inv-copiar="${i}">Copiar para o grimório</button>`); acoes.push(`<button type="button" class="small" data-inv-usar="${i}">Usar o pergaminho</button>`); }
-    else if (IE.temEfeitos(it) || t === "consumivel") acoes.push(`<button type="button" class="small" data-inv-usar="${i}">Usar</button>`);
+    const acoes = []; let usar = "";   // "Usar" fica junto da quantidade (linha própria dos controles principais)
+    if (t === "pergaminho" && it.magiaVinculada) { acoes.push(`<span class="muted">Contém ${esc(it.magiaVinculada.n)} (${it.magiaVinculada.l}º círculo)</span>`); if (wizard()) acoes.push(`<button type="button" class="small" data-inv-copiar="${i}">Copiar para o grimório</button>`); usar = `<button type="button" class="small" data-inv-usar="${i}" aria-label="Usar o pergaminho">Usar<span class="inv-usar-resto"> o pergaminho</span></button>`; }
+    else if (IE.temEfeitos(it) || t === "consumivel") usar = `<button type="button" class="small" data-inv-usar="${i}">Usar</button>`;
     if (passivo || sint || t === "magico" || (equipavel(it) && qtdLinha(it) > 0)) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-equip ${it.equipado ? "checked" : ""}> Equipado</label>`);
     if (sint) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-sint ${pr.sintonia.sintonizado ? "checked" : ""}> Sintonizado</label>`);
     if (pr.cargas) acoes.push(`<span class="muted">Cargas ${num(pr.cargas.atual, 0)}/${num(pr.cargas.max, 0)}</span>`);
@@ -391,7 +391,7 @@
     const mais = `<details class="inv-mais"><summary class="small" aria-label="Mais ações de ${nomeIt}" title="Mais ações">${window.ico ? window.ico("more") : "…"}</summary><div class="inv-mais-menu"><button type="button" data-inv-editar-abrir="${i}">Editar…</button><button type="button" data-inv-descartar="${i}">Descartar…</button><button type="button" class="danger" data-inv-excluir="${i}">Excluir item…</button></div></details>`;
     return `<div class="item-inv inv-card${mg.magico ? " item-magico" : ""}${qn <= 0 ? " zerado" : ""}" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-inv-detalhes="${i}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></button>${mec ? `<span class="inv-mec">${esc(mec)}</span>` : ""}</div>
       <div class="inv-meta muted"><span class="inv-base"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span></span>${selos}${resumo ? `<span class="inv-resumo">${esc(resumo)}</span>` : ""}${orig ? `<span class="inv-origem muted">Origem: ${esc(orig)}</span>` : ""}</div>
-      <div class="inv-acoes">${qtdUI}${acoes.join(" ")}<span class="inv-fim"><button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</span></div></div>
+      <div class="inv-acoes"><span class="inv-ctl">${qtdUI}${usar}</span>${acoes.join(" ")}<span class="inv-fim"><button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</span></div></div>
       <div class="inv-edit" data-inv-uid="${esc(it.uid)}"${aberto ? "" : " hidden"}><div class="inv-edit-campos">
         <label class="inv-c-nome">Nome<input data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"></label>
         <label>Peso cada (kg)<input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}"></label>
@@ -624,6 +624,17 @@
     IV.ajustarQuantidade(cont(), membrosDe(it), delta);   // + ganha origem própria ("Adicionado manualmente"); − sai do manual primeiro; nada de pacote é inflado
     atualizarCarga(); salvarInv(); redesenharInv();
   }
+  /* Menu "…": abre para o lado e para o sentido que tiverem espaço dentro da janela (ou da barra lateral), sem ser cortado e sem criar rolagem horizontal */
+  function posicionarMenuMais(d) {
+    const m = d.querySelector(".inv-mais-menu"); if (!m) return;
+    m.style.transform = ""; m.style.top = ""; m.style.bottom = "";
+    const vw = document.documentElement.clientWidth, vh = window.innerHeight, M = 8, r = m.getBoundingClientRect(), b = d.getBoundingClientRect();
+    let dx = 0; if (r.left < M) dx = M - r.left; else if (r.right > vw - M) dx = vw - M - r.right;
+    if (dx) m.style.transform = "translateX(" + Math.round(dx) + "px)";
+    if (r.bottom > vh - M && b.top - M > r.height + 4) { m.style.top = "auto"; m.style.bottom = "calc(100% + 4px)"; }
+  }
+  document.addEventListener("toggle", (e) => { const d = e.target; if (d && d.matches && d.matches("details.inv-mais") && d.open) posicionarMenuMais(d); }, true);
+  window.addEventListener("resize", () => document.querySelectorAll("details.inv-mais[open]").forEach(posicionarMenuMais));
   document.addEventListener("click", (e) => { document.querySelectorAll("details.inv-mais[open]").forEach((d) => { if (!d.contains(e.target)) d.removeAttribute("open"); }); });
   document.addEventListener("change", (e) => { const t = e.target; if (!t || !t.matches || !t.matches('input[data-inv="qtd"]')) return; const c = t.closest(".item-inv"), it = c && INV()[+c.dataset.i]; if (it) { const alvo = Math.max(0, Math.floor(num(t.value, 0))), tot = qtdLinha(it); if (alvo !== tot) { IV.ajustarQuantidade(cont(), membrosDe(it), alvo - tot); atualizarCarga(); salvarInv(); redesenharInv(); } else t.value = tot; } });
   document.addEventListener("input", (e) => { if (e.target && e.target.id === "ci-q") { catAdd.q = e.target.value; desenharCatAdd(); } });

@@ -423,4 +423,26 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 #inv.inv-grade .inv-card{grid-template-rows:auto 1fr auto}
 #inv.inv-grade .inv-corpo{display:flex;flex-direction:column;min-height:0;align-self:stretch}
 #inv.inv-grade .inv-acoes{margin-top:auto}
-#inv.inv-grade .inv-fim{flex:1 1 100%;order:99}
+/* ordem das ações na grade: quantidade, depois Equipado/Sintonizado/cargas, depois Usar; "Detalhes" + "…" ficam juntos à direita na última linha. Se Usar (ou Equipado) e o par não couberem lado a lado nos 176 px, o par desce inteiro para a última linha e Usar/Equipado ficam na linha de cima. */
+.inv-ctl{display:contents}
+#inv.inv-grade .inv-acoes>*{order:1}
+#inv.inv-grade .inv-acoes .inv-qtd-ctl,#inv.inv-grade .inv-acoes .inv-conj-tag{order:0}
+#inv.inv-grade .inv-acoes [data-inv-usar]{order:2}
+#inv.inv-grade .inv-fim{flex:1 1 auto;justify-content:flex-end;order:3}
+/* tag Mágico e raridade: sempre juntas, na mesma linha, sem quebra */
+.inv-selos{flex-wrap:nowrap;white-space:nowrap}
+#inv.inv-grade .inv-meta .inv-selos{display:flex;margin:2px 0 0}
+#inv.inv-grade .inv-selos{gap:3px}#inv.inv-grade .inv-magico-tag{padding:0 5px;gap:3px}#inv.inv-grade .inv-raridade{gap:4px}#inv.inv-grade .inv-raridade::before{width:7px;height:7px}   /* cabe "✦ Mágico" + "Muito rara" nos 138 px úteis do cartão de 156 px, sem reduzir a fonte */
+.inv-mais-menu{max-width:calc(100vw - 16px)}
+/* telas estreitas (celular e barra lateral de 420 px): "Usar" curto, e na LISTA os controles -, número, + e Usar sempre na mesma linha, com o "…" pequeno no canto superior direito do cartão e "Detalhes" visível ao lado quando couber (senão desce para a linha de baixo, nunca some). */
+@media(max-width:520px){
+  .inv-usar-resto{display:none}
+  #inv:not(.inv-grade) .inv-ctl{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;flex:none}
+  #inv:not(.inv-grade) .inv-acoes>*{order:2}
+  #inv:not(.inv-grade) .inv-acoes>.inv-ctl{order:0}
+  #inv:not(.inv-grade) .inv-acoes>.inv-fim{order:1}   /* Detalhes logo depois de Usar; Equipado, Sintonizado e cargas na linha de baixo */
+  #inv:not(.inv-grade) .inv-mais{position:absolute;top:6px;right:6px}
+  #inv:not(.inv-grade) .inv-mais>summary{min-width:30px;min-height:30px;width:30px;height:30px;padding:0}
+  #inv:not(.inv-grade) .inv-mais>summary svg{width:16px;height:16px}
+  #inv:not(.inv-grade) .inv-titulo{padding-right:30px}
+}

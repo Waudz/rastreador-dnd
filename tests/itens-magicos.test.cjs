@@ -92,7 +92,7 @@ test('CSS: seis raridades com cores distintas só no indicador; mágico = nome d
 });
 
 test('CSS: moldura da miniatura depende só de ser mágico (dourado discreto x cinza-azulado), nunca da raridade; tamanhos intactos',()=>{
-  const css=ler('css/fichas.css'),b=css.slice(css.indexOf('Moldura da miniatura'));
+  const css=ler('css/fichas.css'),b=css.slice(css.indexOf('Moldura da miniatura'),css.indexOf('Grade: "Detalhes"'));
   assert.match(b,/\.inv-card \.inv-thumb\{border-color:#56667A\}/);
   assert.match(b,/\.inv-card\.item-magico \.inv-thumb\{border-color:var\(--gold-dark,#947345\)\}/);
   assert.ok(!/rar-/.test(b),'nenhuma regra de moldura usa a raridade');
@@ -102,9 +102,9 @@ test('CSS: moldura da miniatura depende só de ser mágico (dourado discreto x c
 test('grade: Detalhes e … juntos na última linha do cartão; lista e miniaturas/colunas intactas',()=>{
   const css=ler('css/fichas.css'),b=css.slice(css.indexOf('Grade: "Detalhes"')),p=ler('js/personagem.js');
   assert.ok(p.includes('<span class="inv-fim"><button type="button" class="small subtle" data-inv-detalhes="${i}">Detalhes</button>${mais}</span>'));
-  assert.match(b,/#inv\.inv-grade \.inv-acoes\{margin-top:auto\}/);assert.match(b,/#inv\.inv-grade \.inv-fim\{flex:1 1 100%;order:99\}/);
+  assert.match(b,/#inv\.inv-grade \.inv-acoes\{margin-top:auto\}/);assert.match(b,/#inv\.inv-grade \.inv-fim\{flex:1 1 auto;justify-content:flex-end;order:3\}/);assert.match(b,/\.inv-ctl\{display:contents\}/);assert.match(b,/#inv:not\(\.inv-grade\) \.inv-mais\{position:absolute;top:6px;right:6px\}/);
+  assert.ok(p.includes('<span class="inv-ctl">${qtdUI}${usar}</span>')&&p.includes('posicionarMenuMais'),'quantidade e Usar agrupados; menu … posicionado dentro da janela');
   assert.ok(!/\.inv-thumb|grid-template-columns|minmax/.test(b),'não muda miniatura nem colunas');
-  assert.ok(b.split('\n').filter(l=>/inv-fim|inv-acoes|inv-corpo|grid-template-rows/.test(l)&&!/^\.inv-fim\{/.test(l)).every(l=>l.startsWith('#inv.inv-grade')),'regras de posição só na grade');
 });
 
 test('interface: lista, grade e barra lateral do inventário e o catálogo usam a mesma classificação',()=>{
