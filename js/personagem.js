@@ -567,15 +567,12 @@
   }
   /* quantidade: + e −, ou valor digitado; só ajusta (não é uso nem descarte); nunca negativa */
   function ajustarQtd(i, delta) {
-    const it = itemPor(i); if (!it) return; const mem = membrosDe(it);
-    if (mem.length > 1) { IV.ajustarGrupo(mem, delta); atualizarCarga(); agendar({ inventario: P.inventario }); redesenharInv(); return; }
-    it.qtd = Math.max(0, Math.floor(num(it.qtd, 0)) + delta);
-    const card = document.querySelector(`#inv [data-i="${i}"]`); const inp = card && card.querySelector('input[data-inv="qtd"]'); if (inp) inp.value = it.qtd;
-    if (card) { card.classList.toggle("zerado", it.qtd <= 0); const m = card.querySelector("[data-inv-qtd-menos]"); if (m) m.disabled = it.qtd <= 0; }
-    atualizarCarga(); agendar({ inventario: P.inventario });
+    const it = itemPor(i); if (!it) return;
+    IV.ajustarQuantidade(cont(), membrosDe(it), delta);   // + ganha origem própria ("Adicionado manualmente"); − sai do manual primeiro; nada de pacote é inflado
+    atualizarCarga(); salvarInv(); redesenharInv();
   }
   document.addEventListener("click", (e) => { document.querySelectorAll("details.inv-mais[open]").forEach((d) => { if (!d.contains(e.target)) d.removeAttribute("open"); }); });
-  document.addEventListener("change", (e) => { const t = e.target; if (!t || !t.matches || !t.matches('input[data-inv="qtd"]')) return; const c = t.closest(".item-inv"), it = c && INV()[+c.dataset.i]; if (it) { const tot = qtdLinha(it); t.value = tot; c.classList.toggle("zerado", tot <= 0); const m = c.querySelector("[data-inv-qtd-menos]"); if (m) m.disabled = it.qtd <= 0; } });
+  document.addEventListener("change", (e) => { const t = e.target; if (!t || !t.matches || !t.matches('input[data-inv="qtd"]')) return; const c = t.closest(".item-inv"), it = c && INV()[+c.dataset.i]; if (it) { const alvo = Math.max(0, Math.floor(num(t.value, 0))), tot = qtdLinha(it); if (alvo !== tot) { IV.ajustarQuantidade(cont(), membrosDe(it), alvo - tot); atualizarCarga(); salvarInv(); redesenharInv(); } else t.value = tot; } });
   document.addEventListener("input", (e) => { if (e.target && e.target.id === "ci-q") { catAdd.q = e.target.value; desenharCatAdd(); } });
   document.addEventListener("change", (e) => { if (e.target && e.target.id === "ci-cat") { catAdd.cat = e.target.value; desenharCatAdd(); } });
   if (CAT()) CAT().carregar().then(() => { try { if (P && document.getElementById("inv")) redesenharInv(); } catch (_) { /* a ficha ainda não carregou */ } }).catch(() => {});
@@ -959,7 +956,7 @@
     if (t.dataset.bonustemp) { const k = t.dataset.bonustemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))), f = F(); f.bonusTemp = { ...(f.bonusTemp || {}) }; if (v) f.bonusTemp[k] = v; else delete f.bonusTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.modtemp) { const k = t.dataset.modtemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))); const f = F(); f.modTemp = { ...(f.modTemp || {}) }; if (v) f.modTemp[k] = v; else delete f.modTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.atr) { const k = t.dataset.atr; A()[k] = num(t.value, 10); $("#mod-" + k).textContent = fm(mod(A()[k])); refrescar(); return; }
-    if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; { const it_ = INV()[i]; if (k === "nome") it_.nome = t.value; else if (k === "desc") it_.desc = t.value.slice(0, 1500); else if (k === "qtd") { const mem = membrosDe(it_), alvo = Math.max(0, Math.floor(num(t.value, 0))); if (mem.length > 1) IV.ajustarGrupo(mem, alvo - IV.totalDe(mem)); else it_.qtd = alvo; } else it_[k] = Math.max(0, num(t.value, 0)); } atualizarCarga(); atualizarCartao(t.closest(".item-inv"), INV()[i]); agendar({ inventario: P.inventario }); return; }
+    if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; { const it_ = INV()[i]; if (k === "nome") it_.nome = t.value; else if (k === "desc") it_.desc = t.value.slice(0, 1500); else if (k === "qtd") { /* aplicado ao confirmar (evento change), para não desfazer origens a cada tecla */ } else it_[k] = Math.max(0, num(t.value, 0)); } atualizarCarga(); atualizarCartao(t.closest(".item-inv"), INV()[i]); agendar({ inventario: P.inventario }); return; }
     if (t.dataset.din) { DIN()[t.dataset.din] = moeda(t.value); t.value = DIN()[t.dataset.din]; $("#total-po").textContent = totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); agendar({ dinheiro: P.dinheiro }); return; }
     if (t.dataset.cls) { const i = +t.closest("[data-ci]").dataset.ci, k = t.dataset.cls; if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; if (k === "n") CLS()[i].n = Math.max(1, Math.min(Math.max(1,20-R.nivelTotal(CLS().filter((_,j)=>j!==i))), Math.floor(num(t.value, 1)))); else if (k === "sub") { CLS()[i].sub = t.value; } else return; refrescar(); return; }
     if (t.dataset.atq && t.tagName === "INPUT" && t.type !== "checkbox") { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = ["magico", "extra"].includes(k) ? num(t.value, 0) : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
@@ -993,7 +990,7 @@
     }
     if (t.dataset.prep) { const magia=MAG()[+t.dataset.prep],limites=R.preparacao(F()).filter(x=>x.pertence(magia)),disponivel=limites.find(x=>x.usadas<x.limite);if(t.checked&&!magia.prep&&!disponivel){t.checked=false;aviso("Limite de magias preparadas atingido. Desmarque uma magia antes de preparar outra.",true);return;}if(disponivel)magia.classePreparacao=disponivel.id; magia.prep = t.checked; $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.invTipo !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; it.tipo = t.value; salvarInv(); redesenharInv(); return; }
-    if (t.dataset.invEquip !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; if (equipavel(it)) { try { EF().alternar(P, it.uid, t.checked); } catch (err) { t.checked = !t.checked; aviso(err.message, true); return; } $("#lista-atq") && ($("#lista-atq").innerHTML = listaAtq()); const sa = $("#eq-arm"), se = $("#eq-esc"); if (sa) sa.value = EQ().armadura || ""; if (se) se.checked = !!EQ().escudo; } else it.equipado = t.checked; salvarInv(); refrescar(); redesenharInv(); return; }
+    if (t.dataset.invEquip !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; if (equipavel(it)) { try { EF().alternar(P, (t.checked ? (membrosDe(it).find((m) => num(m.qtd, 0) >= 1) || it) : it).uid, t.checked); } catch (err) { t.checked = !t.checked; aviso(err.message, true); return; } $("#lista-atq") && ($("#lista-atq").innerHTML = listaAtq()); const sa = $("#eq-arm"), se = $("#eq-esc"); if (sa) sa.value = EQ().armadura || ""; if (se) se.checked = !!EQ().escudo; } else it.equipado = t.checked; salvarInv(); refrescar(); redesenharInv(); return; }
     if (t.dataset.invSint !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; try { IV.sintonizar(cont(), it.uid, t.checked); } catch (e) { t.checked = !t.checked; aviso(e.message, true); return; } salvarInv(); refrescar(); redesenharInv(); return; }
     if (t.name === "uso-alvo" && uso) { uso.alvo = t.value; renderUso(); return; }
     if (t.dataset.usoDano !== undefined && uso) { uso.danos[+t.dataset.usoDano] = t.value; atualizaUso(); return; }

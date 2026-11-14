@@ -134,7 +134,37 @@
     for (const m of [...membros].reverse()) { if (!(falta > 0)) break; const k = Math.min(falta, Math.floor(num(m.qtd, 0))); if (k >= 1) { saidas.push(retirar(c, m.uid, k, { ...meta, extra: { ...(meta.extra || {}), origem: m.origem || null } })); falta -= k; } }
     return saidas;
   }
-  /* + e − na linha agrupada: soma vai para o principal; subtração sai do último registro com unidades (nunca negativa, sem entrada de histórico, como o ajuste individual) */
+  /* Ajuste manual de quantidade (+, − e quantidade digitada), na linha agrupada ou num registro só.
+     + : unidades novas ganham origem PRÓPRIA (id "manual"): entram num registro "Adicionado manualmente" (criado se não existir), sem mexer na quantidade de pacote/criação.
+         Só soma direto no registro quando nenhum dos registros tem origem a preservar (item avulso sem origem identificada).
+     − : sai primeiro do registro manual, depois do último para o primeiro; nunca fica negativa e o registro zerado continua na lista. O histórico recebe 'ajuste' (junta ajustes seguidos do mesmo registro). */
+  const ehManual = (m) => !!(m.origem && m.origem.id === "manual");
+  const preservaOrigem = (m) => !!(m.origem && (m.origem.id || m.origem.pacote || m.origem.tipo === "criacao" || m.origem.tipo === "inicial"));
+  function registrarAjuste(c, m, delta, nota) {
+    const ult = c.movimentos[c.movimentos.length - 1];
+    if (ult && ult.tipo === "ajuste" && ult.uid === m.uid) { ult.qtd = num(ult.qtd, 0) + delta; ult.quando = agora(); return; }
+    registrar(c, { tipo: "ajuste", uid: m.uid, nome: m.nome, qtd: delta, nota, origem: m.origem || null });
+  }
+  function ajustarQuantidade(c, membros, delta) {
+    delta = Math.trunc(num(delta, 0)); if (!delta || !membros.length) return null;
+    if (delta > 0) {
+      const man = membros.find(ehManual);
+      if (man) { man.qtd = Math.max(0, Math.floor(num(man.qtd, 0))) + delta; registrarAjuste(c, man, delta, "Adicionado manualmente"); return man; }
+      if (!membros.some(preservaOrigem)) { const b = membros[0]; b.qtd = Math.max(0, Math.floor(num(b.qtd, 0))) + delta; return b; }
+      const base = membros[0], ultimo = membros[membros.length - 1];
+      const novo = { ...copia(base), uid: uid(), qtd: delta, equipado: false, origem: { tipo: "jogo", id: "manual", nota: "Adicionado manualmente" } }; delete novo.origemUid;
+      c.itens.splice(c.itens.indexOf(ultimo) + 1, 0, novo);
+      registrar(c, { tipo: "entrada", uid: novo.uid, nome: novo.nome, qtd: delta, nota: "Adicionado manualmente", origem: novo.origem });
+      return novo;
+    }
+    let falta = -delta;
+    for (const m of [...membros.filter(ehManual), ...[...membros].reverse().filter((x) => !ehManual(x))]) {
+      if (!(falta > 0)) break; const atual = Math.max(0, Math.floor(num(m.qtd, 0))), k = Math.min(falta, atual); if (!k) continue;
+      m.qtd = atual - k; falta -= k; if (preservaOrigem(m) || membros.length > 1) registrarAjuste(c, m, -k, "Ajuste de quantidade");
+    }
+    return null;
+  }
+  /* + e − na linha agrupada (versão antiga, sem histórico): soma vai para o principal; subtração sai do último registro com unidades (nunca negativa, sem entrada de histórico, como o ajuste individual) */
   function ajustarGrupo(membros, delta) {
     delta = Math.trunc(num(delta, 0));
     if (delta > 0) { membros[0].qtd = Math.max(0, Math.floor(num(membros[0].qtd, 0))) + delta; return; }
@@ -147,5 +177,6 @@
   ROTULO_MOV.exclusao = "Item excluído";
   ROTULO_MOV["retirada-componente"] = "Componente retirado";
 
-  window.INVENTARIO = { TIPOS, LIMITE_SINTONIA, novoItem, normalizar, conteinerDe, adicionar, retirar, consumir, transferir, chaveGrupo, agrupar, totalDe, retirarDoGrupo, ajustarGrupo, criarPergaminho, sintonizar, sintonizados, usarCarga, pesoTotal, registrar, ROTULO_MOV };
+  ROTULO_MOV.divisao = "Unidade separada"; ROTULO_MOV.ajuste = "Ajuste de quantidade";
+  window.INVENTARIO = { TIPOS, ajustarQuantidade, ehManual, LIMITE_SINTONIA, novoItem, normalizar, conteinerDe, adicionar, retirar, consumir, transferir, chaveGrupo, agrupar, totalDe, retirarDoGrupo, ajustarGrupo, criarPergaminho, sintonizar, sintonizados, usarCarga, pesoTotal, registrar, ROTULO_MOV };
 })();

@@ -52,13 +52,24 @@
     if (u && (!uidAtual || e.escudoUid === uidAtual)) { const it = porUid(P, u); if (it) it.equipado = false; e.escudo = false; delete e.escudoUid; }
   }
 
+  /* Equipar uma pilha (qtd > 1) equipa UMA unidade: separa 1 unidade num registro novo (uid novo, origem copiada, origemUid apontando para a pilha) e deixa o resto da pilha intacto,
+     com o uid, a origem e o histórico de sempre. Nada é apagado; o registro novo é o que a ficha liga. Munição não é equipável; armas de arremesso seguem a mesma regra (uma unidade equipada). */
+  function separarUnidade(P, it) {
+    const IVn = window.INVENTARIO; if (!IVn || !(Number(it.qtd) > 1)) return it;
+    const novo = { ...JSON.parse(JSON.stringify(it)), uid: IVn.novoItem({}).uid, qtd: 1, equipado: false, origemUid: it.uid };
+    const L = inv(P); L.splice(L.indexOf(it) + 1, 0, novo); it.qtd -= 1;
+    IVn.registrar(IVn.conteinerDe(P), { tipo: "divisao", uid: it.uid, nome: it.nome, qtd: 1, nota: "Unidade separada para equipar", para: novo.uid, origem: it.origem || null });
+    return novo;
+  }
+  const jaLigado = (P, uid) => { const f = P.ficha || {}, e = f.equip || {}; return (f.ataques || []).some((x) => x.itemUid === uid) || e.armaduraUid === uid || e.escudoUid === uid; };
   function equipar(P, uid) {
-    const it = porUid(P, uid); if (!existe(it)) throw new Error("Este item não está no inventário.");
+    let it = porUid(P, uid); if (!existe(it)) throw new Error("Este item não está no inventário.");
     const cat = catDoItem(it), tipo = tipoEquipavel(cat);
     if (!tipo) throw new Error(cat ? "Este item não é arma, armadura nem escudo." : "Este item não está ligado ao catálogo; ligue-o antes de equipar.");
     const f = (P.ficha = P.ficha || {}), e = equipF(f);
+    if (tipo === "arma" && !(cat.arma && cat.arma.dano && cat.arma.dano.dado)) throw new Error("Esta arma não tem dano definido no catálogo.");
+    if (Number(it.qtd) > 1 && !jaLigado(P, uid)) { it = separarUnidade(P, it); uid = it.uid; }
     if (tipo === "arma") {
-      if (!(cat.arma && cat.arma.dano && cat.arma.dano.dado)) throw new Error("Esta arma não tem dano definido no catálogo.");
       const L = ataquesF(f), linha = L.find((x) => x.itemUid === uid), nova = linhaDeArma(f, it, cat), g = f.armasGuardadas && f.armasGuardadas[uid];
       if (linha) Object.assign(linha, { nome: nova.nome, armaId: nova.armaId });
       else {
@@ -133,10 +144,11 @@
   function vincularItem(P, uid, catId) { const it = porUid(P, uid); if (!existe(it)) throw new Error("Este item não está no inventário."); completarIds(it, catId); return equipar(P, uid); }
   /* linha de ataque que já existe na ficha (adicionada pela lista de armas) + item do inventário */
   function vincularLinha(P, indice, uid) {
-    const f = P.ficha, linha = f.ataques && f.ataques[indice], it = porUid(P, uid);
+    const f = P.ficha, linha = f.ataques && f.ataques[indice]; let it = porUid(P, uid);
     if (!linha || !existe(it)) throw new Error("Ataque ou item não encontrado.");
     if (linha.itemUid && linha.itemUid !== uid) throw new Error("Este ataque já está ligado a outro item.");
     const cat = catDoItem(it); if (!cat) { const k = linha.armaId; if (!k) throw new Error("Item sem vínculo com o catálogo."); completarIds(it, k); }
+    if (Number(it.qtd) > 1 && !jaLigado(P, uid)) { it = separarUnidade(P, it); uid = it.uid; }
     linha.itemUid = uid; linha.armaId = linha.armaId || (catDoItem(it) || {}).id; it.equipado = true; return linha;
   }
 
@@ -208,5 +220,5 @@
     return mudancas;
   }
 
-  window.EQUIP_FICHA = { tipoEquipavel, proficiente, linhaDeArma, equipar, desequipar, alternar, reconciliar, diagnosticar, resumo, procurar, vincularItem, vincularLinha, aplicarVinculos, catDoItem };
+  window.EQUIP_FICHA = { tipoEquipavel, proficiente, linhaDeArma, equipar, desequipar, alternar, reconciliar, separarUnidade, diagnosticar, resumo, procurar, vincularItem, vincularLinha, aplicarVinculos, catDoItem };
 })();

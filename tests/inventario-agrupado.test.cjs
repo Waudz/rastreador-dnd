@@ -102,7 +102,7 @@ test('interface: linha agrupada usa o total, lista as origens nos detalhes e age
   const src=ler('js/personagem.js');
   assert.match(src,/listaInvHTML\(\)/);assert.match(src,/IV\.agrupar\(INV\(\), exclGrupo\(\)\)/);
   assert.match(src,/`Origem · \$\{Math\.max\(0, num\(m\.qtd, 0\)\)\}×`/);
-  assert.match(src,/IV\.retirarDoGrupo\(cont\(\), mem, n/);assert.match(src,/IV\.ajustarGrupo\(mem, delta\)/);
+  assert.match(src,/IV\.retirarDoGrupo\(cont\(\), mem, n/);assert.match(src,/IV\.ajustarQuantidade\(cont\(\), membrosDe\(it\), delta\)/);
   assert.match(src,/Faz parte do/);
   assert.ok(!/INV\(\)\.map\(linhaInv\)/.test(src),'nenhuma lista renderiza item por item sem agrupar');
 });
