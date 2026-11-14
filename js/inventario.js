@@ -107,11 +107,45 @@
     if (g.atual < n) throw new Error("Cargas insuficientes."); g.atual -= n;
     registrar(c, { tipo: "carga", uid: id, nome: it.nome, qtd: n, nota: "" }); return g;
   }
+  /* ---------- Agrupamento VISUAL de itens idênticos ----------
+     Os registros continuam individuais (cada um com o próprio uid, origem e quantidade); só a tela os mostra numa linha. Dois registros são "idênticos" quando têm o mesmo ID de catálogo,
+     tipo, nome, peso, preço, descrição e propriedades (raridade, sintonia, cargas, efeitos...), e nenhum está equipado, é conjunto, pergaminho com magia ou está ligado à ficha.
+     Itens sem ID de catálogo nunca se agrupam (não há como saber se são o mesmo). */
+  const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  const ordenado = (v) => (Array.isArray(v) ? v.map(ordenado) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, ordenado(v[k])])) : v);
+  function chaveGrupo(it, excluir) {
+    if (!it || it.conjunto || it.equipado || it.magiaVinculada || (excluir && excluir.has(it.uid))) return null;
+    const id = it.catId || it.ref; if (!id) return null;
+    return JSON.stringify([id, it.tipo || "equipamento", norm(it.nome), num(it.peso, 0), it.preco == null ? null : num(it.preco, 0), String(it.desc || ""), ordenado(it.propriedades || {})]);
+  }
+  /* Map uid -> { principal, membros } só para grupos com 2 ou mais registros; o principal é o primeiro do inventário */
+  function agrupar(itens, excluir) {
+    const por = new Map(), saida = new Map();
+    for (const it of itens || []) { const k = chaveGrupo(it, excluir); if (k) (por.get(k) || por.set(k, []).get(k)).push(it); }
+    for (const membros of por.values()) if (membros.length > 1) { const g = { principal: membros[0], membros }; for (const m of membros) saida.set(m.uid, g); }
+    return saida;
+  }
+  const totalDe = (membros) => membros.reduce((n, m) => n + Math.max(0, Math.floor(num(m.qtd, 0))), 0);
+  /* retira n unidades do grupo (do último registro para o primeiro), pelo caminho normal de `retirar`: cada registro mantém o próprio histórico e o que sobra mantém a origem */
+  function retirarDoGrupo(c, membros, n, meta = {}) {
+    const total = totalDe(membros); n = Math.floor(num(n, 0));
+    if (!(n >= 1) || n > total) throw new Error("Quantidade inválida: há " + total + ".");
+    let falta = n; const saidas = [];
+    for (const m of [...membros].reverse()) { if (!(falta > 0)) break; const k = Math.min(falta, Math.floor(num(m.qtd, 0))); if (k >= 1) { saidas.push(retirar(c, m.uid, k, { ...meta, extra: { ...(meta.extra || {}), origem: m.origem || null } })); falta -= k; } }
+    return saidas;
+  }
+  /* + e − na linha agrupada: soma vai para o principal; subtração sai do último registro com unidades (nunca negativa, sem entrada de histórico, como o ajuste individual) */
+  function ajustarGrupo(membros, delta) {
+    delta = Math.trunc(num(delta, 0));
+    if (delta > 0) { membros[0].qtd = Math.max(0, Math.floor(num(membros[0].qtd, 0))) + delta; return; }
+    let falta = -delta;
+    for (const m of [...membros].reverse()) { if (!(falta > 0)) break; const k = Math.min(falta, Math.max(0, Math.floor(num(m.qtd, 0)))); m.qtd = Math.max(0, Math.floor(num(m.qtd, 0))) - k; falta -= k; }
+  }
   const pesoTotal = (itens) => (itens || []).reduce((s, i) => s + num(i.qtd, 0) * num(i.peso, 0), 0);
   const ROTULO_MOV = { entrada: "Entrada", saida: "Saída", uso: "Uso", descarte: "Descarte", carga: "Carga usada", copia: "Pergaminho copiado", "transferencia-entrada": "Recebido", "transferencia-saida": "Entregue", compra: "Compra", venda: "Venda", saque: "Saque" };
 
   ROTULO_MOV.exclusao = "Item excluído";
   ROTULO_MOV["retirada-componente"] = "Componente retirado";
 
-  window.INVENTARIO = { TIPOS, LIMITE_SINTONIA, novoItem, normalizar, conteinerDe, adicionar, retirar, consumir, transferir, criarPergaminho, sintonizar, sintonizados, usarCarga, pesoTotal, registrar, ROTULO_MOV };
+  window.INVENTARIO = { TIPOS, LIMITE_SINTONIA, novoItem, normalizar, conteinerDe, adicionar, retirar, consumir, transferir, chaveGrupo, agrupar, totalDe, retirarDoGrupo, ajustarGrupo, criarPergaminho, sintonizar, sintonizados, usarCarga, pesoTotal, registrar, ROTULO_MOV };
 })();

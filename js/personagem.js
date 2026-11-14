@@ -351,13 +351,20 @@
   function escolherAdd(tipo) { const p = document.getElementById("inv-add"); if (!p) return; if (tipo === "cat") desenharCatAdd(); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.invAddTipo === tipo))); p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = x.dataset.addLinha !== tipo; }); const f = p.querySelector('[data-add-linha="' + tipo + '"] input, [data-add-linha="' + tipo + '"] select, [data-add-linha="' + tipo + '"] button'); if (f) f.focus(); }
   function atualizarCartao(card, it) {
     if (!card || !it) return; const n = card.querySelector(".inv-nome-txt"), q = card.querySelector(".inv-qtd-badge"), p = card.querySelector(".inv-peso-txt");
-    if (n) n.textContent = (it.nome || "").trim() || "Item sem nome"; if (q) q.textContent = "×" + num(it.qtd, 1); if (p) p.textContent = kg(num(it.peso, 0)) + " kg cada";
+    if (n) n.textContent = (it.nome || "").trim() || "Item sem nome"; if (q) q.textContent = "×" + qtdLinha(it); if (p) p.textContent = kg(num(it.peso, 0)) + " kg cada";
   }
   /* arma, armadura ou escudo do catálogo: o "Equipado" do inventário liga o item à ficha (EQUIP_FICHA) */
   const EF = () => window.EQUIP_FICHA;
   const equipavel = (it) => { const E = EF(); return !!(E && E.tipoEquipavel(E.catDoItem(it))); };
   /* "Faz parte do Pacote de X": origem do componente (não substitui a descrição do item). Itens antigos da criação trazem o nome do pacote só na nota. */
   const pacoteDe = (it) => { const o = (it && it.origem) || {}; if (o.pacote && o.pacote.nome) return o.pacote.nome; const m = /(Pacote d[eao] [^—]+)$/.exec(o.nota || ""); return m ? m[1].trim() : ""; };
+  /* agrupamento visual de itens idênticos (registros, uid e origens continuam individuais; ver INVENTARIO.agrupar) */
+  const exclGrupo = () => { const f = F(), e = f.equip || {}; return new Set([...(f.ataques || []).map((a) => a.itemUid), e.armaduraUid, e.escudoUid, ...Object.keys(f.armasGuardadas || {})].filter(Boolean)); };
+  const gruposInv = () => IV.agrupar(INV(), exclGrupo());
+  const membrosDe = (it) => { const g = gruposInv().get(it.uid); return g ? g.membros : [it]; };
+  const qtdLinha = (it) => { const m = membrosDe(it); return m.length > 1 ? IV.totalDe(m) : Math.max(0, num(it.qtd, 1)); };
+  const rotuloOrigemItem = (it) => { const p = pacoteDe(it), o = (it && it.origem) || {}; return p ? "Faz parte do " + p : !o.tipo || o.tipo === "inicial" ? "Inicial" : (ROT_ORIGEM[o.tipo] || o.tipo) + (o.nota ? ": " + o.nota : ""); };
+  const listaInvHTML = () => { const gs = gruposInv(); return INV().map((it, i) => { const g = gs.get(it.uid); return g && g.principal !== it ? "" : linhaInv(it, i); }).join(""); };
   function linhaInv(it, i) {
     const t = it.tipo || "equipamento", pr = it.propriedades || {}, sint = pr.sintonia && pr.sintonia.requer, passivo = IE.efeitosDe(it).some((e) => e.passivo);
     const acoes = [];
@@ -367,8 +374,8 @@
     if (sint) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-sint ${pr.sintonia.sintonizado ? "checked" : ""}> Sintonizado</label>`);
     if (pr.cargas) acoes.push(`<span class="muted">Cargas ${num(pr.cargas.atual, 0)}/${num(pr.cargas.max, 0)}</span>`);
     if (pr.raridade) acoes.push(`<span class="muted">${esc(pr.raridade)}</span>`);
-    const pac = pacoteDe(it), org = pac ? ` · Faz parte do ${esc(pac)}` : it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? ` · ${esc(ROT_ORIGEM[it.origem.tipo] || it.origem.tipo)}${it.origem.nota ? ": " + esc(it.origem.nota) : ""}` : "";
-    const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim(), qn = Math.max(0, num(it.qtd, 1));
+    const pac = pacoteDe(it), org = membrosDe(it).length > 1 ? ` · ${membrosDe(it).length} origens (veja os detalhes)` : pac ? ` · Faz parte do ${esc(pac)}` : it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? ` · ${esc(ROT_ORIGEM[it.origem.tipo] || it.origem.tipo)}${it.origem.nota ? ": " + esc(it.origem.nota) : ""}` : "";
+    const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim(), membros = membrosDe(it), agrup = membros.length > 1, qn = agrup ? IV.totalDe(membros) : Math.max(0, num(it.qtd, 1));
     const thumb = `<button type="button" class="inv-thumb${im ? "" : " vazio"}" data-inv-detalhes="${i}" aria-label="Abrir os detalhes de ${nomeIt}" title="Ver detalhes">${im ? `<img class="inv-thumb-img" src="${esc(im.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : (window.ico ? window.ico(II.ICONE[t] || "bag") : "")}</button>`;
     const qtdCtl = `<span class="inv-qtd-ctl" role="group" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-menos="${i}" aria-label="Diminuir a quantidade de ${nomeIt}"${qn <= 0 ? " disabled" : ""}>−</button><input class="num" type="number" min="0" step="1" inputmode="numeric" data-inv="qtd" value="${qn}" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-mais="${i}" aria-label="Aumentar a quantidade de ${nomeIt}">+</button></span>`;
     const qtdUI = it.conjunto ? `<span class="inv-conj-tag">Conjunto · ${it.conjunto.reduce((n, c) => n + Math.max(0, num(c.qtd, 0)), 0)} unidades</span>` : qtdCtl;
@@ -447,7 +454,7 @@
   /* ficha de leitura do item: a mesma de js/catalogo-itens.js (aba Itens), com o estado deste personagem (quantidade, sintonia, cargas) */
   const CAT = () => window.CAT_ITENS || null;
   function viewDoItem(it) {
-    const C = CAT(), cat = C && C.doInventario(it), t = it.tipo || "equipamento", pr = it.propriedades || {}, efs = IE.efeitosDe(it), im = II.obter(F(), it), qn = Math.max(0, num(it.qtd, 1));
+    const C = CAT(), cat = C && C.doInventario(it), t = it.tipo || "equipamento", pr = it.propriedades || {}, efs = IE.efeitosDe(it), im = II.obter(F(), it), membros = membrosDe(it), qn = membros.length > 1 ? IV.totalDe(membros) : Math.max(0, num(it.qtd, 1));
     const consumo = pr.consumo || (t === "magico" ? "carga" : "unidade"), usavel = IE.temEfeitos(it) || t === "consumivel";
     const org = it.origem && it.origem.tipo && it.origem.tipo !== "inicial" ? (ROT_ORIGEM[it.origem.tipo] || it.origem.tipo) + (it.origem.nota ? ": " + it.origem.nota : "") : "";
     const raridade = pr.raridade || (cat && cat.raridade ? C.RARIDADES[cat.raridade] : ""), exigeSint = pr.sintonia ? !!pr.sintonia.requer : !!(cat && cat.sintonia);
@@ -458,8 +465,7 @@
       pr.cargas ? ["Cargas", `${num(pr.cargas.atual, 0)} de ${num(pr.cargas.max, 0)}${pr.cargas.recarga ? " · recarga: " + pr.cargas.recarga : ""}`] : null,
       usavel && efs.some((e) => !e.passivo) ? ["Ao usar", consumo === "carga" ? "Gasta carga(s) do item" : consumo === "nenhum" ? "Não gasta nada" : "Gasta 1 unidade"] : null,
       it.magiaVinculada ? ["Magia", `${it.magiaVinculada.n} (${Number(it.magiaVinculada.l) ? it.magiaVinculada.l + "º círculo" : "truque"})`] : null,
-      pacoteDe(it) ? ["Pacote", "Faz parte do " + pacoteDe(it)] : null,
-      org && !pacoteDe(it) ? ["Origem", org] : null,
+      ...(membros.length > 1 ? membros.map((m) => [`Origem · ${Math.max(0, num(m.qtd, 0))}×`, rotuloOrigemItem(m)]) : [pacoteDe(it) ? ["Pacote", "Faz parte do " + pacoteDe(it)] : null, org && !pacoteDe(it) ? ["Origem", org] : null]),
     ].filter(Boolean);
     const doCatalogo = cat ? C.linhas(cat).filter(([k]) => !["Peso", "Raridade", "Sintonia"].includes(k)) : [];
     return { usavel, v: { nome: it.nome || "Item sem nome", categoria: cat ? cat.categoria : t, imagem: im ? im.src : null, subtitulo: [IV.TIPOS[t] || t, raridade].filter(Boolean).join(" · ") + (cat ? " · " + C.rotuloCat(cat.categoria) : ""),
@@ -532,7 +538,7 @@
   }
   /* Descartar: escolhe quantas unidades; registra no histórico; zerar tira o item da lista (com confirmação extra) */
   function abrirDescartar(i) {
-    const it = itemPor(i); if (!it) return; const total = Math.floor(num(it.qtd, 0));
+    const it = itemPor(i); if (!it) return; const total = qtdLinha(it);
     if (total < 1) { aviso("Este item não tem unidades para descartar. Use Excluir item para tirá-lo da lista.", true); return; }
     const { ov, fim } = modalInv("Descartar item", `<h3>Descartar: ${esc(it.nome || "item")}</h3><p class="muted">Você tem ${total} unidade${total === 1 ? "" : "s"}. O descarte fica registrado no histórico de movimentações.</p>
       <label>Quantas unidades<input id="dsc-qtd" class="num" type="number" min="1" max="${total}" step="1" value="1"></label>
@@ -544,30 +550,32 @@
     ok.addEventListener("click", () => {
       const n = Math.floor(num(q.value, 0)); if (!(n >= 1) || n > total) { av.textContent = `Informe de 1 a ${total}.`; return; }
       if (n === total && !confirmando) { confirmando = true; ok.textContent = "Confirmar: descartar todas"; av.textContent = `Isso descarta todas as ${total} unidades e tira o item da lista.`; return; }
-      try { IV.retirar(cont(), it.uid, n, { tipo: "descarte", nota: ov.querySelector("#dsc-nota").value.trim() }); } catch (err) { av.textContent = err.message; return; }
+      try { const mem = membrosDe(it); if (mem.length > 1) IV.retirarDoGrupo(cont(), mem, n, { tipo: "descarte", nota: ov.querySelector("#dsc-nota").value.trim() }); else IV.retirar(cont(), it.uid, n, { tipo: "descarte", nota: ov.querySelector("#dsc-nota").value.trim() }); } catch (err) { av.textContent = err.message; return; }
       fim(); salvarInv(); redesenharInv(); aviso(`${n} unidade${n === 1 ? "" : "s"} de ${it.nome || "item"} descartada${n === 1 ? "" : "s"}.`);
     });
   }
   /* Excluir: correção administrativa (cadastro errado); não é descarte nem uso, e fica marcada no histórico como exclusão */
   function abrirExcluir(i) {
     const it = itemPor(i); if (!it) return;
-    const { ov, fim } = modalInv("Excluir item", `<h3>Excluir: ${esc(it.nome || "item")}</h3><p>Remove o item da lista <b>sem</b> contar como descarte ou uso, como a correção de um cadastro errado. A exclusão fica marcada no histórico e não pode ser desfeita.</p>
+    const { ov, fim } = modalInv("Excluir item", `<h3>Excluir: ${esc(it.nome || "item")}</h3><p>${membrosDe(it).length > 1 ? `Esta linha reúne ${membrosDe(it).length} registros (${qtdLinha(it)} unidades) e todos serão excluídos. ` : ""}Remove o item da lista <b>sem</b> contar como descarte ou uso, como a correção de um cadastro errado. A exclusão fica marcada no histórico e não pode ser desfeita.</p>
       <div class="row"><button type="button" class="danger" id="exc-ok">Excluir item</button><button type="button" class="small subtle" data-modal-fechar>Cancelar</button></div>`);
     ov.querySelector("#exc-ok").addEventListener("click", () => {
-      const k = INV().indexOf(it); if (k < 0) { fim(); return; }
-      IV.registrar(cont(), { tipo: "exclusao", uid: it.uid, nome: it.nome, qtd: num(it.qtd, 0), nota: "Excluído do inventário" }); INV().splice(k, 1);
+      const alvos = membrosDe(it).filter((m) => INV().indexOf(m) >= 0); if (!alvos.length) { fim(); return; }
+      for (const m of alvos) { IV.registrar(cont(), { tipo: "exclusao", uid: m.uid, nome: m.nome, qtd: num(m.qtd, 0), nota: "Excluído do inventário" }); INV().splice(INV().indexOf(m), 1); }
       fim(); salvarInv(); redesenharInv(); aviso(`${it.nome || "Item"} excluído do inventário.`);
     });
   }
   /* quantidade: + e −, ou valor digitado; só ajusta (não é uso nem descarte); nunca negativa */
   function ajustarQtd(i, delta) {
-    const it = itemPor(i); if (!it) return; it.qtd = Math.max(0, Math.floor(num(it.qtd, 0)) + delta);
+    const it = itemPor(i); if (!it) return; const mem = membrosDe(it);
+    if (mem.length > 1) { IV.ajustarGrupo(mem, delta); atualizarCarga(); agendar({ inventario: P.inventario }); redesenharInv(); return; }
+    it.qtd = Math.max(0, Math.floor(num(it.qtd, 0)) + delta);
     const card = document.querySelector(`#inv [data-i="${i}"]`); const inp = card && card.querySelector('input[data-inv="qtd"]'); if (inp) inp.value = it.qtd;
     if (card) { card.classList.toggle("zerado", it.qtd <= 0); const m = card.querySelector("[data-inv-qtd-menos]"); if (m) m.disabled = it.qtd <= 0; }
     atualizarCarga(); agendar({ inventario: P.inventario });
   }
   document.addEventListener("click", (e) => { document.querySelectorAll("details.inv-mais[open]").forEach((d) => { if (!d.contains(e.target)) d.removeAttribute("open"); }); });
-  document.addEventListener("change", (e) => { const t = e.target; if (!t || !t.matches || !t.matches('input[data-inv="qtd"]')) return; const c = t.closest(".item-inv"), it = c && INV()[+c.dataset.i]; if (it) { t.value = it.qtd; c.classList.toggle("zerado", it.qtd <= 0); const m = c.querySelector("[data-inv-qtd-menos]"); if (m) m.disabled = it.qtd <= 0; } });
+  document.addEventListener("change", (e) => { const t = e.target; if (!t || !t.matches || !t.matches('input[data-inv="qtd"]')) return; const c = t.closest(".item-inv"), it = c && INV()[+c.dataset.i]; if (it) { const tot = qtdLinha(it); t.value = tot; c.classList.toggle("zerado", tot <= 0); const m = c.querySelector("[data-inv-qtd-menos]"); if (m) m.disabled = it.qtd <= 0; } });
   document.addEventListener("input", (e) => { if (e.target && e.target.id === "ci-q") { catAdd.q = e.target.value; desenharCatAdd(); } });
   document.addEventListener("change", (e) => { if (e.target && e.target.id === "ci-cat") { catAdd.cat = e.target.value; desenharCatAdd(); } });
   if (CAT()) CAT().carregar().then(() => { try { if (P && document.getElementById("inv")) redesenharInv(); } catch (_) { /* a ficha ainda não carregou */ } }).catch(() => {});
@@ -576,7 +584,7 @@
     return l.length ? `<ul class="hist-inv">${l.map((m) => `<li><b>${esc(IV.ROTULO_MOV[m.tipo] || (m.tipo === "uso-efeito" ? "Uso" : m.tipo))}</b> · ${esc(m.nome || "")}${m.qtd ? " ×" + m.qtd : ""}${m.alvo && m.tipo === "uso-efeito" ? " em " + esc(m.alvo) : ""}${m.resultado && m.resultado.length ? " — " + esc(m.resultado.join("; ")) : ""}${m.nota ? " (" + esc(m.nota) + ")" : ""} <span class="muted">${esc(String(m.quando || "").slice(0, 16).replace("T", " "))}</span></li>`).join("")}</ul>` : '<span class="muted">Nenhuma movimentação registrada.</span>';
   }
   function redesenharInv() {
-    const l = $("#inv"); if (l) l.innerHTML = INV().map(linhaInv).join("");
+    const l = $("#inv"); if (l) l.innerHTML = listaInvHTML();
     const h = $("#inv-hist"); if (h) h.innerHTML = histInv();
     atualizarCarga(); const e = $("#bloco-efeitos"); if (e) e.innerHTML = blocoEfeitos();
   }
@@ -846,7 +854,7 @@
           <div class="inv-add-linha" data-add-linha="cat" hidden><label for="ci-q">Buscar no catálogo (armas, armaduras, equipamento, poções, itens mágicos, pacotes…)</label><div class="row"><input id="ci-q" type="search" placeholder="Nome do item…" autocomplete="off" style="flex:1 1 180px"><select id="ci-cat" aria-label="Categoria" style="flex:0 1 200px"><option value="">Todas as categorias</option>${(CAT() ? CAT().CATEGORIAS : []).map(([k, n]) => `<option value="${k}">${esc(n)}</option>`).join("")}</select></div><div id="ci-res" class="inv-cat-res"></div></div>
           <div class="inv-add-linha" data-add-linha="perg" hidden><label for="pg-mag">Pergaminho de magia</label><div class="row"><select id="pg-mag" style="flex:1 1 200px" aria-label="Magia do pergaminho">${opt("", "Escolher a magia…", true)}</select><input id="pg-nota" style="flex:1 1 140px" maxlength="80" placeholder="Onde foi encontrado (opcional)"><button type="button" class="small" id="pg-add">Adicionar pergaminho</button></div></div>
           <div class="inv-add-linha" data-add-linha="livre" hidden><label>Outro item (personalizado)</label><div class="row"><button type="button" class="small" id="add-item">Adicionar item em branco</button><span class="muted">Cria uma linha vazia na lista acima para você preencher nome, quantidade e peso.</span></div></div>
-        </div><div id="inv" class="${vistaInv === "grade" ? "inv-grade" : ""}">${INV().map(linhaInv).join("")}</div>
+        </div><div id="inv" class="${vistaInv === "grade" ? "inv-grade" : ""}">${listaInvHTML()}</div>
         <div id="bloco-carga">${blocoCarga()}</div>
         <div id="uso-box" class="panel" hidden></div><div id="ef-box" class="panel" hidden></div>
 <h3 class="sub inv-tit">Dinheiro</h3>
@@ -951,7 +959,7 @@
     if (t.dataset.bonustemp) { const k = t.dataset.bonustemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))), f = F(); f.bonusTemp = { ...(f.bonusTemp || {}) }; if (v) f.bonusTemp[k] = v; else delete f.bonusTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.modtemp) { const k = t.dataset.modtemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))); const f = F(); f.modTemp = { ...(f.modTemp || {}) }; if (v) f.modTemp[k] = v; else delete f.modTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.atr) { const k = t.dataset.atr; A()[k] = num(t.value, 10); $("#mod-" + k).textContent = fm(mod(A()[k])); refrescar(); return; }
-    if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; { const it_ = INV()[i]; if (k === "nome") it_.nome = t.value; else if (k === "desc") it_.desc = t.value.slice(0, 1500); else if (k === "qtd") it_.qtd = Math.max(0, Math.floor(num(t.value, 0))); else it_[k] = Math.max(0, num(t.value, 0)); } atualizarCarga(); atualizarCartao(t.closest(".item-inv"), INV()[i]); agendar({ inventario: P.inventario }); return; }
+    if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; { const it_ = INV()[i]; if (k === "nome") it_.nome = t.value; else if (k === "desc") it_.desc = t.value.slice(0, 1500); else if (k === "qtd") { const mem = membrosDe(it_), alvo = Math.max(0, Math.floor(num(t.value, 0))); if (mem.length > 1) IV.ajustarGrupo(mem, alvo - IV.totalDe(mem)); else it_.qtd = alvo; } else it_[k] = Math.max(0, num(t.value, 0)); } atualizarCarga(); atualizarCartao(t.closest(".item-inv"), INV()[i]); agendar({ inventario: P.inventario }); return; }
     if (t.dataset.din) { DIN()[t.dataset.din] = moeda(t.value); t.value = DIN()[t.dataset.din]; $("#total-po").textContent = totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); agendar({ dinheiro: P.dinheiro }); return; }
     if (t.dataset.cls) { const i = +t.closest("[data-ci]").dataset.ci, k = t.dataset.cls; if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; if (k === "n") CLS()[i].n = Math.max(1, Math.min(Math.max(1,20-R.nivelTotal(CLS().filter((_,j)=>j!==i))), Math.floor(num(t.value, 1)))); else if (k === "sub") { CLS()[i].sub = t.value; } else return; refrescar(); return; }
     if (t.dataset.atq && t.tagName === "INPUT" && t.type !== "checkbox") { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = ["magico", "extra"].includes(k) ? num(t.value, 0) : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
