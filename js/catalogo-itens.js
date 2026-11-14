@@ -127,6 +127,27 @@
     const n = Math.max(1, Math.floor(num(qtd, 1))), IV = window.INVENTARIO, orig = { ...(origem || { tipo: "jogo" }), id: "pacote:" + it.id, nota: it.nome, pacote: { id: it.id, nome: it.nome } };
     return it.pacote.map((c) => { const x = obter(c.id); return x ? paraInventario(x, num(c.qtd, 1) * n, orig) : IV.novoItem({ nome: c.id, qtd: num(c.qtd, 1) * n, peso: 0, ref: c.id, catId: c.id, origem: orig }); });
   }
+  /* ---------- Item mágico e raridade: duas informações separadas ----------
+     MÁGICO é classificação do catálogo (categoria magico, pocao ou pergaminho: no SRD todos têm raridade e nenhum item mundano tem) ou, para itens sem catálogo, o tipo do item
+     (magico; pergaminho com magia) ou uma raridade escrita pelo mestre. RARIDADE é só o rótulo (Comum…Artefato) e a chave de cor do indicador; não define se o item é mágico. */
+  const CATEGORIAS_MAGICAS = ["magico", "pocao", "pergaminho"];
+  const RAR_CHAVE = { common: "comum", uncommon: "incomum", rare: "rara", "very-rare": "muito-rara", legendary: "lendaria", artifact: "artefato" };
+  const RAR_ROTULO = { comum: "Comum", incomum: "Incomum", rara: "Rara", "muito-rara": "Muito rara", lendaria: "Lendária", artefato: "Artefato" };
+  const RAR_TEXTO = { comum: "comum", incomum: "incomum", raro: "rara", rara: "rara", "muito-raro": "muito-rara", "muito-rara": "muito-rara", lendario: "lendaria", lendaria: "lendaria", artefato: "artefato" };
+  /* chave de cor a partir da chave do catálogo ("very-rare") ou do rótulo escrito à mão ("Muito raro"); desconhecido = sem cor */
+  function chaveRaridade(x) { if (!x) return null; if (RAR_CHAVE[x]) return RAR_CHAVE[x]; return RAR_TEXTO[sem(x).trim().replace(/\s+/g, "-")] || null; }
+  const ehMagicoCatalogo = (cat) => !!cat && !cat.custom && CATEGORIAS_MAGICAS.includes(cat.categoria);
+  /* item do inventário -> { magico, raridade: {chave, rotulo} | null } */
+  function infoMagica(it) {
+    const cat = it ? doInventario(it) : null, pr = (it && it.propriedades) || {}, doCat = ehMagicoCatalogo(cat);
+    const magico = doCat || !!(it && (it.tipo === "magico" || (it.tipo === "pergaminho" && it.magiaVinculada))) || !!chaveRaridade(pr.raridade);
+    if (!magico) return { magico: false, raridade: null };
+    const escrita = pr.raridade ? String(pr.raridade).trim() : "", chave = chaveRaridade(escrita) || (cat && cat.raridade ? RAR_CHAVE[cat.raridade] || null : null);
+    const rotulo = escrita || (cat && cat.raridade ? RARIDADES[cat.raridade] || "" : "");
+    return { magico: true, raridade: rotulo ? { chave, rotulo: chave && !escrita ? RAR_ROTULO[chave] : rotulo } : null };
+  }
+  /* indicador da raridade: texto sempre presente (a cor nunca é a única pista) */
+  const seloRaridade = (r) => (r && r.rotulo ? `<span class="inv-raridade${r.chave ? " rar-" + r.chave : ""}" data-raridade="${esc(r.chave || "")}">${esc(r.rotulo)}</span>` : "");
   /* ID do catálogo para um nome digitado, só quando existe exatamente UM item com esse nome (ex.: "Bastão" é quarterstaff e rod: ambíguo, devolve null).
      Pacotes e itens personalizados ficam de fora; quem chama decide se usa o resultado. */
   function idPorNomeUnico(nome) {
@@ -136,5 +157,5 @@
   }
   const pesoDoConjunto = (conj) => (conj || []).reduce((s, c) => s + num(c.qtd) * num(c.peso, 0), 0);
 
-  window.CAT_ITENS = { CATEGORIAS, SUBTIPOS, ESPACOS, RARIDADES, PROPRIEDADES, ICONE, carregar, todos, obter, doInventario, personalizados, custoTexto, custoEmPO, pesoPacote, pesoDe, componentes, linhas, fichaHTML, viewDoCatalogo, filtrar, contagemPorCategoria, paraInventario, paraInventarioPacote, idPorNomeUnico, pesoDoConjunto, rotuloCat, sem, esc, kg, indexar, subtituloDe };
+  window.CAT_ITENS = { CATEGORIAS, SUBTIPOS, ESPACOS, RARIDADES, PROPRIEDADES, ICONE, carregar, todos, obter, doInventario, personalizados, custoTexto, custoEmPO, pesoPacote, pesoDe, componentes, linhas, fichaHTML, viewDoCatalogo, filtrar, contagemPorCategoria, paraInventario, paraInventarioPacote, idPorNomeUnico, ehMagicoCatalogo, infoMagica, chaveRaridade, seloRaridade, CATEGORIAS_MAGICAS, pesoDoConjunto, rotuloCat, sem, esc, kg, indexar, subtituloDe };
 })();

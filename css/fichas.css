@@ -404,3 +404,13 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .inv-det-origens input{flex:1 1 200px;min-width:0}
 .inv-det-hist li{margin:0 0 4px;font-size:.85rem;overflow-wrap:anywhere}
 .criador-equip-lista{padding-left:18px}.criador-equip-origem{display:block;overflow-wrap:anywhere}
+
+/* ---- Item mágico (classificação) e raridade (indicador): informações separadas. Não mexe em miniaturas, molduras nem no fundo do cartão. ----
+   Mágico: nome em dourado suave + tag "✦ Mágico" (igual para todas as raridades). Raridade: só o indicador (ponto + texto, nunca só a cor) com cor própria. */
+.item-magico .inv-nome-txt{color:color-mix(in srgb,var(--gold,#D4AE72) 82%,var(--text,#F3E9D5))}
+.inv-magico-tag{display:inline-flex;align-items:center;gap:4px;padding:0 7px;border:1px solid var(--gold-dark,#947345);border-radius:999px;font-size:.72rem;font-weight:700;line-height:1.5;color:var(--gold,#D4AE72);white-space:nowrap}
+.inv-magico-tag::before{content:"✦";font-size:.85em}
+.inv-raridade{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:600;line-height:1.5;color:var(--rar,var(--muted));white-space:nowrap}
+.inv-raridade::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--rar,var(--muted));flex:none}
+.inv-meta .inv-selos{flex:none;display:inline-flex;align-items:center;gap:6px;vertical-align:middle}.inv-meta .inv-base{margin-right:8px}
+.rar-comum{--rar:#A3ACB5}.rar-incomum{--rar:#5CB584}.rar-rara{--rar:#6FA3E8}.rar-muito-rara{--rar:#A98AE6}.rar-lendaria{--rar:#D4AE72}.rar-artefato{--rar:#E5806A}

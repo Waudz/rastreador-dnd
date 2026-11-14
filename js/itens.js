@@ -10,13 +10,15 @@
   /* imagem do item: a do aparelho (biblioteca por referência do catálogo) ou a do item personalizado; sem ela, o ícone da categoria */
   const imagemDe=it=>window.CATALOGO?.imagem('item',it.id)??(it.custom?it.imagem:null)??null;
   const miniatura = (it) => { const src = imagemDe(it); return src ? `<img class="inv-thumb-img" src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ico(C.ICONE[it.categoria] || "bag"); };
-  const meta = (it) => { const p = C.pesoDe(it), c = C.custoTexto(it); return [C.rotuloCat(it.categoria), it.raridade ? C.RARIDADES[it.raridade] : null, c, p != null && p > 0 ? C.kg(p) + " kg" : null].filter(Boolean).join(" · "); };
+  /* linha secundária do cartão (HTML): categoria, tag Mágico, raridade (indicador com cor própria), preço e peso; mágico e raridade são informações separadas */
+  const meta = (it) => { const p = C.pesoDe(it), c = C.custoTexto(it), mg = C.ehMagicoCatalogo(it), rar = it.raridade ? C.RARIDADES[it.raridade] : null;
+    return [esc(C.rotuloCat(it.categoria)), mg ? '<span class="inv-magico-tag">Mágico</span>' : null, rar ? C.seloRaridade({ chave: C.chaveRaridade(it.raridade), rotulo: rar }) : null, c ? esc(c) : null, p != null && p > 0 ? esc(C.kg(p) + " kg") : null].filter(Boolean).join(" · "); };
 
   function cartao(it) {
     const id = esc(it.id);
-    return `<div class="item-inv inv-card itens-card" data-it="${id}"><button type="button" class="inv-thumb${imagemDe(it) ? "" : " vazio"}" data-it-det="${id}" aria-label="Abrir os detalhes de ${esc(it.nome)}" title="Ver detalhes">${miniatura(it)}</button>
+    return `<div class="item-inv inv-card itens-card${C.ehMagicoCatalogo(it) ? " item-magico" : ""}" data-it="${id}"><button type="button" class="inv-thumb${imagemDe(it) ? "" : " vazio"}" data-it-det="${id}" aria-label="Abrir os detalhes de ${esc(it.nome)}" title="Ver detalhes">${miniatura(it)}</button>
       <div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-it-det="${id}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome)}</b></button></div>
-      <div class="inv-meta muted">${esc(meta(it))}</div>${it.pacote ? '<div class="inv-meta muted">Conjunto de ' + it.pacote.length + " componentes</div>" : ""}</div></div>`;
+      <div class="inv-meta muted">${meta(it)}</div>${it.pacote ? '<div class="inv-meta muted">Conjunto de ' + it.pacote.length + " componentes</div>" : ""}</div></div>`;
   }
   function desenhar() {
     const lista = C.filtrar(C.todos(), estado); atual = lista;

@@ -179,7 +179,7 @@ test('nomes personalizados: não agrupam entre si, a separação de pilha e a tr
 
 /* ---------- Origem neutra e itens mágicos ---------- */
 test('a Origem é sempre neutra: nenhuma cor nem classe por categoria; raridade e efeitos continuam à frente',()=>{
-  const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'));
+  const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'),css.indexOf('Item mágico (classificação)'));
   const semMec=bloco.replace(/#inv:not\(\.inv-grade\) \.inv-mec\{[^}]*\}/,'');
   assert.ok(!/color\s*:/.test(semMec),'nada além da descrição mecânica da lista define cor (a Origem e o resto não têm cor própria)');
   assert.ok(/#inv:not\(\.inv-grade\) \.inv-mec\{[^}]*color:var\(--muted\)/.test(bloco),'a descrição mecânica usa a cor secundária da paleta');
@@ -189,7 +189,7 @@ test('a Origem é sempre neutra: nenhuma cor nem classe por categoria; raridade 
   assert.ok(!/inv-origem[^"]*\$\{/.test(fonte),'a classe da Origem não varia com a categoria');
   /* raridade e efeitos entram no resumo mecânico (negrito), antes da origem na ordem de leitura */
   const A=amb(),RS=A.W.INV_RESUMO,m=RS.mecanico({propriedades:{raridade:'Raro',cargas:{atual:2,max:3},bonus:1}},A.C.obter('srd51:item/longsword'),['Recupera 2d4+2 pontos de vida']);
-  assert.match(m,/\+1/);assert.match(m,/Recupera 2d4\+2/);assert.match(m,/Cargas 2\/3/);assert.ok(!/Raro/.test(m),'a raridade tem elemento próprio (não fica no fim da linha, onde as reticências a cortariam)');assert.ok(fonte.includes('class="muted inv-raridade"')&&fonte.includes('CAT().RARIDADES[catR.raridade]'),'raridade do catálogo na lista e na grade');
+  assert.match(m,/\+1/);assert.match(m,/Recupera 2d4\+2/);assert.match(m,/Cargas 2\/3/);assert.ok(!/Raro/.test(m),'a raridade tem elemento próprio (não fica no fim da linha, onde as reticências a cortariam)');assert.ok(fonte.includes('CAT().seloRaridade(mg.raridade)')&&fonte.includes('CAT().infoMagica(it)'),'raridade e tag Mágico vêm da classificação do catálogo, na lista e na grade');
   assert.ok(fonte.indexOf('class="inv-mec"')<fonte.indexOf('class="inv-origem muted"'),'a mecânica vem antes da Origem');
   assert.ok(ler('css/itens.css').includes('.inv-selo'),'o selo existente (detalhes/catálogo) foi preservado');
 });
@@ -330,7 +330,7 @@ test('resumos: arma, arma mágica, item sem descrição e item personalizado usa
 });
 
 test('lista e grade: textos longos limitados por linhas, sem altura fixa, sem rolagem horizontal e sem fonte menor; na lista larga ocupam o espaço já existente',()=>{
-  const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'));
+  const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'),css.indexOf('Item mágico (classificação)'));
   const larga=bloco.slice(bloco.indexOf('@media(min-width:700px)'),bloco.indexOf('.inv-det-origens,.inv-det-hist'));
   const base=bloco.replace(larga,'');
   assert.match(base,/\.inv-mec\{[^}]*-webkit-line-clamp:2[^}]*overflow:hidden\}/);assert.match(base,/\.inv-origem\{[^}]*-webkit-line-clamp:1/);
@@ -396,7 +396,7 @@ test('modelos de Origem: os manuais são curtos e genéricos; os automáticos ma
 });
 
 test('hierarquia da lista: o nome continua em negrito e a descrição mecânica é secundária; a grade não muda',()=>{
-  const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'));
+  const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'),css.indexOf('Item mágico (classificação)'));
   const lista=/#inv:not\(\.inv-grade\) \.inv-mec\{([^}]*)\}/.exec(bloco);assert.ok(lista,'regra da lista');
   assert.match(lista[1],/font-weight:400/);assert.match(lista[1],/font-size:\.8rem/);assert.match(lista[1],/color:var\(--muted\)/);
   assert.ok(!/font-weight:\s*(6|7|8|9)00|bold/.test(lista[1]),'sem negrito na descrição da lista');

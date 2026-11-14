@@ -1,5 +1,7 @@
 # Pendências e próxima tarefa
 
+**Identidade de item magico (14/11, local, cache v192):** magico (nome dourado suave + tag Magico) e raridade (ponto e rotulo coloridos) sao informacoes separadas; classificacao por categoria do catalogo (magico/pocao/pergaminho), tipo magico, pergaminho com magia ou raridade escrita, nao so por ter raridade (CAT_ITENS.infoMagica). Miniaturas, molduras e fundo do cartao intactos. Lista, grade, barra lateral e itens.html. Testes: itens-magicos.
+
 
 **Equipamento inicial (14/11, local, cache v178, nao publicado):** `criador-regras.js` identifica itens por ID do catalogo (nao por nome), entrega cada item com `ref`/`catId`, peso e nome do catalogo e `origem {tipo:"criacao", id:<chave de origem>, nota:"Criacao — ..."}`; ter itens no inventario nao marca mais a entrega (removido o atalho de `criador.js`); o que ja veio da criacao e reconhecido pela chave de origem (sem duplicar). Ataques derivados dos dados da arma (`armaId`), incluindo Dardo. Origem: usa o catalogo so quando o nome e unico. Testes: `tests/equipamento-inicial.test.cjs`.
 
