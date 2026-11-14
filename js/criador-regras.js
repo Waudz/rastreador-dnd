@@ -22,7 +22,11 @@ window.CRIADOR = (() => {
   function configurar(d,magias) {D=d;window.SUBCLASSES_2014?.aplicar(D);D.subclasses.forEach(s=>{s.nome ||= SUBS[s.id.split("/").pop()]||s.id.split("/").pop();});MAGIAS=magias;return api;}
   function iniciar(p,modo) {
     const q=copiar(p),f=q.ficha ||= {},anterior=f.criacao;
-    const temValores=f.atributos && Object.keys(f.atributos).length>0;
+    /* Atributos "intocados" (vazios ou todos 10, o padrão de uma ficha que ainda não passou pela criação) não são valores a preservar: a criação começa na compra de pontos e aplica a raça.
+       Só valores de verdade (ficha manual ou já criada) viram `preservado`. */
+    const preenchida=!!f.atributos && Object.keys(f.atributos).length>0;
+    const intocados=preenchida&&modo==="criacao"&&!(anterior&&anterior.concluido)&&ATR.every(k=>!(k in f.atributos)||Number(f.atributos[k])===10)&&!Object.values(f.bonusRaca||{}).some(Number)&&!Object.values(f.bonusMelhorias||{}).some(Number);
+    const temValores=preenchida&&!intocados;
     f.criacao={versao:1,base:temValores?Object.fromEntries(ATR.map(k=>[k,(Number(f.atributos[k])||10)-(f.bonusRaca?.[k]||0)-(f.bonusMelhorias?.[k]||0)])):Object.fromEntries(ATR.map(k=>[k,8])),metodo:temValores?"preservado":"pointbuy",selecoes:{},equipamento:{},...anterior};
     f.criacao.selecoes ||= {}; f.criacao.equipamento ||= {};f.classes ||= [];
     if(!f.classes.length && !temValores)f.classes=[{c:"",n:1,sub:""}];
@@ -242,7 +246,7 @@ window.CRIADOR = (() => {
   }
   function derivar(p) {
     const q=copiar(p),f=q.ficha,st=estado(f),bg=origem(f);reconciliarNiveis(f);
-    if(st.metodo==="pointbuy"||st.baseEditada){const racial={...(f.bonusRaca||{})};f.atributos={...st.base};f.bonusRaca={};f.bonusMelhorias={};if(st.metodo==="pointbuy")R.aplicarRaca(f,{});else{f.bonusRaca=racial;for(const k of ATR)f.atributos[k]=(Number(st.base[k])||0)+(racial[k]||0);}}R.aplicarMelhorias(f);
+    if(st.metodo==="pointbuy"||st.baseEditada){const racial={...(f.bonusRaca||{})};f.atributos={...st.base};f.bonusRaca={};f.bonusMelhorias={};if(st.metodo==="pointbuy"||(st.modo==="criacao"&&!st.concluido&&f.raca))R.aplicarRaca(f,{});else{f.bonusRaca=racial;for(const k of ATR)f.atributos[k]=(Number(st.base[k])||0)+(racial[k]||0);}}R.aplicarMelhorias(f);
     f.background=bg?.nome||"";f.backgroundPericias=[...(bg?.per||[])];
     const gs=grupos(f),gclasse=gs.find(g=>g.source===idClasse(f.classes?.[0]?.c)&&g.opts.some(per));
     f.perClasse=(gclasse?.selecionadas||[]).map(per).filter(Boolean);
