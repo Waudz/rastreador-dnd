@@ -180,7 +180,9 @@ test('nomes personalizados: não agrupam entre si, a separação de pilha e a tr
 /* ---------- Origem neutra e itens mágicos ---------- */
 test('a Origem é sempre neutra: nenhuma cor nem classe por categoria; raridade e efeitos continuam à frente',()=>{
   const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'));
-  assert.ok(!/color\s*:/.test(bloco),'o bloco da lista não define nenhuma cor');
+  const semMec=bloco.replace(/#inv:not\(\.inv-grade\) \.inv-mec\{[^}]*\}/,'');
+  assert.ok(!/color\s*:/.test(semMec),'nada além da descrição mecânica da lista define cor (a Origem e o resto não têm cor própria)');
+  assert.ok(/#inv:not\(\.inv-grade\) \.inv-mec\{[^}]*color:var\(--muted\)/.test(bloco),'a descrição mecânica usa a cor secundária da paleta');
   assert.ok(!/\.inv-origem-(?!campo|modelo)|\.origem-(classe|pacote|antecedente|compra|mestre)|border-left|background/.test(bloco),'nada colore o cartão pela origem');
   const fonte=ler('js/personagem.js');
   assert.ok(fonte.includes('class="inv-origem muted"'),'texto secundário da paleta (muted)');
@@ -391,4 +393,17 @@ test('modelos de Origem: os manuais são curtos e genéricos; os automáticos ma
   for(const m of ['"Equipamento inicial da classe [classe]"','"Escolha de equipamento da classe [classe]"','"Equipamento do antecedente [antecedente]"','"Componente do [pacote]"'])assert.ok(src.includes(m),m);
   assert.ok(src.includes('inicial: "Equipamento inicial da classe " + classe')&&src.includes('antecedente: "Equipamento do antecedente " + ante')&&src.includes('pacote: "Componente do " + pac'));
   assert.ok(!/inv-origem-modelo\s*\{[^}]*color/.test(ler('css/fichas.css')),'apresentação visual neutra, inalterada');
+});
+
+test('hierarquia da lista: o nome continua em negrito e a descrição mecânica é secundária; a grade não muda',()=>{
+  const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Inventário: resumo mecânico'));
+  const lista=/#inv:not\(\.inv-grade\) \.inv-mec\{([^}]*)\}/.exec(bloco);assert.ok(lista,'regra da lista');
+  assert.match(lista[1],/font-weight:400/);assert.match(lista[1],/font-size:\.8rem/);assert.match(lista[1],/color:var\(--muted\)/);
+  assert.ok(!/font-weight:\s*(6|7|8|9)00|bold/.test(lista[1]),'sem negrito na descrição da lista');
+  const base=/\n\.inv-mec\{([^}]*)\}/.exec(bloco);assert.ok(base);assert.match(base[1],/font-weight:600/);assert.match(base[1],/font-size:\.82rem/);   // base = grade, como antes
+  assert.ok(!/#inv\.inv-grade \.inv-mec\{[^}]*(font-weight|color)/.test(bloco),'a grade não ganhou estilo novo');
+  assert.match(bloco,/#inv:not\(\.inv-grade\) \.inv-titulo\{gap:2px 12px\}/,'espaço entre nome e descrição');
+  assert.ok(ler('js/personagem.js').includes('<b class="inv-nome-txt">'),'o nome segue em negrito (b)');
+  assert.ok(!/\.inv-nome-txt\{[^}]*font-weight:\s*(4|3)00/.test(css),'o nome não foi enfraquecido');
+  assert.ok(!/(?:^|[;{\s])height\s*:/.test(bloco),'continua sem altura fixa');
 });

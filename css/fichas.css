@@ -383,6 +383,9 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .inv-resumo{display:none}
 .inv-origem{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;overflow-wrap:anywhere;min-width:0}
 #inv.inv-grade .inv-mec{-webkit-line-clamp:1}
+/* Lista (não a grade): a descrição mecânica é informação SECUNDÁRIA — peso normal, tamanho um pouco menor e cor secundária clara — para o nome (negrito, cor principal) continuar sendo o destaque. Mesma paleta (--muted/--text). */
+#inv:not(.inv-grade) .inv-mec{font-weight:400;font-size:.8rem;line-height:1.35;color:var(--muted);color:color-mix(in srgb,var(--muted) 72%,var(--text))}
+#inv:not(.inv-grade) .inv-titulo{gap:2px 12px}
 #inv.inv-grade .inv-origem{display:none}
 @media(max-width:519px){#inv .inv-origem{display:none}}   /* celular estreito: a Origem fica nos detalhes (é a de menor prioridade) */
 @media(min-width:700px){
