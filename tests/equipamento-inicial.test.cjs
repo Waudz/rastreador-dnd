@@ -70,11 +70,10 @@ test('Eremita entrega o equipamento da Origem: catálogo quando a correspondênc
   const {C,p,W}=monge(),q=C.aplicarEquipamento(p),cat=catalogoDe(W);
   const nota='Criação — Origem Eremita',da=q.inventario.filter(i=>i.origem?.nota===nota);
   const porNome=n=>da.find(i=>i.nome===n);
-  for(const [nome,id] of [['Cobertor','srd51:item/blanket'],['Roupas comuns','srd51:item/clothes-common'],['Algibeira','srd51:item/pouch'],['Kit de herbalismo','srd51:item/herbalism-kit']]){
+  for(const [nome,id] of [['Cobertor','srd51:item/blanket'],['Roupas comuns','srd51:item/clothes-common'],['Algibeira','srd51:item/pouch'],['Kit de herbalismo','srd51:item/herbalism-kit'],['Porta-Mapas ou Pergaminhos','srd51:item/case-map-or-scroll']]){
     const i=porNome(nome);assert.ok(i,nome);assert.equal(i.catId,id);assert.equal(i.ref,id);assert.equal(i.peso,cat(id).peso,nome+' usa o peso real');
   }
-  const estojo=porNome('Estojo de pergaminhos com anotações');
-  assert.ok(estojo,'item personalizado preservado');assert.equal(estojo.ref,null);assert.ok(!estojo.catId);assert.equal(estojo.peso,0);assert.equal(estojo.qtd,1);
+  assert.ok(!porNome('Estojo de pergaminhos com anotações'),'o Eremita recebe o Porta-Mapas ou Pergaminhos do catálogo');
   assert.equal(da.length,5);
   assert.equal(q.dinheiro.po,4+5,'ouro da Origem somado ao que já havia');
 });
@@ -164,7 +163,7 @@ test('imagem cadastrada no catálogo aparece para o item entregue pelo criador',
   /* item antigo, que só tinha catId (sem ref), também encontra a imagem */
   const antigo={uid:'a',nome:'Bastão',catId:'srd51:item/quarterstaff',qtd:1};assert.equal(W.INV_IMG.obter({},antigo).src,url);
   /* item personalizado da Origem não ganha imagem de outro item */
-  const custom=q.inventario.find(i=>i.nome==='Estojo de pergaminhos com anotações');assert.equal(W.INV_IMG.obter({},custom),null);
+  const custom={uid:'c',nome:'Item da mesa',qtd:1};assert.equal(W.INV_IMG.obter({},custom),null);
 });
 
 test('alternativas de equipamento inicial das 12 classes entregam todos os itens, sem perdas',()=>{
