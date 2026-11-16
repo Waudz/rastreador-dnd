@@ -641,3 +641,21 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 .catalogo-filtros .inv-vista{display:inline-flex;gap:4px;margin-left:auto}
 .catalogo-filtros .inv-vista button[aria-pressed="true"]{border-color:var(--accent,var(--line));background:var(--panel)}
 @media(max-width:520px){#blist.catalogo-grade,#spells.catalogo-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#blist.catalogo-grade>.res,#spells.catalogo-grade>.res{padding:9px}#blist.catalogo-grade .acts button,#spells.catalogo-grade .acts button{flex:1 1 auto}}
+
+/* PR20 — acabamento compartilhado entre Itens, Bestiário e Magias. */
+#blist .catalogo-cartao,#spells .catalogo-cartao{min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:10px;gap:10px;transition:border-color .15s ease,background-color .15s ease}
+#blist .catalogo-cartao:hover,#spells .catalogo-cartao:hover{border-color:var(--accent,var(--line))}
+#blist .catalogo-cartao .lft,#spells .catalogo-cartao .lft{display:flex;gap:10px;align-items:center;min-width:0;flex:1}
+#blist .catalogo-cartao .lft>span:last-child,#spells .catalogo-cartao .lft>span:last-child{min-width:0;overflow-wrap:anywhere;line-height:1.4}
+#blist .catalogo-cartao .lft b,#spells .catalogo-cartao .lft b{font-size:14px;line-height:1.4}
+#blist .catalogo-cartao .av,#spells .catalogo-cartao .av{flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}
+#blist .catalogo-cartao .av img,#spells .catalogo-cartao .av img{width:100%;height:100%;object-fit:cover}
+#spells .catalogo-cartao .magia-selo-circulo{display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+#blist .catalogo-cartao .acts,#spells .catalogo-cartao .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#blist.catalogo-grade .catalogo-cartao,#spells.catalogo-grade .catalogo-cartao{background:var(--panel);min-height:152px}
+#blist.catalogo-grade .catalogo-cartao .lft,#spells.catalogo-grade .catalogo-cartao .lft{align-items:flex-start}
+#blist.catalogo-grade .catalogo-cartao .acts,#spells.catalogo-grade .catalogo-cartao .acts{margin-top:auto}
+.catalogo-vazio{grid-column:1/-1;width:100%;padding:26px 16px;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted);background:var(--panel)}
+.catalogo-vazio strong{display:block;color:var(--text);margin-bottom:5px}
+.catalogo-vazio p{margin:0;font-size:13px}
+@media(max-width:520px){#blist.catalogo-grade .catalogo-cartao .lft,#spells.catalogo-grade .catalogo-cartao .lft{flex-direction:column;align-items:flex-start}#blist.catalogo-grade .catalogo-cartao .acts button,#spells.catalogo-grade .catalogo-cartao .acts button{min-height:36px}}
