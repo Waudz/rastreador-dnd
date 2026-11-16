@@ -20,7 +20,7 @@
   function conjurador({classe,atributo,cd,ataque,preparar}){
     return `<section class="magia-conjurador"><h3>${esc(classe)}</h3>${propriedades([['Atributo',atributo],['CD de magia',cd],['Ataque mágico',ataque],...(preparar==null?[]:[['Preparar até',preparar+' magias']])])}</section>`;
   }
-  const escolaIcones={abjuracao:'shield',adivinhacao:'eye',conjuracao:'sparkles',encantamento:'heart',evocacao:'flame',ilusao:'eye',necromancia:'skull',transmutacao:'refresh-cw'};
+  const escolaIcones={abjuracao:'shield',adivinhacao:'eye',conjuracao:'sparkles',encantamento:'heart',evocacao:'flame',ilusao:'eye',necromancia:'skull',transmutacao:'transmute'};
   const semAcentos=s=>String(s||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
   function simboloEscola(escola){const chave=semAcentos(escola).trim();const nome=escolaIcones[chave]||'sparkles';return '<span class="av av0 magia-selo-circulo catalogo-simbolo" aria-hidden="true">'+(window.ico?window.ico(nome):'✦')+'</span>';}
   /* resultado da pesquisa de magias: a mesma linha compacta da pesquisa de monstros (.res: círculo no lugar do retrato, nome, uma linha de dados e o botão Ver) */
