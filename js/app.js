@@ -299,7 +299,7 @@
     const hay = (m) => nz([m.name, pt(m), m.subtitle, CAT[catOf(m)], m.size?.name, SZ[m.size?.name], m.type?.name, TP[m.type?.name], srcOf(m)].filter(Boolean).join(" "));
     function buildFilter() {
       const f = $("#bf"), cur = f.value, docs = [...new Set(ALL.filter((m) => !m.custom).map(srcOf))].sort();
-      f.innerHTML = '<option value="">Sem filtro</option><option value="custom">Minhas criações</option><option value="monster">Só monstros</option><option value="player">Só personagens</option><option value="npc">Só NPCs</option>' + docs.map((d) => `<option value="doc:${esc(d)}">Coleção: ${esc(d)}</option>`).join("");
+      f.innerHTML = '<option value="">Todos</option><option value="monster">Monstros</option><option value="player">Personagens</option><option value="npc">NPCs</option><option value="custom">Minhas criações</option>' + docs.map((d) => `<option value="doc:${esc(d)}">Fonte: ${esc(d)}</option>`).join("");
       f.value = [...f.options].some((o) => o.value === cur) ? cur : "";
     }
     const inF = (m, f) => !f || (f === "custom" && m.custom) || (["monster", "player", "npc"].includes(f) && catOf(m) === f) || (f.startsWith("doc:") && !m.custom && srcOf(m) === f.slice(4));
