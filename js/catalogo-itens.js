@@ -35,6 +35,18 @@
   /* o item do inventário aponta para o catálogo por `catId` ou, nos antigos, pelo `ref` (srd51:item/...) */
   const doInventario = (it) => (it ? (obter(it.catId) || obter(it.ref) || null) : null);
 
+  /* Pacotes que contêm um item: opções de origem para adição manual, sem inventar vínculos.
+     Não altera a origem dos itens já salvos; a interface escolhe quando aplicar. */
+  function pacotesQueContem(itemId) {
+    const id = obter(itemId)?.id || itemId;
+    if (!id) return [];
+    return (lista || []).filter(p => p.categoria === "pacote" && Array.isArray(p.pacote) &&
+      p.pacote.some(c => c.id === id || obter(c.id)?.id === id))
+      .map(p => ({ id: p.id, nome: p.nome, texto: "Componente do " + p.nome,
+        origem: { tipo: "criacao", id: "pacote:" + p.id, nota: p.nome, pacote: { id: p.id, nome: p.nome } } }));
+  }
+
+
   /* ---------- itens personalizados (neste aparelho, por conta) ---------- */
   const chaveCustom = () => "dnd5e_itens_custom_v1:" + ((window.nuvem && nuvem.usuario && nuvem.usuario() && nuvem.usuario().id) || "publico");
   const personalizados = {
@@ -158,5 +170,5 @@
   }
   const pesoDoConjunto = (conj) => (conj || []).reduce((s, c) => s + num(c.qtd) * num(c.peso, 0), 0);
 
-  window.CAT_ITENS = { CATEGORIAS, SUBTIPOS, ESPACOS, RARIDADES, PROPRIEDADES, ICONE, carregar, todos, obter, doInventario, personalizados, custoTexto, custoEmPO, pesoPacote, pesoDe, componentes, linhas, fichaHTML, viewDoCatalogo, filtrar, contagemPorCategoria, paraInventario, paraInventarioPacote, idPorNomeUnico, ehMagicoCatalogo, infoMagica, chaveRaridade, seloRaridade, CATEGORIAS_MAGICAS, pesoDoConjunto, rotuloCat, sem, esc, kg, indexar, subtituloDe };
+  window.CAT_ITENS = { CATEGORIAS, SUBTIPOS, ESPACOS, RARIDADES, PROPRIEDADES, ICONE, carregar, todos, obter, doInventario, pacotesQueContem, personalizados, custoTexto, custoEmPO, pesoPacote, pesoDe, componentes, linhas, fichaHTML, viewDoCatalogo, filtrar, contagemPorCategoria, paraInventario, paraInventarioPacote, idPorNomeUnico, ehMagicoCatalogo, infoMagica, chaveRaridade, seloRaridade, CATEGORIAS_MAGICAS, pesoDoConjunto, rotuloCat, sem, esc, kg, indexar, subtituloDe };
 })();
