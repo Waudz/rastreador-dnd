@@ -683,3 +683,8 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 /* Conjuntos de classes e escolas D&D, imagens WebP com transparência. */
 .grupo-unificado .catalogo-simbolo .dnd-categoria-icone,#spells .catalogo-simbolo .dnd-categoria-icone,.magia-selo-circulo .dnd-categoria-icone{display:block;width:80%;height:80%;max-width:100%;max-height:100%;object-fit:contain;background:transparent;border:0;box-shadow:none}
 .grupo-unificado .retrato-cartao.catalogo-simbolo .dnd-categoria-icone{width:80%;height:80%}
+
+/* Ícones D&D: pequenos na grade; no modo lista preservam a escala anterior. */
+.grupo-classe-linha{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.grupo-classe-linha .dnd-categoria-icone{width:20px!important;height:20px!important;flex:none;object-fit:contain}
+#spells.catalogo-grade .catalogo-simbolo .dnd-categoria-icone,.grupo-unificado .grupo-personagens-grade .catalogo-simbolo .dnd-categoria-icone{width:60%!important;height:60%!important;max-width:60%;max-height:60%}
