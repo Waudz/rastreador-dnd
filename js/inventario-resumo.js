@@ -10,13 +10,19 @@
   const limpa = (s) => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
   const linha = (rows, k) => { const r = (rows || []).find((x) => x && x[0] === k); return r ? limpa(r[1]) : ""; };
 
+  /* O catálogo guarda o dano base; o encantamento é individual e não altera o dado original. */
+  function danoComEncantamento(it, cat, texto) {
+    const bonus = cat?.arma ? Math.max(0, Math.min(3, Number(it?.propriedades?.encantamento?.bonus) || 0)) : 0;
+    return bonus && texto ? String(texto).replace(/^(\d+d\d+)(?=\s|$)/i, dado => dado + " + " + bonus) : texto;
+  }
+
   /* efeitos: lista de textos já prontos (quem chama traduz os efeitos do item com as regras da ficha) */
   function mecanico(it, cat, efeitosTexto) {
     const efs = (efeitosTexto || []).map(limpa).filter(Boolean);
     const c = C(), pr = (it && it.propriedades) || {}, partes = [];
     if (cat && c && !cat.custom) {
       const rows = c.linhas(cat);
-      const dano = linha(rows, "Dano");
+      const dano = danoComEncantamento(it, cat, linha(rows, "Dano"));
       if (dano) partes.push(dano);
       let props = linha(rows, "Propriedades");
       const duas = cat.arma && cat.arma.danoDuasMaos && cat.arma.danoDuasMaos.dado;
@@ -59,5 +65,5 @@
     const d = limpa(it && it.desc) || limpa(cat && cat.desc);
     return d || fatual(cat);
   }
-  window.INV_RESUMO = { mecanico, descricao, fatual };
+  window.INV_RESUMO = { mecanico, descricao, fatual, danoComEncantamento };
 })();
