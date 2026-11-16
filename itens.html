@@ -28,7 +28,7 @@
   <script src="js/catalogo.js" defer></script>
   <script src="js/inventario-imagens.js" defer></script>
   <script src="js/catalogo-itens.js" defer></script>
-  <script src="js/inventario-resumo.js" defer></script><script src="js/itens.js" defer></script>
+  <script src="js/inventario-resumo.js" defer></script><script src="js/ordenacao-catalogos.js" defer></script><script src="js/itens.js" defer></script>
   <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body>
@@ -46,6 +46,7 @@
         <select id="it-rar" aria-label="Raridade"></select>
         <select id="it-prop" aria-label="Propriedade de arma"></select>
         <select id="it-sint" aria-label="Sintonia"><option value="">Sintonia: qualquer</option><option value="sim">Exige sintonia</option><option value="nao">Mágicos sem sintonia</option></select>
+        <select id="it-ordem" aria-label="Ordenar itens"><option value="nome-asc">Nome: A–Z</option><option value="nome-desc">Nome: Z–A</option><option value="categoria">Categoria</option><option value="raridade-asc">Raridade: menor primeiro</option><option value="raridade-desc">Raridade: maior primeiro</option><option value="valor-asc">Preço: menor primeiro</option><option value="valor-desc">Preço: maior primeiro</option></select>
         <button type="button" class="small subtle" id="it-limpar">Limpar filtros</button>
         <span class="inv-vista" role="group" aria-label="Modo de exibição"><button type="button" class="small" data-it-vista="lista" aria-pressed="true">Lista</button><button type="button" class="small" data-it-vista="grade" aria-pressed="false">Grade</button></span>
       </div>
