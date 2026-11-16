@@ -41,7 +41,7 @@ test("busca e filtros: acento, categoria, propriedade, raridade e sintonia", () 
 });
 test("ficha de leitura: peso, preço e resumo editorial sem inventar efeitos", () => {
   const { C } = carregar(), it = itens.find((i) => i.id === "srd51:item/longsword"), h = C.fichaHTML(C.viewDoCatalogo(it, null));
-  assert.match(h, /Dano<\/dt><dd>1d8 cortante/); assert.match(h, /15 PO/); assert.match(h, /1,5 kg/); assert.match(h, /Descrição/); assert.match(h, /arma marcial corpo a corpo/);
+  assert.match(h, /Dano<\/dt><dd>1d8 cortante/); assert.match(h, /15 PO/); assert.match(h, /1,5 kg/); assert.match(h, /Descrição/); assert.match(h, /Espada de lâmina reta/);
   const pack = C.fichaHTML(C.viewDoCatalogo(itens.find((i) => i.id === "srd51:item/explorers-pack"), null)); assert.match(pack, /Conteúdo do conjunto/); assert.match(pack, /Tocha <b>×10<\/b>/); assert.match(pack, /29,5 kg/);
 });
 test("adicionar ao inventário: item comum, poção com efeito aprovado, kit único e pacote agrupado sem empilhar", () => {
