@@ -93,10 +93,10 @@ test('CSS: sete raridades com cores distintas; mágico = nome dourado + tag; mol
 
 test('CSS: moldura da miniatura acompanha as sete raridades sem alterar dimensões ou efeitos',()=>{
   const css=ler('css/fichas.css'),b=css.slice(css.indexOf('Moldura fina da miniatura'),css.indexOf('Grade: "Detalhes"'));
-  assert.match(b,/\\.inv-card \\.inv-thumb\\{border-color:#66717D\\}/);
+  assert.match(b,/\.inv-card \.inv-thumb\{border-color:#66717D\}/);
   const esperado={mundano:'#66717D',comum:'#D5DCE3',incomum:'#5CB584',rara:'#6FA3E8','muito-rara':'#A98AE6',lendaria:'#D4AE72',artefato:'#E5806A'};
   for(const [rar,cor] of Object.entries(esperado))assert.ok(b.includes('.inv-card.raridade-'+rar+' .inv-thumb{border-color:'+cor+'}'),rar);
-  assert.ok(!/shadow|glow|filter|(?:^|[;{\\s])(width|height)\\s*:/.test(b),'sem brilho, sombra nem tamanho novo na moldura');
+  assert.ok(!/shadow|glow|filter|(?:^|[;{\s])(width|height)\s*:/.test(b),'sem brilho, sombra nem tamanho novo na moldura');
   const p=ler('js/personagem.js'),t=ler('js/itens.js');
   assert.ok(p.includes('raridade-${mg.raridade?.chave || "mundano"}'),'inventário usa raridade efetiva');
   assert.ok(t.includes('raridade-${C.chaveRaridade(it.raridade || "mundano") || "mundano"}'),'catálogo usa raridade do item');
