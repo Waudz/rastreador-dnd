@@ -16,6 +16,11 @@ const PROP = (p) => p.replace("srd51:property/", "");
 const EFEITOS = { "potion-of-healing-common": "pocao-cura", "potion-of-healing-greater": "pocao-cura-maior", "potion-of-healing-superior": "pocao-cura-superior", "potion-of-healing-supreme": "pocao-cura-suprema", "potion-of-heroism": "pocao-heroismo", "potion-of-invisibility": "pocao-invisibilidade", "antitoxin-vial": "antitoxina", "ring-of-protection": "anel-protecao", "wand-of-magic-missiles": "varinha-misseis" };
 for (const k of fonte.filter((x) => /^srd51:item\/potion-of-resistance-/.test(x.id))) EFEITOS[sem(k.id)] = "pocao-resistencia";
 const ALIAS = { "potion-of-healing-common": ["srd51:item/potion-of-healing"] };
+/* Preserva os resumos editoriais revisados ao regenerar os dados estruturados. */
+const arquivoAtual=path.join(raiz,"dados/itens-srd2014.json");
+const descricoesAtuais=fs.existsSync(arquivoAtual)
+ ? new Map(JSON.parse(fs.readFileSync(arquivoAtual,"utf8")).itens.map(i=>[i.id,i.desc]).filter(x=>typeof x[1]==="string"&&x[1].trim()))
+ : new Map();
 const saida = []; const faltaNome = [];
 for (const x of fonte) {
   const d = x.data, id = sem(x.id), nome = pt[id] || (x.nome !== x.en ? x.nome : null);
@@ -42,6 +47,7 @@ for (const x of fonte) {
   if (d.vehicle && d.vehicle.speed) it.velocidade = d.vehicle.speed.unit === "ft/round" ? { v: m(d.vehicle.speed.amount), u: "m/rodada" } : { v: Math.round(d.vehicle.speed.amount * 1.6 * 10) / 10, u: "km/h" };
   if (EFEITOS[id]) it.efeitos = EFEITOS[id];
   if (ALIAS[id]) it.alias = ALIAS[id];
+  if(descricoesAtuais.has(it.id))it.desc=descricoesAtuais.get(it.id);
   saida.push(it);
 }
 const ids = new Set(); for (const i of saida) { if (ids.has(i.id)) throw new Error("id duplicado " + i.id); ids.add(i.id); }
