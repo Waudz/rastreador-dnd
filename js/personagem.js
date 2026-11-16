@@ -447,6 +447,13 @@
   document.addEventListener("toggle", (e) => { const d = e.target; if (!d || !d.matches || !d.matches("details.inv-edit")) return; const u = d.dataset.invUid; if (u) d.open ? invAbertos.add(u) : invAbertos.delete(u); }, true);
   /* ---------- janelas do inventário: detalhes do item, descartar e excluir ---------- */
   function modalInv(rotulo, html) {
+    if (window.COMP_JANELA) {
+      document.getElementById("inv-modal")?.remove();
+      const j = window.COMP_JANELA.abrir({ titulo: rotulo, conteudo: html, largura: "media", classe: "inv-modal-box" });
+      j.ov.id = "inv-modal";
+      j.ov.addEventListener("click", e => { if (e.target.closest("[data-modal-fechar]")) j.fechar(); });
+      return { ov: j.ov, fim: j.fechar };
+    }
     document.getElementById("inv-modal")?.remove();
     const ov = document.createElement("div"); ov.id = "inv-modal"; ov.className = "inv-ov";
     ov.innerHTML = `<div class="crop-box inv-modal-box" role="dialog" aria-modal="true" aria-label="${esc(rotulo)}">${html}</div>`;
@@ -531,7 +538,7 @@
   function htmlDetalhes(it, i) {
     const C = CAT(); if (!C) return '<p class="err">Os detalhes do catálogo não carregaram. Recarregue a página.</p>';
     const { usavel, v } = viewDoItem(it);
-    return C.fichaHTML(v) + `<div class="row inv-det-acoes">${nomeDivergente(it) && !soLeitura ? `<button type="button" class="small subtle" data-det-restaurar="${i}">Restaurar nome do catálogo</button>` : ""}<button type="button" class="small" data-det-imagem="${i}">${v.imagem?"Trocar imagem":"Adicionar imagem"}</button>${usavel ? `<button type="button" class="small primary" data-det-usar="${i}">Usar</button>` : ""}${souMestre ? `<button type="button" class="small" data-det-config="${i}">Configurar efeitos (mestre)</button>` : ""}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div>`;
+    return C.fichaHTML(v) + `<div class="row inv-det-acoes">${nomeDivergente(it) && !soLeitura ? `<button type="button" class="small subtle" data-det-restaurar="${i}">Restaurar nome do catálogo</button>` : ""}<button type="button" class="small" data-det-imagem="${i}">${v.imagem?"Trocar imagem":"Adicionar imagem"}</button>${usavel ? `<button type="button" class="small primary" data-det-usar="${i}">Usar</button>` : ""}${!soLeitura ? `<button type="button" class="small primary" data-det-editar="${i}">Editar item</button>` : ""}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div>`;
   }
   /* conjunto: retirar 1 unidade de um componente (vira item separado) ou consumi-la; o peso do conjunto é recalculado pela soma do que resta */
   function acaoComponente(it, k, acao) {
@@ -560,10 +567,10 @@
       }
       const rest = e.target.closest('[data-det-restaurar]'); if (rest) { if (restaurarNomeCatalogo(it)) ov.querySelector(".inv-modal-box").innerHTML = htmlDetalhes(it, INV().indexOf(it)); return; }
       const foto=e.target.closest('[data-det-imagem]');if(foto){fim();abrirImagemItem(+foto.dataset.detImagem);return;}
-      const b = e.target.closest("[data-det-usar],[data-det-config]"); if (!b) return;
+      const b = e.target.closest("[data-det-usar],[data-det-editar]"); if (!b) return;
       fim();
       if (b.dataset.detUsar !== undefined) { abrirUso(+b.dataset.detUsar); $("#uso-box")?.scrollIntoView({ block: "center" }); }
-      else { abrirEditor(+b.dataset.detConfig); $("#ef-box")?.scrollIntoView({ block: "center" }); }
+      else { const idx=+b.dataset.detEditar, card=document.querySelector('.item-inv[data-i="'+idx+'"]'); card?.querySelector('[data-inv-editar-abrir]')?.click(); }
     });
   }
   /* ---------- adicionar do catálogo de itens ---------- */
