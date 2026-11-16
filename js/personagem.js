@@ -823,7 +823,7 @@
      Efeitos de magias complexas são resolvidos na mesa, não lançados automaticamente no alvo. */
   async function abrirMagiasItem(i) {
     if (!souMestre || soLeitura) return;
-    const it=itemPor(i); if(!it)return;
+    let it=itemPor(i); if(!it)return;
     let magias; try { magias=await catalogoMagiasInv(); } catch(e){aviso("Não foi possível carregar as magias.",true);return;}
     const E=window.ITEM_ENCANTADO, atual=E.magias(it);
     const {ov,fim}=modalInv("Magias do item",`<h3>Magias de ${esc(it.nome)}</h3>
@@ -838,7 +838,7 @@
       const rem=e.target.closest("[data-enc-rem]"); if(rem){it.propriedades.magiasItem=E.magias(it).filter(m=>m.en!==rem.dataset.encRem);salvarInv();redesenharInv();fim();abrirMagiasItem(INV().indexOf(it));return;}
       if(!e.target.closest("#enc-mag-add"))return;
       const en=ov.querySelector("#enc-mag-sel").value,m=magias.find(x=>x.en===en),passiva=ov.querySelector("#enc-mag-modo").value==="passiva",custo=Number(ov.querySelector("#enc-mag-custo").value);
-      try{E.vincularMagia(it,m,passiva?0:custo);if(passiva)it.propriedades.magiasItem.find(x=>x.en===en).passiva=true;salvarInv();redesenharInv();fim();abrirMagiasItem(INV().indexOf(it));}catch(err){aviso(err.message,true);}
+      try{if(Number(it.qtd)>1)it=EF().separarUnidade(P,it);E.vincularMagia(it,m,passiva?0:custo);if(passiva)it.propriedades.magiasItem.find(x=>x.en===en).passiva=true;salvarInv();redesenharInv();fim();abrirMagiasItem(INV().indexOf(it));}catch(err){aviso(err.message,true);}
     });
   }
   function abrirConjuracaoItem(i) {
@@ -1072,7 +1072,7 @@
 
   document.addEventListener("change", (e) => {
     const t = e.target; if (!P) return;
-    if (t.dataset.encBonus !== undefined) { const it=INV()[+t.dataset.encBonus], cat=it&&EF().catDoItem(it); if(!it||!cat||soLeitura)return; try { window.ITEM_ENCANTADO.configurar(it,cat,t.value); const a=ATQ().find(a=>a.itemUid===it.uid); if(a)a.magico=window.ITEM_ENCANTADO.bonus(it); salvarInv(); redesenharInv(); refrescar(); } catch(err){aviso(err.message,true);} return; }
+    if (t.dataset.encBonus !== undefined) { let it=INV()[+t.dataset.encBonus], cat=it&&EF().catDoItem(it); if(!it||!cat||soLeitura)return; try { if(Number(it.qtd)>1)it=EF().separarUnidade(P,it); window.ITEM_ENCANTADO.configurar(it,cat,t.value); const a=ATQ().find(a=>a.itemUid===it.uid); if(a)a.magico=window.ITEM_ENCANTADO.bonus(it); salvarInv(); redesenharInv(); refrescar(); } catch(err){aviso(err.message,true);} return; }
     if (t.dataset.cls === "n") { desenhar(); return; }
     if (t.dataset.cls === "c") { const i = +t.closest("[data-ci]").dataset.ci; if(CLS().some((c,j)=>j!==i && c.c===t.value && t.value)){aviso("Esta classe já foi adicionada.",true);desenhar();return;} if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; CLS()[i].c = t.value; CLS()[i].sub = ""; F().classesEditadas=true; if(i===0){F().perClasse=[];F().especializacoes=[];} refrescar(); desenhar(); return; }
     if (t.dataset.atq && (t.tagName === "SELECT" || t.type === "checkbox")) { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = t.type === "checkbox" ? t.checked : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
