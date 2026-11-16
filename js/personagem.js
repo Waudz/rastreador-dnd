@@ -175,6 +175,7 @@
       if (ids.includes("Monk") && !eq.escudo && 10 + d + modA("sab") > base) { base = 10 + d + modA("sab"); desc = "Sem armadura: 10 + Des + Sab"; }
     }
     if (eq.escudo) { base += 2; desc += " + escudo (+2)"; }
+    const encCA = window.ITEM_ENCANTADO?.bonusCA(P) || 0; if (encCA) { base += encCA; desc += ` + ${encCA} encantamento`; }
     if (num(eq.bonus, 0)) { base += num(eq.bonus, 0); desc += ` ${fm(num(eq.bonus, 0))} outros`; }
     if (R.bonusTemp(F(), "ca")) { base += R.bonusTemp(F(), "ca"); desc += ` ${fm(R.bonusTemp(F(), "ca"))} temporário`; }
     return { ca: base, desc };
@@ -379,8 +380,9 @@
     if (passivo || sint || t === "magico" || (equipavel(it) && qtdLinha(it) > 0)) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-equip ${it.equipado ? "checked" : ""}> Equipado</label>`);
     if (sint) acoes.push(`<label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-inv-sint ${pr.sintonia.sintonizado ? "checked" : ""}> Sintonizado</label>`);
     if (pr.cargas) acoes.push(`<span class="muted">Cargas ${num(pr.cargas.atual, 0)}/${num(pr.cargas.max, 0)}</span>`);
+    if (window.ITEM_ENCANTADO?.magias(it).some(m=>!m.passiva)) acoes.push(`<button type="button" class="small" data-inv-conjurar="${i}">Conjurar</button>`);
     /* mágico e raridade são informações separadas (CAT_ITENS.infoMagica): a tag "Mágico" e o nome dourado vêm da classificação; a cor do indicador vem só da raridade */
-    const mg = CAT() ? CAT().infoMagica(it) : { magico: false, raridade: null }, selo = CAT() ? CAT().seloRaridade(mg.raridade) : "";
+    const mg = CAT() ? CAT().infoMagica(it) : { magico: false, raridade: null }; if (window.ITEM_ENCANTADO?.bonus(it) || window.ITEM_ENCANTADO?.magias(it).length) mg.magico = true; const selo = CAT() ? CAT().seloRaridade(mg.raridade) : "";
     const selos = mg.magico || selo ? `<span class="inv-selos">${mg.magico ? '<span class="inv-magico-tag">Mágico</span>' : ""}${selo}</span>` : "";   // na linha secundária (tipo · peso), não na dos controles: não aumenta o cartão
     const nMem = membrosDe(it).length, orig = nMem > 1 ? `${nMem} origens (veja os detalhes)` : IV.origemTexto(it);
     const catI = CAT() && CAT().doInventario(it), RS = window.INV_RESUMO, mec = RS ? RS.mecanico(it, catI, IE.efeitosDe(it).map(descreverEfeito)) : "", resumo = RS ? RS.descricao(it, catI) : "";
@@ -395,6 +397,8 @@
       <div class="inv-edit" data-inv-uid="${esc(it.uid)}"${aberto ? "" : " hidden"}><div class="inv-edit-campos">
         <label class="inv-c-nome">Nome<input data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"></label>
         <label>Peso cada (kg)<input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}"></label>
+        ${!soLeitura && equipavel(it) ? `<label>Bônus mágico<select data-enc-bonus="${i}">${[0,1,2,3].map(n=>opt(n,n?"+"+n:"Nenhum",window.ITEM_ENCANTADO?.bonus(it)===n)).join("")}</select></label>` : ""}
+        ${!soLeitura ? `<div class="inv-c-nome"><button type="button" class="small" data-enc-magias="${i}">Magias do item (${window.ITEM_ENCANTADO?.magias(it).length || 0})</button></div>` : ""}
         <label>Tipo<select data-inv-tipo aria-label="Tipo do item">${Object.entries(IV.TIPOS).map(([k, n]) => opt(k, n, t === k)).join("")}</select></label>
         ${!soLeitura ? `<label class="inv-c-nome">Origem<span class="inv-origem-campo"><input data-inv-origem maxlength="120" value="${esc(typeof (it.origem && it.origem.texto) === "string" ? it.origem.texto : IV.origemTexto(it))}" placeholder="Ex.: Recompensa de missão">${seletorModelos()}</span></label>` : ""}
         <label class="inv-c-nome">Descrição<textarea data-inv="desc" rows="3" maxlength="1500" placeholder="Aparência, história, funcionamento conhecido…">${esc(it.desc || "")}</textarea></label>
@@ -814,6 +818,37 @@
     IV.adicionar(cont(), IV.criarPergaminho(m, { origem: origemAdd({ tipo: "mestre", nota: $("#pg-nota").value.trim().slice(0, 80) }) }), { nota: $("#pg-nota").value.trim().slice(0, 80) });
     $("#pg-nota").value = ""; salvarInv(); redesenharInv(); fecharAdd();
   }
+
+  /* Magias de itens: o mestre configura; conjurar gasta cargas e registra o uso.
+     Efeitos de magias complexas são resolvidos na mesa, não lançados automaticamente no alvo. */
+  async function abrirMagiasItem(i) {
+    if (!souMestre || soLeitura) return;
+    const it=itemPor(i); if(!it)return;
+    let magias; try { magias=await catalogoMagiasInv(); } catch(e){aviso("Não foi possível carregar as magias.",true);return;}
+    const E=window.ITEM_ENCANTADO, atual=E.magias(it);
+    const {ov,fim}=modalInv("Magias do item",`<h3>Magias de ${esc(it.nome)}</h3>
+      <p class="muted">Conjuração consome cargas. Magias permanentes são registradas como encantamentos enquanto equipado; seus efeitos específicos devem ser aplicados conforme a regra da magia.</p>
+      <ul>${atual.map(m=>`<li>${esc(m.n)} · ${m.passiva?"Permanente":"Custo: "+m.custo+" carga(s)"} <button type="button" class="small subtle" data-enc-rem="${esc(m.en)}">Remover</button></li>`).join("") || "<li>Nenhuma magia vinculada</li>"}</ul>
+      <label>Magia<select id="enc-mag-sel">${magias.slice().sort((a,b)=>a.n.localeCompare(b.n,"pt-BR")).map(m=>opt(m.en,m.n+" ("+(m.l?m.l+"º círculo":"truque")+")",false)).join("")}</select></label>
+      <label>Modo<select id="enc-mag-modo"><option value="conjurar">Conjurar usando cargas</option><option value="passiva">Encantamento permanente (equipado)</option></select></label>
+      <label>Custo em cargas<input id="enc-mag-custo" class="num" type="number" min="0" max="99" value="1"></label>
+      <div class="row"><button type="button" class="small primary" id="enc-mag-add">Vincular magia</button><button type="button" class="small subtle" data-modal-fechar>Fechar</button></div>
+      <p class="muted">Configure as cargas do item em Efeitos e propriedades (mestre).</p>`);
+    ov.addEventListener("click",e=>{
+      const rem=e.target.closest("[data-enc-rem]"); if(rem){it.propriedades.magiasItem=E.magias(it).filter(m=>m.en!==rem.dataset.encRem);salvarInv();redesenharInv();fim();abrirMagiasItem(INV().indexOf(it));return;}
+      if(!e.target.closest("#enc-mag-add"))return;
+      const en=ov.querySelector("#enc-mag-sel").value,m=magias.find(x=>x.en===en),passiva=ov.querySelector("#enc-mag-modo").value==="passiva",custo=Number(ov.querySelector("#enc-mag-custo").value);
+      try{E.vincularMagia(it,m,passiva?0:custo);if(passiva)it.propriedades.magiasItem.find(x=>x.en===en).passiva=true;salvarInv();redesenharInv();fim();abrirMagiasItem(INV().indexOf(it));}catch(err){aviso(err.message,true);}
+    });
+  }
+  function abrirConjuracaoItem(i) {
+    const it=itemPor(i), E=window.ITEM_ENCANTADO;if(!it||!E)return;
+    const magias=E.magias(it).filter(m=>!m.passiva);if(!magias.length)return;
+    const {ov,fim}=modalInv("Conjurar magia do item",`<h3>${esc(it.nome)}</h3><label>Magia<select id="enc-conj-mag">${magias.map(m=>opt(m.en,m.n+" · "+m.custo+" carga(s)",false)).join("")}</select></label>
+      <p class="muted">Cargas disponíveis: ${num(it.propriedades?.cargas?.atual,0)}. A magia será registrada; resolva seus efeitos de acordo com as regras.</p>
+      <div class="row"><button type="button" class="small primary" id="enc-conj-ok">Conjurar</button><button type="button" class="small subtle" data-modal-fechar>Cancelar</button></div><p id="enc-conj-erro" class="err"></p>`);
+    ov.querySelector("#enc-conj-ok").addEventListener("click",()=>{try{const m=E.conjurar(it,ov.querySelector("#enc-conj-mag").value);IV.registrar(cont(),{tipo:"uso-efeito",uid:it.uid,nome:it.nome,nota:"Conjurou "+m.n});salvarInv();redesenharInv();fim();aviso(m.n+" conjurada pelo item.");}catch(err){ov.querySelector("#enc-conj-erro").textContent=err.message;}});
+  }
   /* ---------- grimório: copiar magia (Mago) ---------- */
   async function carregarCat() { if (!magiasCat) magiasCat = await fetch("dados/magias.json").then((r) => r.json()); return magiasCat; }
   const wizard = () => CLS().some((c) => c.c === "Wizard");
@@ -1037,6 +1072,7 @@
 
   document.addEventListener("change", (e) => {
     const t = e.target; if (!P) return;
+    if (t.dataset.encBonus !== undefined) { const it=INV()[+t.dataset.encBonus], cat=it&&EF().catDoItem(it); if(!it||!cat||soLeitura)return; try { window.ITEM_ENCANTADO.configurar(it,cat,t.value); const a=ATQ().find(a=>a.itemUid===it.uid); if(a)a.magico=window.ITEM_ENCANTADO.bonus(it); salvarInv(); redesenharInv(); refrescar(); } catch(err){aviso(err.message,true);} return; }
     if (t.dataset.cls === "n") { desenhar(); return; }
     if (t.dataset.cls === "c") { const i = +t.closest("[data-ci]").dataset.ci; if(CLS().some((c,j)=>j!==i && c.c===t.value && t.value)){aviso("Esta classe já foi adicionada.",true);desenhar();return;} if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; CLS()[i].c = t.value; CLS()[i].sub = ""; F().classesEditadas=true; if(i===0){F().perClasse=[];F().especializacoes=[];} refrescar(); desenhar(); return; }
     if (t.dataset.atq && (t.tagName === "SELECT" || t.type === "checkbox")) { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = t.type === "checkbox" ? t.checked : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
@@ -1135,6 +1171,8 @@
     if (c("#inv-add-abrir")) { const p = $("#inv-add"); if (p && !p.hidden) fecharAdd(); else abrirAdd(); return; }
     if (c("#inv-add-fechar")) { fecharAdd(); return; }
     if ((b = c("[data-inv-add-tipo]"))) { escolherAdd(b.dataset.invAddTipo); return; }
+    if ((b = c("[data-enc-magias]"))) { abrirMagiasItem(+b.dataset.encMagias); return; }
+    if ((b = c("[data-inv-conjurar]"))) { abrirConjuracaoItem(+b.dataset.invConjurar); return; }
     if ((b = c("[data-inv-editar-abrir]"))) { const card = b.closest(".item-inv"), p = card && card.querySelector(".inv-edit"), it = INV()[+b.dataset.invEditarAbrir]; if (p && it) { const abre = p.hidden; p.hidden = !abre; abre ? invAbertos.add(it.uid) : invAbertos.delete(it.uid); card.querySelector(".inv-mais")?.removeAttribute("open"); if (abre) p.querySelector('input[data-inv="nome"]')?.focus(); } return; }
     if ((b = c("[data-cat-add]"))) { const row = b.closest(".inv-cat-item"); adicionarDoCatalogo(b.dataset.catAdd, row?.querySelector("input.num")?.value || 1, row?.querySelector("[data-cat-pacote]")?.value || ""); return; }
     if ((b = c("[data-cat-det]"))) { detalhesCatalogoAdd(b.dataset.catDet); return; }
