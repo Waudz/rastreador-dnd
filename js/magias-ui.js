@@ -20,9 +20,9 @@
   function conjurador({classe,atributo,cd,ataque,preparar}){
     return `<section class="magia-conjurador"><h3>${esc(classe)}</h3>${propriedades([['Atributo',atributo],['CD de magia',cd],['Ataque mágico',ataque],...(preparar==null?[]:[['Preparar até',preparar+' magias']])])}</section>`;
   }
-  const escolaIcones={abjuracao:'cleric',adivinhacao:'arcane',conjuracao:'mage',encantamento:'enchantment',evocacao:'evocation',ilusao:'spirit',necromancia:'undead',transmutacao:'arcane'};
+  const escolaIcones={abjuracao:'abjuration',adivinhacao:'divination',conjuracao:'conjuration',encantamento:'enchantment',evocacao:'evocation',ilusao:'illusion',necromancia:'necromancy',transmutacao:'transmutation'};
   const semAcentos=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  function simboloEscola(escola){const chave=semAcentos(escola).trim();const nome=escolaIcones[chave]||'sparkles';return '<span class="av av0 magia-selo-circulo catalogo-simbolo" aria-hidden="true">'+(window.rpgIcon?window.rpgIcon(nome):(window.ico?window.ico('sparkles'):'✦'))+'</span>';}
+  function simboloEscola(escola){const chave=semAcentos(escola).trim();const slug=escolaIcones[chave];return '<span class="av av0 magia-selo-circulo catalogo-simbolo" aria-hidden="true">'+(slug?'<img class="dnd-categoria-icone" src="icones/dnd/escolas/'+slug+'.webp" alt="" loading="lazy">':(window.rpgIcon?window.rpgIcon('arcane'):'✦'))+'</span>';}
   /* resultado da pesquisa de magias: a mesma linha compacta da pesquisa de monstros (.res: círculo no lugar do retrato, nome, uma linha de dados e o botão Ver) */
   function resultado({chave,nome,original,nivel,escola,tempo,alcance,ritual,concentracao,fonte,alias}){
     const circ=circulo(nivel);
