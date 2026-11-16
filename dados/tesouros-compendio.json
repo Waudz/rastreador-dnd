@@ -1,0 +1,305 @@
+{
+  "versao": 1,
+  "nota": "Descrições originais do Compêndio; valores indicativos para jogo, não transcrição do Livro do Jogador. Gemas usam faixas de tesouro; preços de mercadorias devem ser conferidos com as tabelas de 2014.",
+  "itens": [
+    {
+      "id": "compendio:tesouro/agate",
+      "nome": "Ágata",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Pedra ornamental de padrões coloridos, apreciada em adornos e pequenas peças de joalheria.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/azurite",
+      "nome": "Azurita",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Mineral azul intenso que pode ser lapidado ou guardado como peça de coleção.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/quartz",
+      "nome": "Quartzo",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Cristal translúcido utilizado em ornamentos e objetos decorativos.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/turquoise",
+      "nome": "Turquesa",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Pedra azul-esverdeada frequentemente utilizada em anéis e amuletos.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/amethyst",
+      "nome": "Ametista",
+      "categoria": "gema",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Variedade violeta de quartzo, valorizada em joias.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/garnet",
+      "nome": "Granada",
+      "categoria": "gema",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema de tonalidade avermelhada, adequada para adornos e engastes.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/pearl",
+      "nome": "Pérola",
+      "categoria": "gema",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Peça lustrosa formada no interior de certos moluscos, usada em joalheria.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/topaz",
+      "nome": "Topázio",
+      "categoria": "gema",
+      "custo": {
+        "v": 500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema de brilho vítreo, encontrada em diferentes tonalidades.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/opal",
+      "nome": "Opala",
+      "categoria": "gema",
+      "custo": {
+        "v": 1000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema conhecida por reflexos coloridos que variam conforme a luz.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/sapphire",
+      "nome": "Safira",
+      "categoria": "gema",
+      "custo": {
+        "v": 1000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Pedra preciosa conhecida especialmente por sua variedade azul.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/emerald",
+      "nome": "Esmeralda",
+      "categoria": "gema",
+      "custo": {
+        "v": 1000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Pedra preciosa verde, muito procurada por joalheiros e colecionadores.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/ruby",
+      "nome": "Rubi",
+      "categoria": "gema",
+      "custo": {
+        "v": 5000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Pedra preciosa vermelha de alto valor, usada em joias requintadas.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/diamond",
+      "nome": "Diamante",
+      "categoria": "gema",
+      "custo": {
+        "v": 5000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Cristal de grande dureza e brilho, apreciado como pedra preciosa.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/salt",
+      "nome": "Sal (500 g)",
+      "categoria": "mercadoria",
+      "custo": {
+        "v": 0.05,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Sal comercializado para conservar e temperar alimentos.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/wheat",
+      "nome": "Trigo (500 g)",
+      "categoria": "mercadoria",
+      "custo": {
+        "v": 0.01,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Grãos de trigo destinados à moagem, ao comércio ou à alimentação.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/flour",
+      "nome": "Farinha (500 g)",
+      "categoria": "mercadoria",
+      "custo": {
+        "v": 0.02,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Farinha moída, utilizada na preparação de pães e outros alimentos.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/iron",
+      "nome": "Ferro (500 g)",
+      "categoria": "mercadoria",
+      "custo": {
+        "v": 0.1,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Metal bruto comercializado para forja e fabricação de utensílios.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/copper",
+      "nome": "Cobre (500 g)",
+      "categoria": "mercadoria",
+      "custo": {
+        "v": 0.5,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Metal avermelhado usado na fabricação de ferramentas e objetos.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/linen",
+      "nome": "Linho (1 m²)",
+      "categoria": "mercadoria",
+      "custo": {
+        "v": 5,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Tecido de fibra vegetal empregado em roupas e artigos domésticos.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/silk",
+      "nome": "Seda (1 m²)",
+      "categoria": "mercadoria",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Tecido fino e leve, valorizado em vestimentas de luxo.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/saffron",
+      "nome": "Açafrão (500 g)",
+      "categoria": "mercadoria",
+      "custo": {
+        "v": 15,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Especiaria aromática rara, usada em culinária e comércio.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/cloves",
+      "nome": "Cravo-da-índia (500 g)",
+      "categoria": "mercadoria",
+      "custo": {
+        "v": 15,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Especiaria aromática empregada em alimentos e preparações.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/cinnamon",
+      "nome": "Canela (500 g)",
+      "categoria": "mercadoria",
+      "custo": {
+        "v": 15,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Casca aromática seca comercializada como especiaria.",
+      "fonte": "original-compendio",
+      "peso": null
+    }
+  ]
+}
