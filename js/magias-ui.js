@@ -24,7 +24,7 @@
   function resultado({chave,nome,original,nivel,escola,tempo,alcance,ritual,concentracao,fonte,alias}){
     const circ=circulo(nivel),selo=nivel===0?'T':nivel==null?'M':nivel+'º';
     const dados=['Magia',circ,escola,tempo,alcance,ritual?'Ritual':'',concentracao?'Concentração':'',fonte,alias?'No LDJ: '+alias:''].filter(Boolean);
-    return `<div class="res res-magia" data-spopen="${esc(chave)}"><span class="lft"><span class="av av0 magia-selo-circulo" style="width:40px;height:40px" aria-hidden="true">${esc(selo)}</span><span><b>${esc(nome)}</b>${original&&original!==nome?` <span class="muted">(${esc(original)})</span>`:''}<br><span class="muted">${dados.map(esc).join(' · ')}</span></span></span><span class="acts"><button type="button" class="small" data-spopen="${esc(chave)}" aria-label="Ver ${esc(nome)}">Ver</button></span></div>`;
+    return `<div class="res res-magia catalogo-cartao catalogo-magia" data-spopen="${esc(chave)}"><span class="lft"><span class="av av0 magia-selo-circulo" aria-hidden="true">${esc(selo)}</span><span><b>${esc(nome)}</b>${original&&original!==nome?` <span class="muted">(${esc(original)})</span>`:''}<br><span class="muted">${dados.map(esc).join(' · ')}</span></span></span><span class="acts"><button type="button" class="small" data-spopen="${esc(chave)}" aria-label="Ver ${esc(nome)}">Ver</button></span></div>`;
   }
   /* ficha da magia: mesma estrutura das fichas de monstro e de personagem (identidade, cartões de dados, seções em cartões com o título padrão) */
   function detalhes({nome,original,meta,descricao,materiais,nota,originalTexto,concentracao}){
