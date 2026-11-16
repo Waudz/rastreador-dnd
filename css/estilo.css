@@ -665,3 +665,13 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 #blist.catalogo-grade>.catalogo-habilidade>.lft,#spells.catalogo-grade>.catalogo-habilidade>.lft{flex-direction:column;align-items:stretch}
 #spells .catalogo-habilidade .catalogo-simbolo{width:44px;height:44px}
 #spells.catalogo-grade .catalogo-habilidade .catalogo-simbolo{width:100%;height:auto;aspect-ratio:1/1}
+
+
+/* Menu compacto de ações secundárias do Bestiário. */
+#blist .catalogo-acoes-menu{position:relative;display:inline-block;align-self:center}
+#blist .catalogo-acoes-menu>summary{display:flex;align-items:center;justify-content:center;min-width:32px;min-height:30px;list-style:none;cursor:pointer;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--text);padding:4px 8px;font-weight:bold}
+#blist .catalogo-acoes-menu>summary::-webkit-details-marker{display:none}
+#blist .catalogo-acoes-menu[open]>summary{border-color:var(--gold)}
+#blist .catalogo-acoes-opcoes{position:absolute;right:0;bottom:calc(100% + 6px);z-index:30;display:flex;flex-direction:column;gap:5px;min-width:155px;padding:8px;background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:0 10px 24px #0008}
+#blist .catalogo-acoes-opcoes button{width:100%;text-align:left;justify-content:flex-start}
+#blist.catalogo-grade>.catalogo-cartao{overflow:visible}
