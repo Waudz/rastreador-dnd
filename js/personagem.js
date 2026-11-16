@@ -288,7 +288,17 @@
   }
 
   /* ataques */
+  /* Ataques vinculados usam o bônus atual do item, inclusive após encantá-lo.
+     Não altera a ficha persistida nem adiciona o bônus duas vezes. */
+  function ataqueComEncantamento(a) {
+    if (!a?.itemUid) return a;
+    const it = INV().find(x => x.uid === a.itemUid && Number(x.qtd) > 0);
+    if (!it) return a;
+    const magico = window.ITEM_ENCANTADO?.bonus(it) || 0;
+    return { ...a, magico };
+  }
   function resAtq(a) {
+    a = ataqueComEncantamento(a);
     const valores=R.valoresAtaque(F(),a),hit=valores.ataque,dm=valores.dano;
     return `Ataque ${fm(hit)} · Dano ${esc(a.dado || "—")}${dm ? fm(dm) : ""} ${esc(a.tipo || "")}`;
   }
@@ -299,11 +309,11 @@
     return `<article class="panel2 ataque-ficha" data-ataque-auto="desarmado"><h3>${esc(a.nome)}</h3><p class="muted">${esc(nota)}</p><div class="atk-res" id="atk-res-auto"><b>${resAtq(a)}</b></div><div class="row"><button type="button" class="small" data-rolar-atq="auto">${window.ico?window.ico("d20"):""}Rolar ataque</button><button type="button" class="small" data-rolar-dano="auto">${window.ico?window.ico("d20"):""}Rolar dano</button></div></article>`;
   };
   const listaAtq = () => cartaoDesarmado() + ATQ().map(linhaAtq).join("");
-  const ataqueDe = (k) => (k === "auto" ? R.ataqueDesarmado(F()) : ATQ()[+k]);
+  const ataqueDe = (k) => (k === "auto" ? R.ataqueDesarmado(F()) : ataqueComEncantamento(ATQ()[+k]));
   const linhaAtq = (a, i) => `<article class="panel2 ataque-ficha" data-ai="${i}"><h3>${esc(a.nome||"Ataque personalizado")}</h3><details class="ataque-editor"><summary>Ajustar arma e bônus</summary><div class="row" style="margin:0 0 6px"><input style="flex:1 1 160px" data-atq="nome" value="${esc(a.nome || "")}" placeholder="Nome do ataque" maxlength="60"><button type="button" class="small subtle" data-rm-atq="${i}" aria-label="Remover ataque">${window.ico ? window.ico("x") : "x"}</button></div>
       <div class="row" style="margin:0 0 6px"><div><label>Atributo</label><select data-atq="atr">${opt("for", "Força", (a.atr || "for") === "for")}${opt("des", "Destreza", a.atr === "des")}${opt("acuidade", "Acuidade (maior)", a.atr === "acuidade")}${opt("int", "Inteligência", a.atr === "int")}${opt("sab", "Sabedoria", a.atr === "sab")}${opt("car", "Carisma", a.atr === "car")}</select></div>
       <div><label>Dano</label><input class="num" data-atq="dado" value="${esc(a.dado || "1d6")}" maxlength="12"></div><div><label>Tipo de dano</label><select data-atq="tipo">${R.TIPOS_DANO.map((t) => opt(t, t, t === a.tipo)).join("")}</select></div>
-      <div><label>Bônus mágico</label><input class="num" type="number" data-atq="magico" value="${num(a.magico, 0)}"></div><div><label>Dano extra</label><input class="num" type="number" data-atq="extra" value="${num(a.extra, 0)}" title="Somado ao dano (ex.: fúria, estilo de luta)"></div>
+      <div><label>Bônus mágico</label><input class="num" type="number" data-atq="magico" value="${num(ataqueComEncantamento(a).magico, 0)}"${a.itemUid ? " readonly title=\"Bônus definido pelo encantamento do item vinculado\"" : ""}></div><div><label>Dano extra</label><input class="num" type="number" data-atq="extra" value="${num(a.extra, 0)}" title="Somado ao dano (ex.: fúria, estilo de luta)"></div>
       <label class="inline" style="margin:14px 0 0"><input type="checkbox" style="width:auto;height:auto" data-atq="prof" ${a.prof === false ? "" : "checked"}> Proficiente</label></div>
       </details><div class="atk-res" id="atk-res-${i}"><b>${resAtq(a)}</b></div><div class="row"><button type="button" class="small" data-rolar-atq="${i}">${window.ico?window.ico("d20"):""}Rolar ataque</button><button type="button" class="small" data-rolar-dano="${i}">${window.ico?window.ico("d20"):""}Rolar dano</button></div></article>`;
 
