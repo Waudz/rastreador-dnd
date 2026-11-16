@@ -69,10 +69,10 @@
     const G=window.GRUPO_PERSONAGENS, v=pct(p.pv_atual,p.pv_max);
     const dono=mestre()?`<div class="jogador-vinculo"><label>Jogador<select data-dono="${esc(p.id)}"><option value="">Vincular conta…</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?'selected':''}>${esc(nomes[m.usuario_id]||'Jogador')}</option>`).join('')}</select></label></div>`:'';
     return `<article class="card personagem-card grupo-cartao" data-id="${esc(p.id)}"><div class="grupo-cartao-topo">
-      ${mestre()?G.checkbox(p,selecionados.has(p.id)):''}${G.identidade(p,{jogador:nomes[p.dono_id]||'Sem vínculo',vida:true})}
+      ${mestre()?G.checkbox(p,selecionados.has(p.id)):''}${G.identidade(p,{jogador:nomes[p.dono_id]||'Sem vínculo',vida:true,barraVida:v})}
       <div class="grupo-cartao-acoes">${mestre()?`<a class="grupo-icone" href="${esc(G.destino(id,[p.id]))}" title="Adicionar à iniciativa" aria-label="Adicionar ${esc(p.nome)} à iniciativa">${ico('swords')}</a>`:''}
       <details class="compact-menu"><summary title="Mais opções" aria-label="Mais opções de ${esc(p.nome)}">${ico('more')}</summary><div class="compact-popover"><a href="personagem.html?id=${encodeURIComponent(p.id)}">Abrir ficha</a>${dono}<button type="button" class="small danger" data-excluir-pers="${esc(p.id)}">Excluir personagem</button></div></details></div></div>
-      <div class="hp-track" role="meter" aria-label="Pontos de vida de ${esc(p.nome)}" aria-valuemin="0" aria-valuemax="${Math.max(1,p.pv_max)}" aria-valuenow="${p.pv_atual}"><div class="hp-fill ${v<=25?'low':v<=50?'mid':''}" style="width:${v}%"></div></div>${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''}</article>`;
+${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''}</article>`;
   };
 
 
