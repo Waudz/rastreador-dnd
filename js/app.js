@@ -147,7 +147,7 @@
     const pt = (m) => { const k = m.name.toLowerCase(); return window.CATALOGO?.registro('monstro',m.key)?.dados?.nomeCatalogo ?? TR[k] ?? D.M[k] ?? ""; };
 
     /* banco local (IndexedDB) */
-    let db, ALL = [], SP = [], PH = {}, BY = {}, ABI = new Map(), curSheet = null, phKey = null, formPhoto, shown = 40, showAll = false, editKey = null, editGlobal = false, editVersion = 0, cmSpells = [];
+    let db, ALL = [], SP = [], PH = {}, BY = {}, ABI = new Map(), curSheet = null, phKey = null, formPhoto, shown = 40, shownSpells = 40, editKey = null, editGlobal = false, editVersion = 0, cmSpells = [];
     const rq = (r) => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
     const done = (t) => new Promise((ok, no) => { t.oncomplete = ok; t.onerror = () => no(t.error); });
     const put = async (store, arr) => { const t = db.transaction(store, "readwrite"); arr.forEach((x) => t.objectStore(store).put(x)); await done(t); };
@@ -341,9 +341,7 @@
     restaurarOrdem("magias", "#s-ordem");
     function renderBestiary() {
       const q = nz($("#bq").value.trim()), f = $("#bf").value;
-      $("#ball").textContent = showAll ? "Ocultar lista" : "Mostrar tudo";
       renderGlobalDeleted();
-      if (!q && !f && !showAll) { $("#bcount").textContent = ALL.length ? `${ALL.length} fichas guardadas. Pesquise, escolha um filtro ou use “Mostrar tudo”.` : "Nenhuma ficha guardada ainda."; $("#blist").innerHTML = ""; return; }
       const ws = q.split(/\s+/).filter(Boolean), encontrados = ALL.filter((m) => inF(m, f) && ws.every((w) => hay(m).includes(w)));
       const list = ordenarCatalogo(encontrados, $("#b-ordem")?.value || "nome-asc", m => pt(m) || m.name);
       $("#bcount").textContent = `${list.length} fichas`;
@@ -352,7 +350,7 @@
     $("#bf").onchange = () => { shown = 40; renderBestiary(); };
     $("#b-ordem")?.addEventListener("change", () => { guardarOrdem("bestiario", $("#b-ordem").value); shown = 40; renderBestiary(); });
     $("#bq").addEventListener("input", () => { shown = 40; renderBestiary(); });
-    $("#ball").onclick = () => { showAll = !showAll; shown = 40; renderBestiary(); };
+
 
     /* abas laterais: ficha (direita) e magia (esquerda, ou empilhada na direita) */
     function layout() { window.PAINEIS_LAYOUT.aplicar(); }
@@ -410,7 +408,7 @@
     };
     const edOf = (doc) => (/2014/.test(String(doc?.key || "")) ? "2014" : "");
     function spSearch() {
-      const q = nz($("#sq").value.trim()), box = $("#spells"), cont = $("#scount"); if (!q) { box.innerHTML = ""; if (cont) cont.textContent = ""; return; }
+      const q = nz($("#sq").value.trim()), box = $("#spells"), cont = $("#scount");
       const tipo = $("#sf-type").value, src = "2014", lv = $("#sf-lvl").value, sch = $("#sf-sch").value, ex = $("#sf-ex").value;
       const soMagia = tipo === "spell" || !!(lv || sch || ex); // círculo, escola e ritual só existem em magias
       const kOf = (s) => s.key.startsWith("ds:") ? s.key.slice(3) : s.name.toLowerCase();
@@ -418,13 +416,15 @@
         .filter((s) => lv === "" || (s.level != null && String(s.level) === lv))
         .filter((s) => !sch || (SCH[s.school?.name] || "") === sch)
         .filter((s) => !ex || (ex === "ritual" ? !!s.ritual : !!s.concentration))
-        .filter((s) => { const k = kOf(s); return nz(s.name + " " + (D.S[k]?.[0] || "")).includes(q); });
-      const r = ordenarCatalogo(filtradas, $("#s-ordem")?.value || "nome-asc", s => D.S[kOf(s)]?.[0] || s.name).slice(0, 30);
+        .filter((s) => { const k = kOf(s); return !q || nz(s.name + " " + (D.S[k]?.[0] || "")).includes(q); });
+      const ordenadas = ordenarCatalogo(filtradas, $("#s-ordem")?.value || "nome-asc", s => D.S[kOf(s)]?.[0] || s.name);
+      const r = ordenadas.slice(0, shownSpells);
+      const mais = $("#sp-more"); mais.hidden = ordenadas.length <= shownSpells || (tipo !== "spell" && tipo !== ""); mais.textContent = `Mostrar mais magias (${Math.max(0, ordenadas.length - shownSpells)})`;
       box.innerHTML = r.map((s) => {
         const k = kOf(s), d = D.S[k];
         return window.MAGIAS_UI.resultado({chave:s.key,nome:d?d[0]:s.name,original:s.name,nivel:s.level,escola:SCH[s.school?.name],tempo:s.casting_time?cap(tr(s.casting_time)):undefined,alcance:s.range_text?tr(s.range_text):undefined,ritual:s.ritual,concentracao:s.concentration,fonte:srcOf(s),alias:''});
       }).join("") + (soMagia || (tipo && tipo !== "monster") ? "" : abilityRows(q, src)) + (soMagia || (tipo && tipo !== "class") ? "" : classRows(q, src)) || '<span class="muted">Nada encontrado.</span>';
-      if (cont) { const n = box.querySelectorAll(".res").length; cont.textContent = n ? `${n} ${n === 1 ? "resultado" : "resultados"}` : ""; }   // contagem, como "N fichas" no bestiário
+      if (cont) { const n = box.querySelectorAll(".res").length; cont.textContent = n ? `${n} de ${ordenadas.length}${tipo === "spell" ? " magias" : " resultados de magia"} exibidos` : "Nenhuma magia encontrada."; }   // contagem, como "N fichas" no bestiário
     }
     function abilityRows(q, src = "") {
       return [...ABI.entries()].map(([l, v]) => [l, v, src ? v.items.filter((x) => edOf(x.m.document) === src) : v.items]).filter(([l, v, its]) => its.length && nz(v.name + " " + nm(v.name)).includes(q)).slice(0, 15).map(([l, v, its]) => `<div class="res" data-abopen="${esc(l)}"><span><b>${esc(nm(v.name))}</b> <span class="muted">(${esc(v.name)})</span><br><span class="muted">Habilidade de monstro · ${its.length} ${its.length > 1 ? "monstros" : "monstro"}: ${esc(its.slice(0, 3).map((x) => pt(x.m) || x.m.name).join(", "))}${its.length > 3 ? "…" : ""}</span></span></div>`).join("");
@@ -549,9 +549,19 @@
       $("#cm-acts").value = m.raw?.actions ?? (m.actions || []).map((a) => `${a.name} | ${a.desc}`).join("\n");
       window.FICHA_CRIACAO.preencherExtras(window.FICHA_CRIACAO.extrasDeMonstro(m));
       refreshLineChips(); $("#cm-save").textContent = editGlobal ? "Publicar alterações globais" : "Salvar alterações"; $("#cm-cancel").hidden = false; $("#cm-msg").textContent = editGlobal ? "Edição global: as alterações serão vistas por todos os usuários." : "";
-      $("#cm").open = true; $("#cm").scrollIntoView({ behavior: "smooth" });
+      abrirCriacao();
     }
-    $("#cm-cancel").onclick = () => { resetForm(); $("#cm-msg").textContent = "Edição cancelada."; };
+    const dialogoCriacao = $("#cm");
+    function abrirCriacao() {
+      if (visitante()) return;
+      if (!dialogoCriacao.open) dialogoCriacao.showModal();
+      $("#cm-name").focus();
+    }
+    function fecharCriacao() { if (dialogoCriacao.open) dialogoCriacao.close(); }
+    $("#cm-abrir").onclick = () => { if (visitante()) { location.href = "entrar.html?voltar=iniciativa.html%3Faba%3Dmonstros"; return; } resetForm(); $("#cm-msg").textContent = ""; abrirCriacao(); };
+    $("#cm-fechar").onclick = fecharCriacao;
+    dialogoCriacao.addEventListener("click", e => { if (e.target === dialogoCriacao) fecharCriacao(); });
+    $("#cm-cancel").onclick = () => { resetForm(); fecharCriacao(); };
     /* ---- Importar bloco de estatísticas: a leitura acontece neste aparelho (js/ficha-importar.js); a prévia é revista antes de preencher o formulário, que continua editável ---- */
     let impAtual = null;
     const impPrevia = (v) => {
@@ -615,8 +625,8 @@
         const botao = $("#cm-save"); botao.disabled = true;
         try {
           await CATALOGO.salvar('monstro', original.key, global, opcoes);
-          resetForm(); await reload();
-          $("#cm-msg").textContent = `“${name}” atualizado no catálogo global.`;
+          resetForm(); await reload(); fecharCriacao();
+          status(`“${esc(name)}” atualizado no catálogo global.`);
         } catch (e) {
           $("#cm-msg").textContent = "Não foi possível publicar: " + e.message + " Atualize a página antes de tentar novamente se houve conflito.";
         } finally { botao.disabled = false; }
@@ -624,13 +634,14 @@
       }
       await put("mon", [m]);
       if (typeof formPhoto === "string") await put("img", [{ key: m.key, data: formPhoto }]); else if (formPhoto === null) await del("img", m.key);
-      resetForm(); await reload(); queueSync();
-      $("#cm-msg").textContent = `“${name}” ${edited ? "atualizado" : "salvo"} no bestiário.`;
+      resetForm(); await reload(); queueSync(); fecharCriacao();
+      status(`“${esc(name)}” ${edited ? "atualizado" : "salvo"} no bestiário.`);
     };
 
     /* eventos */
-    $("#sq").addEventListener("input", () => { $("#sq-x").hidden = !$("#sq").value; spSearch(); });
-    $("#s-ordem")?.addEventListener("change", () => { guardarOrdem("magias", $("#s-ordem").value); spSearch(); });
+    $("#sq").addEventListener("input", () => { shownSpells = 40; $("#sq-x").hidden = !$("#sq").value; spSearch(); });
+    $("#sp-more").onclick = () => { shownSpells += 40; spSearch(); };
+    $("#s-ordem")?.addEventListener("change", () => { guardarOrdem("magias", $("#s-ordem").value); shownSpells = 40; spSearch(); });
     /* filtros: só o tipo fica à vista; o resto abre em "Filtros" e se adapta ao tipo escolhido */
     const syncFilters = () => {
       const tipo = $("#sf-type").value, soMagia = tipo === "" || tipo === "spell"; // círculo, escola e ritual só existem em magias
@@ -639,9 +650,9 @@
       $("#sf-more").innerHTML = ico("filter") + "Filtros" + (n ? ` (${n})` : "");
     };
     $("#sf-more").onclick = () => { const aberto = $("#sf-adv").hidden; $("#sf-adv").hidden = !aberto; $("#sf-more").setAttribute("aria-expanded", String(aberto)); };
-    ["#sf-type", "#sf-lvl", "#sf-sch", "#sf-ex"].forEach((s) => $(s).addEventListener("change", () => { syncFilters(); spSearch(); }));
+    ["#sf-type", "#sf-lvl", "#sf-sch", "#sf-ex"].forEach((s) => $(s).addEventListener("change", () => { shownSpells = 40; syncFilters(); spSearch(); }));
     syncFilters();
-    $("#sq-x").onclick = () => { $("#sq").value = ""; $("#sq-x").hidden = true; spSearch(); $("#sq").focus(); };
+    $("#sq-x").onclick = () => { $("#sq").value = ""; shownSpells = 40; $("#sq-x").hidden = true; spSearch(); $("#sq").focus(); };
     $("#sh-close").onclick = closeSheet; $("#spd-close").onclick = closeSheet; $("#spd-voltar").onclick = voltarPainel;
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") { sug.hidden = true; if (!$("#spd").hidden) voltarPainel(); else if (!$("#sheet").hidden) closeSheet(); } });
     $("#combatants").addEventListener("click", (e) => { if (e.target.closest("button,input,select,.fx-form,.fxchip")) return; const a = e.target.closest(".combatant"); if (a && a.dataset.key) openSheet(a.dataset.key); });
