@@ -17,8 +17,8 @@ test("catálogo: 578 itens do SRD 5.1, ids únicos, todos com nome em português
   const por = {}; for (const i of itens) por[i.categoria] = (por[i.categoria] || 0) + 1;
   assert.equal(por.arma, 37); assert.equal(por.armadura + por.escudo, 13); assert.equal(por.pacote, 7); assert.equal(por.kit, 7); assert.equal(por.ferramenta, 31); assert.equal(por["montaria-veiculo"], 40);
 });
-test("nada inventado: o SRD não traz descrição, então o catálogo não tem desc; valores vêm dos dados (arma, armadura, preço, peso em kg)", () => {
-  assert.ok(itens.every((i) => i.desc === undefined));
+test("resumos editoriais em todos os itens; valores estruturados do SRD preservados (arma, armadura, preço, peso em kg)", () => {
+  assert.ok(itens.every((i) => typeof i.desc === "string" && i.desc.trim().length > 15));
   const por = (id) => itens.find((i) => i.id === "srd51:item/" + id);
   assert.deepEqual(J(por("longsword").arma.dano), { dado: "1d8", tipo: "slashing" }); assert.equal(por("longsword").peso, 1.5); assert.equal(por("longsword").custo.v, 15);
   assert.equal(por("plate-armor").armadura.ca, 18); assert.equal(por("chain-mail").armadura.forMin, 13);
@@ -39,9 +39,9 @@ test("busca e filtros: acento, categoria, propriedade, raridade e sintonia", () 
   assert.ok(C.filtrar(itens, { cat: "magico", raridade: "legendary", sintonia: "sim" }).every((i) => i.raridade === "legendary" && i.sintonia));
   assert.equal(C.filtrar(itens, { q: "zzzz-nada" }).length, 0);
 });
-test("ficha de leitura: peso, preço e lacuna de descrição sem inventar texto", () => {
+test("ficha de leitura: peso, preço e resumo editorial sem inventar efeitos", () => {
   const { C } = carregar(), it = itens.find((i) => i.id === "srd51:item/longsword"), h = C.fichaHTML(C.viewDoCatalogo(it, null));
-  assert.match(h, /Dano<\/dt><dd>1d8 cortante/); assert.match(h, /15 PO/); assert.match(h, /1,5 kg/); assert.match(h, /não traz descrição textual/);
+  assert.match(h, /Dano<\/dt><dd>1d8 cortante/); assert.match(h, /15 PO/); assert.match(h, /1,5 kg/); assert.match(h, /Descrição/); assert.match(h, /arma marcial corpo a corpo/);
   const pack = C.fichaHTML(C.viewDoCatalogo(itens.find((i) => i.id === "srd51:item/explorers-pack"), null)); assert.match(pack, /Conteúdo do conjunto/); assert.match(pack, /Tocha <b>×10<\/b>/); assert.match(pack, /29,5 kg/);
 });
 test("adicionar ao inventário: item comum, poção com efeito aprovado, kit único e pacote agrupado sem empilhar", () => {
