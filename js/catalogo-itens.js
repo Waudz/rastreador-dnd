@@ -128,7 +128,7 @@
   function paraInventario(it, qtd, origem) {
     const IV = window.INVENTARIO, IE = window.ITENS_EFEITOS, n = Math.max(1, Math.floor(num(qtd, 1))), po = custoEmPO(it);
     if (it.efeitos && IE && IE.CATALOGO[it.efeitos]) { const x = IE.itemDoCatalogo(it.efeitos, origem); x.qtd = n; x.catId = it.id; x.nome = it.nome; if (it.peso != null) x.peso = it.peso; if (po != null) x.preco = po; return x; }
-    const x = IV.novoItem({ nome: it.nome, qtd: n, peso: pesoDe(it) || 0, tipo: it.custom ? "equipamento" : tipoInventario(it), ref: it.custom&&!it.global ? null : it.id, catId: it.custom&&!it.global ? null : it.id, origem: origem || { tipo: "jogo" }, preco: po, desc: it.custom ? it.desc || "" : "" });
+    const x = IV.novoItem({ nome: it.nome, qtd: n, peso: pesoDe(it) || 0, tipo: it.custom ? "equipamento" : tipoInventario(it), ref: it.custom&&!it.global ? null : it.id, catId: it.custom&&!it.global ? null : it.id, origem: origem || { tipo: "jogo" }, preco: po, desc: it.desc || "" });
     if (it.pacote) x.conjunto = componentes(it).map((c) => ({ ref: c.id, nome: c.nome, qtd: c.qtd, peso: c.peso }));
     return x;
   }
