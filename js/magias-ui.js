@@ -20,11 +20,14 @@
   function conjurador({classe,atributo,cd,ataque,preparar}){
     return `<section class="magia-conjurador"><h3>${esc(classe)}</h3>${propriedades([['Atributo',atributo],['CD de magia',cd],['Ataque mágico',ataque],...(preparar==null?[]:[['Preparar até',preparar+' magias']])])}</section>`;
   }
+  const escolaIcones={abjuracao:'shield',adivinhacao:'eye',conjuracao:'sparkles',encantamento:'heart',evocacao:'flame',ilusao:'eye',necromancia:'skull',transmutacao:'refresh-cw'};
+  const semAcentos=s=>String(s||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+  function simboloEscola(escola){const chave=semAcentos(escola).trim();const nome=escolaIcones[chave]||'sparkles';return '<span class="av av0 magia-selo-circulo catalogo-simbolo" aria-hidden="true">'+(window.ico?window.ico(nome):'✦')+'</span>';}
   /* resultado da pesquisa de magias: a mesma linha compacta da pesquisa de monstros (.res: círculo no lugar do retrato, nome, uma linha de dados e o botão Ver) */
   function resultado({chave,nome,original,nivel,escola,tempo,alcance,ritual,concentracao,fonte,alias}){
-    const circ=circulo(nivel),selo=nivel===0?'T':nivel==null?'M':nivel+'º';
+    const circ=circulo(nivel);
     const dados=['Magia',circ,escola,tempo,alcance,ritual?'Ritual':'',concentracao?'Concentração':'',fonte,alias?'No LDJ: '+alias:''].filter(Boolean);
-    return `<div class="res res-magia catalogo-cartao catalogo-magia" data-spopen="${esc(chave)}"><span class="lft"><span class="av av0 magia-selo-circulo" aria-hidden="true">${esc(selo)}</span><span><b>${esc(nome)}</b>${original&&original!==nome?` <span class="muted">(${esc(original)})</span>`:''}<br><span class="muted">${dados.map(esc).join(' · ')}</span></span></span><span class="acts"><button type="button" class="small" data-spopen="${esc(chave)}" aria-label="Ver ${esc(nome)}">Ver</button></span></div>`;
+    return `<div class="res res-magia catalogo-cartao catalogo-magia" data-spopen="${esc(chave)}"><span class="lft">${simboloEscola(escola)}<span><b>${esc(nome)}</b>${original&&original!==nome?` <span class="muted">(${esc(original)})</span>`:''}<br><span class="muted">${dados.map(esc).join(' · ')}</span></span></span><span class="acts"><button type="button" class="small" data-spopen="${esc(chave)}" aria-label="Ver ${esc(nome)}">Ver</button></span></div>`;
   }
   /* ficha da magia: mesma estrutura das fichas de monstro e de personagem (identidade, cartões de dados, seções em cartões com o título padrão) */
   function detalhes({nome,original,meta,descricao,materiais,nota,originalTexto,concentracao}){
