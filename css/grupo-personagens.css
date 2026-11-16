@@ -113,3 +113,15 @@ a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, cu
 .grupo-personagens-lista .grupo-cartao-topo{width:100%;align-items:center}
 .grupo-personagens-lista .grupo-cartao .grupo-identidade{flex:1}
 @media(max-width:520px){.grupo-vista-controles{justify-content:space-between}.grupo-personagens-lista .grupo-cartao-topo{flex-wrap:wrap}}
+
+/* PR20 — cartões do Grupo seguem o mesmo acabamento dos catálogos. */
+.grupo-unificado .grupo-cartao{border:1px solid var(--line);border-radius:10px;background:var(--panel);transition:border-color .15s ease}
+.grupo-unificado .grupo-cartao:hover{border-color:var(--accent,var(--line))}
+.grupo-unificado .grupo-cartao .grupo-identidade img,.grupo-unificado .grupo-cartao .grupo-identidade .av{border:1px solid var(--line);border-radius:9px;object-fit:cover;flex:none}
+.grupo-unificado .grupo-cartao .grupo-identidade-texto{min-width:0;overflow-wrap:anywhere}
+.grupo-unificado .grupo-cartao .grupo-cartao-acoes{gap:6px}
+.grupo-unificado .grupo-cartao .grupo-icone{border-color:var(--line);color:var(--text)}
+.grupo-unificado .cards.grupo-personagens-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:10px}
+.grupo-unificado .cards.grupo-personagens-lista{display:flex;flex-direction:column;gap:8px}
+.grupo-unificado .grupo-personagens-lista .grupo-cartao{width:100%}
+@media(max-width:520px){.grupo-unificado .cards.grupo-personagens-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.grupo-unificado .grupo-personagens-grade .grupo-cartao-topo{flex-wrap:wrap}.grupo-unificado .grupo-personagens-grade .grupo-identidade{flex-basis:100%}.grupo-unificado .grupo-personagens-grade .grupo-cartao-acoes{margin-left:auto}}
