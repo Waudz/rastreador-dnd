@@ -578,3 +578,19 @@ img.ampliavel{cursor:zoom-in}
 .vi-barra button{min-width:44px;height:44px;border-radius:999px;border:0;background:transparent;color:#fff;display:grid;place-items:center;cursor:pointer;padding:0 10px;font-weight:800}
 .vi-barra button:hover,.vi-x:hover{background:rgba(255,255,255,.14)}
 .vi-pct{font-size:13px}
+
+/* Compêndio 5e — miniaturas de itens: fundo uniforme e profundidade.
+   Seletores específicos para não alterar imagens de personagens ou monstros. */
+:root { --item-imagem-fundo: #2D4050; }
+.inv-thumb,
+.inv-thumb.vazio {
+  background: var(--item-imagem-fundo);
+  border-color: var(--line);
+}
+.inv-thumb.vazio {
+  border-style: dashed;
+  border-color: var(--gold-dark);
+}
+.inv-thumb img.inv-thumb-img {
+  filter: drop-shadow(0 6px 7px rgba(0, 0, 0, .42));
+}

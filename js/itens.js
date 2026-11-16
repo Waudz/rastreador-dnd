@@ -1,3 +1,4 @@
+
 /* Aba Itens: catálogo de itens do SRD 5.1 (2014) com busca, filtros, lista/grade, detalhes e itens personalizados. Dados e ficha em js/catalogo-itens.js. */
 (() => {
   "use strict";
@@ -11,8 +12,8 @@
   const imagemDe=it=>window.CATALOGO?.imagem('item',it.id)??(it.custom?it.imagem:null)??null;
   const miniatura = (it) => { const src = imagemDe(it); return src ? `<img class="inv-thumb-img" src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ico(C.ICONE[it.categoria] || "bag"); };
   /* linha secundária do cartão (HTML): categoria, tag Mágico, raridade (indicador com cor própria), preço e peso; mágico e raridade são informações separadas */
-  const meta = (it) => { const p = C.pesoDe(it), c = C.custoTexto(it), mg = C.ehMagicoCatalogo(it), rar = it.raridade ? C.RARIDADES[it.raridade] : "Comum";   // sem raridade cadastrada: "Comum" só na exibição
-    return [esc(C.rotuloCat(it.categoria)), mg ? '<span class="inv-magico-tag">Mágico</span>' : null, rar ? C.seloRaridade({ chave: C.chaveRaridade(it.raridade) || (it.raridade ? null : "comum"), rotulo: rar }) : null, c ? esc(c) : null, p != null && p > 0 ? esc(C.kg(p) + " kg") : null].filter(Boolean).join(" · "); };
+  const meta = (it) => { const p = C.pesoDe(it), c = C.custoTexto(it), mg = C.ehMagicoCatalogo(it), rar = C.RARIDADES[it.raridade || "mundano"];   // itens sem raridade são exibidos como Mundano
+    return [esc(C.rotuloCat(it.categoria)), mg ? '<span class="inv-magico-tag">Mágico</span>' : null, rar ? C.seloRaridade({ chave: C.chaveRaridade(it.raridade || "mundano"), rotulo: rar }) : null, c ? esc(c) : null, p != null && p > 0 ? esc(C.kg(p) + " kg") : null].filter(Boolean).join(" · "); };
 
   /* linha mecânica do cartão: a mesma do inventário (INV_RESUMO.mecanico: dano, tipo de dano, propriedades, alcance, CA, cura) mais o que o catálogo já registra (furtividade, sintonia, espaço do corpo, lote, velocidade).
      Só dados existentes: sem dado, não mostra nada e nunca inventa descrição. Itens personalizados mostram a descrição que o próprio usuário escreveu. */
@@ -31,7 +32,7 @@
   function cartao(it) {
     const id = esc(it.id), mec = mecanicaDe(it);
     return `<div class="item-inv inv-card itens-card${C.ehMagicoCatalogo(it) ? " item-magico" : ""}" data-it="${id}"><button type="button" class="inv-thumb${imagemDe(it) ? "" : " vazio"}" data-it-det="${id}" aria-label="Abrir os detalhes de ${esc(it.nome)}" title="Ver detalhes">${miniatura(it)}</button>
-      <div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-it-det="${id}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome)}</b></button>${mec ? `<span class="inv-mec">${esc(mec)}</span>` : ""}</div>
+      <div class="inv-corpo"><div class="inv-titulo"><button class="inv-nome-btn" type="button" data-it-det="${id}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome)}</b></button>${mec ? `<span class="inv-mec">${esc(mec)}</span>` : ""}</div>
       <div class="inv-meta muted">${meta(it)}</div>${it.pacote ? '<div class="inv-meta muted">Conjunto de ' + it.pacote.length + " componentes</div>" : ""}</div></div>`;
   }
   function desenhar() {

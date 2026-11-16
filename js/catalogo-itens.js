@@ -11,7 +11,7 @@
     "artisans-tools": "Ferramentas de artesão", "gaming-sets": "Jogos", "musical-instrument": "Instrumento musical", "other-tools": "Outras ferramentas",
     "mounts-and-other-animals": "Montarias e outros animais", "tack-harness-and-drawn-vehicles": "Arreios e veículos puxados", "waterborne-vehicles": "Veículos aquáticos" };
   const ESPACOS = { body: "Corpo", neck: "Pescoço", shield: "Escudo", waist: "Cintura", oneHand: "Uma mão", feet: "Pés", arms: "Braços", shoulders: "Ombros", head: "Cabeça", hands: "Mãos", twoHands: "Duas mãos", ring: "Anel" };
-  const RARIDADES = { common: "Comum", uncommon: "Incomum", rare: "Rara", "very-rare": "Muito rara", legendary: "Lendária", artifact: "Artefato" };
+  const RARIDADES = { mundano: "Mundano", common: "Comum", uncommon: "Incomum", rare: "Rara", "very-rare": "Muito rara", legendary: "Lendária", artifact: "Artefato" };
   const PROPRIEDADES = { ammunition: "Munição", finesse: "Acuidade", heavy: "Pesada", light: "Leve", loading: "Recarga", reach: "Alcance", special: "Especial", thrown: "Arremesso", "two-handed": "Duas mãos", versatile: "Versátil", monk: "Arma de monge" };
   const DANOS = { slashing: "cortante", piercing: "perfurante", bludgeoning: "contundente" };
   const MOEDAS = { gp: "PO", sp: "PP", cp: "PC" }, EM_PO = { gp: 1, sp: 0.1, cp: 0.01 };
