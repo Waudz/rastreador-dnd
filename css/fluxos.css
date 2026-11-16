@@ -112,20 +112,24 @@ body.ficha-embutida { padding-top:0!important; padding-bottom:0!important; }
 #vez-res:empty { display:none; }
 #vez-res { margin-top:6px; }
 
-/* Iniciativa dos personagens: cartão em duas linhas (identidade em cima; campo Ini., Rolar d20 e Adicionar embaixo) com o resultado no próprio cartão */
-#ci-lista .ci-cartao.grupo-cartao.ci-cartao-ini { flex-direction:column; align-items:stretch; gap:8px; }
-#ci-lista .ci-cartao-ini .ci-topo { display:flex; align-items:center; gap:8px; min-width:0; }
-#ci-lista .ci-cartao-ini .ci-topo .grupo-identidade { flex:1 1 auto; min-width:0; }
-#ci-lista .ci-cartao-ini .grupo-identidade-texto b { overflow-wrap:normal; word-break:normal; }
-#ci-lista .ci-cartao-ini .ci-acoes { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-#ci-lista .ci-cartao-ini .ci-ini { display:inline-flex; align-items:center; gap:6px; margin:0; width:auto; }
-#ci-lista .ci-cartao-ini .ci-ini span { font-size:12px; color:var(--muted); }
-#ci-lista .ci-cartao-ini .ci-ini input { width:64px; min-width:0; height:36px; padding:0 4px; text-align:center; appearance:textfield; }
-#ci-lista .ci-cartao-ini .ci-acoes .small { min-height:36px; white-space:nowrap; }
-#ci-lista .ci-cartao-ini .ci-ini-res { margin:0; font-size:12px; color:var(--text); min-height:0; }
-#ci-lista .ci-cartao-ini .ci-ini-res:empty { display:none; }
-.ci-resultado { margin:6px 0; }
-.ci-resultado ul { margin:4px 0 8px 18px; padding:0; }
+/* Cartões de personagens: retrato independente, ações sem sobreposição e texto fluido. */
+.personagem-card.grupo-cartao{min-width:0;overflow:visible}
+.personagem-card.grupo-cartao .grupo-cartao-topo{display:flex;align-items:flex-start;gap:10px;min-width:0}
+.personagem-card.grupo-cartao .grupo-marcar{position:static;z-index:auto;flex:0 0 24px;width:24px;height:44px;min-height:44px;align-self:center}
+.personagem-card.grupo-cartao .grupo-cartao-topo>.grupo-identidade{flex:1 1 0;min-width:0;min-height:76px;gap:10px;padding:0;align-items:center}
+.personagem-card.grupo-cartao .grupo-identidade .retrato-cartao{display:block;width:76px!important;height:76px!important;min-width:76px;max-width:76px;flex:0 0 76px;aspect-ratio:1/1;object-fit:cover;object-position:center;border:1px solid var(--line);border-radius:10px;background:var(--item-imagem-fundo);box-shadow:none}
+.personagem-card.grupo-cartao .grupo-identidade-texto{flex:1 1 0;min-width:0;overflow-wrap:anywhere}
+.personagem-card.grupo-cartao .grupo-identidade-texto b{display:block;white-space:normal;line-height:1.3}
+.personagem-card.grupo-cartao .grupo-identidade-texto small{display:block;white-space:normal;line-height:1.45}
+.personagem-card.grupo-cartao .grupo-cartao-acoes{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;align-items:center;margin:0}
+.personagem-card.grupo-cartao .grupo-cartao-acoes .grupo-icone,.personagem-card.grupo-cartao .grupo-cartao-acoes .compact-menu>summary{width:36px;height:36px;min-width:36px;min-height:36px}
+.personagem-card.grupo-cartao .hp-track{margin-top:6px}
+@media(max-width:520px){
+ .personagem-card.grupo-cartao .grupo-cartao-topo{gap:7px}
+ .personagem-card.grupo-cartao .grupo-cartao-topo>.grupo-identidade{min-height:64px;gap:8px}
+ .personagem-card.grupo-cartao .grupo-identidade .retrato-cartao{width:64px!important;height:64px!important;min-width:64px;max-width:64px;flex-basis:64px}
+ .personagem-card.grupo-cartao .grupo-cartao-acoes .grupo-icone,.personagem-card.grupo-cartao .grupo-cartao-acoes .compact-menu>summary{width:36px;height:36px;min-width:36px;min-height:36px}
+}
 
 /* Celular e telas de toque: alvos de toque de pelo menos 44 px na faixa "Vez de ...", no painel Atacar e no cartão da iniciativa */
 @media (max-width:760px), (pointer:coarse) {
@@ -541,3 +545,20 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 .imp-avisos ul { margin:4px 0 0; padding-left:18px; }
 .imp-previa details p { font-size:12px; margin:6px 0; overflow-wrap:anywhere; }
 @media (max-width:700px) { .cm-livro > summary, .cm-importar > summary { min-height:44px; } .cm-caixas label.inline { min-height:44px; } .imp-tabela th { width:42%; } }
+
+
+/* Iniciativa dos personagens: cartão em duas linhas (identidade em cima; campo Ini., Rolar d20 e Adicionar embaixo) com o resultado no próprio cartão */
+#ci-lista .ci-cartao.grupo-cartao.ci-cartao-ini { flex-direction:column; align-items:stretch; gap:8px; }
+#ci-lista .ci-cartao-ini .ci-topo { display:flex; align-items:center; gap:8px; min-width:0; }
+#ci-lista .ci-cartao-ini .ci-topo .grupo-identidade { flex:1 1 auto; min-width:0; }
+#ci-lista .ci-cartao-ini .grupo-identidade-texto b { overflow-wrap:normal; word-break:normal; }
+#ci-lista .ci-cartao-ini .ci-acoes { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+#ci-lista .ci-cartao-ini .ci-ini { display:inline-flex; align-items:center; gap:6px; margin:0; width:auto; }
+#ci-lista .ci-cartao-ini .ci-ini span { font-size:12px; color:var(--muted); }
+#ci-lista .ci-cartao-ini .ci-ini input { width:64px; min-width:0; height:36px; padding:0 4px; text-align:center; appearance:textfield; }
+#ci-lista .ci-cartao-ini .ci-acoes .small { min-height:36px; white-space:nowrap; }
+#ci-lista .ci-cartao-ini .ci-ini-res { margin:0; font-size:12px; color:var(--text); min-height:0; }
+#ci-lista .ci-cartao-ini .ci-ini-res:empty { display:none; }
+.ci-resultado { margin:6px 0; }
+.ci-resultado ul { margin:4px 0 8px 18px; padding:0; }
+
