@@ -92,8 +92,11 @@
   const ROT_TIPO = { inicial: "Inicial", criacao: "Criação", compra: "Compra", saque: "Saque", jogo: "Jogo", mestre: "Mestre", transferencia: "Transferência" };
   function origemTexto(it) {
     const o = it && it.origem; if (!o) return "";
-    if (typeof o.texto === "string") return o.texto.trim();
-    if (o.pacote && o.pacote.nome) return "Componente do " + o.pacote.nome;
+    if (typeof o.texto === "string" && o.texto.trim()) return o.texto.trim();
+    const pacoteId = o.pacote?.id || (String(o.id || "").startsWith("pacote:") ? String(o.id).slice(7) : "");
+    const pacoteCatalogo = pacoteId && window.CAT_ITENS?.obter?.(pacoteId);
+    const pacoteNome = pacoteCatalogo?.nome || (o.pacote?.nome && !/^pacote de\\s*$/i.test(o.pacote.nome) ? o.pacote.nome : "");
+    if (pacoteNome) return "Componente do " + pacoteNome;
     const n = String(o.nota || ""); let m;
     if ((m = /^Criação — (Pacote de .+)$/.exec(n))) return "Componente do " + m[1];
     if ((m = /^Criação — Equipamento de (.+)$/.exec(n))) return "Equipamento inicial da classe " + m[1];
