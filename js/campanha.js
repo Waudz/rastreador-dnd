@@ -63,6 +63,8 @@
   }
 
   const selecionados=new Set();
+  let vistaGrupo = "grade";
+  try { vistaGrupo = localStorage.getItem("compendio:vista:grupo") === "lista" ? "lista" : "grade"; } catch (_) {}
   const cartaoPers = (p) => {
     const G=window.GRUPO_PERSONAGENS, v=pct(p.pv_atual,p.pv_max);
     const dono=mestre()?`<div class="jogador-vinculo"><label>Jogador<select data-dono="${esc(p.id)}"><option value="">Vincular conta…</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?'selected':''}>${esc(nomes[m.usuario_id]||'Jogador')}</option>`).join('')}</select></label></div>`:'';
@@ -84,8 +86,9 @@
         <button type="submit" class="primary small">Criar</button>
       </form>
       <div id="imp"></div>
-      <div class="cards">${jog.length ? jog.map(cartaoPers).join("") : '<span class="muted">Nenhum personagem aqui ainda.</span>'}</div>
-      ${npcs.length ? `<h2 class="panel-title" style="margin:16px 0 8px">NPCs</h2><div class="cards">${npcs.map(cartaoPers).join("")}</div>` : ""}`;
+      <div class="row grupo-vista-controles"><span class="muted">Visualização</span><span class="inv-vista" role="group" aria-label="Modo de exibição do grupo"><button type="button" class="small ${vistaGrupo === "lista" ? "ativo" : ""}" data-grupo-vista="lista" aria-pressed="${vistaGrupo === "lista"}">Lista</button><button type="button" class="small ${vistaGrupo === "grade" ? "ativo" : ""}" data-grupo-vista="grade" aria-pressed="${vistaGrupo === "grade"}">Grade</button></span></div>
+      <div class="cards grupo-personagens-${vistaGrupo}">${jog.length ? jog.map(cartaoPers).join("") : '<span class="muted">Nenhum personagem aqui ainda.</span>'}</div>
+      ${npcs.length ? `<h2 class="panel-title" style="margin:16px 0 8px">NPCs</h2><div class="cards grupo-personagens-${vistaGrupo}">${npcs.map(cartaoPers).join("")}</div>` : ""}`;
   }
 
 
@@ -345,6 +348,22 @@
       if(c('#grupo-nenhum')){selecionados.clear();return desenhar();}
       if(c('#grupo-rolar')){if(!mestre()||!selecionados.size)return;location.href=window.GRUPO_PERSONAGENS.destino(id,pers.filter(p=>selecionados.has(p.id)).map(p=>p.id));return;}
 
+      if ((b = c("[data-grupo-vista]"))) {
+        const modo = b.dataset.grupoVista;
+        if (modo !== "lista" && modo !== "grade") return;
+        vistaGrupo = modo;
+        try { localStorage.setItem("compendio:vista:grupo", modo); } catch (_) {}
+        document.querySelectorAll(".grupo-unificado .cards").forEach((el) => {
+          el.classList.toggle("grupo-personagens-lista", modo === "lista");
+          el.classList.toggle("grupo-personagens-grade", modo === "grade");
+        });
+        document.querySelectorAll("[data-grupo-vista]").forEach((botao) => {
+          const ativo = botao.dataset.grupoVista === modo;
+          botao.classList.toggle("ativo", ativo);
+          botao.setAttribute("aria-pressed", String(ativo));
+        });
+        return;
+      }
       if ((b = c("[data-aba]"))) { if(!$("#aparencia-painel").hidden&&!window.CAMPANHA_VISUAL?.sair())return;fecharAparencia(); aba = b.dataset.aba; editandoDoc = null; formAberto = false; anexosForm = []; return desenhar(); }
       if ((b = c("[data-excluir-pers]"))) {const p=pers.find(p=>p.id===b.dataset.excluirPers);if(!p||!(await perguntar("Excluir "+p.nome+"? Esta ação remove a ficha da campanha.", { titulo: "Excluir personagem", ok: "Excluir", perigo: true })))return;await nuvem.apagar("personagens?id=eq."+encodeURIComponent(p.id));return recarregar();}
       if ((b = c("[data-dano]"))) return mudarPV(c(".card"), true);
