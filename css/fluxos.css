@@ -603,3 +603,19 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 .grupo-unificado .grupo-personagens-grade .personagem-card .hp-track{
   flex:0 0 auto;width:100%;margin-top:2px;
 }
+
+/* PV imediatamente sob o texto, com ações discretas na linha inferior. */
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-identidade-texto > .hp-track{
+  display:block;width:100%;height:4px;margin:1px 0 0;flex:0 0 auto;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo > .grupo-cartao-acoes{
+  min-height:28px;gap:5px;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-acoes .grupo-icone,
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-acoes .compact-menu > summary{
+  box-sizing:border-box;width:28px!important;height:28px!important;
+  min-width:28px!important;min-height:28px!important;padding:0;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-acoes svg{
+  width:15px;height:15px;
+}
