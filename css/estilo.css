@@ -683,3 +683,11 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 /* Conjuntos de classes e escolas D&D, imagens WebP com transparência. */
 .grupo-unificado .catalogo-simbolo .dnd-categoria-icone,#spells .catalogo-simbolo .dnd-categoria-icone,.magia-selo-circulo .dnd-categoria-icone{display:block;width:80%;height:80%;max-width:100%;max-height:100%;object-fit:contain;background:transparent;border:0;box-shadow:none}
 .grupo-unificado .retrato-cartao.catalogo-simbolo .dnd-categoria-icone{width:80%;height:80%}
+
+/* Classes: ícones um pouco menores, com a mesma sombra suave das fotos de itens. */
+.grupo-unificado .catalogo-simbolo .dnd-categoria-icone,
+.grupo-unificado .retrato-cartao.catalogo-simbolo .dnd-categoria-icone {
+  width: 70%;
+  height: 70%;
+  filter: drop-shadow(0 6px 7px rgba(0, 0, 0, .42));
+}
