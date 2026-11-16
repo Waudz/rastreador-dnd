@@ -92,7 +92,7 @@
   const ROT_TIPO = { inicial: "Inicial", criacao: "Criação", compra: "Compra", saque: "Saque", jogo: "Jogo", mestre: "Mestre", transferencia: "Transferência" };
   function origemTexto(it) {
     const o = it && it.origem; if (!o) return "";
-    if (typeof o.texto === "string" && o.texto.trim()) return o.texto.trim();
+    if (typeof o.texto === "string") return o.texto.trim();
     const pacoteId = o.pacote?.id || (String(o.id || "").startsWith("pacote:") ? String(o.id).slice(7) : "");
     const pacoteCatalogo = pacoteId && window.CAT_ITENS?.obter?.(pacoteId);
     const pacoteNome = pacoteCatalogo?.nome || (o.pacote?.nome && !/^pacote de\s*$/i.test(o.pacote.nome) ? o.pacote.nome : "");
