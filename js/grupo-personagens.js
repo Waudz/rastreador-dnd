@@ -2,9 +2,12 @@
 (() => {
   const C=window.FICHA_COMPONENTES,esc=C.esc;
   const icone=n=>window.ico?window.ico(n):'';
+  const classeIcones={barbarian:'swords',barbaro:'swords',bard:'music',bardo:'music',cleric:'sun',clerigo:'sun',druid:'leaf',druida:'leaf',fighter:'swords',guerreiro:'swords',monk:'sun',monge:'sun',paladin:'shield',paladino:'shield',ranger:'bow',patrulheiro:'bow',rogue:'dagger',ladino:'dagger',sorcerer:'sparkles',feiticeiro:'sparkles',warlock:'skull',bruxo:'skull',wizard:'book',mago:'book'};
+  function iconeClasse(f){const primeira=Array.isArray(f.classes)&&f.classes.length?f.classes[0].c:f.classe;const chave=String(primeira||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();return icone(classeIcones[chave]||'user');}
   function identidade(p,{resumo=false,jogador='',vida=false}={}){
     const f=p.ficha||{},r=C.resumoPersonagem(f),texto=[r.classes||f.classe,r.nivel?'Nível '+r.nivel:'', 'CA '+p.ca].filter(Boolean).join(' · ');
-    const corpo=C.retrato(p.nome,f.foto,76)+'<span class="grupo-identidade-texto"><b>'+esc(p.nome)+'</b><small>'+esc(texto)+'</small>'+(jogador?'<small>'+esc(jogador)+'</small>':'')+(vida?'<small class="grupo-pv-resumo">PV '+p.pv_atual+'/'+p.pv_max+'</small>':'')+'</span>';
+    const retrato=f.foto?C.retrato(p.nome,f.foto,76):'<span class="av av0 retrato-cartao catalogo-simbolo" style="width:76px;height:76px" aria-hidden="true">'+iconeClasse(f)+'</span>';
+    const corpo=retrato+'<span class="grupo-identidade-texto"><b>'+esc(p.nome)+'</b><small>'+esc(texto)+'</small>'+(jogador?'<small>'+esc(jogador)+'</small>':'')+(vida?'<small class="grupo-pv-resumo">PV '+p.pv_atual+'/'+p.pv_max+'</small>':'')+'</span>';
     return resumo?'<button type="button" class="ci-personagem grupo-identidade" data-ci-resumo="'+esc(p.id)+'" aria-label="Ver resumo de '+esc(p.nome)+'">'+corpo+'</button>':'<a class="grupo-identidade" href="personagem.html?id='+encodeURIComponent(p.id)+'">'+corpo+'</a>';
   }
   const checkbox=(p,selecionado,atributo='grupo-sel',disabled=false)=>'<label class="grupo-marcar"><input type="checkbox" data-'+atributo+'="'+esc(p.id)+'" aria-label="Selecionar '+esc(p.nome)+'" '+(selecionado?'checked ':'')+(disabled?'disabled':'')+'></label>';
