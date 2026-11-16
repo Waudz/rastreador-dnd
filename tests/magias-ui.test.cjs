@@ -39,7 +39,7 @@ test('catálogos usam o padrão de Itens: busca separada, categorias completas e
  assert.match(h,/id="bf-limpar"/);
  assert.doesNotMatch(h,/id="sf-adv"|id="sf-more"/);
  assert.match(css,/\.catalogo-filtros select/);
- assert.match(a,/\$\{n\} de \$\{ordenadas\.length\}/);
+ assert.match(a,/\$\{n\} \$\{tipo === "class"/);
  assert.match(a,/shownSpells/);
 });
 
