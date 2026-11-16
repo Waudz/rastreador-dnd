@@ -98,8 +98,8 @@
   }
   /* upload do aparelho (com recorte) ou URL https; devolve a imagem pronta */
   function escolherImagem(aoEscolher, erro) {
-    const f = document.createElement("input"); f.type = "file"; f.accept = "image/*";
-    f.onchange = async () => { const file = f.files && f.files[0]; if (!file) return; try { const rec = await window.recortarFoto(file,1024); if (!rec) return; await aoEscolher(rec); } catch (_) { erro("Não foi possível ler essa imagem."); } };
+    const f = document.createElement("input"); f.type = "file"; f.accept = "image/png,image/jpeg,image/webp,image/gif,image/*"; f.style.position="fixed"; f.style.left="-9999px"; document.body.appendChild(f);
+    f.onchange = async () => { const file = f.files && f.files[0]; if (!file) { f.remove(); return; } try { const rec = await window.recortarFoto(file,1024); if (!rec) return; await aoEscolher(rec); } catch (_) { erro("Não foi possível ler essa imagem."); } finally { f.remove(); } };
     f.click();
   }
   function formulario(it) {
