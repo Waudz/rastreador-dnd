@@ -72,6 +72,12 @@
 
   /* ---------- janelas ---------- */
   function modal(html, rotulo, raridade = "") {
+    if (window.COMP_JANELA) {
+      const j = COMP_JANELA.abrir({ titulo: rotulo, conteudo: html, largura: "media", classe: `inv-modal-box itens-modal raridade-${raridade}` });
+      j.ov.id = "it-modal";
+      j.ov.addEventListener("click", e => { if (e.target.closest("[data-modal-fechar]")) j.fechar(); });
+      return { ov: j.ov, fim: j.fechar };
+    }
     document.getElementById("it-modal")?.remove();
     const ov = document.createElement("div"); ov.id = "it-modal"; ov.className = "inv-ov"; ov.innerHTML = `<div class="crop-box inv-modal-box itens-modal raridade-${esc(raridade)}" role="dialog" aria-modal="true" aria-label="${esc(rotulo)}">${html}</div>`;
     const fim = () => { document.removeEventListener("keydown", tecla, true); ov.remove(); };
