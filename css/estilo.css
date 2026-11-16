@@ -659,3 +659,17 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 .catalogo-vazio strong{display:block;color:var(--text);margin-bottom:5px}
 .catalogo-vazio p{margin:0;font-size:13px}
 @media(max-width:520px){#blist.catalogo-grade .catalogo-cartao .lft,#spells.catalogo-grade .catalogo-cartao .lft{flex-direction:column;align-items:flex-start}#blist.catalogo-grade .catalogo-cartao .acts button,#spells.catalogo-grade .catalogo-cartao .acts button{min-height:36px}}
+
+
+/* Grade realmente equivalente à de Itens: miniatura quadrada acima do texto. */
+#blist.catalogo-grade,#spells.catalogo-grade{grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:12px}
+#blist.catalogo-grade>.catalogo-cartao,#spells.catalogo-grade>.catalogo-cartao{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;align-content:start;gap:8px;padding:8px;min-height:0}
+#blist.catalogo-grade>.catalogo-cartao>.lft,#spells.catalogo-grade>.catalogo-cartao>.lft{display:contents}
+#blist.catalogo-grade>.catalogo-cartao>.lft>.av,#spells.catalogo-grade>.catalogo-cartao>.lft>.av{width:100%;height:auto;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;object-fit:cover;border-radius:8px;background:var(--item-imagem-fundo);grid-row:1}
+#blist.catalogo-grade>.catalogo-cartao>.lft>.av img,#spells.catalogo-grade>.catalogo-cartao>.lft>.av img{width:100%;height:100%;object-fit:cover}
+#blist.catalogo-grade>.catalogo-cartao>.lft>span:last-child,#spells.catalogo-grade>.catalogo-cartao>.lft>span:last-child{grid-row:2;align-self:start;min-width:0}
+#blist.catalogo-grade>.catalogo-cartao>.acts,#spells.catalogo-grade>.catalogo-cartao>.acts{grid-row:3;align-self:end;min-width:0;margin-top:0}
+#blist.catalogo-grade>.catalogo-cartao>.acts button,#spells.catalogo-grade>.catalogo-cartao>.acts button{min-width:0}
+#spells.catalogo-grade>.catalogo-habilidade{grid-template-rows:1fr}
+#spells.catalogo-grade>.catalogo-habilidade>span{min-width:0;overflow-wrap:anywhere}
+@media(max-width:520px){#blist.catalogo-grade,#spells.catalogo-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#blist.catalogo-grade>.catalogo-cartao>.lft,#spells.catalogo-grade>.catalogo-cartao>.lft{display:contents}}
