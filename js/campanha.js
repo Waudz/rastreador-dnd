@@ -205,8 +205,7 @@
   }
 
   function abaMembros() {
-    const convite = mestre() ? `<div class="panel convite-gestao"><h3 class="sub" style="margin-top:0">Convite da campanha</h3><p class="muted" style="margin:0 0 8px">Quem tem o código entra na campanha como jogador. Ao trocar, o código antigo deixa de valer para novos jogadores; quem já entrou continua no grupo.</p><div id="conv" role="status">Carregando convite…</div><button type="button" class="small" id="novo-cod">Renovar código</button></div>` : "";
-    return convite + membros.map((m) => `<div class="res"><span><b>${esc(nomes[m.usuario_id] || "Jogador")}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></span>${m.papel !== "mestre" ? `<button type="button" class="small danger" data-remover="${esc(m.usuario_id)}">Remover</button>` : ""}</div>`).join("");
+    return membros.map((m) => `<div class="res"><span><b>${esc(nomes[m.usuario_id] || "Jogador")}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></span>${m.papel !== "mestre" ? `<button type="button" class="small danger" data-remover="${esc(m.usuario_id)}">Remover</button>` : ""}</div>`).join("");
   }
 
   /* Aba Grupo (jogadores): foto, nome, jogador, PV e CA dos personagens do grupo, via função do banco que só devolve esses campos. */
@@ -235,7 +234,7 @@
   }
 
   function abaGrupoUnificado() {
-    const personagens = mestre() ? abaPers() : '<div id="grupo-leitura">' + abaGrupo() + '</div>';
+    const personagens = abaPers() + (!mestre() ? '<details class="grupo-secao-recolhida" open><summary>Visão do grupo</summary><div id="grupo-leitura" class="grupo-secao-corpo">' + abaGrupo() + '</div></details>' : '');
     const participantes = mestre() ? abaMembros() : membros.map(m => '<div class="res"><span><b>' + esc(nomes[m.usuario_id] || "Jogador") + '</b> <span class="badge ' + (m.papel === "mestre" ? "" : "jog") + '">' + (m.papel === "mestre" ? "Mestre" : "Jogador") + '</span></span></div>').join('');
     return '<section class="grupo-unificado" aria-label="Personagens da campanha">' + personagens +
       '<details class="grupo-secao-recolhida"><summary>Participantes (' + membros.length + ')</summary><div class="grupo-secao-corpo">' + participantes + '</div></details>' +
