@@ -125,3 +125,14 @@ a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, cu
 .grupo-unificado .cards.grupo-personagens-lista{display:flex;flex-direction:column;gap:8px}
 .grupo-unificado .grupo-personagens-lista .grupo-cartao{width:100%}
 @media(max-width:520px){.grupo-unificado .cards.grupo-personagens-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.grupo-unificado .grupo-personagens-grade .grupo-cartao-topo{flex-wrap:wrap}.grupo-unificado .grupo-personagens-grade .grupo-identidade{flex-basis:100%}.grupo-unificado .grupo-personagens-grade .grupo-cartao-acoes{margin-left:auto}}
+
+
+/* Mesma largura, ritmo e retrato quadrado da grade de Itens. */
+.grupo-unificado .cards.grupo-personagens-grade{grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:12px}
+.grupo-unificado .grupo-personagens-grade .grupo-cartao{padding:8px;gap:8px;min-width:0}
+.grupo-unificado .grupo-personagens-grade .grupo-cartao-topo{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+.grupo-unificado .grupo-personagens-grade .grupo-identidade{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0;width:100%}
+.grupo-unificado .grupo-personagens-grade .grupo-identidade .av,.grupo-unificado .grupo-personagens-grade .grupo-identidade img{width:100%;height:auto;aspect-ratio:1/1;border-radius:8px;object-fit:cover}
+.grupo-unificado .grupo-personagens-grade .grupo-identidade-texto{width:100%}
+.grupo-unificado .grupo-personagens-grade .grupo-cartao-acoes{align-self:flex-end;margin-top:auto}
+@media(max-width:520px){.grupo-unificado .cards.grupo-personagens-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
