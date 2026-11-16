@@ -74,11 +74,11 @@ test('indicador de raridade: texto sempre presente, escapado, e uma chave de cor
   assert.equal(A.C.chaveRaridade('mundano'),'mundano');assert.equal(A.C.chaveRaridade('Mundano'),'mundano');assert.equal(A.C.chaveRaridade('invalida'),null);assert.equal(A.C.chaveRaridade(''),null);
 });
 
-test('CSS: seis raridades com cores distintas só no indicador; mágico = nome dourado + tag; sem mexer em miniatura, moldura ou fundo do cartão',()=>{
+test('CSS: sete raridades com cores distintas; mágico = nome dourado + tag; moldura tratada separadamente',()=>{
   const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Item mágico (classificação)'));
   const cores=Object.fromEntries([...bloco.matchAll(/\.rar-([a-z-]+)\{--rar:(#[0-9A-Fa-f]{6})\}/g)].map(m=>[m[1],m[2].toLowerCase()]));
-  assert.equal(JSON.stringify(Object.keys(cores).sort()),JSON.stringify(['artefato','comum','incomum','lendaria','muito-rara','rara']));
-  assert.equal(new Set(Object.values(cores)).size,6,'seis cores diferentes');
+  assert.equal(JSON.stringify(Object.keys(cores).sort()),JSON.stringify(['artefato','comum','incomum','lendaria','mundano','muito-rara','rara']));
+  assert.equal(new Set(Object.values(cores)).size,7,'sete cores diferentes');
   const matiz=h=>{const r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(!d)return -1;let h6=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;return Math.round(((h6*60)+360)%360);};
   assert.equal(matiz(cores.comum)<0||Math.abs(matiz(cores.comum)-210)<40,true,'comum: cinza (matiz fraco)');
   const m=Object.fromEntries(Object.entries(cores).map(([k,v])=>[k,matiz(v)]));
@@ -86,17 +86,20 @@ test('CSS: seis raridades com cores distintas só no indicador; mágico = nome d
   assert.ok(m.lendaria>=30&&m.lendaria<=45,'lendária dourado '+m.lendaria);assert.ok(m.artefato<20||m.artefato>340,'artefato coral/vermelho, distinto '+m.artefato);
   assert.match(bloco,/\.item-magico \.inv-nome-txt\{color:color-mix\(in srgb,var\(--gold,#D4AE72\) 82%,var\(--text,#F3E9D5\)\)\}/);
   assert.match(bloco,/\.inv-magico-tag::before\{content:"✦"/);
-  const nome=bloco.slice(0,bloco.indexOf('Moldura da miniatura'));
+  const nome=bloco.slice(0,bloco.indexOf('Moldura fina da miniatura'));
   assert.ok(!/\.item-magico\s*\{|\.item-magico[^{]*(background|border)|\.inv-thumb|\.itens-card\s*\{/.test(nome),'o bloco de nome/tag/raridade não mexe em miniatura nem em fundo do cartão');
   assert.ok(!/(?:^|[;{\s])height\s*:|max-height/.test(nome.replace(/\.inv-raridade::before\{[^}]*\}/,'')),'sem alturas fixas (o ponto do indicador tem 8 px; os cartões não)');
 });
 
-test('CSS: moldura da miniatura depende só de ser mágico (dourado discreto x cinza-azulado), nunca da raridade; tamanhos intactos',()=>{
-  const css=ler('css/fichas.css'),b=css.slice(css.indexOf('Moldura da miniatura'),css.indexOf('Grade: "Detalhes"'));
-  assert.match(b,/\.inv-card \.inv-thumb\{border-color:#56667A\}/);
-  assert.match(b,/\.inv-card\.item-magico \.inv-thumb\{border-color:var\(--gold-dark,#947345\)\}/);
-  assert.ok(!/rar-/.test(b),'nenhuma regra de moldura usa a raridade');
-  assert.ok(!/shadow|glow|filter|(?:^|[;{\s])(width|height)\s*:/.test(b.replace(/#inv\.inv-grade[^\n]*/g,'')),'sem brilho, sombra nem tamanho novo na moldura');
+test('CSS: moldura da miniatura acompanha as sete raridades sem alterar dimensões ou efeitos',()=>{
+  const css=ler('css/fichas.css'),b=css.slice(css.indexOf('Moldura fina da miniatura'),css.indexOf('Grade: "Detalhes"'));
+  assert.match(b,/\\.inv-card \\.inv-thumb\\{border-color:#66717D\\}/);
+  const esperado={mundano:'#66717D',comum:'#D5DCE3',incomum:'#5CB584',rara:'#6FA3E8','muito-rara':'#A98AE6',lendaria:'#D4AE72',artefato:'#E5806A'};
+  for(const [rar,cor] of Object.entries(esperado))assert.ok(b.includes('.inv-card.raridade-'+rar+' .inv-thumb{border-color:'+cor+'}'),rar);
+  assert.ok(!/shadow|glow|filter|(?:^|[;{\\s])(width|height)\\s*:/.test(b),'sem brilho, sombra nem tamanho novo na moldura');
+  const p=ler('js/personagem.js'),t=ler('js/itens.js');
+  assert.ok(p.includes('raridade-${mg.raridade?.chave || "mundano"}'),'inventário usa raridade efetiva');
+  assert.ok(t.includes('raridade-${C.chaveRaridade(it.raridade || "mundano") || "mundano"}'),'catálogo usa raridade do item');
 });
 
 test('grade: Detalhes e … juntos na última linha do cartão; lista e miniaturas/colunas intactas',()=>{
