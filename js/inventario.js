@@ -95,7 +95,7 @@
     if (typeof o.texto === "string" && o.texto.trim()) return o.texto.trim();
     const pacoteId = o.pacote?.id || (String(o.id || "").startsWith("pacote:") ? String(o.id).slice(7) : "");
     const pacoteCatalogo = pacoteId && window.CAT_ITENS?.obter?.(pacoteId);
-    const pacoteNome = pacoteCatalogo?.nome || (o.pacote?.nome && !/^pacote de\\s*$/i.test(o.pacote.nome) ? o.pacote.nome : "");
+    const pacoteNome = pacoteCatalogo?.nome || (o.pacote?.nome && !/^pacote de\s*$/i.test(o.pacote.nome) ? o.pacote.nome : "");
     if (pacoteNome) return "Componente do " + pacoteNome;
     const n = String(o.nota || ""); let m;
     if ((m = /^Criação — (Pacote de .+)$/.exec(n))) return "Componente do " + m[1];
