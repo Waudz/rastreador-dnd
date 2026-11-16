@@ -3,9 +3,10 @@
 (() => {
   "use strict";
   const C = window.CAT_ITENS, II = window.INV_IMG, $ = (s) => document.querySelector(s), esc = C.esc;
-  const PAGINA = 48, VISTA = "dnd5e_itens_vista";
-  const estado = { q: "", cat: "", sub: "", raridade: "", prop: "", sintonia: "", mostrar: PAGINA, vista: "lista" };
+  const PAGINA = 48, VISTA = "dnd5e_itens_vista", ORDEM = "dnd5e_itens_ordem";
+  const estado = { q: "", cat: "", sub: "", raridade: "", prop: "", sintonia: "", mostrar: PAGINA, vista: "lista", ordem: "nome-asc" };
   try { estado.vista = localStorage.getItem(VISTA) === "grade" ? "grade" : "lista"; } catch (_) { /* sem armazenamento */ }
+  try { const salva = localStorage.getItem(ORDEM); if (["nome-asc", "nome-desc", "categoria", "raridade-asc", "raridade-desc", "valor-asc", "valor-desc"].includes(salva)) estado.ordem = salva; } catch (_) { /* sem armazenamento */ }
   let atual = [];
   const ico = (n) => (window.ico ? window.ico(n) : "");
   /* imagem do item: a do aparelho (biblioteca por referência do catálogo) ou a do item personalizado; sem ela, o ícone da categoria */
@@ -36,7 +37,9 @@
       <div class="inv-meta muted">${meta(it)}</div>${it.pacote ? '<div class="inv-meta muted">Conjunto de ' + it.pacote.length + " componentes</div>" : ""}</div></div>`;
   }
   function desenhar() {
-    const lista = C.filtrar(C.todos(), estado); atual = lista;
+    const filtrados = C.filtrar(C.todos(), estado);
+    const lista = window.COMP_ORDENACAO ? COMP_ORDENACAO.ordenar(filtrados, estado.ordem) : filtrados;
+    atual = lista;
     const mostra = lista.slice(0, estado.mostrar), el = $("#it-lista");
     el.className = "itens-lista" + (estado.vista === "grade" ? " inv-grade" : "");
     el.innerHTML = mostra.length ? mostra.map(cartao).join("") : '<p class="muted">Nenhum item encontrado. Ajuste a busca ou limpe os filtros.</p>';
@@ -140,14 +143,14 @@
     const { ov, fim } = modal(`<h3>Excluir: ${esc(it.nome)}</h3><p>Remove este item do catálogo global. Itens que já estão em inventários de personagens não são alterados.</p><div class="row"><button type="button" class="danger" id="ex-ok">Excluir item</button><button type="button" class="small subtle" data-modal-fechar>Cancelar</button></div>`, "Excluir item");
     ov.querySelector("#ex-ok").onclick = async () => { const botao=ov.querySelector("#ex-ok");botao.disabled=true;try{await CATALOGO.salvar('item',it.id,null,{excluido:true}); fim(); montarFiltros(); sincronizarSelects(); desenhar();}catch(e){window.FEEDBACK?.mostrar(e.message,{erro:true});}finally{botao.disabled=false;} };
   }
-  function sincronizarSelects() { $("#it-cat").value = estado.cat; $("#it-rar").value = estado.raridade; $("#it-prop").value = estado.prop; $("#it-sint").value = estado.sintonia; subtipos(); }
+  function sincronizarSelects() { $("#it-cat").value = estado.cat; $("#it-rar").value = estado.raridade; $("#it-prop").value = estado.prop; $("#it-sint").value = estado.sintonia; subtipos(); $("#it-ordem").value = estado.ordem; }
 
   /* ---------- eventos ---------- */
   let tq = null;
   document.addEventListener("input", (e) => { if (e.target.id !== "it-q") return; clearTimeout(tq); tq = setTimeout(() => { estado.q = e.target.value; estado.mostrar = PAGINA; desenhar(); }, 120); });
   document.addEventListener("change", (e) => {
-    const id = e.target.id, mapa = { "it-cat": "cat", "it-sub": "sub", "it-rar": "raridade", "it-prop": "prop", "it-sint": "sintonia" };
-    if (!mapa[id]) return; estado[mapa[id]] = e.target.value; if (id === "it-cat") { estado.sub = ""; subtipos(); } estado.mostrar = PAGINA; desenhar();
+    const id = e.target.id, mapa = { "it-cat": "cat", "it-sub": "sub", "it-rar": "raridade", "it-prop": "prop", "it-sint": "sintonia", "it-ordem": "ordem" };
+    if (!mapa[id]) return; estado[mapa[id]] = e.target.value; if (id === "it-ordem") { try { localStorage.setItem(ORDEM, estado.ordem); } catch (_) { /* segue */ } } if (id === "it-cat") { estado.sub = ""; subtipos(); } estado.mostrar = PAGINA; desenhar();
   });
   document.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
@@ -167,6 +170,7 @@
     else if (b.id === "it-novo") formulario(null);
     else if (b.dataset.itVista) { estado.vista = b.dataset.itVista === "grade" ? "grade" : "lista"; try { localStorage.setItem(VISTA, estado.vista); } catch (_) { /* segue */ } desenhar(); }
   });
+  $("#it-ordem").value = estado.ordem;
   window.addEventListener('catalogo:atualizado',()=>{if(!atual.length)return;montarFiltros();sincronizarSelects();desenhar();const aberto=document.querySelector('#it-modal [data-it-img]');if(aberto){/* próxima abertura usa o registro atualizado */}});
   window.ACESSO?.pronto.then(()=>{$('#it-novo').hidden=!CATALOGO.admin();});
   /* imagem indisponível (arquivo removido, rede ou bloqueio): volta ao ícone padrão da categoria, na lista, na grade e nos detalhes */
