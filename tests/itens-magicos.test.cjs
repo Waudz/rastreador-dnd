@@ -77,7 +77,7 @@ test('indicador de raridade: texto sempre presente, escapado, e uma chave de cor
 test('CSS: sete raridades com cores distintas; mágico = nome dourado + tag; moldura tratada separadamente',()=>{
   const css=ler('css/fichas.css'),bloco=css.slice(css.indexOf('Item mágico (classificação)'));
   const cores=Object.fromEntries([...bloco.matchAll(/\.rar-([a-z-]+)\{--rar:(#[0-9A-Fa-f]{6})\}/g)].map(m=>[m[1],m[2].toLowerCase()]));
-  assert.equal(JSON.stringify(Object.keys(cores).sort()),JSON.stringify(['artefato','comum','incomum','lendaria','mundano','muito-rara','rara']));
+  assert.equal(JSON.stringify(Object.keys(cores).sort()),JSON.stringify(['artefato','comum','incomum','lendaria','muito-rara','mundano','rara']));
   assert.equal(new Set(Object.values(cores)).size,7,'sete cores diferentes');
   const matiz=h=>{const r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(!d)return -1;let h6=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;return Math.round(((h6*60)+360)%360);};
   assert.equal(matiz(cores.comum)<0||Math.abs(matiz(cores.comum)-210)<40,true,'comum: cinza (matiz fraco)');
