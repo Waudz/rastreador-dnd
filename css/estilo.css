@@ -748,3 +748,11 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
   max-width:var(--comp-miniatura-icone-tamanho);
   max-height:var(--comp-miniatura-icone-tamanho);
 }
+
+/* Silhueta sem classe: o SVG de humanoide tem margem interna maior que os SVGs
+   de classes. Compensar somente o desenho, sem alterar a moldura nem o padrão
+   de 40% do componente, fundo ou sombra. */
+.catalogo-simbolo .dnd-pessoa-padrao > :is(.rpg-ico,.ico) {
+  transform:scale(1.25);
+  transform-origin:center;
+}
