@@ -8,7 +8,7 @@
  function personagem(id,nome='Personagem',grupo=''){
   if(salvando&&idAtual.split('|')[0]!==id){window.FEEDBACK?.mostrar('Aguarde a ficha terminar de salvar.');return false;}
   foco=document.activeElement;
-  if(idAtual!==id+'|'+grupo||!$('#ci-ficha-frame')){$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(id)+'" title="Ficha de '+esc(nome)+'" src="personagem.html?id='+encodeURIComponent(id)+'&modo=leitura'+(grupo?'&grupo='+encodeURIComponent(grupo):'')+'"></iframe>';idAtual=id+'|'+grupo;}
+  if(idAtual!==id+'|'+grupo||!$('#ci-ficha-frame')){$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(id)+'" title="Ficha de '+esc(nome)+'" src="personagem.html?id='+encodeURIComponent(id)+'&modo='+(location.pathname.endsWith('/iniciativa.html')?'painel':'leitura')+(grupo?'&grupo='+encodeURIComponent(grupo):'')+'"></iframe>';idAtual=id+'|'+grupo;}
   window.PAINEL.mostrar('ci-resumo');$('#ci-resumo-fechar')?.focus();return true;
  }
  async function magia(dados){
@@ -20,7 +20,7 @@
   }catch(e){window.FEEDBACK?.mostrar(e.message,{erro:true});}
  }
  document.addEventListener('click',e=>{
-  const a=e.target.closest('a[href]');if(a&&!a.target&&/^(?:\.\/)?personagem\.html\?/.test(a.getAttribute('href')||'')){e.preventDefault();const url=new URL(a.href,location.href),id=url.searchParams.get('id');if(id)personagem(id,a.textContent.trim(),url.searchParams.get('grupo')||'');return;}
+  const a=e.target.closest('a[href]');if(a&&!a.target&&!location.pathname.endsWith('/campanha.html')&&/^(?:\.\/)?personagem\.html\?/.test(a.getAttribute('href')||'')){e.preventDefault();const url=new URL(a.href,location.href),id=url.searchParams.get('id');if(id)personagem(id,a.textContent.trim(),url.searchParams.get('grupo')||'');return;}
   if(e.target.closest('#ci-resumo-fechar')){e.preventDefault();e.stopImmediatePropagation();window.PAINEL.voltar();foco?.focus();}
   if(e.target.closest('#spd-voltar')){e.preventDefault();e.stopImmediatePropagation();window.PAINEL.voltar();}
   if(e.target.closest('#spd-close')){e.preventDefault();e.stopImmediatePropagation();window.PAINEL.fechar();}
