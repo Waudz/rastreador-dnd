@@ -675,3 +675,7 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 #blist .catalogo-acoes-opcoes{position:absolute;right:0;bottom:calc(100% + 6px);z-index:30;display:flex;flex-direction:column;gap:5px;min-width:155px;padding:8px;background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:0 10px 24px #0008}
 #blist .catalogo-acoes-opcoes button{width:100%;text-align:left;justify-content:flex-start}
 #blist.catalogo-grade>.catalogo-cartao{overflow:visible}
+
+/* Ícones de fantasia preenchidos, mantendo o dourado e fundo de Itens. */
+#blist .catalogo-simbolo .rpg-ico,#spells .catalogo-simbolo .rpg-ico,.grupo-unificado .catalogo-simbolo .rpg-ico{width:25px;height:25px;fill:currentColor;flex:none}
+#blist.catalogo-grade .catalogo-simbolo .rpg-ico,#spells.catalogo-grade .catalogo-simbolo .rpg-ico,.grupo-unificado .grupo-personagens-grade .catalogo-simbolo .rpg-ico{width:52px;height:52px}
