@@ -568,7 +568,7 @@ body.ficha-embutida .tracker { padding:14px; }                                  
    Escopo exclusivo da grade para não alterar a lista ou a iniciativa. */
 .grupo-unificado .cards.grupo-personagens-grade > .personagem-card.grupo-cartao{
   display:flex;flex-direction:column;align-items:stretch;height:auto;min-height:0;
-  padding:10px;gap:9px;overflow:visible;
+  padding:8px;gap:8px;overflow:visible;
 }
 .grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo{
   display:flex;flex-direction:column;align-items:stretch;gap:9px;
@@ -602,4 +602,49 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 }
 .grupo-unificado .grupo-personagens-grade .personagem-card .hp-track{
   flex:0 0 auto;width:100%;margin-top:2px;
+}
+
+/* PV imediatamente sob o texto, com ações discretas na linha inferior. */
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-identidade-texto > .hp-track{
+  display:block;width:100%;height:4px;margin:1px 0 0;flex:0 0 auto;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo > .grupo-cartao-acoes{
+  min-height:28px;gap:5px;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-acoes .grupo-icone,
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-acoes .compact-menu > summary{
+  box-sizing:border-box;width:28px!important;height:28px!important;
+  min-width:28px!important;min-height:28px!important;padding:0;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-acoes svg{
+  width:15px;height:15px;
+}
+
+
+/* Mesma caixa de imagem dos catálogos de itens e monstros: grade 172px, padding 8px,
+   imagem 100% da largura útil e proporção quadrada sem encolhimento. */
+.grupo-unificado .cards.grupo-personagens-grade{
+  grid-template-columns:repeat(auto-fill,minmax(172px,1fr));
+  gap:12px;align-items:stretch;
+}
+.grupo-unificado .cards.grupo-personagens-grade > .personagem-card.grupo-cartao{
+  box-sizing:border-box;padding:8px;margin:0;min-width:0;align-items:stretch;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo{
+  display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;width:100%;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo > .grupo-identidade{
+  display:flex;flex-direction:column;align-items:stretch;width:100%;min-width:0;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo > .grupo-identidade > :is(.av,.retrato-cartao,img){
+  box-sizing:border-box;display:flex;align-items:center;justify-content:center;
+  width:100%!important;height:auto!important;min-width:0!important;max-width:none!important;
+  min-height:0!important;max-height:none!important;flex:none!important;
+  aspect-ratio:1 / 1;object-fit:cover;object-position:center;margin:0;
+  border:1px solid var(--line);border-radius:10px;background:var(--item-imagem-fundo);
+}
+@media(max-width:520px){
+  .grupo-unificado .cards.grupo-personagens-grade{
+    grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+  }
 }
