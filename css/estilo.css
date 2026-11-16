@@ -631,3 +631,13 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
   .catalogo-filtros button{flex:1 1 auto}
   .catalogo-busca>input,.catalogo-busca>.clearable{flex:1 1 100%!important}
 }
+
+/* Cartões de catálogo: lista e grade, com os mesmos controles da aba Itens. */
+#blist.catalogo-grade,#spells.catalogo-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:10px;align-items:stretch}
+#blist.catalogo-grade>.res,#spells.catalogo-grade>.res{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin:0;min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+#blist.catalogo-grade>.res>.lft,#spells.catalogo-grade>.res>.lft{display:flex;align-items:flex-start;min-width:0;flex:1}
+#blist.catalogo-grade>.res>.acts,#spells.catalogo-grade>.res>.acts{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto}
+#blist.catalogo-grade>[data-more]{grid-column:1/-1;justify-self:center}
+.catalogo-filtros .inv-vista{display:inline-flex;gap:4px;margin-left:auto}
+.catalogo-filtros .inv-vista button[aria-pressed="true"]{border-color:var(--accent,var(--line));background:var(--panel)}
+@media(max-width:520px){#blist.catalogo-grade,#spells.catalogo-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#blist.catalogo-grade>.res,#spells.catalogo-grade>.res{padding:9px}#blist.catalogo-grade .acts button,#spells.catalogo-grade .acts button{flex:1 1 auto}}
