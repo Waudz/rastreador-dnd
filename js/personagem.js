@@ -349,7 +349,7 @@
   /* Origem informada ao adicionar manualmente (qualquer tipo de item): vira `origem.texto`; os ids técnicos do item (catálogo, pacote) não mudam */
   const origemAdd = (base) => { const e = document.getElementById("add-origem"), t = e ? e.value.replace(/\s+/g, " ").trim().slice(0, 120) : ""; return t ? { ...base, texto: t } : base; };
   function fecharAdd() { const oa = document.getElementById("add-origem"); if (oa) oa.value = ""; const p = document.getElementById("inv-add"); if (!p) return; p.hidden = true; p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = true; }); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", "false")); p.querySelectorAll("select").forEach((x) => { x.selectedIndex = 0; }); const n = document.getElementById("pg-nota"); if (n) n.value = ""; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "false"); b.textContent = "+ Adicionar item"; } }
-  function abrirAdd() { const p = document.getElementById("inv-add"); if (!p) return; p.hidden = false; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "true"); b.textContent = "Fechar"; } p.querySelector("[data-inv-add-tipo]")?.focus(); }
+  function abrirAdd() { const p = document.getElementById("inv-add"); if (!p) return; p.hidden = false; const b = document.getElementById("inv-add-abrir"); if (b) { b.setAttribute("aria-expanded", "true"); b.textContent = "Fechar"; } escolherAdd("cat"); }
   function escolherAdd(tipo) { const p = document.getElementById("inv-add"); if (!p) return; if (tipo === "cat") desenharCatAdd(); p.querySelectorAll("[data-inv-add-tipo]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.invAddTipo === tipo))); p.querySelectorAll("[data-add-linha]").forEach((x) => { x.hidden = x.dataset.addLinha !== tipo; }); const f = p.querySelector('[data-add-linha="' + tipo + '"] input, [data-add-linha="' + tipo + '"] select, [data-add-linha="' + tipo + '"] button'); if (f) f.focus(); }
   function atualizarCartao(card, it) {
     if (!card || !it) return; const n = card.querySelector(".inv-nome-txt"), q = card.querySelector(".inv-qtd-badge"), p = card.querySelector(".inv-peso-txt");
@@ -572,11 +572,11 @@
     const l = C.filtrar(todos, { q: catAdd.q, cat: catAdd.cat }), mostra = l.slice(0, 30);
     box.innerHTML = (mostra.length ? mostra.map((x) => { const im = x.custom ? x.imagem : (II.obter && II.obter({}, { ref: x.id }) || {}).src; return `<div class="inv-cat-item" data-cat-id="${esc(x.id)}"><button type="button" class="inv-thumb${im ? "" : " vazio"}" data-cat-det="${esc(x.id)}" aria-label="Ver detalhes de ${esc(x.nome)}">${im ? `<img class="inv-thumb-img" src="${esc(im)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : (window.ico ? window.ico(C.ICONE[x.categoria] || "bag") : "")}</button>
       <div class="inv-corpo"><button type="button" class="inv-nome-btn" data-cat-det="${esc(x.id)}"><b class="inv-nome-txt">${esc(x.nome)}</b></button><div class="inv-meta muted">${esc([C.rotuloCat(x.categoria), C.custoTexto(x), C.pesoDe(x) > 0 ? kg(C.pesoDe(x)) + " kg" : ""].filter(Boolean).join(" · "))}</div></div>
-      <div class="inv-cat-add"><input class="num" type="number" min="1" max="99" step="1" value="1" aria-label="Quantidade de ${esc(x.nome)}"><button type="button" class="small primary" data-cat-add="${esc(x.id)}">Adicionar</button></div></div>`; }).join("") : '<p class="muted">Nenhum item encontrado.</p>') + (l.length > mostra.length ? `<p class="muted">Mostrando ${mostra.length} de ${l.length}. Refine a busca para ver os demais.</p>` : "");
+      <div class="inv-cat-add"><input class="num" type="number" min="1" max="99" step="1" value="1" aria-label="Quantidade de ${esc(x.nome)}"><select data-cat-pacote aria-label="Origem de ${esc(x.nome)}"><option value="">Mestre (padrão)</option>${C.pacotesQueContem(x.id).map(p => `<option value="${esc(p.id)}">${esc(p.texto)}</option>`).join("")}</select><button type="button" class="small primary" data-cat-add="${esc(x.id)}">Adicionar</button></div></div>`; }).join("") : '<p class="muted">Nenhum item encontrado.</p>') + (l.length > mostra.length ? `<p class="muted">Mostrando ${mostra.length} de ${l.length}. Refine a busca para ver os demais.</p>` : "");
   }
-  function adicionarDoCatalogo(id, qtd) {
+  function adicionarDoCatalogo(id, qtd, pacoteId = "") {
     const C = CAT(), cat = C && C.obter(id); if (!cat) return;
-    const n = Math.max(1, Math.min(99, Math.floor(num(qtd, 1)))), origem = origemAdd({ tipo: souMestre ? "mestre" : "jogo" }), copias = 1;
+    const n = Math.max(1, Math.min(99, Math.floor(num(qtd, 1)))), pacote = pacoteId && C.pacotesQueContem(id).find(p => p.id === pacoteId), origem = origemAdd(pacote ? pacote.origem : { tipo: "mestre" }), copias = 1;
     let ultimo = null;
     if (cat.pacote) { for (const x of C.paraInventarioPacote(cat, n, origem)) ultimo = IV.adicionar(cont(), x, { tipo: "entrada", nota: cat.nome }); }   // pacote: componentes individuais, sem item "pacote"
     else { for (let k = 0; k < copias; k++) ultimo = IV.adicionar(cont(), C.paraInventario(cat, n, origem), { tipo: "entrada" }); }
@@ -811,7 +811,7 @@
   function adicionarPergaminho() {
     const en = $("#pg-mag").value; if (!en || !magiasCat) return;
     const m = magiasCat.find((x) => x.en === en); if (!m) return;
-    IV.adicionar(cont(), IV.criarPergaminho(m, { origem: origemAdd({ tipo: souMestre ? "mestre" : "jogo", nota: $("#pg-nota").value.trim().slice(0, 80) }) }), { nota: $("#pg-nota").value.trim().slice(0, 80) });
+    IV.adicionar(cont(), IV.criarPergaminho(m, { origem: origemAdd({ tipo: "mestre", nota: $("#pg-nota").value.trim().slice(0, 80) }) }), { nota: $("#pg-nota").value.trim().slice(0, 80) });
     $("#pg-nota").value = ""; salvarInv(); redesenharInv(); fecharAdd();
   }
   /* ---------- grimório: copiar magia (Mago) ---------- */
@@ -911,9 +911,9 @@
         ${souMestre ? '<div class="sub">Mestre</div><button type="button" class="small" id="ms-abrir">Conceder magia ao personagem</button><div id="mestre-box" class="panel" hidden></div>' : ""}</div>` : `<div class="panel"><h2 class="panel-title">Magias</h2><span class="muted">Sem espaços de magia. Magias de raça, talento ou item aparecem aqui quando o personagem as tiver.</span></div>`}
       </section><section id="secao-inventario" role="tabpanel" aria-labelledby="aba-inventario" data-ficha-secao="inventario" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Inventário e equipamento</h2>
         ${cabecalhoInv()}<div class="inv-add panel" id="inv-add" hidden><div class="inv-add-cab"><h3 class="sub inv-tit">Adicionar ao inventário</h3><button type="button" class="small subtle" id="inv-add-fechar">Cancelar</button></div>
-          <div class="inv-add-linha inv-add-origem"><label for="add-origem">Origem (opcional)</label><span class="inv-origem-campo"><input id="add-origem" maxlength="120" placeholder="Ex.: Recompensa da missão em Julkoun" autocomplete="off">${seletorModelos()}</span></div>
           <div class="inv-add-tipos" role="group" aria-label="Tipo de item a adicionar"><button type="button" class="small" data-inv-add-tipo="cat" aria-pressed="false">Catálogo de itens</button><button type="button" class="small" data-inv-add-tipo="perg" aria-pressed="false">Pergaminho de magia</button><button type="button" class="small" data-inv-add-tipo="livre" aria-pressed="false">Outro item (em branco)</button></div>
           <div class="inv-add-linha" data-add-linha="cat" hidden><label for="ci-q">Buscar no catálogo (armas, armaduras, equipamento, poções, itens mágicos, pacotes…)</label><div class="row"><input id="ci-q" type="search" placeholder="Nome do item…" autocomplete="off" style="flex:1 1 180px"><select id="ci-cat" aria-label="Categoria" style="flex:0 1 200px"><option value="">Todas as categorias</option>${(CAT() ? CAT().CATEGORIAS : []).map(([k, n]) => `<option value="${k}">${esc(n)}</option>`).join("")}</select></div><div id="ci-res" class="inv-cat-res"></div></div>
+          <div class="inv-add-linha inv-add-origem"><label for="add-origem">Origem (opcional)</label><span class="inv-origem-campo"><input id="add-origem" maxlength="120" placeholder="Ex.: Recompensa da missão em Julkoun" autocomplete="off">${seletorModelos()}</span></div>
           <div class="inv-add-linha" data-add-linha="perg" hidden><label for="pg-mag">Pergaminho de magia</label><div class="row"><select id="pg-mag" style="flex:1 1 200px" aria-label="Magia do pergaminho">${opt("", "Escolher a magia…", true)}</select><input id="pg-nota" style="flex:1 1 140px" maxlength="80" placeholder="Onde foi encontrado (opcional)"><button type="button" class="small" id="pg-add">Adicionar pergaminho</button></div></div>
           <div class="inv-add-linha" data-add-linha="livre" hidden><label>Outro item (personalizado)</label><div class="row"><button type="button" class="small" id="add-item">Adicionar item em branco</button><span class="muted">Cria uma linha vazia na lista acima para você preencher nome, quantidade e peso.</span></div></div>
         </div><div id="inv" class="${vistaInv === "grade" ? "inv-grade" : ""}">${listaInvHTML()}</div>
@@ -1127,7 +1127,7 @@
     if (c("#ms-abrir")) { abrirMestre(); return; }
     if (c("#ms-fechar")) { $("#mestre-box").hidden = true; return; }
     if (c("#ms-ok")) { concederMagia(); return; }
-    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0, origem: origemAdd({ tipo: "jogo" }) })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector('input[data-inv="nome"]').focus(); agendar({ inventario: P.inventario }); fecharAdd(); return; }
+    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0, origem: origemAdd({ tipo: "mestre" }) })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector('input[data-inv="nome"]').focus(); agendar({ inventario: P.inventario }); fecharAdd(); return; }
     if ((b = c("[data-rm-item]"))) { const it = itemPor(+b.dataset.rmItem); if (!it) return; if (num(it.qtd, 0) >= 1) IV.retirar(cont(), it.uid, null, { tipo: "descarte" }); else INV().splice(+b.dataset.rmItem, 1); salvarInv(); redesenharInv(); return; }
     if ((b = c("[data-inv-nome-restaurar]"))) { const it = itemPor(+b.dataset.invNomeRestaurar); if (it && !soLeitura) { restaurarNomeCatalogo(it); aviso("Nome do catálogo restaurado."); } return; }
     if (c("#inv-vinculos")) { verificarVinculos(); return; }
@@ -1135,7 +1135,7 @@
     if (c("#inv-add-fechar")) { fecharAdd(); return; }
     if ((b = c("[data-inv-add-tipo]"))) { escolherAdd(b.dataset.invAddTipo); return; }
     if ((b = c("[data-inv-editar-abrir]"))) { const card = b.closest(".item-inv"), p = card && card.querySelector(".inv-edit"), it = INV()[+b.dataset.invEditarAbrir]; if (p && it) { const abre = p.hidden; p.hidden = !abre; abre ? invAbertos.add(it.uid) : invAbertos.delete(it.uid); card.querySelector(".inv-mais")?.removeAttribute("open"); if (abre) p.querySelector('input[data-inv="nome"]')?.focus(); } return; }
-    if ((b = c("[data-cat-add]"))) { const row = b.closest(".inv-cat-item"); adicionarDoCatalogo(b.dataset.catAdd, row && row.querySelector("input") ? row.querySelector("input").value : 1); return; }
+    if ((b = c("[data-cat-add]"))) { const row = b.closest(".inv-cat-item"); adicionarDoCatalogo(b.dataset.catAdd, row?.querySelector("input.num")?.value || 1, row?.querySelector("[data-cat-pacote]")?.value || ""); return; }
     if ((b = c("[data-cat-det]"))) { detalhesCatalogoAdd(b.dataset.catDet); return; }
     if ((b = c("[data-inv-qtd-mais]"))) { ajustarQtd(+b.dataset.invQtdMais, 1); return; }
     if ((b = c("[data-inv-qtd-menos]"))) { ajustarQtd(+b.dataset.invQtdMenos, -1); return; }
