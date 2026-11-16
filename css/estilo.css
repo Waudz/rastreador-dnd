@@ -617,3 +617,17 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 .cm-dialog-topo .panel-title { margin:0; }
 .cm-dialog .cmg { min-width:0; }
 @media(max-width:600px) { .cm-dialog { padding:12px; max-height:calc(100dvh - 12px); } .cm-dialog-topo { top:-12px; } }
+
+/* Catálogos: mesmo padrão de busca e filtros da aba Itens. */
+.catalogo-busca{align-items:center;gap:8px}
+.catalogo-busca>.clearable{min-width:0}
+.catalogo-busca>.clearable input{width:100%}
+.catalogo-filtros{align-items:center;gap:8px;margin-top:8px}
+.catalogo-filtros select{flex:1 1 170px;min-width:0}
+.catalogo-filtros select:disabled{opacity:.48;cursor:not-allowed}
+.catalogo-filtros button{flex:0 0 auto}
+@media(max-width:520px){
+  .catalogo-filtros select{flex:1 1 calc(50% - 8px)}
+  .catalogo-filtros button{flex:1 1 auto}
+  .catalogo-busca>input,.catalogo-busca>.clearable{flex:1 1 100%!important}
+}
