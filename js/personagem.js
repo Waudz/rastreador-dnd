@@ -556,7 +556,7 @@
   function abrirDetalhes(i) {
     const it = itemPor(i); if (!it) return;
     const { ov, fim } = modalInv("Detalhes do item", htmlDetalhes(it, i));
-    const raridade = CAT()?.chaveRaridade?.(it.raridade || viewDoItem(it).v?.raridade || "mundano") || "mundano";
+    const raridade = CAT()?.infoMagica?.(it)?.raridade?.chave || "mundano";
     const janela = ov.querySelector(".inv-modal-box");
     if (janela) janela.classList.add("itens-modal", "raridade-" + raridade);
     ov.addEventListener("click", (e) => {
