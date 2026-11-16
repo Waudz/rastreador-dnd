@@ -42,3 +42,13 @@ test('catálogos usam o padrão de Itens: busca separada, categorias completas e
  assert.match(a,/\$\{n\} de \$\{ordenadas\.length\}/);
  assert.match(a,/shownSpells/);
 });
+
+test('Bestiário e Magias têm botões Lista/Grade e salvam a preferência',()=>{
+ const h=ler('iniciativa.html'),a=ler('js/app.js');
+ for(const tipo of ['magias','bestiario']) {
+  assert.match(h,new RegExp('data-cat-vista="'+tipo+':lista"'));
+  assert.match(h,new RegExp('data-cat-vista="'+tipo+':grade"'));
+ }
+ assert.match(a,/compendio:vista:/);
+ assert.match(a,/aplicarVistaCatalogo/);
+});

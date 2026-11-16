@@ -242,7 +242,7 @@
         <select id="sf-sch" aria-label="Escola"><option value="">Todas as escolas</option><option>Abjuração</option><option>Adivinhação</option><option>Conjuração</option><option>Encantamento</option><option>Evocação</option><option>Ilusão</option><option>Necromancia</option><option>Transmutação</option></select>
         <select id="sf-ex" aria-label="Característica"><option value="">Todas as características</option><option value="ritual">Rituais</option><option value="conc">Concentração</option></select>
         <select id="s-ordem" aria-label="Ordenar resultados de magias"><option value="nome-asc">Nome: A–Z</option><option value="nome-desc">Nome: Z–A</option></select>
-        <button type="button" class="small subtle" id="sf-limpar">Limpar filtros</button>
+        <button type="button" class="small subtle" id="sf-limpar">Limpar filtros</button><span class="inv-vista" role="group" aria-label="Modo de exibição das magias"><button type="button" class="small" data-cat-vista="magias:lista" aria-pressed="true">Lista</button><button type="button" class="small" data-cat-vista="magias:grade" aria-pressed="false">Grade</button></span>
       </div>
       <div class="muted" id="scount" role="status"></div>
       <div id="spells" class="magias-resultados"></div>
@@ -260,7 +260,7 @@
       <div class="row catalogo-filtros">
         <select id="bf" aria-label="Categoria do bestiário"></select>
         <select id="b-ordem" aria-label="Ordenar monstros"><option value="nome-asc">Nome: A–Z</option><option value="nome-desc">Nome: Z–A</option></select>
-        <button type="button" class="small subtle" id="bf-limpar">Limpar filtros</button>
+        <button type="button" class="small subtle" id="bf-limpar">Limpar filtros</button><span class="inv-vista" role="group" aria-label="Modo de exibição do bestiário"><button type="button" class="small" data-cat-vista="bestiario:lista" aria-pressed="true">Lista</button><button type="button" class="small" data-cat-vista="bestiario:grade" aria-pressed="false">Grade</button></span>
         <button type="button" class="small" id="exportar-criacoes">Exportar criações</button>
         <button type="button" class="small" id="importar-criacoes">Importar criações</button><input type="file" id="importar-arquivo" accept="application/json,.json" hidden>
       </div>
