@@ -169,12 +169,12 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
   .ficha-abas button { font-size:11px; padding:6px 11px; }
   .inspiracao-ficha { flex-wrap:wrap; }
 }
-@media(min-width:900px) {
+@media(min-width:1200px) {
   html[data-app-view] body { padding-right:calc(24px + var(--painel-reserva-direita,0px)); }
   /* Campanha, conta e demais páginas com painel lateral: o conteúdo cede o lugar do painel em vez de ficar escondido atrás dele. */
   html:not([data-app-view]) body:has(> main #dock-r) { padding-right:calc(var(--pad-corpo,24px) + var(--painel-reserva-direita,0px)); }
 }
-@media(max-width:899px) {
+@media(max-width:1199px) {
   #dock-r, .ci-resumo {
     position:relative;
     inset:auto;
@@ -310,7 +310,9 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 #inv{display:flex;flex-direction:column;gap:10px}
 .inv-card{position:relative;display:grid;grid-template-columns:84px minmax(0,1fr);grid-template-areas:"t c" "e e";gap:4px 12px;align-items:start;padding:10px;border:1px solid var(--line,#3a3548);border-radius:12px;background:rgba(255,255,255,.025);margin:0}
 .inv-thumb{grid-area:t;width:84px;height:84px;padding:0;border-radius:10px;border:1px solid var(--gold-dark,#9f7940);background:linear-gradient(145deg,rgba(201,167,106,.14),rgba(0,0,0,.28));display:grid;place-items:center;overflow:hidden;cursor:zoom-in;color:var(--gold,#c9a76a);min-height:0}
-.inv-thumb.vazio{cursor:pointer;border-style:dashed}.inv-thumb.vazio svg{width:34px;height:34px;opacity:.75}
+/* Sem imagem: mesma moldura e fundo neutro das miniaturas com foto; mantém ícone da categoria. */
+.inv-thumb.vazio{cursor:pointer;border-style:solid;background:#1b242d}
+.inv-thumb.vazio svg{width:34px;height:34px;opacity:.9}
 .inv-thumb-img{width:100%;height:100%;object-fit:cover;display:block}
 .inv-corpo{grid-area:c;min-width:0}
 .inv-titulo{display:flex;align-items:baseline;gap:8px;min-width:0}.inv-nome-txt{font-size:1rem;overflow-wrap:anywhere;line-height:1.25}
@@ -464,3 +466,7 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
   #inv:not(.inv-grade) .inv-qtd-ctl button{min-width:36px}
   #inv:not(.inv-grade) .inv-qtd-ctl input{width:44px}
 }
+
+/* O modal aberto na ficha embutida ocupa a tela toda sem encerrar a aba lateral. */
+body:has(#ci-resumo.comp-modal-ativo) #ci-ficha-frame{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:250!important;background:transparent!important}
+body:has(#ci-resumo.comp-modal-ativo) #ci-resumo{overflow:visible!important}

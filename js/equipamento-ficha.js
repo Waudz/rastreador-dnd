@@ -38,9 +38,10 @@
     }
     return a.categoria === "martial" && (f.proficienciasSubclasse || []).includes("Armas marciais");
   }
+  const itemBonusDefinido = it => !!it.propriedades?.encantamento;
   function linhaDeArma(f, item, cat) {
     const a = cat.arma, props = a.propriedades || [], ranged = a.alcance === "ranged";
-    return { nome: item.nome || cat.nome, dado: a.dano.dado, tipo: TIPO_PT[a.dano.tipo] || a.dano.tipo, atr: props.includes("finesse") ? "acuidade" : ranged ? "des" : "for", prof: proficiente(f, cat), magico: 0, extra: 0, distancia: ranged, armaId: cat.id, itemUid: item.uid };
+    return { nome: item.nome || cat.nome, dado: a.dano.dado, tipo: TIPO_PT[a.dano.tipo] || a.dano.tipo, atr: props.includes("finesse") ? "acuidade" : ranged ? "des" : "for", prof: proficiente(f, cat), magico: window.ITEM_ENCANTADO?.bonus(item) || 0, extra: 0, distancia: ranged, armaId: cat.id, itemUid: item.uid };
   }
 
   function desfazerArmadura(P, uidAtual) {
@@ -71,10 +72,10 @@
     if (Number(it.qtd) > 1 && !jaLigado(P, uid)) { it = separarUnidade(P, it); uid = it.uid; }
     if (tipo === "arma") {
       const L = ataquesF(f), linha = L.find((x) => x.itemUid === uid), nova = linhaDeArma(f, it, cat), g = f.armasGuardadas && f.armasGuardadas[uid];
-      if (linha) Object.assign(linha, { nome: nova.nome, armaId: nova.armaId });
+      if (linha) Object.assign(linha, { nome: nova.nome, armaId: nova.armaId, magico: nova.magico });
       else {
         /* ajustes guardados ao desequipar (bônus mágico, extra, atributo, proficiência marcada...) voltam, mas só para o MESMO item e a MESMA arma do catálogo */
-        L.push(g && g.armaId === cat.id ? { ...nova, ...g.linha, nome: nova.nome, armaId: nova.armaId, itemUid: uid } : nova);
+        L.push(g && g.armaId === cat.id ? { ...nova, ...g.linha, nome: nova.nome, magico: itemBonusDefinido(it) ? nova.magico : g.linha.magico, armaId: nova.armaId, itemUid: uid } : nova);
       }
       if (g) { delete f.armasGuardadas[uid]; if (!Object.keys(f.armasGuardadas).length) delete f.armasGuardadas; }
     } else if (tipo === "armadura") {
@@ -109,6 +110,7 @@
         const it = porUid(P, x.itemUid);
         if (!existe(it)) { removidos.push(x.nome); mudou = true; return false; }
         if (it.nome && x.nome !== it.nome) { x.nome = it.nome; mudou = true; }
+        const enc = window.ITEM_ENCANTADO?.bonus(it); if (it.propriedades?.encantamento && enc !== x.magico) { x.magico = enc; mudou = true; }
         return true;
       });
     }

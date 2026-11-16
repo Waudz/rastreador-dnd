@@ -71,9 +71,15 @@
   }
 
   /* ---------- janelas ---------- */
-  function modal(html, rotulo) {
+  function modal(html, rotulo, raridade = "") {
+    if (window.COMP_JANELA) {
+      const j = COMP_JANELA.abrir({ titulo: rotulo, conteudo: html, largura: "media", classe: `inv-modal-box itens-modal raridade-${raridade}` });
+      j.ov.id = "it-modal";
+      j.ov.addEventListener("click", e => { if (e.target.closest("[data-modal-fechar]")) j.fechar(); });
+      return { ov: j.ov, fim: j.fechar };
+    }
     document.getElementById("it-modal")?.remove();
-    const ov = document.createElement("div"); ov.id = "it-modal"; ov.className = "inv-ov"; ov.innerHTML = `<div class="crop-box inv-modal-box itens-modal" role="dialog" aria-modal="true" aria-label="${esc(rotulo)}">${html}</div>`;
+    const ov = document.createElement("div"); ov.id = "it-modal"; ov.className = "inv-ov"; ov.innerHTML = `<div class="crop-box inv-modal-box itens-modal raridade-${esc(raridade)}" role="dialog" aria-modal="true" aria-label="${esc(rotulo)}">${html}</div>`;
     const fim = () => { document.removeEventListener("keydown", tecla, true); ov.remove(); };
     const tecla = (e) => { if (e.key === "Escape" && !document.querySelector(".vi-ov")) { e.stopPropagation(); fim(); } };
     ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-modal-fechar]")) fim(); });
@@ -85,7 +91,7 @@
     const img = imagemDe(it), v = C.viewDoCatalogo(it, img), pers = it.custom;
     const acoes = !window.CATALOGO?.admin()?'' : pers ? `<button type="button" class="small" data-it-editar>Editar</button><button type="button" class="small danger" data-it-excluir>Excluir</button>`
       : `<button type="button" class="small" data-it-editar>Editar informações</button><button type="button" class="small danger" data-it-excluir>Excluir</button><button type="button" class="small" data-it-img>${img ? "Trocar a imagem" : "Adicionar imagem"}</button>${img ? '<button type="button" class="small subtle" data-it-img-rm>Remover imagem</button>' : ""}`;
-    const { ov, fim } = modal(C.fichaHTML(v) + `<div class="row inv-det-acoes">${acoes}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div><p class="muted inv-nota itens-dica">Para levar este item à ficha, use <b>+ Adicionar item</b> na aba Inventário do personagem.</p><div class="err" role="alert" id="it-erro"></div>`, "Detalhes do item");
+    const { ov, fim } = modal(C.fichaHTML(v) + `<div class="row inv-det-acoes">${acoes}<button type="button" class="small subtle" data-modal-fechar>Fechar</button></div><p class="muted inv-nota itens-dica">Para levar este item à ficha, use <b>+ Adicionar item</b> na aba Inventário do personagem.</p><div class="err" role="alert" id="it-erro"></div>`, "Detalhes do item", C.chaveRaridade(it.raridade || "mundano") || "mundano");
     const erro = (m) => { const e = ov.querySelector("#it-erro"); if (e) e.textContent = m || ""; };
     ov.addEventListener("click", async (e) => {
       const b = e.target.closest("button"); if (!b) return;try{

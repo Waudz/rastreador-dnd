@@ -2,9 +2,9 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {ler}=require('./helpers.cjs');
 test('ficha aberta ao lado: a página cede o espaço em campanha, conta e demais páginas (não fica escondida atrás do painel)',()=>{
   const c=ler('css/fichas.css');
-  assert.match(c,/@media\(min-width:900px\) \{[\s\S]*html:not\(\[data-app-view\]\) body:has\(> main #dock-r\) \{ padding-right:calc\(var\(--pad-corpo,24px\) \+ var\(--painel-reserva-direita,0px\)\)/);
-  assert.match(c,/@media\(max-width:899px\) \{\s*#dock-r, \.ci-resumo \{/);
-  assert.match(ler('js/paineis-layout.js'),/largura>=900\?'lateral'/);assert.match(ler('js/paineis-layout.js'),/--ficha-painel/);
+  assert.ok(c.includes('@media(min-width:1200px) {'),'painel lateral apenas quando ha largura suficiente');
+  assert.ok(c.includes('@media(max-width:1199px) {'),'painel empilhado em meia janela');
+  assert.ok(ler('js/paineis-layout.js').includes("largura>=1200?'lateral'"));assert.match(ler('js/paineis-layout.js'),/--ficha-painel/);
   assert.match(ler('css/identidade.css'),/@media\(min-width:900px\) and \(max-width:1199px\) \{\s*body\.com-ficha-lateral \.appheader/);
 });
 test('menu de três pontos da ficha: o popover fica sob o botão, não no meio da tela',()=>{

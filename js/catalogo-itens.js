@@ -154,7 +154,7 @@
   const RAR_PADRAO_MAGICO = { chave: "comum", rotulo: "Comum" }; // somente para itens mágicos sem raridade conhecida
   function infoMagica(it) {
     const cat = it ? doInventario(it) : null, pr = (it && it.propriedades) || {}, doCat = ehMagicoCatalogo(cat);
-    const magico = doCat || !!(it && (it.tipo === "magico" || (it.tipo === "pergaminho" && it.magiaVinculada)));   // raridade preenchida NÃO torna o item mágico: são informações independentes
+    const magico = doCat || !!(it && (it.tipo === "magico" || (it.tipo === "pergaminho" && it.magiaVinculada) || pr.encantamento?.bonus || pr.magiasItem?.length));   // raridade preenchida NÃO torna o item mágico: são informações independentes
     const escrita = pr.raridade ? String(pr.raridade).trim() : "", chave = chaveRaridade(escrita) || (cat && cat.raridade ? RAR_CHAVE[cat.raridade] || null : null);
     const rotulo = escrita || (cat && cat.raridade ? RARIDADES[cat.raridade] || "" : "");
     return { magico, raridade: rotulo ? { chave, rotulo: chave && !escrita ? RAR_ROTULO[chave] : rotulo } : (it ? (magico ? RAR_PADRAO_MAGICO : RAR_PADRAO_MUNDANO) : null) }; // fallback de exibição; não grava no inventário

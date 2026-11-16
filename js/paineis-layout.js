@@ -1,7 +1,7 @@
 /* Uma política de espaço para fichas de personagens, monstros e consultas. */
 (() => {
   /* A ficha fica ao lado da página a partir de 900 px (meia tela num monitor grande); abaixo disso, empilhada. Entre 900 e 1199 px o painel é mais estreito (380 px) e a página encolhe para caber. */
-  const medir=largura=>({modo:largura>=900?'lateral':'empilhado',largura:largura>=1200?440:largura>=900?380:Math.min(440,Math.max(0,largura))});
+  const medir=largura=>({modo:largura>=1200?'lateral':'empilhado',largura:largura>=1200?440:Math.min(440,Math.max(0,largura))});
   function aplicar(){
     const plano=medir(innerWidth),$=s=>document.querySelector(s);
     const direito=$('#dock-r');
