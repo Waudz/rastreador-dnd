@@ -339,12 +339,37 @@
     }
     restaurarOrdem("bestiario", "#b-ordem");
     restaurarOrdem("magias", "#s-ordem");
+    const VISTAS_CATALOGO = ["bestiario", "magias"];
+    const vistaCatalogo = Object.fromEntries(VISTAS_CATALOGO.map((tipo) => {
+      let valor = "lista";
+      try { valor = localStorage.getItem("compendio:vista:" + tipo) === "grade" ? "grade" : "lista"; } catch (_) {}
+      return [tipo, valor];
+    }));
+    function aplicarVistaCatalogo(tipo) {
+      const el = $(tipo === "bestiario" ? "#blist" : "#spells");
+      if (el) el.classList.toggle("catalogo-grade", vistaCatalogo[tipo] === "grade");
+      document.querySelectorAll('[data-cat-vista^="' + tipo + ':"]').forEach((b) => {
+        const ativo = b.dataset.catVista === tipo + ":" + vistaCatalogo[tipo];
+        b.setAttribute("aria-pressed", String(ativo));
+        b.classList.toggle("ativo", ativo);
+      });
+    }
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-cat-vista]");
+      if (!b) return;
+      const [tipo, modo] = b.dataset.catVista.split(":");
+      if (!VISTAS_CATALOGO.includes(tipo) || !["lista", "grade"].includes(modo)) return;
+      vistaCatalogo[tipo] = modo;
+      try { localStorage.setItem("compendio:vista:" + tipo, modo); } catch (_) {}
+      aplicarVistaCatalogo(tipo);
+    });
     function renderBestiary() {
       const q = nz($("#bq").value.trim()), f = $("#bf").value;
       renderGlobalDeleted();
       const ws = q.split(/\s+/).filter(Boolean), encontrados = ALL.filter((m) => inF(m, f) && ws.every((w) => hay(m).includes(w)));
       const list = ordenarCatalogo(encontrados, $("#b-ordem")?.value || "nome-asc", m => pt(m) || m.name);
       $("#bcount").textContent = `${list.length} fichas`;
+      aplicarVistaCatalogo("bestiario");
       $("#blist").innerHTML = list.slice(0, shown).map(rowFull).join("") + (list.length > shown ? `<button class="small" data-more="1">Mostrar mais (${list.length - shown})</button>` : "") || '<span class="muted">Nada encontrado.</span>';
     }
     $("#bf").onchange = () => { shown = 40; renderBestiary(); };
@@ -421,6 +446,7 @@
       const ordenadas = ordenarCatalogo(filtradas, $("#s-ordem")?.value || "nome-asc", s => D.S[kOf(s)]?.[0] || s.name);
       const r = ordenadas.slice(0, shownSpells);
       const mais = $("#sp-more"); mais.hidden = ordenadas.length <= shownSpells || (tipo !== "spell" && tipo !== ""); mais.textContent = `Mostrar mais magias (${Math.max(0, ordenadas.length - shownSpells)})`;
+      aplicarVistaCatalogo("magias");
       box.innerHTML = r.map((s) => {
         const k = kOf(s), d = D.S[k];
         return window.MAGIAS_UI.resultado({chave:s.key,nome:d?d[0]:s.name,original:s.name,nivel:s.level,escola:SCH[s.school?.name],tempo:s.casting_time?cap(tr(s.casting_time)):undefined,alcance:s.range_text?tr(s.range_text):undefined,ritual:s.ritual,concentracao:s.concentration,fonte:srcOf(s),alias:''});
