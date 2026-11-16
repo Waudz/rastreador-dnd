@@ -691,3 +691,27 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
   height: 70%;
   filter: drop-shadow(0 6px 7px rgba(0, 0, 0, .42));
 }
+
+
+/* Padronização visual: ícones ilustrados, fotos e miniaturas do catálogo. */
+:root { --comp-icone-sombra: drop-shadow(0 6px 7px rgba(0,0,0,.42)); }
+.dnd-categoria-icone, .catalogo-simbolo > .rpg-ico,
+.catalogo-simbolo > .ico, .catalogo-simbolo > img:not(.av) {
+  filter: var(--comp-icone-sombra);
+}
+.grupo-unificado .catalogo-simbolo .dnd-categoria-icone,
+.grupo-unificado .retrato-cartao.catalogo-simbolo .dnd-categoria-icone,
+#blist .catalogo-simbolo .dnd-categoria-icone,
+#spells .catalogo-simbolo .dnd-categoria-icone {
+  width:70%; height:70%; object-fit:contain;
+}
+:is(.grupo-personagens-grade, #blist.catalogo-grade, #spells.catalogo-grade) .catalogo-simbolo > :is(.dnd-categoria-icone,.rpg-ico,.ico) {
+  width:50%; height:50%; max-width:50%; max-height:50%; object-fit:contain;
+}
+:is(.grupo-personagens-grade, #blist.catalogo-grade, #spells.catalogo-grade) .catalogo-simbolo > :is(.dnd-categoria-icone,.rpg-ico,.ico) {
+  filter:var(--comp-icone-sombra);
+}
+/* O retrato usa a mesma área quadrada, sem distorcer a fotografia original. */
+:is(.grupo-personagens-grade, #blist.catalogo-grade, #spells.catalogo-grade) .av > img:not(.dnd-categoria-icone) {
+  width:100%; height:100%; object-fit:cover; object-position:center;
+}
