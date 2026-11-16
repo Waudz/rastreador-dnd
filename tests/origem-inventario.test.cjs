@@ -20,6 +20,19 @@ function criar(A,classe,bg,escolhas={}){
 }
 const origens=(A,p)=>A.CR.equipamento(p).itens.map(i=>[i.nome,i.origem.texto]);
 
+test('catálogo: sugere somente pacotes que realmente contêm o item',()=>{
+  const A=amb(),id='srd51:item/torch',pacotes=A.C.pacotesQueContem(id);
+  assert.ok(pacotes.length>0,'tocha deve pertencer a pelo menos um pacote');
+  for(const p of pacotes){
+    const itemPacote=A.C.obter(p.id);
+    assert.ok(itemPacote.pacote.some(c=>c.id===id),'sugestão precisa corresponder aos dados do pacote');
+    assert.equal(p.texto,'Componente do '+itemPacote.nome);
+    assert.equal(p.origem.pacote.id,p.id);
+    assert.equal(p.origem.pacote.nome,itemPacote.nome);
+  }
+  assert.equal(A.C.pacotesQueContem('item-que-nao-existe').length,0);
+});
+
 /* ---------- Origem no criador ---------- */
 test('criador: Bárbaro com Herói do povo mostra a origem de cada equipamento a partir dos dados reais',()=>{
   const A=amb(),p=criar(A,'Barbarian','heroi');
