@@ -653,3 +653,8 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 #spells.catalogo-grade>.catalogo-habilidade{display:flex;flex-direction:column}
 #spells.catalogo-grade>.catalogo-habilidade>span{min-width:0;overflow-wrap:anywhere}
 @media(max-width:520px){#blist.catalogo-grade,#spells.magias-resultados.catalogo-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#blist.catalogo-grade .acts button,#spells.catalogo-grade .acts button{min-height:36px}}
+
+
+/* Selo de magia: ícone arcano e círculo, sem confundir círculo com imagem. */
+#spells.catalogo-grade>.catalogo-magia>.lft>.magia-selo-circulo{flex-direction:column;gap:6px;font-size:24px!important;line-height:1.1;letter-spacing:.02em}
+#spells.catalogo-grade>.catalogo-magia>.lft>.magia-selo-circulo::before{content:"✦";font-family:Georgia,serif;font-size:34px;line-height:1;color:var(--gold);opacity:.9}
