@@ -103,3 +103,13 @@ a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, cu
 .grupo-unificado .grupo-secao-recolhida > summary:focus-visible { outline:2px solid var(--accent, #a4c7df); outline-offset:-2px; }
 .grupo-unificado .grupo-secao-corpo { padding:0 14px 14px; min-width:0; }
 .grupo-unificado .grupo-secao-corpo .res { min-width:0; }
+
+/* Grupo: mesmos modos de exibição dos catálogos. */
+.grupo-vista-controles{align-items:center;justify-content:flex-end;gap:8px;margin:12px 0 8px}
+.grupo-vista-controles .inv-vista{display:inline-flex;gap:4px}
+.grupo-vista-controles button[aria-pressed="true"]{border-color:var(--accent,var(--line));background:var(--panel)}
+.grupo-unificado .cards.grupo-personagens-lista{display:flex;flex-direction:column;gap:8px}
+.grupo-personagens-lista .grupo-cartao{width:100%;display:flex;flex-direction:column}
+.grupo-personagens-lista .grupo-cartao-topo{width:100%;align-items:center}
+.grupo-personagens-lista .grupo-cartao .grupo-identidade{flex:1}
+@media(max-width:520px){.grupo-vista-controles{justify-content:space-between}.grupo-personagens-lista .grupo-cartao-topo{flex-wrap:wrap}}
