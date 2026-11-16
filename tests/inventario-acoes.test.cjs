@@ -21,7 +21,8 @@ test('ficha: quantidade com + e −, descartar com confirmação, excluir, detal
   const j=ler('js/personagem.js');
   for(const k of ['data-inv-qtd-mais','data-inv-qtd-menos','data-inv-descartar','data-inv-excluir','data-inv-detalhes','abrirDescartar','abrirExcluir','abrirDetalhes','ajustarQtd'])assert.ok(j.includes(k),k);
   assert.match(j,/function abrirEditor\(i\) \{ const it = itemPor\(i\); if \(!it \|\| !souMestre\) return;/,'o editor continua exclusivo do mestre');
-  assert.match(j,/\$\{souMestre \? `<button type="button" class="small" data-det-config/,'botão de configuração só aparece ao mestre');
+  assert.match(j,/data-det-editar/,'detalhes oferecem acesso ao editor unificado');
+  assert.match(j,/!soLeitura \? `<button type="button" class="small primary" data-det-editar/,'edição não aparece em modo somente leitura');
   assert.match(j,/Math\.max\(0, Math\.floor\(num\(t\.value, 0\)\)\)/,'quantidade digitada nunca fica negativa');
   assert.match(j,/n === total && !confirmando/,'descartar todas as unidades pede confirmação');
 });
