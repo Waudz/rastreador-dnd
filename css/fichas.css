@@ -354,6 +354,14 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .inv-edit-campos textarea{width:100%;resize:vertical;min-height:70px}
 .inv-ov{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:14px;background:rgba(8,7,12,.78)}
 .inv-modal-box{width:min(460px,100%)}
+/* Editor do inventário: janela independente, sem expandir a linha do item. */
+.inv-editor-modal{width:min(620px,100%);border-color:var(--line,#394C5D)}
+.inv-editor-modal .inv-edit{margin:0;border:0;padding:0;grid-area:auto}
+.inv-editor-modal .inv-edit-campos{grid-template-columns:repeat(2,minmax(0,1fr));margin:0;gap:12px}
+.inv-editor-modal .inv-edit-campos>label,.inv-editor-modal .inv-edit-campos>div{min-width:0}
+.inv-editor-modal .inv-edit-campos .inv-c-nome,.inv-editor-modal .inv-edit-campos>label:nth-of-type(4){grid-column:1/-1}
+.inv-editor-modal .inv-edit-botoes{justify-content:flex-end;margin-top:6px}
+@media(max-width:520px){.inv-editor-modal .inv-edit-campos{grid-template-columns:minmax(0,1fr)}.inv-editor-modal .inv-edit-campos>*{grid-column:1/-1}}
 .inv-det-topo{display:flex;gap:14px;align-items:center;margin-bottom:8px}.inv-det-topo h3{margin:0 0 2px}.inv-det-topo p{margin:0}
 .inv-det-img{flex:none;width:112px;height:112px;object-fit:cover;border-radius:12px;border:1px solid var(--gold-dark,#9f7940);background:rgba(0,0,0,.25);display:grid;place-items:center}
 .inv-det-img.vazio svg{width:44px;height:44px;color:var(--gold,#c9a76a);opacity:.75}
