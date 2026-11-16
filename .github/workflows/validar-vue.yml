@@ -1,0 +1,45 @@
+name: Validar Vue e catálogos
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validar-vue-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes-catalogos:
+    name: Testes de ordenação
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/ordenacao-catalogos.test.cjs
+
+  compilar-vue:
+    name: Compilar Vue 3 + Vite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+      - name: Compilar Vue
+        run: npm run build
+      - name: Conferir build
+        run: test -f dist/index.html
