@@ -22,6 +22,7 @@
     const fechar = () => {
       if (!ov.isConnected) return;
       ov.removeEventListener("keydown", tecla); ov.remove();
+      if (window.parent !== window && !document.querySelector(".comp-janela-ov")) window.parent.postMessage({tipo:"comp-modal-ficha",aberto:false},location.origin);
       if (typeof aoFechar === "function") aoFechar();
       if (anterior?.isConnected && typeof anterior.focus === "function") anterior.focus({preventScroll:true});
     };
@@ -37,6 +38,7 @@
     ov.addEventListener("click", e => { if (e.target === ov && fecharAoFundo) fechar(); });
     ov.addEventListener("keydown", tecla);
     document.body.append(ov);
+    if (window.parent !== window) window.parent.postMessage({tipo:"comp-modal-ficha",aberto:true},location.origin);
     (corpo.querySelector('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled])') || x).focus({preventScroll:true});
     return { ov, box, corpo, fechar };
   }
