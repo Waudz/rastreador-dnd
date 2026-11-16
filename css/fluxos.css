@@ -562,3 +562,44 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 .ci-resultado { margin:6px 0; }
 .ci-resultado ul { margin:4px 0 8px 18px; padding:0; }
 
+
+
+/* Grade de personagens: retrato, informações e ações em linhas independentes.
+   Escopo exclusivo da grade para não alterar a lista ou a iniciativa. */
+.grupo-unificado .cards.grupo-personagens-grade > .personagem-card.grupo-cartao{
+  display:flex;flex-direction:column;align-items:stretch;height:auto;min-height:0;
+  padding:10px;gap:9px;overflow:visible;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo{
+  display:flex;flex-direction:column;align-items:stretch;gap:9px;
+  width:100%;min-width:0;flex:1 1 auto;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo > .grupo-identidade{
+  display:flex;flex-direction:column;align-items:stretch;flex:1 1 auto;
+  width:100%;min-width:0;min-height:0;gap:8px;padding:0;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo > .grupo-identidade > .retrato-cartao{
+  display:flex;width:100%!important;height:auto!important;min-width:0;max-width:none;
+  flex:0 0 auto;aspect-ratio:1/1;object-fit:cover;object-position:center;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-identidade-texto{
+  display:flex;flex-direction:column;gap:3px;min-width:0;width:100%;
+  overflow:visible;overflow-wrap:break-word;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-identidade-texto b,
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-identidade-texto small{
+  display:block;white-space:normal;overflow:visible;text-overflow:clip;
+  overflow-wrap:anywhere;line-height:1.4;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo > .grupo-cartao-acoes{
+  display:flex;position:relative;flex:0 0 auto;flex-direction:row;
+  justify-content:flex-end;align-items:center;gap:6px;
+  width:100%;margin:0;min-height:36px;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo > .grupo-marcar{
+  position:absolute;top:17px;left:17px;z-index:2;
+  width:24px;height:24px;min-height:24px;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .hp-track{
+  flex:0 0 auto;width:100%;margin-top:2px;
+}
