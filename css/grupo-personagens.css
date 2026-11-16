@@ -96,3 +96,10 @@ a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, cu
 .grupo-nums { display:flex; gap:16px; font-size:14px; }
 .grupo-mestre { grid-template-columns:64px minmax(0,1fr); }
 .ficha-so-leitura input:disabled, .ficha-so-leitura select:disabled, .ficha-so-leitura textarea:disabled { opacity:.85; cursor:default; }
+
+/* Grupo unificado: seções secundárias fechadas por padrão. */
+.grupo-unificado .grupo-secao-recolhida { margin-top:12px; border:1px solid var(--line); border-radius:10px; background:var(--panel); overflow:hidden; }
+.grupo-unificado .grupo-secao-recolhida > summary { cursor:pointer; padding:12px 14px; font-weight:600; list-style-position:inside; }
+.grupo-unificado .grupo-secao-recolhida > summary:focus-visible { outline:2px solid var(--accent, #a4c7df); outline-offset:-2px; }
+.grupo-unificado .grupo-secao-corpo { padding:0 14px 14px; min-width:0; }
+.grupo-unificado .grupo-secao-corpo .res { min-width:0; }
