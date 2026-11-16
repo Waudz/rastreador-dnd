@@ -36,7 +36,7 @@ for (const x of fonte) {
   it.categoria = categoria; if (subtipo) it.subtipo = subtipo;
   if (d.cost && d.cost.amount > 0) it.custo = { v: d.cost.amount, u: d.cost.unit };
   if (d.weight != null) it.peso = kg(d.weight);
-  if (d.rarity) it.raridade = d.rarity;
+  if (d.rarity) it.raridade = d.rarity; else if (cat !== "magic-items") it.raridade = "mundano";
   if (cat === "magic-items") it.sintonia = !!d.attunement;
   if (d.slot) it.espaco = d.slot;
   if (d.weapon) { const w = d.weapon; it.arma = { categoria: w.category, alcance: w.kind, propriedades: w.properties.map(PROP) }; if (w.damage) it.arma.dano = { dado: w.damage.dice, tipo: w.damage.type }; if (w.twoHandedDamage) it.arma.danoDuasMaos = { dado: w.twoHandedDamage.dice, tipo: w.twoHandedDamage.type }; if (w.range) it.arma.alcanceM = { normal: m(w.range.normal), ...(w.range.long ? { longo: m(w.range.long) } : {}) }; if (w.throwRange) it.arma.arremessoM = { normal: m(w.throwRange.normal), longo: m(w.throwRange.long) }; }
