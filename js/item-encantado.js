@@ -5,7 +5,7 @@
   const RAR = { arma: ["", "Incomum", "Rara", "Muito rara"], escudo: ["", "Incomum", "Rara", "Muito rara"], armadura: ["", "Rara", "Muito rara", "Lendária"] };
   const bonus = it => Math.max(0, Math.min(3, Number(it?.propriedades?.encantamento?.bonus) || 0));
   const tipo = cat => cat && ["arma", "armadura", "escudo"].includes(cat.categoria) ? cat.categoria : null;
-  const nomeBase = (it, cat) => cat?.nome || String(it?.nome || "").replace(/ \\+[123]$/, "");
+  const nomeBase = (it, cat) => cat?.nome || String(it?.nome || "").replace(/ \+[123]$/, "");
   function configurar(it, cat, valor) {
     const t = tipo(cat); if (!t) throw Error("Apenas armas, armaduras e escudos do catálogo aceitam bônus +1 a +3.");
     const n = Number(valor); if (!Number.isInteger(n) || n < 0 || n > 3) throw Error("Bônus mágico inválido.");
