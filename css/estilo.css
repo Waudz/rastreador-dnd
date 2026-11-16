@@ -673,3 +673,12 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 #spells.catalogo-grade>.catalogo-habilidade{grid-template-rows:1fr}
 #spells.catalogo-grade>.catalogo-habilidade>span{min-width:0;overflow-wrap:anywhere}
 @media(max-width:520px){#blist.catalogo-grade,#spells.catalogo-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#blist.catalogo-grade>.catalogo-cartao>.lft,#spells.catalogo-grade>.catalogo-cartao>.lft{display:contents}}
+
+
+/* PR21: a regra de magias-resultados (display:block) anulava a grade,
+   fazendo cada selo ocupar toda a largura da página. */
+#spells.magias-resultados.catalogo-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:12px;align-items:stretch}
+#spells.magias-resultados.catalogo-grade>.catalogo-magia{min-width:0;max-width:100%;grid-template-rows:auto minmax(0,1fr) auto}
+#spells.magias-resultados.catalogo-grade>.catalogo-magia>.lft>.magia-selo-circulo{width:100%;height:auto;aspect-ratio:1/1;max-height:220px;box-sizing:border-box;font-size:clamp(20px,3vw,38px)}
+#blist.catalogo-grade>.catalogo-monstro>.lft>.av{width:100%;height:auto;aspect-ratio:1/1;max-height:220px;box-sizing:border-box}
+@media(max-width:520px){#spells.magias-resultados.catalogo-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#spells.magias-resultados.catalogo-grade>.catalogo-magia>.lft>.magia-selo-circulo{max-height:none}}
