@@ -594,3 +594,13 @@ img.ampliavel{cursor:zoom-in}
 .inv-thumb img.inv-thumb-img {
   filter: drop-shadow(0 6px 7px rgba(0, 0, 0, .42));
 }
+
+/* Janela reutilizável em todo o Compêndio: mantém as abas laterais para navegação. */
+.comp-janela-ov{position:fixed;inset:0;z-index:150;display:grid;place-items:center;padding:20px;background:rgba(8,12,18,.8)}
+.comp-janela{width:min(100%,720px);max-height:min(92dvh,1000px);display:flex;flex-direction:column;min-height:0;background:var(--panel,#222e39);border:1px solid var(--gold-dark,#9f7940);border-radius:14px;box-shadow:0 22px 70px rgba(0,0,0,.5);overflow:hidden}
+.comp-janela-pequena{max-width:480px}.comp-janela-media{max-width:720px}.comp-janela-larga{max-width:900px}
+.comp-janela-cab{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line,#354352)}
+.comp-janela-titulo{font:700 1.15rem Georgia,serif;color:var(--gold,#d4ae72);margin:0}
+.comp-janela-corpo{overflow:auto;overscroll-behavior:contain;padding:20px;min-height:0}
+.comp-janela-corpo :is(input,select,textarea){max-width:100%}
+@media(max-width:600px){.comp-janela-ov{padding:8px}.comp-janela{max-height:calc(100dvh - 16px);border-radius:12px}.comp-janela-cab{padding:12px}.comp-janela-corpo{padding:12px}.comp-janela-corpo .row{flex-wrap:wrap}}
