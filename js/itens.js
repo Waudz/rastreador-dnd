@@ -31,7 +31,7 @@
   }
   function cartao(it) {
     const id = esc(it.id), mec = mecanicaDe(it);
-    return `<div class="item-inv inv-card itens-card${C.ehMagicoCatalogo(it) ? " item-magico" : ""}" data-it="${id}"><button type="button" class="inv-thumb${imagemDe(it) ? "" : " vazio"}" data-it-det="${id}" aria-label="Abrir os detalhes de ${esc(it.nome)}" title="Ver detalhes">${miniatura(it)}</button>
+    return `<div class="item-inv inv-card itens-card${C.ehMagicoCatalogo(it) ? " item-magico" : ""} raridade-${C.chaveRaridade(it.raridade || "mundano") || "mundano"}" data-it="${id}"><button type="button" class="inv-thumb${imagemDe(it) ? "" : " vazio"}" data-it-det="${id}" aria-label="Abrir os detalhes de ${esc(it.nome)}" title="Ver detalhes">${miniatura(it)}</button>
       <div class="inv-corpo"><div class="inv-titulo"><button class="inv-nome-btn" type="button" data-it-det="${id}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome)}</b></button>${mec ? `<span class="inv-mec">${esc(mec)}</span>` : ""}</div>
       <div class="inv-meta muted">${meta(it)}</div>${it.pacote ? '<div class="inv-meta muted">Conjunto de ' + it.pacote.length + " componentes</div>" : ""}</div></div>`;
   }
