@@ -52,3 +52,14 @@ test('Bestiário e Magias têm botões Lista/Grade e salvam a preferência',()=>
  assert.match(a,/compendio:vista:/);
  assert.match(a,/aplicarVistaCatalogo/);
 });
+
+test('acabamento visual mantém ações e melhora vazios de catálogo',()=>{
+ const h=M.resultado({chave:'magia-teste',nome:'Magia teste',nivel:1});
+ assert.match(h,/catalogo-cartao catalogo-magia/);
+ assert.match(h,/data-spopen="magia-teste"/);
+ const app=ler('js/app.js'),css=ler('css/estilo.css'),grupo=ler('css/grupo-personagens.css');
+ assert.match(app,/catalogo-vazio/);
+ assert.match(app,/catalogo-monstro/);
+ assert.match(css,/\.catalogo-vazio/);
+ assert.match(grupo,/grupo-personagens-grade/);
+});
