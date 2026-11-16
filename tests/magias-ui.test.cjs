@@ -16,7 +16,7 @@ test('detalhes preservam descrição, materiais e original sem interpretar HTML'
 });
 test('resultados são linhas compactas como os monstros, com botão nativo Ver, e não exibem valores ausentes',()=>{
  const h=M.resultado({chave:'ds:light',nome:'Luz',nivel:0});assert.match(h,/^<div class="res res-magia catalogo-cartao catalogo-magia" data-spopen="ds:light"/);assert.match(h,/<button type="button" class="small" data-spopen="ds:light" aria-label="Ver Luz">Ver<\/button>/);assert.match(h,/Truque/);assert.doesNotMatch(h,/undefined|null/);
- const g=M.resultado({chave:'srd_fireball',nome:'Bola de Fogo',original:'Fireball',nivel:3,escola:'Evocação',tempo:'Ação',alcance:'45 m',concentracao:true,fonte:'5e 2014 Rules'});assert.match(g,/<b>Bola de Fogo<\/b> <span class="muted">\(Fireball\)<\/span>/);assert.match(g,/Magia · 3º círculo · Evocação · Ação · 45 m · Concentração · 5e 2014 Rules/);assert.match(g,/>3º<\/span>/);
+ const g=M.resultado({chave:'srd_fireball',nome:'Bola de Fogo',original:'Fireball',nivel:3,escola:'Evocação',tempo:'Ação',alcance:'45 m',concentracao:true,fonte:'5e 2014 Rules'});assert.match(g,/<b>Bola de Fogo<\/b> <span class="muted">\(Fireball\)<\/span>/);assert.match(g,/Magia · 3º círculo · Evocação · Ação · 45 m · Concentração · 5e 2014 Rules/);assert.match(g,/magia-selo-circulo catalogo-simbolo/);assert.doesNotMatch(g,/>3º<\/span>/);
 });
 test('pesquisa de magias: lista de linhas como a de monstros (CSS) e painel da magia com Fechar (Esc)',()=>{
  const m=ler('css/magias.css'),i=ler('css/identidade.css'),f=ler('css/fluxos.css'),h=ler('iniciativa.html');
