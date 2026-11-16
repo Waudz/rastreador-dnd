@@ -299,7 +299,7 @@
     const hay = (m) => nz([m.name, pt(m), m.subtitle, CAT[catOf(m)], m.size?.name, SZ[m.size?.name], m.type?.name, TP[m.type?.name], srcOf(m)].filter(Boolean).join(" "));
     function buildFilter() {
       const f = $("#bf"), cur = f.value, docs = [...new Set(ALL.filter((m) => !m.custom).map(srcOf))].sort();
-      f.innerHTML = '<option value="">Categoria: Todos</option><option value="monster">Monstros</option><option value="player">Personagens</option><option value="npc">NPCs</option><option value="custom">Minhas criações</option>' + docs.map((d) => `<option value="doc:${esc(d)}">Fonte: ${esc(d)}</option>`).join("");
+      f.innerHTML = '<option value="">Todas as categorias</option><option value="monster">Monstros</option><option value="player">Personagens</option><option value="npc">NPCs</option><option value="custom">Minhas criações</option>' + docs.map((d) => `<option value="doc:${esc(d)}">Fonte: ${esc(d)}</option>`).join("");
       f.value = [...f.options].some((o) => o.value === cur) ? cur : "";
     }
     const inF = (m, f) => !f || (f === "custom" && m.custom) || (["monster", "player", "npc"].includes(f) && catOf(m) === f) || (f.startsWith("doc:") && !m.custom && srcOf(m) === f.slice(4));
@@ -348,6 +348,7 @@
       $("#blist").innerHTML = list.slice(0, shown).map(rowFull).join("") + (list.length > shown ? `<button class="small" data-more="1">Mostrar mais (${list.length - shown})</button>` : "") || '<span class="muted">Nada encontrado.</span>';
     }
     $("#bf").onchange = () => { shown = 40; renderBestiary(); };
+    $("#bf-limpar").onclick = () => { $("#bq").value = ""; $("#bf").value = ""; $("#b-ordem").value = "nome-asc"; guardarOrdem("bestiario", "nome-asc"); shown = 40; renderBestiary(); };
     $("#b-ordem")?.addEventListener("change", () => { guardarOrdem("bestiario", $("#b-ordem").value); shown = 40; renderBestiary(); });
     $("#bq").addEventListener("input", () => { shown = 40; renderBestiary(); });
 
@@ -642,15 +643,23 @@
     $("#sq").addEventListener("input", () => { shownSpells = 40; $("#sq-x").hidden = !$("#sq").value; spSearch(); });
     $("#sp-more").onclick = () => { shownSpells += 40; spSearch(); };
     $("#s-ordem")?.addEventListener("change", () => { guardarOrdem("magias", $("#s-ordem").value); shownSpells = 40; spSearch(); });
-    /* filtros: só o tipo fica à vista; o resto abre em "Filtros" e se adapta ao tipo escolhido */
+    /* Filtros visíveis, como no catálogo de Itens. Campos exclusivos de magias
+       ficam indisponíveis quando o usuário consulta habilidades. */
     const syncFilters = () => {
-      const tipo = $("#sf-type").value, soMagia = tipo === "" || tipo === "spell"; // círculo, escola e ritual só existem em magias
-      for (const id of ["#sf-lvl", "#sf-sch", "#sf-ex"]) { $(id).hidden = !soMagia; if (!soMagia) $(id).value = ""; }
-      const n = ["#sf-lvl", "#sf-sch", "#sf-ex"].filter((id) => $(id).value).length;
-      $("#sf-more").innerHTML = ico("filter") + "Filtros" + (n ? ` (${n})` : "");
+      const tipo = $("#sf-type").value, permiteMagias = tipo === "" || tipo === "spell";
+      for (const id of ["#sf-lvl", "#sf-sch", "#sf-ex"]) {
+        $(id).disabled = !permiteMagias;
+        if (!permiteMagias) $(id).value = "";
+      }
     };
-    $("#sf-more").onclick = () => { const aberto = $("#sf-adv").hidden; $("#sf-adv").hidden = !aberto; $("#sf-more").setAttribute("aria-expanded", String(aberto)); };
-    ["#sf-type", "#sf-lvl", "#sf-sch", "#sf-ex"].forEach((s) => $(s).addEventListener("change", () => { shownSpells = 40; syncFilters(); spSearch(); }));
+    ["#sf-type", "#sf-lvl", "#sf-sch", "#sf-ex"].forEach((id) => $(id).addEventListener("change", () => { shownSpells = 40; syncFilters(); spSearch(); }));
+    $("#sf-limpar").onclick = () => {
+      $("#sq").value = ""; $("#sq-x").hidden = true;
+      $("#sf-type").value = "";
+      for (const id of ["#sf-lvl", "#sf-sch", "#sf-ex"]) $(id).value = "";
+      $("#s-ordem").value = "nome-asc"; guardarOrdem("magias", "nome-asc");
+      shownSpells = 40; syncFilters(); spSearch();
+    };
     syncFilters();
     $("#sq-x").onclick = () => { $("#sq").value = ""; shownSpells = 40; $("#sq-x").hidden = true; spSearch(); $("#sq").focus(); };
     $("#sh-close").onclick = closeSheet; $("#spd-close").onclick = closeSheet; $("#spd-voltar").onclick = voltarPainel;
