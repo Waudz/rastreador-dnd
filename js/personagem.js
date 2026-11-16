@@ -354,7 +354,8 @@
   let uso = null, usando = false, edEf = null;
   const itemPor = (i) => INV()[i];
   /* exibição do inventário: lista (padrão) ou grade de cartões; a escolha fica neste aparelho */
-  const invAbertos = new Set();
+  /* A edição acontece em uma janela, não expande o cartão. */
+  let editorInv = null;
   let vistaInv = "lista"; try { vistaInv = localStorage.getItem("dnd5e_inv_vista") === "grade" ? "grade" : "lista"; } catch (_) { /* sem armazenamento: lista */ }
   const cabecalhoInv = () => `<div class="inv-cab"><h3 class="sub inv-tit">Itens que você carrega</h3><button type="button" class="small primary" id="inv-add-abrir" aria-expanded="false" aria-controls="inv-add">+ Adicionar item</button><button type="button" class="small subtle" id="inv-vinculos" title="Mostra, sem alterar nada, quais itens e equipamentos podem ser ligados ao catálogo">Verificar vínculos</button><div class="inv-vista" role="group" aria-label="Modo de exibição do inventário">${[["lista", "Lista"], ["grade", "Grade"]].map(([k, n]) => `<button type="button" class="small${vistaInv === k ? " ativo" : ""}" data-inv-vista="${k}" aria-pressed="${vistaInv === k}">${n}</button>`).join("")}</div></div>`;
   /* Origem informada ao adicionar manualmente (qualquer tipo de item): vira `origem.texto`; os ids técnicos do item (catálogo, pacote) não mudam */
@@ -396,7 +397,7 @@
     const selos = mg.magico || selo ? `<span class="inv-selos">${mg.magico ? '<span class="inv-magico-tag">Mágico</span>' : ""}${selo}</span>` : "";   // na linha secundária (tipo · peso), não na dos controles: não aumenta o cartão
     const nMem = membrosDe(it).length, orig = nMem > 1 ? `${nMem} origens (veja os detalhes)` : IV.origemTexto(it);
     const catI = CAT() && CAT().doInventario(it), RS = window.INV_RESUMO, mec = RS ? RS.mecanico(it, catI, IE.efeitosDe(it).map(descreverEfeito)) : "", resumo = RS ? RS.descricao(it, catI) : "";
-    const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), aberto = invAbertos.has(it.uid) || !(it.nome || "").trim(), membros = membrosDe(it), agrup = membros.length > 1, qn = agrup ? IV.totalDe(membros) : Math.max(0, num(it.qtd, 1));
+    const im = II.obter(F(), it), nomeIt = esc(it.nome || "item"), membros = membrosDe(it), agrup = membros.length > 1, qn = agrup ? IV.totalDe(membros) : Math.max(0, num(it.qtd, 1));
     const thumb = `<button type="button" class="inv-thumb${im ? "" : " vazio"}" data-inv-detalhes="${i}" aria-label="Abrir os detalhes de ${nomeIt}" title="Ver detalhes">${im ? `<img class="inv-thumb-img" src="${esc(im.src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : (window.ico ? window.ico(II.ICONE[t] || "bag") : "")}</button>`;
     const qtdCtl = `<span class="inv-qtd-ctl" role="group" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-menos="${i}" aria-label="Diminuir a quantidade de ${nomeIt}"${qn <= 0 ? " disabled" : ""}>−</button><input class="num" type="number" min="0" step="1" inputmode="numeric" data-inv="qtd" value="${qn}" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-mais="${i}" aria-label="Aumentar a quantidade de ${nomeIt}">+</button></span>`;
     const qtdUI = it.conjunto ? `<span class="inv-conj-tag">Conjunto · ${it.conjunto.reduce((n, c) => n + Math.max(0, num(c.qtd, 0)), 0)} unidades</span>` : qtdCtl;
@@ -404,7 +405,7 @@
     return `<div class="item-inv inv-card${mg.magico ? " item-magico" : ""}${qn <= 0 ? " zerado" : ""} raridade-${mg.raridade?.chave || "mundano"}" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-inv-detalhes="${i}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></button>${mec ? `<span class="inv-mec">${esc(mec)}</span>` : ""}</div>
       <div class="inv-meta muted"><span class="inv-base"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span></span>${selos}${resumo ? `<span class="inv-resumo">${esc(resumo)}</span>` : ""}${orig ? `<span class="inv-origem muted">Origem: ${esc(orig)}</span>` : ""}</div>
       <div class="inv-acoes"><span class="inv-ctl">${qtdUI}${usar}</span>${acoes.join(" ")}<span class="inv-fim"><button type="button" class="small subtle inv-info" data-inv-detalhes="${i}" aria-label="Detalhes de ${nomeIt}" title="Detalhes">${window.ico ? window.ico("info") : "i"}</button>${mais}</span></div></div>
-      <div class="inv-edit" data-inv-uid="${esc(it.uid)}"${aberto ? "" : " hidden"}><div class="inv-edit-campos">
+      <div class="inv-edit" data-inv-uid="${esc(it.uid)}" hidden><div class="inv-edit-campos">
         <label class="inv-c-nome">Nome<input data-inv="nome" value="${esc(it.nome || "")}" placeholder="Item"></label>
         <label>Peso cada (kg)<input class="num" type="number" min="0" step="0.1" data-inv="peso" value="${num(it.peso, 0)}"></label>
         ${!soLeitura && equipavel(it) ? `<label>Bônus mágico<select data-enc-bonus="${i}">${[0,1,2,3].map(n=>opt(n,n?"+"+n:"Nenhum",window.ITEM_ENCANTADO?.bonus(it)===n)).join("")}</select></label>` : ""}
@@ -413,6 +414,39 @@
         ${!soLeitura ? `<label class="inv-c-nome">Origem<span class="inv-origem-campo"><input data-inv-origem maxlength="120" value="${esc(typeof (it.origem && it.origem.texto) === "string" ? it.origem.texto : IV.origemTexto(it))}" placeholder="Ex.: Recompensa de missão">${seletorModelos()}</span></label>` : ""}
         <label class="inv-c-nome">Descrição<textarea data-inv="desc" rows="3" maxlength="1500" placeholder="Aparência, história, funcionamento conhecido…">${esc(it.desc || "")}</textarea></label>
         <div class="inv-edit-botoes">${nomeDivergente(it) ? `<button type="button" class="small" data-inv-nome-restaurar="${i}">Restaurar nome do catálogo</button>` : ""}<button type="button" class="small" data-inv-img-gerir="${i}">${im ? "Trocar ou remover imagem" : "Adicionar imagem"}</button><button type="button" class="small subtle" data-inv-editar-abrir="${i}">Concluir edição</button></div></div></div></div>`;
+  }
+  /* O formulário conserva os campos e eventos existentes, mas abre no modal padrão.
+     data-i no contêiner mantém os handlers de input/change vinculados ao item correto. */
+  function fecharEditorInv() {
+    if (!editorInv) return;
+    const j = editorInv; editorInv = null;
+    j.fechar();
+  }
+  function abrirEditorInv(i) {
+    if (soLeitura) return;
+    const it = itemPor(i), card = document.querySelector('.item-inv[data-i="' + i + '"]');
+    const formulario = card?.querySelector(".inv-edit");
+    if (!it || !formulario) return;
+    const conteudo = document.createElement("div");
+    conteudo.className = "inv-editor-conteudo";
+    conteudo.dataset.i = String(i);
+    const editor = formulario.cloneNode(true);
+    editor.hidden = false;
+    conteudo.appendChild(editor);
+    fecharEditorInv();
+    if (window.COMP_JANELA) {
+      const j = window.COMP_JANELA.abrir({
+        titulo: "Editar item: " + (it.nome || "Novo item"),
+        conteudo, largura: "media", classe: "inv-modal-box inv-editor-modal",
+        aoFechar: () => { if (editorInv?.ov === j.ov) editorInv = null; redesenharInv(); }
+      });
+      j.ov.id = "inv-editor-modal";
+      editorInv = j;
+    } else {
+      const j = modalInv("Editar item: " + (it.nome || "Novo item"), conteudo.outerHTML);
+      j.ov.id = "inv-editor-modal";
+      editorInv = { ov: j.ov, fechar: () => { j.fim(); redesenharInv(); } };
+    }
   }
   /* Imagem do item: ver maior, enviar do aparelho, usar URL https, trocar ou remover (o retrato usa o mesmo recorte) */
   function abrirImagemItem(i) {
@@ -454,7 +488,6 @@
     const b = im.closest(".inv-thumb"), it = b && INV()[+b.dataset.invImg]; if (!b) return;
     b.classList.add("vazio"); b.innerHTML = window.ico ? window.ico((it && II.ICONE[it.tipo || "equipamento"]) || "bag") : "";
   }, true);
-  document.addEventListener("toggle", (e) => { const d = e.target; if (!d || !d.matches || !d.matches("details.inv-edit")) return; const u = d.dataset.invUid; if (u) d.open ? invAbertos.add(u) : invAbertos.delete(u); }, true);
   /* ---------- janelas do inventário: detalhes do item, descartar e excluir ---------- */
   function modalInv(rotulo, html) {
     if (window.COMP_JANELA) {
@@ -525,7 +558,8 @@
     if (soLeitura) return;   // visão somente leitura do grupo: nada é gravado
     const uid = t.dataset.loteOrigem || (t.closest(".inv-edit") && t.closest(".inv-edit").dataset.invUid), rec = INV().find((x) => x.uid === uid);
     if (!rec) return;
-    IV.definirOrigemTexto(rec, t.value); salvarInv(); redesenharInv();
+    const noModal = !!t.closest("#inv-editor-modal");
+    IV.definirOrigemTexto(rec, t.value); if (noModal) fecharEditorInv(); salvarInv(); redesenharInv(); if (noModal) abrirEditorInv(INV().indexOf(rec));
   });
   function viewDoItem(it) {
     const C = CAT(), cat = C && C.doInventario(it), t = it.tipo || "equipamento", pr = it.propriedades || {}, efs = IE.efeitosDe(it), im = II.obter(F(), it), membros = membrosDe(it), qn = membros.length > 1 ? IV.totalDe(membros) : Math.max(0, num(it.qtd, 1));
@@ -540,7 +574,7 @@
       usavel && efs.some((e) => !e.passivo) ? ["Ao usar", consumo === "carga" ? "Gasta carga(s) do item" : consumo === "nenhum" ? "Não gasta nada" : "Gasta 1 unidade"] : null,
       it.magiaVinculada ? ["Magia", `${it.magiaVinculada.n} (${Number(it.magiaVinculada.l) ? it.magiaVinculada.l + "º círculo" : "truque"})`] : null,
     ].filter(Boolean);
-    const doCatalogo = cat ? C.linhas(cat).filter(([k]) => !["Peso", "Raridade", "Sintonia"].includes(k)) : [];
+    const doCatalogo = cat ? C.linhas(cat).filter(([k]) => !["Peso", "Raridade", "Sintonia"].includes(k)).map(([k, v]) => [k, k === "Dano" ? (window.INV_RESUMO?.danoComEncantamento(it, cat, v) || v) : v]) : [];
     return { usavel, v: { nome: it.nome || "Item sem nome", categoria: cat ? cat.categoria : t, imagem: im ? im.src : null, subtitulo: [IV.TIPOS[t] || t, raridade].filter(Boolean).join(" · ") + (cat ? " · " + C.rotuloCat(cat.categoria) : ""),
       desc: it.desc || null, lacunaDesc: !!cat && !cat.custom && !it.desc && !efs.length, efeitos: efs.map(descreverEfeito), componentes: it.conjunto || null, acoesComponente: !!it.conjunto,
       notaConjunto: it.conjunto ? "Conjunto agrupado: retire ou consuma cada componente aqui. O peso do conjunto é a soma do que resta, sem contar duas vezes." : null, dados: doEstado.concat(doCatalogo), extraHTML: blocoOrigemHTML(it), rodape: cat ? "Dados básicos do catálogo (SRD 5.1)" + (cat.en ? `; original: ${cat.en}.` : ".") : "" } };
@@ -1076,7 +1110,7 @@
     if (t.dataset.bonustemp) { const k = t.dataset.bonustemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))), f = F(); f.bonusTemp = { ...(f.bonusTemp || {}) }; if (v) f.bonusTemp[k] = v; else delete f.bonusTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.modtemp) { const k = t.dataset.modtemp, v = Math.max(-20, Math.min(20, Math.round(num(t.value, 0)))); const f = F(); f.modTemp = { ...(f.modTemp || {}) }; if (v) f.modTemp[k] = v; else delete f.modTemp[k]; refrescar(); agendar({ ficha: P.ficha }); return; }
     if (t.dataset.atr) { const k = t.dataset.atr; A()[k] = num(t.value, 10); $("#mod-" + k).textContent = fm(mod(A()[k])); refrescar(); return; }
-    if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; { const it_ = INV()[i]; if (k === "nome") it_.nome = t.value; else if (k === "desc") it_.desc = t.value.slice(0, 1500); else if (k === "qtd") { /* aplicado ao confirmar (evento change), para não desfazer origens a cada tecla */ } else it_[k] = Math.max(0, num(t.value, 0)); } atualizarCarga(); atualizarCartao(t.closest(".item-inv"), INV()[i]); agendar({ inventario: P.inventario }); return; }
+    if (t.dataset.inv) { const i = +t.closest("[data-i]").dataset.i, k = t.dataset.inv; { const it_ = INV()[i]; if (k === "nome") it_.nome = t.value; else if (k === "desc") it_.desc = t.value.slice(0, 1500); else if (k === "qtd") { /* aplicado ao confirmar (evento change), para não desfazer origens a cada tecla */ } else it_[k] = Math.max(0, num(t.value, 0)); } atualizarCarga(); atualizarCartao(t.closest(".item-inv") || document.querySelector('.item-inv[data-i="' + i + '"]'), INV()[i]); agendar({ inventario: P.inventario }); return; }
     if (t.dataset.din) { DIN()[t.dataset.din] = moeda(t.value); t.value = DIN()[t.dataset.din]; $("#total-po").textContent = totalPO().toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); agendar({ dinheiro: P.dinheiro }); return; }
     if (t.dataset.cls) { const i = +t.closest("[data-ci]").dataset.ci, k = t.dataset.cls; if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; if (k === "n") CLS()[i].n = Math.max(1, Math.min(Math.max(1,20-R.nivelTotal(CLS().filter((_,j)=>j!==i))), Math.floor(num(t.value, 1)))); else if (k === "sub") { CLS()[i].sub = t.value; } else return; refrescar(); return; }
     if (t.dataset.atq && t.tagName === "INPUT" && t.type !== "checkbox") { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = ["magico", "extra"].includes(k) ? num(t.value, 0) : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
@@ -1092,7 +1126,7 @@
 
   document.addEventListener("change", (e) => {
     const t = e.target; if (!P) return;
-    if (t.dataset.encBonus !== undefined) { let it=INV()[+t.dataset.encBonus], cat=it&&EF().catDoItem(it); if(!it||!cat||soLeitura)return; try { if(Number(it.qtd)>1)it=EF().separarUnidade(P,it); window.ITEM_ENCANTADO.configurar(it,cat,t.value); const a=ATQ().find(a=>a.itemUid===it.uid); if(a)a.magico=window.ITEM_ENCANTADO.bonus(it); salvarInv(); redesenharInv(); refrescar(); } catch(err){aviso(err.message,true);} return; }
+    if (t.dataset.encBonus !== undefined) { let it=INV()[+t.dataset.encBonus], cat=it&&EF().catDoItem(it); if(!it||!cat||soLeitura)return; try { const noModal=!!t.closest("#inv-editor-modal"); if(Number(it.qtd)>1)it=EF().separarUnidade(P,it); window.ITEM_ENCANTADO.configurar(it,cat,t.value); const a=ATQ().find(a=>a.itemUid===it.uid); if(a)a.magico=window.ITEM_ENCANTADO.bonus(it); if(noModal)fecharEditorInv(); salvarInv(); redesenharInv(); refrescar(); if(noModal)abrirEditorInv(INV().indexOf(it)); } catch(err){aviso(err.message,true);} return; }
     if (t.dataset.cls === "n") { desenhar(); return; }
     if (t.dataset.cls === "c") { const i = +t.closest("[data-ci]").dataset.ci; if(CLS().some((c,j)=>j!==i && c.c===t.value && t.value)){aviso("Esta classe já foi adicionada.",true);desenhar();return;} if(!CLS()[i])CLS()[i]={c:"",n:1,sub:""}; CLS()[i].c = t.value; CLS()[i].sub = ""; F().classesEditadas=true; if(i===0){F().perClasse=[];F().especializacoes=[];} refrescar(); desenhar(); return; }
     if (t.dataset.atq && (t.tagName === "SELECT" || t.type === "checkbox")) { const i = +t.closest("[data-ai]").dataset.ai, k = t.dataset.atq; ATQ()[i][k] = t.type === "checkbox" ? t.checked : t.value; const r = $("#atk-res-" + i); if (r) r.innerHTML = `<b>${resAtq(ATQ()[i])}</b>`; agendar({ ficha: P.ficha }); return; }
@@ -1110,7 +1144,7 @@
       R.aplicarRaca(f,antes); refrescar(); desenhar(); agendar({ ficha: P.ficha }); return;
     }
     if (t.dataset.prep) { const magia=MAG()[+t.dataset.prep],limites=R.preparacao(F()).filter(x=>x.pertence(magia)),disponivel=limites.find(x=>x.usadas<x.limite);if(t.checked&&!magia.prep&&!disponivel){t.checked=false;aviso("Limite de magias preparadas atingido. Desmarque uma magia antes de preparar outra.",true);return;}if(disponivel)magia.classePreparacao=disponivel.id; magia.prep = t.checked; $("#lista-mag").innerHTML = listaMagias(); agendar({ ficha: P.ficha }); return; }
-    if (t.dataset.invTipo !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; it.tipo = t.value; salvarInv(); redesenharInv(); return; }
+    if (t.dataset.invTipo !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; const noModal=!!t.closest("#inv-editor-modal"); it.tipo = t.value; if(noModal)fecharEditorInv(); salvarInv(); redesenharInv(); if(noModal)abrirEditorInv(INV().indexOf(it)); return; }
     if (t.dataset.invEquip !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; if (equipavel(it)) { try { EF().alternar(P, (t.checked ? (membrosDe(it).find((m) => num(m.qtd, 0) >= 1) || it) : it).uid, t.checked); } catch (err) { t.checked = !t.checked; aviso(err.message, true); return; } $("#lista-atq") && ($("#lista-atq").innerHTML = listaAtq()); const sa = $("#eq-arm"), se = $("#eq-esc"); if (sa) sa.value = EQ().armadura || ""; if (se) se.checked = !!EQ().escudo; } else it.equipado = t.checked; salvarInv(); refrescar(); redesenharInv(); return; }
     if (t.dataset.invSint !== undefined) { const it = itemPor(+t.closest("[data-i]").dataset.i); if (!it) return; try { IV.sintonizar(cont(), it.uid, t.checked); } catch (e) { t.checked = !t.checked; aviso(e.message, true); return; } salvarInv(); refrescar(); redesenharInv(); return; }
     if (t.name === "uso-alvo" && uso) { uso.alvo = t.value; renderUso(); return; }
@@ -1184,16 +1218,16 @@
     if (c("#ms-abrir")) { abrirMestre(); return; }
     if (c("#ms-fechar")) { $("#mestre-box").hidden = true; return; }
     if (c("#ms-ok")) { concederMagia(); return; }
-    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0, origem: origemAdd({ tipo: "mestre" }) })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); $("#inv").lastElementChild.querySelector('input[data-inv="nome"]').focus(); agendar({ inventario: P.inventario }); fecharAdd(); return; }
+    if (c("#add-item")) { INV().push(IV.novoItem({ nome: "", qtd: 1, peso: 0, origem: origemAdd({ tipo: "mestre" }) })); $("#inv").insertAdjacentHTML("beforeend", linhaInv(INV()[INV().length - 1], INV().length - 1)); abrirEditorInv(INV().length - 1); agendar({ inventario: P.inventario }); fecharAdd(); return; }
     if ((b = c("[data-rm-item]"))) { const it = itemPor(+b.dataset.rmItem); if (!it) return; if (num(it.qtd, 0) >= 1) IV.retirar(cont(), it.uid, null, { tipo: "descarte" }); else INV().splice(+b.dataset.rmItem, 1); salvarInv(); redesenharInv(); return; }
-    if ((b = c("[data-inv-nome-restaurar]"))) { const it = itemPor(+b.dataset.invNomeRestaurar); if (it && !soLeitura) { restaurarNomeCatalogo(it); aviso("Nome do catálogo restaurado."); } return; }
+    if ((b = c("[data-inv-nome-restaurar]"))) { const it = itemPor(+b.dataset.invNomeRestaurar); if (it && !soLeitura) { const noModal=!!b.closest("#inv-editor-modal"); if(noModal)fecharEditorInv(); restaurarNomeCatalogo(it); if(noModal)abrirEditorInv(INV().indexOf(it)); aviso("Nome do catálogo restaurado."); } return; }
     if (c("#inv-vinculos")) { verificarVinculos(); return; }
     if (c("#inv-add-abrir")) { const p = $("#inv-add"); if (p && !p.hidden) fecharAdd(); else abrirAdd(); return; }
     if (c("#inv-add-fechar")) { fecharAdd(); return; }
     if ((b = c("[data-inv-add-tipo]"))) { escolherAdd(b.dataset.invAddTipo); return; }
-    if ((b = c("[data-enc-magias]"))) { abrirMagiasItem(+b.dataset.encMagias); return; }
+    if ((b = c("[data-enc-magias]"))) { fecharEditorInv(); abrirMagiasItem(+b.dataset.encMagias); return; }
     if ((b = c("[data-inv-conjurar]"))) { abrirConjuracaoItem(+b.dataset.invConjurar); return; }
-    if ((b = c("[data-inv-editar-abrir]"))) { const card = b.closest(".item-inv"), p = card && card.querySelector(".inv-edit"), it = INV()[+b.dataset.invEditarAbrir]; if (p && it) { const abre = p.hidden; p.hidden = !abre; abre ? invAbertos.add(it.uid) : invAbertos.delete(it.uid); card.querySelector(".inv-mais")?.removeAttribute("open"); if (abre) p.querySelector('input[data-inv="nome"]')?.focus(); } return; }
+    if ((b = c("[data-inv-editar-abrir]"))) { if (b.closest("#inv-editor-modal")) fecharEditorInv(); else { b.closest(".inv-mais")?.removeAttribute("open"); abrirEditorInv(+b.dataset.invEditarAbrir); } return; }
     if ((b = c("[data-cat-add]"))) { const row = b.closest(".inv-cat-item"); adicionarDoCatalogo(b.dataset.catAdd, row?.querySelector("input.num")?.value || 1, row?.querySelector("[data-cat-pacote]")?.value || ""); return; }
     if ((b = c("[data-cat-det]"))) { detalhesCatalogoAdd(b.dataset.catDet); return; }
     if ((b = c("[data-inv-qtd-mais]"))) { ajustarQtd(+b.dataset.invQtdMais, 1); return; }
@@ -1202,7 +1236,7 @@
     if ((b = c("[data-inv-descartar]"))) { b.closest("details")?.removeAttribute("open"); abrirDescartar(+b.dataset.invDescartar); return; }
     if ((b = c("[data-inv-excluir]"))) { b.closest("details")?.removeAttribute("open"); abrirExcluir(+b.dataset.invExcluir); return; }
     if ((b = c("[data-inv-img]"))) { const it = INV()[+b.dataset.invImg], im = it && II.obter(F(), it); if (im && window.VISUALIZADOR) window.VISUALIZADOR.abrir({ src: im.src, titulo: it.nome || "Item", origem: b }); else abrirImagemItem(+b.dataset.invImg); return; }
-    if ((b = c("[data-inv-img-gerir]"))) { abrirImagemItem(+b.dataset.invImgGerir); return; }
+    if ((b = c("[data-inv-img-gerir]"))) { fecharEditorInv(); abrirImagemItem(+b.dataset.invImgGerir); return; }
     if ((b = c("[data-inv-vista]"))) { vistaInv = b.dataset.invVista === "grade" ? "grade" : "lista"; try { localStorage.setItem("dnd5e_inv_vista", vistaInv); } catch (_) { /* segue sem guardar */ } const inv = $("#inv"); if (inv) inv.classList.toggle("inv-grade", vistaInv === "grade"); document.querySelectorAll("[data-inv-vista]").forEach((x) => { const on = x.dataset.invVista === vistaInv; x.classList.toggle("ativo", on); x.setAttribute("aria-pressed", String(on)); }); return; }
     if ((b = c("[data-inv-usar]"))) { abrirUso(+b.dataset.invUsar); return; }
     if ((b = c("[data-inv-copiar]"))) { const it = itemPor(+b.dataset.invCopiar); if (!it || !it.magiaVinculada) return; cp.fonte = "pergaminho"; cp.en = it.magiaVinculada.en; cp.uid = it.uid; cp.arc = ""; const aba = document.querySelector('[data-ficha-aba="magias"]'); if (aba) aba.click(); abrirCopia(); return; }
