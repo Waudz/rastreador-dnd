@@ -608,3 +608,12 @@ img.ampliavel{cursor:zoom-in}
 /* Ficha embutida: ao consultar detalhes, somente o modal fica visível no iframe ampliado. */
 body.pagina-personagem:has(.comp-janela-ov) > main{visibility:hidden}
 body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
+
+/* Editor do bestiário em janela modal, independente da aba visível. */
+.cm-dialog { box-sizing:border-box; width:min(920px,calc(100vw - 24px)); max-width:920px; max-height:calc(100dvh - 24px); overflow:auto; overscroll-behavior:contain; padding:18px; border:1px solid var(--line); border-radius:12px; color:var(--text); background:var(--panel); box-shadow:0 20px 65px #0009; }
+.cm-dialog:not([open]) { display:none; }
+.cm-dialog::backdrop { background:rgba(0,0,0,.74); }
+.cm-dialog-topo { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; position:sticky; top:-18px; z-index:3; background:var(--panel); padding:12px 0; border-bottom:1px solid var(--line); }
+.cm-dialog-topo .panel-title { margin:0; }
+.cm-dialog .cmg { min-width:0; }
+@media(max-width:600px) { .cm-dialog { padding:12px; max-height:calc(100dvh - 12px); } .cm-dialog-topo { top:-12px; } }

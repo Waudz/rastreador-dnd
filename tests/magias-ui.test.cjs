@@ -32,5 +32,5 @@ test('ficha da magia no padrão das fichas: identidade com emblema do círculo, 
 test('filtro da pesquisa de magias na mesma disposição do bestiário: pesquisa, tipo e Filtros numa linha, contagem e filtros avançados recolhidos',()=>{
  const h=ler('iniciativa.html'),m=ler('css/magias.css'),a=ler('js/app.js');
  assert.match(h,/<div class="row magias-busca-controles">\s*<div class="clearable" style="flex:1 1 240px"><input id="sq" type="search"/);assert.match(h,/<select id="sf-type" style="flex:0 1 260px"/);assert.match(h,/id="sf-more"/);
- assert.match(h,/<div class="muted" id="scount" role="status"><\/div>/);assert.match(h,/id="sf-adv"[^>]*hidden/);assert.match(m,/#sf-type \{ flex:0 1 260px!important;/);assert.match(a,/\$\{n\} \$\{n === 1 \? "resultado" : "resultados"\}/);
+ assert.match(h,/<div class="muted" id="scount" role="status"><\/div>/);assert.match(h,/id="sf-adv"[^>]*hidden/);assert.match(m,/#sf-type \{ flex:0 1 260px!important;/);assert.match(a,/\$\{n\} de \$\{ordenadas\.length\}/);assert.match(a,/shownSpells/);
 });
