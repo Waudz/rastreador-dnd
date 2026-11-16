@@ -331,11 +331,11 @@ test('destinatário que já tem item igual: registros ficam separados quando ori
 test('resumos: arma, arma mágica, item sem descrição e item personalizado usam só dados existentes',()=>{
   const A=amb(),RS=A.W.INV_RESUMO,C=A.C;
   const ge=C.obter('srd51:item/greatsword');
-  assert.equal(RS.mecanico({},ge,[]),'2d6 cortante · Pesada · Duas mãos');assert.equal(RS.descricao({},ge),'Arma marcial corpo a corpo: exige as duas mãos para atacar.');
+  assert.equal(RS.mecanico({},ge,[]),'2d6 cortante · Pesada · Duas mãos');assert.equal(RS.descricao({},ge),ge.desc,'a descrição editorial do catálogo é utilizada');
   const el=C.obter('srd51:item/longsword');assert.equal(RS.mecanico({},el,[]),'1d8 cortante · Versátil (1d10)');
   assert.equal(RS.mecanico({propriedades:{bonus:1}},el,[]),'1d8 cortante · Versátil (1d10) · +1');
   assert.equal(RS.descricao({desc:'  Concede +1 nas jogadas   de ataque e dano.  '},el),'Concede +1 nas jogadas de ataque e dano.','a descrição escrita tem prioridade e é compactada');
-  assert.equal(RS.mecanico({},C.obter('srd51:item/backpack'),[]),'');assert.equal(RS.descricao({},C.obter('srd51:item/backpack')),'','sem dado, sem linha');
+  assert.equal(RS.mecanico({},C.obter('srd51:item/backpack'),[]),'');assert.equal(RS.descricao({},C.obter('srd51:item/backpack')),C.obter('srd51:item/backpack').desc,'equipamento usa descrição editorial');
   const custom={nome:'Amuleto estranho',propriedades:{raridade:'Raro',cargas:{atual:1,max:3},efeitos:[{tipo:'condicao'}]}};
   assert.equal(RS.mecanico(custom,null,['Invisível por 1 hora']),'Invisível por 1 hora · Cargas 1/3');
   assert.equal(RS.mecanico({},C.obter('srd51:item/dart'),[]).split(' · ').filter(x=>/Arremesso|Alcance/.test(x)).length,1,'o alcance de arremesso aparece uma vez só');
