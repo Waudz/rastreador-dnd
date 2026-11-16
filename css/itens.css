@@ -29,11 +29,11 @@
 .itens-lista .itens-card .inv-mec{-webkit-line-clamp:5}
 .itens-lista:not(.inv-grade) .itens-card .inv-mec{font-weight:400;font-size:.8rem;line-height:1.35;color:var(--muted);color:color-mix(in srgb,var(--muted) 72%,var(--text))}
 
-/* A janela de detalhes e a moldura da imagem acompanham a raridade do item. */
-.itens-modal.raridade-mundano{border-color:#66717D} .itens-modal.raridade-mundano .inv-det-img,.itens-modal.raridade-mundano .inv-thumb{border-color:#66717D}
-.itens-modal.raridade-comum{border-color:#D5DCE3} .itens-modal.raridade-comum .inv-det-img,.itens-modal.raridade-comum .inv-thumb{border-color:#D5DCE3}
-.itens-modal.raridade-incomum{border-color:#5CB584} .itens-modal.raridade-incomum .inv-det-img,.itens-modal.raridade-incomum .inv-thumb{border-color:#5CB584}
-.itens-modal.raridade-rara{border-color:#6FA3E8} .itens-modal.raridade-rara .inv-det-img,.itens-modal.raridade-rara .inv-thumb{border-color:#6FA3E8}
-.itens-modal.raridade-muito-rara{border-color:#A98AE6} .itens-modal.raridade-muito-rara .inv-det-img,.itens-modal.raridade-muito-rara .inv-thumb{border-color:#A98AE6}
-.itens-modal.raridade-lendaria{border-color:#D4AE72} .itens-modal.raridade-lendaria .inv-det-img,.itens-modal.raridade-lendaria .inv-thumb{border-color:#D4AE72}
-.itens-modal.raridade-artefato{border-color:#E5806A} .itens-modal.raridade-artefato .inv-det-img,.itens-modal.raridade-artefato .inv-thumb{border-color:#E5806A}
+/* Apenas a moldura da imagem acompanha a raridade; a janela mantém sua borda padrão. */
+.itens-modal.raridade-mundano .inv-det-img,.itens-modal.raridade-mundano .inv-thumb{border-color:#66717D}
+.itens-modal.raridade-comum .inv-det-img,.itens-modal.raridade-comum .inv-thumb{border-color:#D5DCE3}
+.itens-modal.raridade-incomum .inv-det-img,.itens-modal.raridade-incomum .inv-thumb{border-color:#5CB584}
+.itens-modal.raridade-rara .inv-det-img,.itens-modal.raridade-rara .inv-thumb{border-color:#6FA3E8}
+.itens-modal.raridade-muito-rara .inv-det-img,.itens-modal.raridade-muito-rara .inv-thumb{border-color:#A98AE6}
+.itens-modal.raridade-lendaria .inv-det-img,.itens-modal.raridade-lendaria .inv-thumb{border-color:#D4AE72}
+.itens-modal.raridade-artefato .inv-det-img,.itens-modal.raridade-artefato .inv-thumb{border-color:#E5806A}
