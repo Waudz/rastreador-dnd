@@ -413,7 +413,7 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .inv-raridade{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:600;line-height:1.5;color:var(--rar,var(--muted));white-space:nowrap}
 .inv-raridade::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--rar,var(--muted));flex:none}
 .inv-meta .inv-selos{flex:none;display:inline-flex;align-items:center;gap:6px;vertical-align:middle}.inv-meta .inv-base{margin-right:8px}
-.rar-comum{--rar:#A3ACB5}.rar-incomum{--rar:#5CB584}.rar-rara{--rar:#6FA3E8}.rar-muito-rara{--rar:#A98AE6}.rar-lendaria{--rar:#D4AE72}.rar-artefato{--rar:#E5806A}
+.rar-mundano{--rar:#78828E}.rar-comum{--rar:#A3ACB5}.rar-incomum{--rar:#5CB584}.rar-rara{--rar:#6FA3E8}.rar-muito-rara{--rar:#A98AE6}.rar-lendaria{--rar:#D4AE72}.rar-artefato{--rar:#E5806A}
 
 /* Moldura da miniatura: depende só de ser mágico ou não (nunca da raridade). Mágico = o dourado discreto que o compêndio já usa; comum = cinza-azulado discreto do tema escuro. Sem brilho, sombra ou efeito; tamanhos inalterados. */
 .inv-card .inv-thumb{border-color:#56667A}
