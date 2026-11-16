@@ -129,10 +129,10 @@ test('o jogador altera a Origem do próprio item sem tocar nos dados técnicos, 
 test('adicionar manualmente: a Origem informada vira o texto do registro, para catálogo, pacote, item em branco, itens com efeitos e pergaminho',()=>{
   const src=ler('js/personagem.js');
   assert.ok(src.includes('id="add-origem"')&&src.includes('placeholder="Ex.: Recompensa da missão em Julkoun"'));
-  assert.ok(src.includes('origem = origemAdd({ tipo: souMestre ? "mestre" : "jogo" })'),'catálogo e pacotes');
-  assert.ok(src.includes('IV.novoItem({ nome: "", qtd: 1, peso: 0, origem: origemAdd({ tipo: "jogo" }) })'),'item em branco');
+  assert.ok(src.includes('origem = origemAdd(pacote ? pacote.origem : { tipo: "mestre" })'),'catálogo e pacotes');
+  assert.ok(src.includes('IV.novoItem({ nome: "", qtd: 1, peso: 0, origem: origemAdd({ tipo: "mestre" }) })'),'item em branco');
   assert.ok(!/#add-pre|#it-cat-add|const presets|eq-pre/.test(src),'a lista rápida e o formulário de efeitos separados saíram da interface (código morto removido); poções e itens mágicos entram pelo Catálogo de itens');
-  assert.ok(src.includes('origem: origemAdd({ tipo: souMestre ? "mestre" : "jogo", nota: $("#pg-nota")'),'pergaminho');
+  assert.ok(src.includes('origem: origemAdd({ tipo: "mestre", nota: $("#pg-nota")'),'pergaminho');
   /* a mesma montagem em dados: o texto acompanha o registro e os ids técnicos do catálogo e do pacote ficam */
   const A=amb(),origem={tipo:'jogo',texto:'Comprado em Daggerford'};
   const c={dono:{},itens:[],movimentos:[]};
