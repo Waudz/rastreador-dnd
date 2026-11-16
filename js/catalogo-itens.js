@@ -128,23 +128,24 @@
     return it.pacote.map((c) => { const x = obter(c.id); return x ? paraInventario(x, num(c.qtd, 1) * n, orig) : IV.novoItem({ nome: c.id, qtd: num(c.qtd, 1) * n, peso: 0, ref: c.id, catId: c.id, origem: orig }); });
   }
   /* ---------- Item mágico e raridade: duas informações separadas ----------
-     MÁGICO é classificação do catálogo (categoria magico, pocao ou pergaminho: no SRD todos têm raridade e nenhum item mundano tem) ou, para itens sem catálogo, o tipo do item
-     (magico; pergaminho com magia) ou uma raridade escrita pelo mestre. RARIDADE é só o rótulo (Comum…Artefato) e a chave de cor do indicador; não define se o item é mágico. */
+     MÁGICO é classificação do catálogo (categoria magico, pocao ou pergaminho: itens mágicos têm raridade própria e itens comuns podem ter raridade mundano) ou, para itens sem catálogo, o tipo do item
+     (magico; pergaminho com magia) ou uma raridade escrita pelo mestre. RARIDADE é só o rótulo (Mundano…Artefato) e a chave de cor do indicador; não define se o item é mágico. */
   const CATEGORIAS_MAGICAS = ["magico", "pocao", "pergaminho"];
-  const RAR_CHAVE = { common: "comum", uncommon: "incomum", rare: "rara", "very-rare": "muito-rara", legendary: "lendaria", artifact: "artefato" };
-  const RAR_ROTULO = { comum: "Comum", incomum: "Incomum", rara: "Rara", "muito-rara": "Muito rara", lendaria: "Lendária", artefato: "Artefato" };
-  const RAR_TEXTO = { comum: "comum", incomum: "incomum", raro: "rara", rara: "rara", "muito-raro": "muito-rara", "muito-rara": "muito-rara", lendario: "lendaria", lendaria: "lendaria", artefato: "artefato" };
+  const RAR_CHAVE = { mundano: "mundano", common: "comum", uncommon: "incomum", rare: "rara", "very-rare": "muito-rara", legendary: "lendaria", artifact: "artefato" };
+  const RAR_ROTULO = { mundano: "Mundano", comum: "Comum", incomum: "Incomum", rara: "Rara", "muito-rara": "Muito rara", lendaria: "Lendária", artefato: "Artefato" };
+  const RAR_TEXTO = { mundano: "mundano", comum: "comum", incomum: "incomum", raro: "rara", rara: "rara", "muito-raro": "muito-rara", "muito-rara": "muito-rara", lendario: "lendaria", lendaria: "lendaria", artefato: "artefato" };
   /* chave de cor a partir da chave do catálogo ("very-rare") ou do rótulo escrito à mão ("Muito raro"); desconhecido = sem cor */
   function chaveRaridade(x) { if (!x) return null; if (RAR_CHAVE[x]) return RAR_CHAVE[x]; return RAR_TEXTO[sem(x).trim().replace(/\s+/g, "-")] || null; }
   const ehMagicoCatalogo = (cat) => !!cat && !cat.custom && CATEGORIAS_MAGICAS.includes(cat.categoria);
   /* item do inventário -> { magico, raridade: {chave, rotulo} | null } */
-  const RAR_PADRAO = { chave: "comum", rotulo: "Comum" };   // raridade padrão de EXIBIÇÃO; não altera dados nem a classificação mágica
+  const RAR_PADRAO_MUNDANO = { chave: "mundano", rotulo: "Mundano" };
+  const RAR_PADRAO_MAGICO = { chave: "comum", rotulo: "Comum" }; // somente para itens mágicos sem raridade conhecida
   function infoMagica(it) {
     const cat = it ? doInventario(it) : null, pr = (it && it.propriedades) || {}, doCat = ehMagicoCatalogo(cat);
     const magico = doCat || !!(it && (it.tipo === "magico" || (it.tipo === "pergaminho" && it.magiaVinculada)));   // raridade preenchida NÃO torna o item mágico: são informações independentes
     const escrita = pr.raridade ? String(pr.raridade).trim() : "", chave = chaveRaridade(escrita) || (cat && cat.raridade ? RAR_CHAVE[cat.raridade] || null : null);
     const rotulo = escrita || (cat && cat.raridade ? RARIDADES[cat.raridade] || "" : "");
-    return { magico, raridade: rotulo ? { chave, rotulo: chave && !escrita ? RAR_ROTULO[chave] : rotulo } : (it ? RAR_PADRAO : null) };   // sem raridade cadastrada: "Comum" só para exibir (nada é gravado)
+    return { magico, raridade: rotulo ? { chave, rotulo: chave && !escrita ? RAR_ROTULO[chave] : rotulo } : (it ? (magico ? RAR_PADRAO_MAGICO : RAR_PADRAO_MUNDANO) : null) }; // fallback de exibição; não grava no inventário
   }
   /* indicador da raridade: texto sempre presente (a cor nunca é a única pista) */
   const seloRaridade = (r) => (r && r.rotulo ? `<span class="inv-raridade${r.chave ? " rar-" + r.chave : ""}" data-raridade="${esc(r.chave || "")}">${esc(r.rotulo)}</span>` : "");

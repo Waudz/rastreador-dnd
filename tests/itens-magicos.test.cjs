@@ -9,12 +9,12 @@ function amb(){
 }
 const inv=(A,id,tipo)=>{const x=A.C.paraInventario(A.C.obter(id),1,{tipo:'jogo'});return tipo?{...x,tipo}:x;};
 
-test('classificação do catálogo: mágico é por categoria (magico, pocao, pergaminho) e coincide com ter raridade em todos os 578 itens',()=>{
+test('classificação do catálogo: mágico é por categoria (magico, pocao, pergaminho) independentemente da raridade em todos os 578 itens',()=>{
   const A=amb();let magicos=0,mundanos=0;
   for(const i of A.dados){
     const m=A.C.ehMagicoCatalogo(i);
     assert.equal(m,A.C.CATEGORIAS_MAGICAS.includes(i.categoria),i.id);
-    assert.equal(m,!!i.raridade,'categoria e raridade concordam: '+i.id);   // o dado não tem exceções; se tiver no futuro, este teste avisa
+    assert.equal(i.raridade ? i.raridade !== 'mundano' : false,m,'raridade mundano não classifica item como mágico: '+i.id);
     m?magicos++:mundanos++;
   }
   assert.equal(magicos,294+37+10);assert.equal(mundanos,578-341);
@@ -37,11 +37,11 @@ test('as quatro poções de cura são mágicas, com a raridade certa, mesmo como
   const sem=A.C.infoMagica({nome:'Poção de cura',qtd:1,tipo:'consumivel',propriedades:{}});assert.equal(sem.magico,false,'sem vínculo, sem tipo mágico e sem raridade: não é classificado como mágico');
 });
 
-test('itens mundanos nunca são mágicos nem recebem raridade',()=>{
+test('itens mundanos nunca são mágicos e recebem raridade mundano',()=>{
   const A=amb();let n=0;
   for(const i of A.dados.filter(x=>!A.C.CATEGORIAS_MAGICAS.includes(x.categoria))){
     const m=A.C.infoMagica(A.C.paraInventario(i.pacote?A.C.obter('srd51:item/backpack'):i,1,{tipo:'jogo'}));
-    assert.equal(m.magico,false,i.id);assert.equal(m.raridade.chave,'comum',i.id);assert.equal(m.raridade.rotulo,'Comum',i.id);assert.equal(i.raridade,undefined,'o dado não é alterado');n++;
+    assert.equal(m.magico,false,i.id);assert.equal(m.raridade.chave,'mundano',i.id);assert.equal(m.raridade.rotulo,'Mundano',i.id);assert.equal(i.raridade,'mundano','raridade registrada no catálogo');n++;
   }
   assert.equal(n,237);
   assert.equal(A.C.infoMagica({nome:'Corda',qtd:1,tipo:'equipamento',propriedades:{}}).magico,false);assert.equal(A.C.infoMagica(null).magico,false);
@@ -71,7 +71,7 @@ test('indicador de raridade: texto sempre presente, escapado, e uma chave de cor
     assert.ok(h.includes('class="inv-raridade rar-'+r+'"')&&h.includes('>'+A.C.RARIDADES[k]+'<'),h);
   }
   assert.ok(A.C.seloRaridade({chave:null,rotulo:'<b>x</b>'}).includes('&lt;b&gt;'),'escapa HTML');
-  assert.equal(A.C.chaveRaridade('invalida'),null);assert.equal(A.C.chaveRaridade(''),null);
+  assert.equal(A.C.chaveRaridade('mundano'),'mundano');assert.equal(A.C.chaveRaridade('Mundano'),'mundano');assert.equal(A.C.chaveRaridade('invalida'),null);assert.equal(A.C.chaveRaridade(''),null);
 });
 
 test('CSS: seis raridades com cores distintas só no indicador; mágico = nome dourado + tag; sem mexer em miniatura, moldura ou fundo do cartão',()=>{
@@ -140,7 +140,7 @@ test('catálogo: cartão mostra a linha mecânica do inventário (dano, propried
   assert.equal(mec('srd51:item/backpack'),'','sem dado mecânico: sem linha, sem inventar');
   const t=ler('js/itens.js');assert.ok(t.includes('INV_RESUMO')&&t.includes('<span class="inv-mec">')&&t.includes('"Desvantagem em Furtividade"')&&t.includes('"Exige sintonia"'));
   assert.ok(ler('itens.html').includes('js/inventario-resumo.js'));
-  for(const i of A.dados.filter(x=>!x.raridade))assert.equal(i.raridade,undefined);   // nenhum item mundano ganha raridade
+  for(const i of A.dados.filter(x=>!A.C.CATEGORIAS_MAGICAS.includes(x.categoria)))assert.equal(i.raridade,'mundano'); // mundano é uma raridade real
 });
 
 test('Alabarda: "Alcance" não se repete na linha mecânica (propriedade + alcance de 3 m)',()=>{
@@ -150,11 +150,11 @@ test('Alabarda: "Alcance" não se repete na linha mecânica (propriedade + alcan
   assert.match(A.W.INV_RESUMO.mecanico({},A.C.obter('srd51:item/dagger'),[]),/Arremesso 6 m \/ 18 m/);
 });
 
-test('raridade padrão "Comum" só na exibição: Adaga mundana = Comum cinza no catálogo e no inventário, continua mundana; raridades cadastradas e do mestre preservadas',()=>{
+test('raridade Mundano no catálogo e no inventário: Adaga continua não mágica; raridades cadastradas e do mestre preservadas',()=>{
   const A=amb(),adaga=A.C.obter('srd51:item/dagger'),inv=A.C.paraInventario(adaga,1,{tipo:'jogo'});
-  const m=A.C.infoMagica(inv);assert.equal(m.magico,false);assert.equal(m.raridade.chave,'comum');assert.match(A.C.seloRaridade(m.raridade),/inv-raridade rar-comum.*>Comum</);
-  assert.equal(adaga.raridade,undefined);assert.equal(inv.propriedades&&inv.propriedades.raridade,undefined,'nada é gravado no item');
+  const m=A.C.infoMagica(inv);assert.equal(m.magico,false);assert.equal(m.raridade.chave,'mundano');assert.match(A.C.seloRaridade(m.raridade),/inv-raridade rar-mundano.*>Mundano</);
+  assert.equal(adaga.raridade,'mundano');assert.equal(inv.propriedades&&inv.propriedades.raridade,undefined,'nada é gravado no item');
   assert.equal(A.C.infoMagica({nome:'x',tipo:'arma',propriedades:{raridade:'Épico'}}).raridade.rotulo,'Épico');
   assert.equal(A.C.infoMagica(A.C.paraInventario(A.C.obter('srd51:item/potion-of-healing-supreme'),1,{tipo:'jogo'})).raridade.chave,'muito-rara');
-  const t=ler('js/itens.js');assert.ok(t.includes(': "Comum"')&&t.includes('"comum"'));
+  const t=ler('js/itens.js');assert.ok(t.includes('mundano')&&t.includes('C.seloRaridade('));
 });
