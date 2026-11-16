@@ -604,3 +604,7 @@ img.ampliavel{cursor:zoom-in}
 .comp-janela-corpo{overflow:auto;overscroll-behavior:contain;padding:20px;min-height:0}
 .comp-janela-corpo :is(input,select,textarea){max-width:100%}
 @media(max-width:600px){.comp-janela-ov{padding:8px}.comp-janela{max-height:calc(100dvh - 16px);border-radius:12px}.comp-janela-cab{padding:12px}.comp-janela-corpo{padding:12px}.comp-janela-corpo .row{flex-wrap:wrap}}
+
+/* Ficha embutida: ao consultar detalhes, somente o modal fica visível no iframe ampliado. */
+body.pagina-personagem:has(.comp-janela-ov) > main{visibility:hidden}
+body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
