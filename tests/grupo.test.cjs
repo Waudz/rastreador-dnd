@@ -15,7 +15,7 @@ test('grupo completo: a função devolve a ficha sem notas, movimentos nem diár
 });
 test('grupo: aba unificada mantém a visão de leitura, mestre e fichas sem gravação',()=>{
   const c=ler('js/campanha.js'),p=ler('js/personagem.js'),l=ler('js/leitor-fichas.js');
-  assert.match(c,/\[\["pers", "Grupo"\]\]/);assert.match(c,/grupo-secao-recolhida/);assert.match(c,/rpc\("grupo_fichas"/);assert.match(c,/rpc\("grupo_basico"/);assert.match(c,/Mestre da campanha/);assert.match(c,/&grupo=\$\{encodeURIComponent\(id\)\}/);
+  assert.match(c,/\[\["pers", "Grupo"\],/);assert.match(c,/grupo-secao-recolhida/);assert.match(c,/rpc\("grupo_fichas"/);assert.match(c,/rpc\("grupo_basico"/);assert.match(c,/Mestre da campanha/);assert.match(c,/&grupo=\$\{encodeURIComponent\(id\)\}/);
   assert.match(l,/url\.searchParams\.get\('grupo'\)/,'o leitor lateral repassa o grupo');assert.match(l,/&grupo='\+encodeURIComponent\(grupo\)/);
   assert.match(p,/function agendar\(campos\) \{ if \(soLeitura\) return;/);assert.match(p,/if \(soLeitura \|\| !pend \|\| salvando\) return;/);
   assert.match(p,/for \(const k of \["inventario", "notas"\]\)/);assert.match(p,/if \(!visivel\) \{ await visaoGrupo/);
