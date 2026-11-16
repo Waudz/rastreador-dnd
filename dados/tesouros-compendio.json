@@ -1,6 +1,6 @@
 {
   "versao": 1,
-  "nota": "Descrições originais do Compêndio; valores indicativos para jogo, não transcrição do Livro do Jogador. Gemas usam faixas de tesouro; preços de mercadorias devem ser conferidos com as tabelas de 2014.",
+  "nota": "Descrições originais do Compêndio; valores indicativos para jogo, não transcrição do Livro do Jogador. Gemas usam faixas de tesouro; preços de mercadorias devem ser conferidos com as tabelas de 2014. Objetos de arte e bugigangas são criações originais; valores de arte são sugestões, não preços oficiais.",
   "itens": [
     {
       "id": "compendio:tesouro/agate",
@@ -298,6 +298,362 @@
       },
       "raridade": "mundano",
       "desc": "Casca aromática seca comercializada como especiaria.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-silver-goblet",
+      "nome": "Taça de prata gravada",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 25,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Taça de prata com folhas gravadas ao redor da borda; pode ter servido em um banquete nobre.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-bronze-statuette",
+      "nome": "Estatueta de bronze de um corvo",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 25,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Pequena escultura de bronze escurecido, com as asas recolhidas e marcas de cinzel na base.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-ivory-comb",
+      "nome": "Pente de marfim entalhado",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 25,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Pente de dentes finos com flores e pequenas aves entalhadas no cabo.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-painted-ceramic-vase",
+      "nome": "Vaso de cerâmica pintado",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 25,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Vaso de cerâmica esmaltada com cenas de colheita e um pequeno reparo na base.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-silver-mirror",
+      "nome": "Espelho de mão com moldura de prata",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Espelho pequeno com moldura trabalhada em prata e cabo decorado com arabescos.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-embroidered-tapestry",
+      "nome": "Tapeçaria bordada",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Painel têxtil mostrando uma ponte sobre um rio, bordado com fios coloridos.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-carved-wood-chest",
+      "nome": "Cofre de madeira entalhada",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Caixa com fechadura simples e painéis entalhados com figuras de animais.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-golden-brooch",
+      "nome": "Broche de ouro em forma de folha",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Broche de ouro delicadamente moldado como uma folha, com fecho de agulha.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-miniature-portrait",
+      "nome": "Retrato em miniatura",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Pequena pintura de uma pessoa desconhecida em uma moldura ornamentada.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-ceremonial-dagger",
+      "nome": "Adaga cerimonial ornamentada",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Lâmina de cerimônia com bainha decorativa; feita para exibição, não para combate.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-silver-candelabrum",
+      "nome": "Candelabro de prata",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 250,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Candelabro de três braços com motivos florais e sinais de uso antigo.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-golden-chalice",
+      "nome": "Cálice de ouro com esmalte azul",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 250,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Cálice de ouro trabalhado com faixas de esmalte azul e inscrições ornamentais.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-rusty-key",
+      "nome": "Chave enferrujada",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Uma chave pesada cuja fechadura correspondente ninguém conseguiu identificar.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-blue-feather",
+      "nome": "Pena azul iridescente",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Uma pena que muda de tom entre azul e verde conforme a luz.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-broken-compass",
+      "nome": "Bússola quebrada",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Uma bússola antiga cuja agulha gira livremente e nunca aponta para o norte.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-sealed-letter",
+      "nome": "Carta lacrada sem destinatário",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um envelope amarelado com selo de cera intacto e nenhum nome escrito.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-stone-die",
+      "nome": "Dado de pedra",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um dado de seis faces esculpido à mão, com uma das marcas quase apagada.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-tiny-bell",
+      "nome": "Sininho sem badalo",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um sino minúsculo de metal que não possui a peça interna para soar.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-glass-marble",
+      "nome": "Bolinha de vidro com espiral",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Uma esfera transparente com um fio de vidro vermelho preso em seu interior.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-wooden-coin",
+      "nome": "Moeda de madeira",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Uma moeda talhada em madeira com o rosto de um governante desconhecido.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-pressed-flower",
+      "nome": "Flor prensada",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Uma flor roxa seca guardada entre duas folhas de papel fino.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-blank-map",
+      "nome": "Mapa sem nomes",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um mapa de estradas e rios sem qualquer nome de cidade ou região.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-copper-ring",
+      "nome": "Anel de cobre torto",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um anel simples de cobre marcado por riscos e ligeiramente deformado.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-bone-whistle",
+      "nome": "Apito de osso",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um apito curto feito de osso polido que produz um som agudo.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-wax-seal",
+      "nome": "Selo de cera com uma torre",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um selo de cera vermelho, retirado de uma carta e marcado com uma torre.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-silver-button",
+      "nome": "Botão de prata solitário",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um botão de prata com desenho de uma estrela e nenhum par conhecido.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-old-ticket",
+      "nome": "Bilhete de passagem vencido",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um bilhete para uma travessia fluvial datado de muitos anos atrás.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-tiny-hourglass",
+      "nome": "Ampulheta minúscula",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Uma ampulheta de bolso com pouca areia, presa em armação de latão.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-carved-pebble",
+      "nome": "Seixo com runas decorativas",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Uma pedra lisa com sinais entalhados que parecem runas, sem magia identificada.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-folded-paper-bird",
+      "nome": "Pássaro de papel dobrado",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Uma figura de pássaro feita de papel espesso e cuidadosamente dobrada.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-brass-locket",
+      "nome": "Medalhão de latão vazio",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um medalhão que se abre, mas não contém retrato nem inscrição.",
+      "fonte": "original-compendio",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-cracked-mask",
+      "nome": "Máscara de madeira rachada",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Uma pequena máscara teatral de madeira com uma rachadura atravessando a testa.",
       "fonte": "original-compendio",
       "peso": null
     }
