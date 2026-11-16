@@ -684,39 +684,67 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 .grupo-unificado .catalogo-simbolo .dnd-categoria-icone,#spells .catalogo-simbolo .dnd-categoria-icone,.magia-selo-circulo .dnd-categoria-icone{display:block;width:80%;height:80%;max-width:100%;max-height:100%;object-fit:contain;background:transparent;border:0;box-shadow:none}
 .grupo-unificado .retrato-cartao.catalogo-simbolo .dnd-categoria-icone{width:80%;height:80%}
 
-/* Classes: ícones um pouco menores, com a mesma sombra suave das fotos de itens. */
-.grupo-unificado .catalogo-simbolo .dnd-categoria-icone,
-.grupo-unificado .retrato-cartao.catalogo-simbolo .dnd-categoria-icone {
-  width: 70%;
-  height: 70%;
-  filter: drop-shadow(0 6px 7px rgba(0, 0, 0, .42));
+/* Padrão único de miniaturas: o menu Itens é a fonte visual.
+   A moldura tem o mesmo fundo e borda; ilustrações ocupam 40% da área.
+   Fotografias reais continuam preenchendo a moldura sem distorção. */
+:root {
+  --comp-miniatura-fundo: var(--item-imagem-fundo, #2D4050);
+  --comp-miniatura-sombra: drop-shadow(0 6px 7px rgba(0,0,0,.42));
+  --comp-miniatura-icone-tamanho: 40%;
 }
-
-
-/* Padronização visual: ícones ilustrados, fotos e miniaturas do catálogo. */
-:root { --comp-icone-sombra: drop-shadow(0 6px 7px rgba(0,0,0,.42)); }
-.dnd-categoria-icone, .catalogo-simbolo > .rpg-ico,
-.catalogo-simbolo > .ico, .catalogo-simbolo > img:not(.av) {
-  filter: var(--comp-icone-sombra);
+:is(.inv-thumb,.catalogo-simbolo,.retrato-cartao,.grupo-identidade .av,
+    #blist .catalogo-cartao .av,#spells .catalogo-cartao .av) {
+  background-color: var(--comp-miniatura-fundo);
+  border-color: var(--line);
 }
-.grupo-unificado .catalogo-simbolo .dnd-categoria-icone,
-.grupo-unificado .retrato-cartao.catalogo-simbolo .dnd-categoria-icone,
-#blist .catalogo-simbolo .dnd-categoria-icone,
-#spells .catalogo-simbolo .dnd-categoria-icone {
-  width:70%; height:70%; object-fit:contain;
+:is(.catalogo-simbolo,.retrato-cartao,.grupo-identidade .av,
+    #blist .catalogo-cartao .av,#spells .catalogo-cartao .av) {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  overflow:hidden;
 }
-:is(.grupo-personagens-grade, #blist.catalogo-grade, #spells.catalogo-grade) .catalogo-simbolo > :is(.dnd-categoria-icone,.rpg-ico,.ico) {
-  width:50%; height:50%; max-width:50%; max-height:50%; object-fit:contain;
+:is(.catalogo-simbolo,.retrato-cartao,.grupo-identidade .av,
+    #blist .catalogo-cartao .av,#spells .catalogo-cartao .av)
+  :is(.dnd-categoria-icone,.rpg-ico,.ico,.dnd-pessoa-padrao) {
+  width:var(--comp-miniatura-icone-tamanho);
+  height:var(--comp-miniatura-icone-tamanho);
+  max-width:var(--comp-miniatura-icone-tamanho);
+  max-height:var(--comp-miniatura-icone-tamanho);
+  flex:0 0 auto;
+  object-fit:contain;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+  filter:var(--comp-miniatura-sombra);
 }
-:is(.grupo-personagens-grade, #blist.catalogo-grade, #spells.catalogo-grade) .catalogo-simbolo > :is(.dnd-categoria-icone,.rpg-ico,.ico) {
-  filter:var(--comp-icone-sombra);
+:is(.catalogo-simbolo,.retrato-cartao,.grupo-identidade .av,
+    #blist .catalogo-cartao .av,#spells .catalogo-cartao .av)
+  .dnd-pessoa-padrao {
+  display:grid;
+  place-items:center;
 }
-/* O retrato usa a mesma área quadrada, sem distorcer a fotografia original. */
-:is(.grupo-personagens-grade, #blist.catalogo-grade, #spells.catalogo-grade) .av > img:not(.dnd-categoria-icone) {
-  width:100%; height:100%; object-fit:cover; object-position:center;
+.dnd-pessoa-padrao > :is(.rpg-ico,.ico) {
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  filter:none!important;
 }
-
-/* Pessoa/NPC sem classe: mesma escala e sombra dos símbolos de classe. */
-.catalogo-simbolo .dnd-pessoa-padrao { display:grid;place-items:center;width:70%;height:70%;filter:var(--comp-icone-sombra); }
-.catalogo-simbolo .dnd-pessoa-padrao > :is(.rpg-ico,.ico) { width:100%;height:100%;max-width:100%;max-height:100%; }
-.grupo-personagens-grade .catalogo-simbolo .dnd-pessoa-padrao { width:50%;height:50%; }
+/* O enquadramento fotográfico usa 100% da moldura, como em Itens. */
+:is(.grupo-identidade .av,#blist .catalogo-cartao .av,#spells .catalogo-cartao .av)
+  > img:not(.dnd-categoria-icone) {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+/* O estilo de grade nunca amplia o desenho: 40% também nas grades. */
+:is(#blist.catalogo-grade,#spells.catalogo-grade,.grupo-personagens-grade)
+  .catalogo-simbolo > :is(.ico,.rpg-ico,.dnd-categoria-icone,.dnd-pessoa-padrao) {
+  width:var(--comp-miniatura-icone-tamanho);
+  height:var(--comp-miniatura-icone-tamanho);
+  max-width:var(--comp-miniatura-icone-tamanho);
+  max-height:var(--comp-miniatura-icone-tamanho);
+}
