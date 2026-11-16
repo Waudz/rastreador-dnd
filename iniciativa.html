@@ -191,8 +191,8 @@
       <div class="row" style="margin:0"><a class="btnlike primary" href="entrar.html?voltar=iniciativa.html%3Faba%3Dmonstros">Entrar ou criar conta</a></div>
     </section>
 
-    <details class="vista-monstros panel" id="cm">
-      <summary class="panel-title"><i data-i="plus"></i>Criar ficha (monstro, personagem ou NPC)</summary>
+    <dialog class="cm-dialog" id="cm" aria-labelledby="cm-titulo">
+      <div class="cm-dialog-topo"><h2 class="panel-title" id="cm-titulo"><i data-i="plus"></i>Criar ficha (monstro, personagem ou NPC)</h2><button type="button" class="small" id="cm-fechar" aria-label="Fechar criação de ficha">Fechar</button></div>
       <p class="muted">Só o nome é obrigatório: preencha o que quiser e salve. Os detalhes do Livro dos Monstros (defesas, sentidos, perícias, reações, ações lendárias…) ficam em “Mais detalhes”.</p>
       <details class="cm-importar" id="cm-importar"><summary>Importar bloco de estatísticas (colar o texto de uma ficha)</summary>
         <p class="muted">Cole o texto de uma ficha que você possui (português ou inglês, inclusive copiado do D&amp;D Beyond). Nada é enviado para fora: a leitura acontece neste aparelho. Você revisa a prévia, o formulário preenche e só então salva.</p>
@@ -228,14 +228,14 @@
       <div id="cm-chips" class="row" style="margin:9px 0"></div>
       <button type="button" class="primary" id="cm-save">Salvar ficha</button>
       <button type="button" id="cm-cancel" hidden>Cancelar edição</button> <span class="muted" id="cm-msg"></span>
-    </details>
+    </dialog>
 
     <section class="vista-magias panel catalogo-magias">
       <h2 class="panel-title"><i data-i="sparkles"></i>Consultar magias e habilidades</h2>
       <p class="muted" id="spinfo"></p>
       <div class="row magias-busca-controles">
         <div class="clearable" style="flex:1 1 240px"><input id="sq" type="search" name="busca-magias" data-lpignore="true" data-1p-ignore placeholder="Pesquisar: nome da magia ou habilidade (português ou inglês)" autocomplete="off"><button type="button" class="xbtn" id="sq-x" hidden aria-label="Limpar pesquisa" title="Limpar pesquisa"><i data-i="x"></i></button></div>
-        <select id="sf-type" style="flex:0 1 260px" aria-label="Tipo"><option value="">Tudo</option><option value="spell">Só magias</option><option value="class">Só habilidades de classe</option><option value="monster">Só habilidades de monstro</option></select>
+        <select id="sf-type" style="flex:0 1 260px" aria-label="Tipo"><option value="">Tudo</option><option value="spell" selected>Só magias</option><option value="class">Só habilidades de classe</option><option value="monster">Só habilidades de monstro</option></select>
         <select id="s-ordem" aria-label="Ordenar resultados de magias"><option value="nome-asc">Nome: A–Z</option><option value="nome-desc">Nome: Z–A</option></select>
         <button type="button" class="small" id="sf-more" aria-expanded="false" aria-controls="sf-adv"><i data-i="filter"></i>Filtros</button>
       </div>
@@ -246,6 +246,7 @@
       </div>
       <div class="muted" id="scount" role="status"></div>
       <div id="spells" class="magias-resultados"></div>
+      <div class="row" style="justify-content:center"><button type="button" class="small" id="sp-more" hidden>Mostrar mais magias</button></div>
     </section>
 
 
@@ -256,7 +257,7 @@
         <input id="bq" type="search" name="busca-bestiario" data-lpignore="true" data-1p-ignore placeholder="Pesquisar: nome, dragão, imenso, pequeno, fera, humanoide…" autocomplete="off" style="flex:1 1 240px">
         <select id="bf" style="flex:0 1 260px"></select>
         <select id="b-ordem" aria-label="Ordenar monstros"><option value="nome-asc">Nome: A–Z</option><option value="nome-desc">Nome: Z–A</option></select>
-        <button type="button" class="small" id="ball">Mostrar tudo</button><button type="button" class="small" id="exportar-criacoes">Exportar Minhas Criações</button><button type="button" class="small" id="importar-criacoes">Importar Minhas Criações</button><input type="file" id="importar-arquivo" accept="application/json,.json" hidden>
+        <button type="button" class="small primary" id="cm-abrir"><i data-i="plus"></i>Criar ficha</button><button type="button" class="small" id="exportar-criacoes">Exportar Minhas Criações</button><button type="button" class="small" id="importar-criacoes">Importar Minhas Criações</button><input type="file" id="importar-arquivo" accept="application/json,.json" hidden>
       </div>
       <p id="dl-status" class="muted" role="status"></p>
       <div class="muted" id="bcount"></div>
