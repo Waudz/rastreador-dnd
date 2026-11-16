@@ -1,6 +1,6 @@
 {
-  "versao": 1,
-  "nota": "Descrições originais do Compêndio; valores indicativos para jogo, não transcrição do Livro do Jogador. Gemas usam faixas de tesouro; preços de mercadorias devem ser conferidos com as tabelas de 2014. Objetos de arte e bugigangas são criações originais; valores de arte são sugestões, não preços oficiais.",
+  "versao": 2,
+  "nota": "Catálogo de tesouros referenciado nas faixas de valores e exemplos das tabelas de D&D 5e (2014), com rótulos em português e descrições resumidas próprias. Objetos de arte: 48 exemplos das faixas oficiais (25/250/750/2500/7500 PO); bugigangas: amostra de 10 exemplos das Regras Básicas de 2014. Não contém transcrição integral das tabelas.",
   "itens": [
     {
       "id": "compendio:tesouro/agate",
@@ -172,6 +172,539 @@
       "peso": null
     },
     {
+      "id": "compendio:tesouro/gema-agata-listrada-10",
+      "nome": "Ágata listrada",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 10 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-agata-musgosa-10",
+      "nome": "Ágata musgosa",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 10 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-hematita-10",
+      "nome": "Hematita",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 10 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-lapis-lazuli-10",
+      "nome": "Lápis-lazúli",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 10 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-malaquita-10",
+      "nome": "Malaquita",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 10 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-obsidiana-10",
+      "nome": "Obsidiana",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 10 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-rodocrosita-10",
+      "nome": "Rodocrosita",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 10 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-olho-de-tigre-10",
+      "nome": "Olho-de-tigre",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 10 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-perola-de-agua-doce-10",
+      "nome": "Pérola de água doce",
+      "categoria": "gema",
+      "custo": {
+        "v": 10,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 10 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-heliotropio-50",
+      "nome": "Heliotrópio",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-cornalina-50",
+      "nome": "Cornalina",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-calcedonia-50",
+      "nome": "Calcedônia",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-crisoprasio-50",
+      "nome": "Crisoprásio",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-citrino-50",
+      "nome": "Citrino",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-jaspe-50",
+      "nome": "Jaspe",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-pedra-da-lua-50",
+      "nome": "Pedra-da-lua",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-onix-50",
+      "nome": "Ônix",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-peridoto-50",
+      "nome": "Peridoto",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-cristal-de-rocha-50",
+      "nome": "Cristal de rocha",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-sardonica-50",
+      "nome": "Sardônica",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-quartzo-rosa-50",
+      "nome": "Quartzo-rosa",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-zircao-50",
+      "nome": "Zircão",
+      "categoria": "gema",
+      "custo": {
+        "v": 50,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 50 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-ambar-100",
+      "nome": "Âmbar",
+      "categoria": "gema",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 100 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-crisoberilo-100",
+      "nome": "Crisoberilo",
+      "categoria": "gema",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 100 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-coral-vermelho-100",
+      "nome": "Coral vermelho",
+      "categoria": "gema",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 100 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-jade-100",
+      "nome": "Jade",
+      "categoria": "gema",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 100 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-azeviche-100",
+      "nome": "Azeviche",
+      "categoria": "gema",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 100 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-espinelio-100",
+      "nome": "Espinélio",
+      "categoria": "gema",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 100 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-turmalina-100",
+      "nome": "Turmalina",
+      "categoria": "gema",
+      "custo": {
+        "v": 100,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 100 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-alexandrita-500",
+      "nome": "Alexandrita",
+      "categoria": "gema",
+      "custo": {
+        "v": 500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 500 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-agua-marinha-500",
+      "nome": "Água-marinha",
+      "categoria": "gema",
+      "custo": {
+        "v": 500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 500 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-perola-negra-500",
+      "nome": "Pérola negra",
+      "categoria": "gema",
+      "custo": {
+        "v": 500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 500 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-espinelio-azul-500",
+      "nome": "Espinélio azul",
+      "categoria": "gema",
+      "custo": {
+        "v": 500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 500 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-topazio-amarelo-500",
+      "nome": "Topázio amarelo",
+      "categoria": "gema",
+      "custo": {
+        "v": 500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 500 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-opala-negra-1000",
+      "nome": "Opala negra",
+      "categoria": "gema",
+      "custo": {
+        "v": 1000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 1.000 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-opala-de-fogo-1000",
+      "nome": "Opala de fogo",
+      "categoria": "gema",
+      "custo": {
+        "v": 1000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 1.000 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-rubi-estrela-1000",
+      "nome": "Rubi-estrela",
+      "categoria": "gema",
+      "custo": {
+        "v": 1000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 1.000 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-safira-estrela-1000",
+      "nome": "Safira-estrela",
+      "categoria": "gema",
+      "custo": {
+        "v": 1000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 1.000 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-safira-amarela-1000",
+      "nome": "Safira amarela",
+      "categoria": "gema",
+      "custo": {
+        "v": 1000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 1.000 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-safira-negra-5000",
+      "nome": "Safira negra",
+      "categoria": "gema",
+      "custo": {
+        "v": 5000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 5.000 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/gema-jacinto-5000",
+      "nome": "Jacinto",
+      "categoria": "gema",
+      "custo": {
+        "v": 5000,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Gema não mágica da faixa de 5.000 PO das tabelas de tesouro de 2014. A avaliação exata pode variar conforme a pedra e a campanha.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
       "id": "compendio:tesouro/salt",
       "nome": "Sal (500 g)",
       "categoria": "mercadoria",
@@ -302,359 +835,727 @@
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-silver-goblet",
-      "nome": "Taça de prata gravada",
+      "id": "compendio:tesouro/arte-dmg2014-25-1",
+      "nome": "Jarra de prata",
       "categoria": "objeto-arte",
       "custo": {
         "v": 25,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Taça de prata com folhas gravadas ao redor da borda; pode ter servido em um banquete nobre.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 25 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-bronze-statuette",
-      "nome": "Estatueta de bronze de um corvo",
+      "id": "compendio:tesouro/arte-dmg2014-25-2",
+      "nome": "Estatueta de osso entalhado",
       "categoria": "objeto-arte",
       "custo": {
         "v": 25,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Pequena escultura de bronze escurecido, com as asas recolhidas e marcas de cinzel na base.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 25 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-ivory-comb",
-      "nome": "Pente de marfim entalhado",
+      "id": "compendio:tesouro/arte-dmg2014-25-3",
+      "nome": "Pulseira pequena de ouro",
       "categoria": "objeto-arte",
       "custo": {
         "v": 25,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Pente de dentes finos com flores e pequenas aves entalhadas no cabo.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 25 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-painted-ceramic-vase",
-      "nome": "Vaso de cerâmica pintado",
+      "id": "compendio:tesouro/arte-dmg2014-25-4",
+      "nome": "Vestimenta de tecido dourado",
       "categoria": "objeto-arte",
       "custo": {
         "v": 25,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Vaso de cerâmica esmaltada com cenas de colheita e um pequeno reparo na base.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 25 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-silver-mirror",
-      "nome": "Espelho de mão com moldura de prata",
+      "id": "compendio:tesouro/arte-dmg2014-25-5",
+      "nome": "Máscara de veludo preto com fios de prata",
       "categoria": "objeto-arte",
       "custo": {
-        "v": 50,
+        "v": 25,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Espelho pequeno com moldura trabalhada em prata e cabo decorado com arabescos.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 25 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-embroidered-tapestry",
-      "nome": "Tapeçaria bordada",
+      "id": "compendio:tesouro/arte-dmg2014-25-6",
+      "nome": "Cálice de cobre com filigrana de prata",
       "categoria": "objeto-arte",
       "custo": {
-        "v": 50,
+        "v": 25,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Painel têxtil mostrando uma ponte sobre um rio, bordado com fios coloridos.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 25 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-carved-wood-chest",
-      "nome": "Cofre de madeira entalhada",
+      "id": "compendio:tesouro/arte-dmg2014-25-7",
+      "nome": "Par de dados de osso gravados",
       "categoria": "objeto-arte",
       "custo": {
-        "v": 50,
+        "v": 25,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Caixa com fechadura simples e painéis entalhados com figuras de animais.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 25 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-golden-brooch",
-      "nome": "Broche de ouro em forma de folha",
+      "id": "compendio:tesouro/arte-dmg2014-25-8",
+      "nome": "Espelho pequeno em moldura pintada",
       "categoria": "objeto-arte",
       "custo": {
-        "v": 100,
+        "v": 25,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Broche de ouro delicadamente moldado como uma folha, com fecho de agulha.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 25 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-miniature-portrait",
-      "nome": "Retrato em miniatura",
+      "id": "compendio:tesouro/arte-dmg2014-25-9",
+      "nome": "Lenço de seda bordado",
       "categoria": "objeto-arte",
       "custo": {
-        "v": 100,
+        "v": 25,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Pequena pintura de uma pessoa desconhecida em uma moldura ornamentada.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 25 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-ceremonial-dagger",
-      "nome": "Adaga cerimonial ornamentada",
+      "id": "compendio:tesouro/arte-dmg2014-25-10",
+      "nome": "Medalhão de ouro com retrato",
       "categoria": "objeto-arte",
       "custo": {
-        "v": 100,
+        "v": 25,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Lâmina de cerimônia com bainha decorativa; feita para exibição, não para combate.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 25 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-silver-candelabrum",
-      "nome": "Candelabro de prata",
+      "id": "compendio:tesouro/arte-dmg2014-250-1",
+      "nome": "Anel de ouro com heliotrópios",
       "categoria": "objeto-arte",
       "custo": {
         "v": 250,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Candelabro de três braços com motivos florais e sinais de uso antigo.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 250 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/arte-golden-chalice",
-      "nome": "Cálice de ouro com esmalte azul",
+      "id": "compendio:tesouro/arte-dmg2014-250-2",
+      "nome": "Estatueta de marfim",
       "categoria": "objeto-arte",
       "custo": {
         "v": 250,
         "u": "gp"
       },
       "raridade": "mundano",
-      "desc": "Cálice de ouro trabalhado com faixas de esmalte azul e inscrições ornamentais.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 250 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-rusty-key",
-      "nome": "Chave enferrujada",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-250-3",
+      "nome": "Pulseira grande de ouro",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 250,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Uma chave pesada cuja fechadura correspondente ninguém conseguiu identificar.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 250 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-blue-feather",
-      "nome": "Pena azul iridescente",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-250-4",
+      "nome": "Colar de prata com pingente de gema",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 250,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Uma pena que muda de tom entre azul e verde conforme a luz.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 250 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-broken-compass",
-      "nome": "Bússola quebrada",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-250-5",
+      "nome": "Coroa de bronze",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 250,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Uma bússola antiga cuja agulha gira livremente e nunca aponta para o norte.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 250 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-sealed-letter",
-      "nome": "Carta lacrada sem destinatário",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-250-6",
+      "nome": "Robe de seda bordado a ouro",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 250,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Um envelope amarelado com selo de cera intacto e nenhum nome escrito.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 250 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-stone-die",
-      "nome": "Dado de pedra",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-250-7",
+      "nome": "Tapeçaria grande de alta qualidade",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 250,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Um dado de seis faces esculpido à mão, com uma das marcas quase apagada.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 250 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-tiny-bell",
-      "nome": "Sininho sem badalo",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-250-8",
+      "nome": "Caneca de latão com jade",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 250,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Um sino minúsculo de metal que não possui a peça interna para soar.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 250 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-glass-marble",
-      "nome": "Bolinha de vidro com espiral",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-250-9",
+      "nome": "Caixa com miniaturas de animais em turquesa",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 250,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Uma esfera transparente com um fio de vidro vermelho preso em seu interior.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 250 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-wooden-coin",
-      "nome": "Moeda de madeira",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-250-10",
+      "nome": "Gaiola dourada com filigrana de electro",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 250,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Uma moeda talhada em madeira com o rosto de um governante desconhecido.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 250 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-pressed-flower",
-      "nome": "Flor prensada",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-750-1",
+      "nome": "Cálice de prata com pedras-da-lua",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 750,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Uma flor roxa seca guardada entre duas folhas de papel fino.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 750 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-blank-map",
-      "nome": "Mapa sem nomes",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-750-2",
+      "nome": "Espada longa prateada com azeviche no punho",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 750,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Um mapa de estradas e rios sem qualquer nome de cidade ou região.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 750 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-copper-ring",
-      "nome": "Anel de cobre torto",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-750-3",
+      "nome": "Harpa de madeira exótica com marfim e zircões",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 750,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Um anel simples de cobre marcado por riscos e ligeiramente deformado.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 750 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-bone-whistle",
-      "nome": "Apito de osso",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-750-4",
+      "nome": "Ídolo pequeno de ouro",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 750,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Um apito curto feito de osso polido que produz um som agudo.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 750 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-wax-seal",
-      "nome": "Selo de cera com uma torre",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-750-5",
+      "nome": "Pente dourado em forma de dragão com granadas",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 750,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Um selo de cera vermelho, retirado de uma carta e marcado com uma torre.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 750 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-silver-button",
-      "nome": "Botão de prata solitário",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-750-6",
+      "nome": "Rolha decorada com ouro e ametistas",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 750,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Um botão de prata com desenho de uma estrela e nenhum par conhecido.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 750 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-old-ticket",
-      "nome": "Bilhete de passagem vencido",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-750-7",
+      "nome": "Adaga cerimonial de electro com pérola negra",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 750,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Um bilhete para uma travessia fluvial datado de muitos anos atrás.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 750 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-tiny-hourglass",
-      "nome": "Ampulheta minúscula",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-750-8",
+      "nome": "Broche de prata e ouro",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 750,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Uma ampulheta de bolso com pouca areia, presa em armação de latão.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 750 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-carved-pebble",
-      "nome": "Seixo com runas decorativas",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-750-9",
+      "nome": "Estatueta de obsidiana ornamentada com ouro",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 750,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Uma pedra lisa com sinais entalhados que parecem runas, sem magia identificada.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 750 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-folded-paper-bird",
-      "nome": "Pássaro de papel dobrado",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-750-10",
+      "nome": "Máscara cerimonial dourada",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 750,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Uma figura de pássaro feita de papel espesso e cuidadosamente dobrada.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 750 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-brass-locket",
-      "nome": "Medalhão de latão vazio",
-      "categoria": "bugiganga",
-      "custo": null,
+      "id": "compendio:tesouro/arte-dmg2014-2500-1",
+      "nome": "Corrente fina de ouro com opala de fogo",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 2500,
+        "u": "gp"
+      },
       "raridade": "mundano",
-      "desc": "Um medalhão que se abre, mas não contém retrato nem inscrição.",
-      "fonte": "original-compendio",
+      "desc": "Objeto de arte não mágico da faixa de 2.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
       "peso": null
     },
     {
-      "id": "compendio:tesouro/bugiganga-cracked-mask",
-      "nome": "Máscara de madeira rachada",
+      "id": "compendio:tesouro/arte-dmg2014-2500-2",
+      "nome": "Pintura antiga de mestre",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 2500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 2.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-2500-3",
+      "nome": "Manto de seda e veludo com pedras-da-lua",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 2500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 2.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-2500-4",
+      "nome": "Pulseira de platina com safira",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 2500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 2.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-2500-5",
+      "nome": "Luva bordada com fragmentos de gemas",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 2500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 2.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-2500-6",
+      "nome": "Tornozeleira com pedras preciosas",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 2500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 2.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-2500-7",
+      "nome": "Caixa de música de ouro",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 2500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 2.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-2500-8",
+      "nome": "Diadema de ouro com águas-marinhas",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 2500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 2.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-2500-9",
+      "nome": "Tapa-olho com olho de safira e pedra-da-lua",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 2500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 2.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-2500-10",
+      "nome": "Colar de pequenas pérolas rosadas",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 2500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 2.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-7500-1",
+      "nome": "Coroa de ouro cravejada de gemas",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 7500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 7.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-7500-2",
+      "nome": "Anel de platina cravejado de gemas",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 7500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 7.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-7500-3",
+      "nome": "Estatueta de ouro com rubis",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 7500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 7.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-7500-4",
+      "nome": "Taça de ouro com esmeraldas",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 7500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 7.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-7500-5",
+      "nome": "Caixa de joias de ouro com filigrana de platina",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 7500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 7.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-7500-6",
+      "nome": "Sarcófago infantil dourado e pintado",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 7500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 7.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-7500-7",
+      "nome": "Tabuleiro de jade com peças de ouro",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 7500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 7.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/arte-dmg2014-7500-8",
+      "nome": "Chifre de beber em marfim com ouro e gemas",
+      "categoria": "objeto-arte",
+      "custo": {
+        "v": 7500,
+        "u": "gp"
+      },
+      "raridade": "mundano",
+      "desc": "Objeto de arte não mágico da faixa de 7.500 PO. Peça ornamental ou de coleção, cujo valor está no trabalho e nos materiais.",
+      "fonte": "referencia-dmg2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-2014-01",
+      "nome": "Mão mumificada de goblin",
       "categoria": "bugiganga",
       "custo": null,
       "raridade": "mundano",
-      "desc": "Uma pequena máscara teatral de madeira com uma rachadura atravessando a testa.",
-      "fonte": "original-compendio",
+      "desc": "Uma mão ressecada e preservada de um goblin.",
+      "fonte": "referencia-basic-rules2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-2014-02",
+      "nome": "Cristal luminoso ao luar",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Pequeno cristal que parece emitir brilho fraco à luz da lua.",
+      "fonte": "referencia-basic-rules2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-2014-03",
+      "nome": "Moeda de ouro estrangeira",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Moeda cunhada por uma terra desconhecida.",
+      "fonte": "referencia-basic-rules2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-2014-04",
+      "nome": "Diário em língua desconhecida",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Caderno de anotações em um idioma que o portador não entende.",
+      "fonte": "referencia-basic-rules2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-2014-05",
+      "nome": "Anel de latão sem oxidação",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Um anel de latão que permanece brilhante apesar do tempo.",
+      "fonte": "referencia-basic-rules2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-2014-06",
+      "nome": "Peça de xadrez de vidro",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Peça antiga de um jogo de xadrez, moldada em vidro.",
+      "fonte": "referencia-basic-rules2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-2014-07",
+      "nome": "Dados de ossinhos com caveiras",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Dois dados feitos de ossos, marcados com pequenas caveiras.",
+      "fonte": "referencia-basic-rules2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-2014-08",
+      "nome": "Ídolo de criatura aterradora",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Pequena imagem que inspira sonhos inquietantes.",
+      "fonte": "referencia-basic-rules2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-2014-09",
+      "nome": "Colar com dedos mumificados",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Cordão com quatro dedos élficos preservados.",
+      "fonte": "referencia-basic-rules2014",
+      "peso": null
+    },
+    {
+      "id": "compendio:tesouro/bugiganga-2014-10",
+      "nome": "Escritura de terra desconhecida",
+      "categoria": "bugiganga",
+      "custo": null,
+      "raridade": "mundano",
+      "desc": "Documento de propriedade de um lugar que ninguém sabe localizar.",
+      "fonte": "referencia-basic-rules2014",
       "peso": null
     }
   ]
