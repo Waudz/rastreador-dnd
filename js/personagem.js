@@ -429,7 +429,7 @@
       if (a === "fechar") return fim();
       if (a === "rm") { if(editarGlobal)await CATALOGO.salvar('item',globalRef,null,{imagem:null});else II.remover(F(),itemFoto);salvarInv();redesenharInv();pinta();return; }
       if (a === "url") { if(editarGlobal){erro('Envie um arquivo para guardá-lo no catálogo global.');return;}await gravarImagem((ov.querySelector("#inv-img-url").value || "").trim()); return; }
-      if (a === "arq") { const f = document.createElement("input"); f.type = "file"; f.accept = "image/*"; f.onchange = async () => { const file = f.files && f.files[0]; if (!file) return; try { const rec = await window.recortarFoto(file); if (!rec) return; await gravarImagem(await II.reduzir(rec)); } catch (_) { erro("Não foi possível ler essa imagem."); } }; f.click(); }
+      if (a === "arq") { const f = document.createElement("input"); f.type = "file"; f.accept = "image/png,image/jpeg,image/webp,image/gif,image/*"; f.style.position="fixed"; f.style.left="-9999px"; document.body.appendChild(f); f.onchange = async () => { const file = f.files && f.files[0]; if (!file) { f.remove(); return; } try { const rec = await window.recortarFoto(file); if (!rec) return; await gravarImagem(await II.reduzir(rec)); } catch (_) { erro("Não foi possível ler essa imagem."); } finally { f.remove(); } }; f.click(); }
     });
     ov.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.id === "inv-img-url") { e.preventDefault(); ov.querySelector('[data-ii="url"]').click(); } });
     pinta(); document.body.appendChild(ov); document.addEventListener("keydown", esc2, true); ov.querySelector("[data-ii]")?.focus();
