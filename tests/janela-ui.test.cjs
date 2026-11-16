@@ -5,10 +5,10 @@ test('componente compartilhado expõe API de janelas',()=>{
 });
 test('páginas principais carregam o componente e preservam suas seções',()=>{
  for(const p of ['personagem.html','itens.html','campanha.html','conta.html','iniciativa.html','criar-personagem.html']){
-  const s=fs.readFileSync(p,'utf8');assert.match(s,/js\\/janela\\.js/);assert.match(s,/<main/);
+  const s=fs.readFileSync(p,'utf8');assert.ok(s.includes("js/janela.js"));assert.match(s,/<main/);
  }
 });
 test('catálogo usa o diálogo comum e mantém compatibilidade com o fechamento',()=>{
  const s=fs.readFileSync('js/itens.js','utf8');
- assert.match(s,/COMP_JANELA\\.abrir/);assert.match(s,/data-modal-fechar/);
+ assert.ok(s.includes("COMP_JANELA.abrir"));assert.match(s,/data-modal-fechar/);
 });
