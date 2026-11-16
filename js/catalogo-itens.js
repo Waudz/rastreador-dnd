@@ -5,7 +5,7 @@
    sendo configurados pelo mestre no inventário, porque o servidor só aceita essas propriedades vindas do mestre ou do catálogo aprovado. */
 (() => {
   "use strict";
-  const CATEGORIAS = [["arma", "Armas"], ["armadura", "Armaduras"], ["escudo", "Escudos"], ["equipamento", "Equipamento de aventura"], ["municao", "Munição"], ["foco", "Focos e símbolos"], ["kit", "Kits (item único)"], ["pacote", "Pacotes (conjuntos)"], ["ferramenta", "Ferramentas e instrumentos"], ["montaria-veiculo", "Montarias e veículos"], ["pocao", "Poções e óleos"], ["pergaminho", "Pergaminhos"], ["magico", "Itens mágicos"], ["personalizado", "Personalizados"]];
+  const CATEGORIAS = [["arma", "Armas"], ["armadura", "Armaduras"], ["escudo", "Escudos"], ["equipamento", "Equipamento de aventura"], ["municao", "Munição"], ["foco", "Focos e símbolos"], ["kit", "Kits (item único)"], ["pacote", "Pacotes (conjuntos)"], ["ferramenta", "Ferramentas e instrumentos"], ["montaria-veiculo", "Montarias e veículos"], ["pocao", "Poções e óleos"], ["pergaminho", "Pergaminhos"], ["magico", "Itens mágicos"], ["gema", "Gemas"], ["mercadoria", "Mercadorias"], ["personalizado", "Personalizados"]];
   const SUBTIPOS = { "simple-melee": "Arma simples corpo a corpo", "simple-ranged": "Arma simples à distância", "martial-melee": "Arma marcial corpo a corpo", "martial-ranged": "Arma marcial à distância", light: "Leve", medium: "Média", heavy: "Pesada", shield: "Escudo",
     "standard-gear": "Equipamento comum", ammunition: "Munição", "holy-symbols": "Símbolo sagrado", "arcane-foci": "Foco arcano", "druidic-foci": "Foco druídico", kits: "Kit", "equipment-packs": "Pacote de equipamento",
     "artisans-tools": "Ferramentas de artesão", "gaming-sets": "Jogos", "musical-instrument": "Instrumento musical", "other-tools": "Outras ferramentas",
@@ -15,7 +15,7 @@
   const PROPRIEDADES = { ammunition: "Munição", finesse: "Acuidade", heavy: "Pesada", light: "Leve", loading: "Recarga", reach: "Alcance", special: "Especial", thrown: "Arremesso", "two-handed": "Duas mãos", versatile: "Versátil", monk: "Arma de monge" };
   const DANOS = { slashing: "cortante", piercing: "perfurante", bludgeoning: "contundente" };
   const MOEDAS = { gp: "PO", sp: "PP", cp: "PC" }, EM_PO = { gp: 1, sp: 0.1, cp: 0.01 };
-  const ICONE = { arma: "swords", armadura: "bag", escudo: "bag", equipamento: "bag", municao: "swords", foco: "sparkles", kit: "bag", pacote: "bag", ferramenta: "clip", "montaria-veiculo": "users", pocao: "flask", pergaminho: "book", magico: "sparkles", personalizado: "plus" };
+  const ICONE = { arma: "swords", armadura: "bag", escudo: "bag", equipamento: "bag", municao: "swords", foco: "sparkles", kit: "bag", pacote: "bag", ferramenta: "clip", "montaria-veiculo": "users", pocao: "flask", pergaminho: "book", magico: "sparkles", gema: "sparkles", mercadoria: "bag", personalizado: "plus" };
   const sem = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
@@ -27,7 +27,7 @@
   function indexar(itens) { lista = itens; porId = new Map(); for (const i of itens) { porId.set(i.id, i); for (const a of i.alias || []) porId.set(a, i); } }
   function carregar() {
     if (lista) return Promise.resolve(lista);
-    if (!esperando) esperando = fetch("dados/itens-srd2014.json").then((r) => { if (!r.ok) throw new Error("catálogo de itens indisponível"); return r.json(); }).then((j) => { indexar(j.itens); return lista; }).catch((e) => { esperando = null; throw e; });
+    if (!esperando) esperando = Promise.all([fetch("dados/itens-srd2014.json").then((r) => { if (!r.ok) throw new Error("catálogo de itens indisponível"); return r.json(); }), fetch("dados/tesouros-compendio.json").then((r) => { if (!r.ok) throw new Error("tesouros indisponíveis"); return r.json(); }).catch(() => ({ itens: [] }))]).then(([base, extra]) => { const ids = new Set(base.itens.map(i => i.id)); indexar(base.itens.concat((extra.itens || []).filter(i => i && i.id && !ids.has(i.id)))); return lista; }).catch((e) => { esperando = null; throw e; });
     return esperando;
   }
   const todos = () => {const m=new Map((lista||[]).concat(personalizados.listar().map(deCustom)).map(i=>[i.id,i]));for(const r of window.CATALOGO?.registros('item')||[]){if(r.excluido)m.delete(r.chave);else if(r.dados)m.set(r.chave,{...r.dados,global:true,imagem:window.CATALOGO.imagem('item',r.chave)||null});}return [...m.values()];};
@@ -89,7 +89,7 @@
       <dl class="inv-det-dados">${(v.dados || []).map(([k, x]) => `<div><dt>${esc(k)}</dt><dd>${esc(x)}</dd></div>`).join("")}</dl>${v.extraHTML || ""}${v.rodape ? `<p class="muted inv-nota">${esc(v.rodape)}</p>` : ""}</div>`;
   }
   const subtituloDe = (it) => [it.custom ? rotuloCat(it.subtipo) : rotuloCat(it.categoria), it.raridade ? RARIDADES[it.raridade] : null, it.custom ? "Personalizado" : null].filter(Boolean).join(" · ");
-  const rodapeFonte = (it) => (it.custom ? "Item personalizado, guardado neste aparelho." : "Fonte: SRD 5.1 (CC BY 4.0). Pesos em kg e distâncias em metros (conversão do Compêndio); o nome em português é tradução do projeto" + (it.en ? ` (original: ${it.en}).` : "."));
+  const rodapeFonte = (it) => (it.custom ? "Item personalizado, guardado neste aparelho." : it.fonte === "original-compendio" ? "Descrição original do Compêndio; valor de referência para jogo, sujeito à decisão do mestre." : "Fonte: SRD 5.1 (CC BY 4.0). Pesos em kg e distâncias em metros (conversão do Compêndio); o nome em português é tradução do projeto" + (it.en ? ` (original: ${it.en}).` : "."));
   function viewDoCatalogo(it, imagem) {
     return { nome: it.nome, categoria: it.categoria, imagem, subtitulo: subtituloDe(it), desc: it.desc || null, lacunaDesc: !it.custom && !it.desc, dados: linhas(it), componentes: it.pacote ? componentes(it) : null, notaConjunto: it.pacote ? "Pacote de equipamentos: ao adicionar ao inventário, cada componente entra como item individual (com ID, peso e imagem próprios), identificado como parte deste pacote." : (it.categoria === "kit" ? "Kit: é um item único (as ferramentas e os suprimentos que o compõem não são itens separados)." : null), rodape: rodapeFonte(it) };
   }
