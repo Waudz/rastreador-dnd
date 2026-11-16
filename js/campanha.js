@@ -57,7 +57,7 @@
     $("#titulo").textContent = camp.nome; document.title = camp.nome + " — Compêndio 5e";
     $("#papel").textContent = mestre() ? "Mestre" : "Jogador";
     $("#lnk-combate").href = "iniciativa.html?campanha="+encodeURIComponent(id); $("#lnk-combate").hidden = false; $("#lnk-combate").textContent=mestre()?"Combate e consultas":"Consultar monstros e habilidades";
-    const abas = [["pers", "Personagens"], ["diario", "Diário"], ["docs", "Documentos"]].concat(mestre() ? [["membros", "Grupo"]] : [["grupo", "Grupo"]]);
+    const abas = [["pers", "Grupo"], ["diario", "Diário"], ["docs", "Documentos"]];
     $("#abas").hidden = false; $("#abas").className = "tabs"; $("#abas").removeAttribute("aria-hidden");
     $("#abas").innerHTML = abas.map(([k, t]) => `<button type="button" data-aba="${k}" class="${aba === k ? "on" : ""}">${t}</button>`).join("");
   }
@@ -205,8 +205,7 @@
   }
 
   function abaMembros() {
-    const convite = mestre() ? `<div class="panel convite-gestao"><h3 class="sub" style="margin-top:0">Convite da campanha</h3><p class="muted" style="margin:0 0 8px">Quem tem o código entra na campanha como jogador. Ao trocar, o código antigo deixa de valer para novos jogadores; quem já entrou continua no grupo.</p><div id="conv" role="status">Carregando convite…</div><button type="button" class="small" id="novo-cod">Renovar código</button></div>` : "";
-    return convite + membros.map((m) => `<div class="res"><span><b>${esc(nomes[m.usuario_id] || "Jogador")}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></span>${m.papel !== "mestre" ? `<button type="button" class="small danger" data-remover="${esc(m.usuario_id)}">Remover</button>` : ""}</div>`).join("");
+    return membros.map((m) => `<div class="res"><span><b>${esc(nomes[m.usuario_id] || "Jogador")}</b> <span class="badge ${m.papel === "mestre" ? "" : "jog"}">${m.papel === "mestre" ? "Mestre" : "Jogador"}</span></span>${m.papel !== "mestre" ? `<button type="button" class="small danger" data-remover="${esc(m.usuario_id)}">Remover</button>` : ""}</div>`).join("");
   }
 
   /* Aba Grupo (jogadores): foto, nome, jogador, PV e CA dos personagens do grupo, via função do banco que só devolve esses campos. */
@@ -218,7 +217,7 @@
       try { r = await nuvem.rpc("grupo_fichas", { p_campanha: id }); } catch (_) { r = await nuvem.rpc("grupo_basico", { p_campanha: id }); }   // sem a função completa, só os dados básicos
       if (consultada === id) grupoBasico = Array.isArray(r) ? r : [];
     } catch (e) { if (consultada === id) grupoBasico = { erro: e.message || "indisponível" }; }
-    if (consultada === id && aba === "grupo") $("#conteudo").innerHTML = abaGrupo();
+    if (consultada === id && aba === "pers" && !mestre()) { const box = $("#grupo-leitura"); if (box) box.innerHTML = abaGrupo(); }
   }
   const avatarGrupo = (nome, foto) => foto && /^data:image\//.test(foto) ? `<img class="av" src="${esc(foto)}" alt="Foto de ${esc(nome)}">` : `<span class="av av0">${esc((nome || "?").charAt(0).toUpperCase())}</span>`;
   function cartaoGrupo(p) {
@@ -234,13 +233,22 @@
     return grupoBasico.length ? `<p class="muted">Foto, nome, jogador, PV e CA dos personagens do grupo. Toque em um personagem para ver a ficha dele em modo leitura. Inventário, dinheiro e observações não aparecem.</p><h3 class="sub">Mestre</h3>${membros.filter((m) => m.papel === "mestre").map(cartaoMestre).join("") || '<p class="muted">Sem mestre listado.</p>'}<h3 class="sub">Jogadores</h3>${grupoBasico.map(cartaoGrupo).join("")}` : '<div class="estado-vazio"><strong>Nenhum personagem no grupo ainda</strong><p>Quando os jogadores tiverem personagens vinculados, eles aparecem aqui.</p></div>';
   }
 
+  function abaGrupoUnificado() {
+    const personagens = abaPers() + (!mestre() ? '<details class="grupo-secao-recolhida" open><summary>Visão do grupo</summary><div id="grupo-leitura" class="grupo-secao-corpo">' + abaGrupo() + '</div></details>' : '');
+    const participantes = mestre() ? abaMembros() : membros.map(m => '<div class="res"><span><b>' + esc(nomes[m.usuario_id] || "Jogador") + '</b> <span class="badge ' + (m.papel === "mestre" ? "" : "jog") + '">' + (m.papel === "mestre" ? "Mestre" : "Jogador") + '</span></span></div>').join('');
+    return '<section class="grupo-unificado" aria-label="Personagens da campanha">' + personagens +
+      '<details class="grupo-secao-recolhida"><summary>Participantes (' + membros.length + ')</summary><div class="grupo-secao-corpo">' + participantes + '</div></details>' +
+      (mestre() ? '<details class="grupo-secao-recolhida" id="grupo-convite"><summary>Convidar jogadores</summary><div class="grupo-secao-corpo"><p class="muted">Abra para consultar ou renovar o código de convite.</p><div id="conv" role="status">Carregando convite…</div><button type="button" class="small" id="novo-cod">Renovar código</button></div></details>' : '') + '</section>';
+  }
   async function desenhar() {
     for(const pid of selecionados)if(!pers.some(p=>p.id===pid))selecionados.delete(pid);
     cabecalho();
-    if (aba === "grupo" && mestre()) aba = "pers";
-    $("#conteudo").innerHTML = aba === "pers" ? abaPers() : aba === "diario" ? abaDiario() : aba === "docs" ? abaDocs() : aba === "grupo" ? abaGrupo() : abaMembros();
-    if (aba === "grupo") { grupoBasico = grupoBasico && Array.isArray(grupoBasico) ? grupoBasico : null; carregarGrupo(); }
-    if(aba==="membros")await mostrarConvite();
+    if (aba === "grupo" || aba === "membros") aba = "pers"; // compatibilidade com abas antigas
+    $("#conteudo").innerHTML = aba === "pers" ? abaGrupoUnificado() : aba === "diario" ? abaDiario() : abaDocs();
+    if (aba === "pers" && !mestre()) {
+      grupoBasico = grupoBasico && Array.isArray(grupoBasico) ? grupoBasico : null;
+      carregarGrupo();
+    }
   }
 
   async function mostrarConvite() {
@@ -332,7 +340,7 @@
       if(c('[data-camp-aparencia]')){if(!responsavelVisual())return;const painel=$('#aparencia-painel');painel.hidden=false;painel.open=true;$('#conteudo').hidden=true;document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);window.CAMPANHA_VISUAL.montar({id,mestre:responsavelVisual()});painel.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
       if(c('#aparencia-voltar')){if(window.CAMPANHA_VISUAL?.sair())fecharAparencia();return;}
       if(c('[data-camp-convite]')){mostrarConvite();return;}
-      if(c('[data-camp-grupo]')){if(!mestre())return;aba='membros';document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);return desenhar();}
+      if(c('[data-camp-grupo]')){aba='pers';document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);return desenhar();}
       if(c('#grupo-todos')){if(!mestre())return;pers.forEach(p=>selecionados.add(p.id));return desenhar();}
       if(c('#grupo-nenhum')){selecionados.clear();return desenhar();}
       if(c('#grupo-rolar')){if(!mestre()||!selecionados.size)return;location.href=window.GRUPO_PERSONAGENS.destino(id,pers.filter(p=>selecionados.has(p.id)).map(p=>p.id));return;}
@@ -417,7 +425,7 @@
     }
   }
 
-  document.addEventListener('toggle',e=>{if(e.target.matches?.('.campanha-ferramentas details')&&e.target.open&&e.target.querySelector('#conv'))mostrarConvite();},true);
+  document.addEventListener('toggle',e=>{if(e.target.matches?.('#grupo-convite')&&e.target.open)mostrarConvite();},true);
   /* A aparência substitui a lista (não aparece por cima nem embaixo); fechar, ou trocar de aba, volta ao conteúdo. */
   function fecharAparencia() { const p = $('#aparencia-painel'); if (p) { p.hidden = true; p.open = false; } $('#conteudo').hidden = false; }
 
