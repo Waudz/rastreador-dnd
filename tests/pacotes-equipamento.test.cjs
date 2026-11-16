@@ -27,7 +27,7 @@ test('adicionar o pacote cria os componentes individuais, sem item que represent
   assert.ok(!c.itens.some(i=>i.catId===EXP||i.ref===EXP||i.conjunto),'nenhum item "pacote" nem conjunto');
   for(const comp of cat.pacote){
     const i=c.itens.find(x=>x.catId===comp.id),ref=A.C.obter(comp.id);
-    assert.ok(i,comp.id);assert.equal(i.qtd,comp.qtd);assert.equal(i.ref,comp.id);assert.equal(i.nome,ref.nome);assert.equal(i.peso,Number(ref.peso)||0);assert.equal(i.desc,'','a descrição do item não é usada para a origem');
+    assert.ok(i,comp.id);assert.equal(i.qtd,comp.qtd);assert.equal(i.ref,comp.id);assert.equal(i.nome,ref.nome);assert.equal(i.peso,Number(ref.peso)||0);assert.equal(i.desc,ref.desc,'o componente preserva a descrição do catálogo sem substituir a origem');
     assert.equal(i.origem.nota,'Pacote de Explorador');assert.equal(i.origem.pacote.id,EXP);assert.equal(i.origem.pacote.nome,'Pacote de Explorador');assert.equal(i.origem.tipo,'jogo');assert.equal(i.origem.id,'pacote:'+EXP);
   }
   assert.equal(c.itens.length,new Set(c.itens.map(i=>i.uid)).size,'uid individuais');
