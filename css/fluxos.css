@@ -59,7 +59,10 @@
 .grupo-cartao { position:relative; }
 .grupo-cartao .grupo-marcar { position:absolute; top:0; left:0; z-index:1; width:44px; height:44px; min-height:44px; padding:0; }
 .grupo-cartao .grupo-marcar input { width:18px; height:18px; }
-.grupo-cartao .retrato-cartao { width:76px!important; height:76px!important; min-width:76px; flex:0 0 76px; object-fit:cover; border-radius:50%; font-size:28px; }
+.grupo-cartao .retrato-cartao { width:76px!important; height:76px!important; min-width:76px; flex:0 0 76px; object-fit:cover; object-position:center; border-radius:10px; border:1px solid var(--line); background:var(--item-imagem-fundo); box-sizing:border-box; font-size:28px; }
+/* Retratos dos personagens ficam em molduras próprias, nunca como fundo do cartão. */
+.personagem-card .grupo-identidade .retrato-cartao,.grupo-cartao .grupo-identidade .retrato-cartao { display:block; position:static; max-width:100%; background-image:none; }
+.personagem-card .grupo-identidade img.retrato-cartao,.grupo-cartao .grupo-identidade img.retrato-cartao { object-fit:cover; object-position:center; }
 .grupo-cartao .grupo-identidade { gap:12px; padding-top:8px; align-items:center; }
 .grupo-cartao .grupo-identidade-texto b { font-size:15px; line-height:1.35; }
 .grupo-cartao .grupo-identidade-texto small,.grupo-cartao .grupo-pv-resumo { font-size:12px!important; line-height:1.55; }
