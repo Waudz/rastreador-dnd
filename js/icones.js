@@ -31,6 +31,18 @@
     flask: '<path d="M9 3h6M10 3v6L5 19a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-10V3"/><path d="M7.5 15h9"/>',
     bag: '<path d="M6 8h12l1 13H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
     skull: '<path d="M12 3a8 8 0 0 0-8 8c0 2.6 1.2 4.3 3 5.4V20h10v-3.6c1.8-1.1 3-2.8 3-5.4a8 8 0 0 0-8-8z"/><circle cx="9" cy="11" r="1.2"/><circle cx="15" cy="11" r="1.2"/><path d="M10 20v-2M14 20v-2"/>',
+    shield: '<path d="M12 2 21 6v6c0 6-4 9-9 10-5-1-9-4-9-10V6z"/>',
+    heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/>',
+    flame: '<path d="M12 22c5 0 8-3.5 8-8 0-3.4-2-6.5-5-9-1 4-3 5-4 6-1-3-1-5-1-9C5 6 4 10 4 14c0 4.5 3 8 8 8z"/><path d="M12 22c2 0 3-1.5 3-3.5 0-1.4-.8-2.7-2-3.5-.2 1.7-2 2.7-2 4a3 3 0 0 0 1 3z"/>',
+    transmute: '<path d="M20 7h-9l3-3M11 7l3 3M4 17h9l-3-3M13 17l-3 3"/><path d="M5 7a8 8 0 0 1 13-2M19 17a8 8 0 0 1-13 2"/>',
+    paw: '<circle cx="7" cy="7" r="1.3"/><circle cx="12" cy="5" r="1.3"/><circle cx="17" cy="7" r="1.3"/><circle cx="20" cy="11" r="1.2"/><path d="M12 11c-3 0-4 4-6 5-2 1-1 5 2 5 2 0 3-1 4-1s2 1 4 1c3 0 4-4 2-5-2-1-3-5-6-5z"/>',
+    dragon: '<path d="M3 20c2-6 4-9 8-10l3-7 2 4 5-1-2 5 2 3-5 1-2 6"/><path d="M7 15l4 1 3 5M16 11h.01"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M10 2h4l1 3 3 1 3-1 2 4-3 2v3l3 2-2 4-3-1-3 1-1 3h-4l-1-3-3-1-3 1-2-4 3-2v-3L1 9l2-4 3 1 3-1z"/>',
+    bow: '<path d="M6 3c12 0 12 18 0 18M4 3l14 18M3 12h18M17 9l4 3-4 3"/>',
+    dagger: '<path d="M18 3l3 3-9 9-3-3zM8 14l-5 7M5 13l6 6"/>',
+    music: '<path d="M9 18V5l12-2v13M9 9l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+    leaf: '<path d="M20 4C9 4 4 9 4 16a4 4 0 0 0 4 4c7 0 12-5 12-16zM4 20c3-5 7-8 12-11"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
     camera: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>'
   };
   const svg = (n) => `<svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || ""}</svg>`;
