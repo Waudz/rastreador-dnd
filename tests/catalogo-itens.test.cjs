@@ -62,6 +62,21 @@ test("itens personalizados: validação e persistência por conta; só campos na
   assert.ok(C.todos().some((i) => i.custom && i.nome === "Medalhão")); assert.equal(P.salvar({ id: r.id, nome: "Medalhão 2" }).ok, true); assert.equal(P.listar().length, 1);
   P.excluir(r.id); assert.equal(P.listar().length, 0); assert.ok(Object.keys(store).some((k) => /itens_custom_v1:publico/.test(k)));
 });
+test("catálogo complementar: arte e bugigangas originais têm IDs únicos, descrições e categorias pesquisáveis", () => {
+  const extra = JSON.parse(ler("dados/tesouros-compendio.json")).itens;
+  const { C } = carregar(), ids = new Set();
+  assert.equal(extra.filter(i => i.categoria === "objeto-arte").length, 12);
+  assert.equal(extra.filter(i => i.categoria === "bugiganga").length, 20);
+  for (const item of extra) {
+    assert.ok(!ids.has(item.id), "ID duplicado: " + item.id);
+    ids.add(item.id);
+    assert.ok(item.desc && item.fonte === "original-compendio", item.id);
+    assert.ok(C.CATEGORIAS.some(([id]) => id === item.categoria), item.categoria);
+  }
+  C.indexar(itens.concat(extra));
+  assert.equal(C.filtrar(C.todos(), { cat: "objeto-arte" }).length, 12);
+  assert.equal(C.filtrar(C.todos(), { cat: "bugiganga" }).length, 20);
+});
 test("aba Itens: página, navegação, cache offline e integração com o inventário", () => {
   const h = ler("itens.html"), sw = ler("sw.js"), nav = ler("js/navegacao.js"), p = ler("js/personagem.js");
   for (const f of ["js/catalogo-itens.js", "js/itens.js", "js/visualizador-imagem.js", "css/itens.css"]) assert.ok(h.includes(f), f);
