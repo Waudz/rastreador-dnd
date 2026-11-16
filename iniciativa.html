@@ -49,6 +49,7 @@
   <script src="js/recentes.js" defer></script>
   <script src="js/ficha-criacao.js" defer></script>
   <script src="js/ficha-importar.js" defer></script>
+  <script src="js/ordenacao-catalogos.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/origens.js" defer></script>
   <script src="js/texto-regras.js" defer></script>
@@ -235,6 +236,7 @@
       <div class="row magias-busca-controles">
         <div class="clearable" style="flex:1 1 240px"><input id="sq" type="search" name="busca-magias" data-lpignore="true" data-1p-ignore placeholder="Pesquisar: nome da magia ou habilidade (português ou inglês)" autocomplete="off"><button type="button" class="xbtn" id="sq-x" hidden aria-label="Limpar pesquisa" title="Limpar pesquisa"><i data-i="x"></i></button></div>
         <select id="sf-type" style="flex:0 1 260px" aria-label="Tipo"><option value="">Tudo</option><option value="spell">Só magias</option><option value="class">Só habilidades de classe</option><option value="monster">Só habilidades de monstro</option></select>
+        <select id="s-ordem" aria-label="Ordenar resultados de magias"><option value="nome-asc">Nome: A–Z</option><option value="nome-desc">Nome: Z–A</option></select>
         <button type="button" class="small" id="sf-more" aria-expanded="false" aria-controls="sf-adv"><i data-i="filter"></i>Filtros</button>
       </div>
       <div class="row magias-filtros" id="sf-adv" style="margin-bottom:8px" hidden>
@@ -253,6 +255,7 @@
       <div class="row">
         <input id="bq" type="search" name="busca-bestiario" data-lpignore="true" data-1p-ignore placeholder="Pesquisar: nome, dragão, imenso, pequeno, fera, humanoide…" autocomplete="off" style="flex:1 1 240px">
         <select id="bf" style="flex:0 1 260px"></select>
+        <select id="b-ordem" aria-label="Ordenar monstros"><option value="nome-asc">Nome: A–Z</option><option value="nome-desc">Nome: Z–A</option></select>
         <button type="button" class="small" id="ball">Mostrar tudo</button><button type="button" class="small" id="exportar-criacoes">Exportar Minhas Criações</button><button type="button" class="small" id="importar-criacoes">Importar Minhas Criações</button><input type="file" id="importar-arquivo" accept="application/json,.json" hidden>
       </div>
       <p id="dl-status" class="muted" role="status"></p>

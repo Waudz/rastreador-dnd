@@ -320,16 +320,37 @@
       box.hidden = !lista.length;
       box.innerHTML = lista.length ? `<details><summary>Monstros excluídos do catálogo global (${lista.length})</summary><div class="muted" style="margin:8px 0">Restaurar torna o monstro visível novamente para todos os usuários.</div>${lista.map(r => `<div class="res"><span>${esc(r.dados?.name || r.chave)}</span><button type="button" class="small" data-global-restore="${esc(r.chave)}">Restaurar</button></div>`).join('')}</details>` : '';
     }
+    const ORDENS_CATALOGO = ["nome-asc", "nome-desc"];
+    function guardarOrdem(secao, valor) {
+      if (!ORDENS_CATALOGO.includes(valor)) return;
+      try { localStorage.setItem("compendio:ordem:" + secao, valor); } catch (_) { /* sem armazenamento */ }
+    }
+    function restaurarOrdem(secao, id) {
+      const campo = $(id); if (!campo) return;
+      try {
+        const valor = localStorage.getItem("compendio:ordem:" + secao);
+        if (ORDENS_CATALOGO.includes(valor)) campo.value = valor;
+      } catch (_) { /* sem armazenamento */ }
+    }
+    function ordenarCatalogo(registros, criterio, nome) {
+      if (window.COMP_ORDENACAO?.ordenar) return window.COMP_ORDENACAO.ordenar(registros, criterio, { nome });
+      const collator = new Intl.Collator("pt-BR", { sensitivity: "base", numeric: true });
+      return [...registros].sort((a, b) => (criterio === "nome-desc" ? -1 : 1) * collator.compare(String(nome(a) || ""), String(nome(b) || "")));
+    }
+    restaurarOrdem("bestiario", "#b-ordem");
+    restaurarOrdem("magias", "#s-ordem");
     function renderBestiary() {
       const q = nz($("#bq").value.trim()), f = $("#bf").value;
       $("#ball").textContent = showAll ? "Ocultar lista" : "Mostrar tudo";
       renderGlobalDeleted();
       if (!q && !f && !showAll) { $("#bcount").textContent = ALL.length ? `${ALL.length} fichas guardadas. Pesquise, escolha um filtro ou use “Mostrar tudo”.` : "Nenhuma ficha guardada ainda."; $("#blist").innerHTML = ""; return; }
-      const ws = q.split(/\s+/).filter(Boolean), list = ALL.filter((m) => inF(m, f) && ws.every((w) => hay(m).includes(w)));
+      const ws = q.split(/\s+/).filter(Boolean), encontrados = ALL.filter((m) => inF(m, f) && ws.every((w) => hay(m).includes(w)));
+      const list = ordenarCatalogo(encontrados, $("#b-ordem")?.value || "nome-asc", m => pt(m) || m.name);
       $("#bcount").textContent = `${list.length} fichas`;
       $("#blist").innerHTML = list.slice(0, shown).map(rowFull).join("") + (list.length > shown ? `<button class="small" data-more="1">Mostrar mais (${list.length - shown})</button>` : "") || '<span class="muted">Nada encontrado.</span>';
     }
     $("#bf").onchange = () => { shown = 40; renderBestiary(); };
+    $("#b-ordem")?.addEventListener("change", () => { guardarOrdem("bestiario", $("#b-ordem").value); shown = 40; renderBestiary(); });
     $("#bq").addEventListener("input", () => { shown = 40; renderBestiary(); });
     $("#ball").onclick = () => { showAll = !showAll; shown = 40; renderBestiary(); };
 
@@ -393,11 +414,12 @@
       const tipo = $("#sf-type").value, src = "2014", lv = $("#sf-lvl").value, sch = $("#sf-sch").value, ex = $("#sf-ex").value;
       const soMagia = tipo === "spell" || !!(lv || sch || ex); // círculo, escola e ritual só existem em magias
       const kOf = (s) => s.key.startsWith("ds:") ? s.key.slice(3) : s.name.toLowerCase();
-      const r = (tipo && tipo !== "spell" ? [] : catalog()).filter((s) => !src || edOf(s.document) === src)
+      const filtradas = (tipo && tipo !== "spell" ? [] : catalog()).filter((s) => !src || edOf(s.document) === src)
         .filter((s) => lv === "" || (s.level != null && String(s.level) === lv))
         .filter((s) => !sch || (SCH[s.school?.name] || "") === sch)
         .filter((s) => !ex || (ex === "ritual" ? !!s.ritual : !!s.concentration))
-        .filter((s) => { const k = kOf(s); return nz(s.name + " " + (D.S[k]?.[0] || "")).includes(q); }).slice(0, 30);
+        .filter((s) => { const k = kOf(s); return nz(s.name + " " + (D.S[k]?.[0] || "")).includes(q); });
+      const r = ordenarCatalogo(filtradas, $("#s-ordem")?.value || "nome-asc", s => D.S[kOf(s)]?.[0] || s.name).slice(0, 30);
       box.innerHTML = r.map((s) => {
         const k = kOf(s), d = D.S[k];
         return window.MAGIAS_UI.resultado({chave:s.key,nome:d?d[0]:s.name,original:s.name,nivel:s.level,escola:SCH[s.school?.name],tempo:s.casting_time?cap(tr(s.casting_time)):undefined,alcance:s.range_text?tr(s.range_text):undefined,ritual:s.ritual,concentracao:s.concentration,fonte:srcOf(s),alias:''});
@@ -608,6 +630,7 @@
 
     /* eventos */
     $("#sq").addEventListener("input", () => { $("#sq-x").hidden = !$("#sq").value; spSearch(); });
+    $("#s-ordem")?.addEventListener("change", () => { guardarOrdem("magias", $("#s-ordem").value); spSearch(); });
     /* filtros: só o tipo fica à vista; o resto abre em "Filtros" e se adapta ao tipo escolhido */
     const syncFilters = () => {
       const tipo = $("#sf-type").value, soMagia = tipo === "" || tipo === "spell"; // círculo, escola e ritual só existem em magias
