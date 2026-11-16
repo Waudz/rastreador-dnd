@@ -42,6 +42,13 @@
     function fechar() { anterior = null; esconderTodas(null); atualizar(); }
     return { encerrar: fechar, mostrar: mostrar, empilhar: empilhar, voltar: voltar, fechar: fechar, visivel: visivel, temAnterior: function () { return !!anterior; }, VISTAS: VISTAS };
   }
+  if (raiz.addEventListener) raiz.addEventListener("message", function(e) {
+    if (e.origin !== raiz.location.origin || !e.data || e.data.tipo !== "comp-modal-ficha") return;
+    var frame=raiz.document.getElementById("ci-ficha-frame");
+    if (!frame || e.source !== frame.contentWindow) return;
+    var painel=raiz.document.getElementById("ci-resumo");
+    if (painel) painel.classList.toggle("comp-modal-ativo", e.data.aberto === true);
+  });
   var api = { criar: criar, VISTAS: VISTAS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else { raiz.PainelDetalhes = api; raiz.PAINEL = criar(raiz.document, function () { if (raiz.reorganizarPaineis) raiz.reorganizarPaineis(); }); }
