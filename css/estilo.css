@@ -632,53 +632,36 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
   .catalogo-busca>input,.catalogo-busca>.clearable{flex:1 1 100%!important}
 }
 
-/* Cartões de catálogo: lista e grade, com os mesmos controles da aba Itens. */
-#blist.catalogo-grade,#spells.catalogo-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:10px;align-items:stretch}
-#blist.catalogo-grade>.res,#spells.catalogo-grade>.res{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin:0;min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
-#blist.catalogo-grade>.res>.lft,#spells.catalogo-grade>.res>.lft{display:flex;align-items:flex-start;min-width:0;flex:1}
-#blist.catalogo-grade>.res>.acts,#spells.catalogo-grade>.res>.acts{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto}
-#blist.catalogo-grade>[data-more]{grid-column:1/-1;justify-self:center}
+/* Catálogos: visual de lista preservado; grade com a mesma composição de Itens. */
 .catalogo-filtros .inv-vista{display:inline-flex;gap:4px;margin-left:auto}
 .catalogo-filtros .inv-vista button[aria-pressed="true"]{border-color:var(--accent,var(--line));background:var(--panel)}
-@media(max-width:520px){#blist.catalogo-grade,#spells.catalogo-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#blist.catalogo-grade>.res,#spells.catalogo-grade>.res{padding:9px}#blist.catalogo-grade .acts button,#spells.catalogo-grade .acts button{flex:1 1 auto}}
-
-/* PR20 — acabamento compartilhado entre Itens, Bestiário e Magias. */
-#blist .catalogo-cartao,#spells .catalogo-cartao{min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:10px;gap:10px;transition:border-color .15s ease,background-color .15s ease}
-#blist .catalogo-cartao:hover,#spells .catalogo-cartao:hover{border-color:var(--accent,var(--line))}
+#blist .catalogo-cartao,#spells .catalogo-cartao{min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:10px;gap:10px}
 #blist .catalogo-cartao .lft,#spells .catalogo-cartao .lft{display:flex;gap:10px;align-items:center;min-width:0;flex:1}
 #blist .catalogo-cartao .lft>span:last-child,#spells .catalogo-cartao .lft>span:last-child{min-width:0;overflow-wrap:anywhere;line-height:1.4}
-#blist .catalogo-cartao .lft b,#spells .catalogo-cartao .lft b{font-size:14px;line-height:1.4}
-#blist .catalogo-cartao .av,#spells .catalogo-cartao .av{flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}
-#blist .catalogo-cartao .av img,#spells .catalogo-cartao .av img{width:100%;height:100%;object-fit:cover}
-#spells .catalogo-cartao .magia-selo-circulo{display:inline-flex;align-items:center;justify-content:center;font-weight:700}
 #blist .catalogo-cartao .acts,#spells .catalogo-cartao .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-#blist.catalogo-grade .catalogo-cartao,#spells.catalogo-grade .catalogo-cartao{background:var(--panel);min-height:152px}
-#blist.catalogo-grade .catalogo-cartao .lft,#spells.catalogo-grade .catalogo-cartao .lft{align-items:flex-start}
-#blist.catalogo-grade .catalogo-cartao .acts,#spells.catalogo-grade .catalogo-cartao .acts{margin-top:auto}
+#blist .catalogo-cartao .av,#spells .catalogo-cartao .av{flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:9px;overflow:hidden}
 .catalogo-vazio{grid-column:1/-1;width:100%;padding:26px 16px;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted);background:var(--panel)}
 .catalogo-vazio strong{display:block;color:var(--text);margin-bottom:5px}
 .catalogo-vazio p{margin:0;font-size:13px}
-@media(max-width:520px){#blist.catalogo-grade .catalogo-cartao .lft,#spells.catalogo-grade .catalogo-cartao .lft{flex-direction:column;align-items:flex-start}#blist.catalogo-grade .catalogo-cartao .acts button,#spells.catalogo-grade .catalogo-cartao .acts button{min-height:36px}}
-
-
-/* Grade realmente equivalente à de Itens: miniatura quadrada acima do texto. */
-#blist.catalogo-grade,#spells.catalogo-grade{grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:12px}
-#blist.catalogo-grade>.catalogo-cartao,#spells.catalogo-grade>.catalogo-cartao{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;align-content:start;gap:8px;padding:8px;min-height:0}
-#blist.catalogo-grade>.catalogo-cartao>.lft,#spells.catalogo-grade>.catalogo-cartao>.lft{display:contents}
-#blist.catalogo-grade>.catalogo-cartao>.lft>.av,#spells.catalogo-grade>.catalogo-cartao>.lft>.av{width:100%;height:auto;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;object-fit:cover;border-radius:8px;background:var(--item-imagem-fundo);grid-row:1}
-#blist.catalogo-grade>.catalogo-cartao>.lft>.av img,#spells.catalogo-grade>.catalogo-cartao>.lft>.av img{width:100%;height:100%;object-fit:cover}
-#blist.catalogo-grade>.catalogo-cartao>.lft>span:last-child,#spells.catalogo-grade>.catalogo-cartao>.lft>span:last-child{grid-row:2;align-self:start;min-width:0}
-#blist.catalogo-grade>.catalogo-cartao>.acts,#spells.catalogo-grade>.catalogo-cartao>.acts{grid-row:3;align-self:end;min-width:0;margin-top:0}
-#blist.catalogo-grade>.catalogo-cartao>.acts button,#spells.catalogo-grade>.catalogo-cartao>.acts button{min-width:0}
-#spells.catalogo-grade>.catalogo-habilidade{grid-template-rows:1fr}
+#blist.catalogo-grade,#spells.magias-resultados.catalogo-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:12px;align-items:stretch}
+#blist.catalogo-grade>.catalogo-cartao,#spells.catalogo-grade>.catalogo-cartao{display:flex;flex-direction:column;gap:8px;padding:8px;margin:0;min-width:0;min-height:0;align-items:stretch}
+#blist.catalogo-grade>.catalogo-cartao>.lft,#spells.catalogo-grade>.catalogo-cartao>.lft{display:flex;flex-direction:column;align-items:stretch;gap:8px;flex:1;min-width:0}
+#blist.catalogo-grade>.catalogo-cartao>.lft>.av,#spells.catalogo-grade>.catalogo-cartao>.lft>.av{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%!important;height:auto!important;aspect-ratio:1/1;min-height:0;max-height:none;margin:0;flex:none;object-fit:cover;border:1px solid var(--line);border-radius:10px;background:var(--item-imagem-fundo);font-family:Georgia,serif;font-size:38px;font-weight:700;color:var(--gold)}
+#blist.catalogo-grade>.catalogo-cartao>.lft>.av img{width:100%;height:100%;object-fit:cover}
+#blist.catalogo-grade>.catalogo-cartao>.lft>span:last-child,#spells.catalogo-grade>.catalogo-cartao>.lft>span:last-child{min-width:0;align-self:stretch}
+#blist.catalogo-grade>.catalogo-cartao>.acts,#spells.catalogo-grade>.catalogo-cartao>.acts{margin-top:auto;align-self:stretch}
+#spells.catalogo-grade>.catalogo-habilidade{display:flex;flex-direction:column}
 #spells.catalogo-grade>.catalogo-habilidade>span{min-width:0;overflow-wrap:anywhere}
-@media(max-width:520px){#blist.catalogo-grade,#spells.catalogo-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#blist.catalogo-grade>.catalogo-cartao>.lft,#spells.catalogo-grade>.catalogo-cartao>.lft{display:contents}}
+@media(max-width:520px){#blist.catalogo-grade,#spells.magias-resultados.catalogo-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#blist.catalogo-grade .acts button,#spells.catalogo-grade .acts button{min-height:36px}}
 
 
-/* PR21: a regra de magias-resultados (display:block) anulava a grade,
-   fazendo cada selo ocupar toda a largura da página. */
-#spells.magias-resultados.catalogo-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:12px;align-items:stretch}
-#spells.magias-resultados.catalogo-grade>.catalogo-magia{min-width:0;max-width:100%;grid-template-rows:auto minmax(0,1fr) auto}
-#spells.magias-resultados.catalogo-grade>.catalogo-magia>.lft>.magia-selo-circulo{width:100%;height:auto;aspect-ratio:1/1;max-height:220px;box-sizing:border-box;font-size:clamp(20px,3vw,38px)}
-#blist.catalogo-grade>.catalogo-monstro>.lft>.av{width:100%;height:auto;aspect-ratio:1/1;max-height:220px;box-sizing:border-box}
-@media(max-width:520px){#spells.magias-resultados.catalogo-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#spells.magias-resultados.catalogo-grade>.catalogo-magia>.lft>.magia-selo-circulo{max-height:none}}
+
+/* Símbolos compartilhados: mesma cor, fundo e moldura dos itens. */
+:root{--catalogo-icone:var(--gold,#c9a76a)}
+#blist .catalogo-simbolo,#spells .catalogo-simbolo,.grupo-unificado .catalogo-simbolo{display:flex;align-items:center;justify-content:center;flex:none;background:var(--item-imagem-fundo);color:var(--catalogo-icone);border:1px solid var(--line);border-radius:10px;box-sizing:border-box}
+#blist .catalogo-simbolo .ico,#spells .catalogo-simbolo .ico,.grupo-unificado .catalogo-simbolo .ico{width:24px;height:24px;stroke:currentColor;flex:none}
+#blist.catalogo-grade .catalogo-simbolo .ico,#spells.catalogo-grade .catalogo-simbolo .ico,.grupo-unificado .grupo-personagens-grade .catalogo-simbolo .ico{width:48px;height:48px}
+#blist .catalogo-habilidade>.lft,#spells .catalogo-habilidade>.lft{display:flex;align-items:center;gap:10px;min-width:0}
+#blist.catalogo-grade>.catalogo-habilidade>.lft,#spells.catalogo-grade>.catalogo-habilidade>.lft{flex-direction:column;align-items:stretch}
+#spells .catalogo-habilidade .catalogo-simbolo{width:44px;height:44px}
+#spells.catalogo-grade .catalogo-habilidade .catalogo-simbolo{width:100%;height:auto;aspect-ratio:1/1}

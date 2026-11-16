@@ -139,7 +139,9 @@
     const lvl = (m) => catOf(m) === "monster" ? "ND " + CRV(m) : "Nível " + (m.level ?? "—");
     const srcOf = (m) => m.document?.display_name || m.document?.key || "?";
     const illu = (m) => typeof m.illustration === "string" ? m.illustration : (m.illustration && (m.illustration.url || m.illustration.image)) || "";
-    const av = (m, size = 36) => { const global=m&&window.CATALOGO?.imagem('monstro',m.key);const src = m && (global!==undefined?global:((PH[m.key]) || (!m.custom && PUB.has(m.key) ? pubName(m.key) : "") || illu(m))); const st = `width:${size}px;height:${size}px`; return src ? `<img class="av" style="${st}" src="${esc(src)}" alt="" loading="lazy">` : `<span class="av av0" style="${st};font-size:${Math.round(size * 0.45)}px">${esc(((m && (pt(m) || m.name)) || "?").charAt(0).toUpperCase())}</span>`; };
+    const tipoIcones={Aberration:'eye',Beast:'paw',Celestial:'sun',Construct:'gear',Dragon:'dragon',Elemental:'flame',Fey:'sparkles',Fiend:'skull',Giant:'swords',Humanoid:'user',Monstrosity:'dragon',Ooze:'flask',Plant:'leaf',Undead:'skull'};
+    const av = (m, size = 36) => { const global=m&&window.CATALOGO?.imagem('monstro',m.key);const src=m&&(global!==undefined?global:((PH[m.key])||(!m.custom&&PUB.has(m.key)?pubName(m.key):'')||illu(m)));const st=`width:${size}px;height:${size}px`;const tipo=m?.type?.name||'';const ic=tipoIcones[tipo]||'skull';return src?`<img class="av" style="${st}" src="${esc(src)}" alt="" loading="lazy">`:`<span class="av av0 catalogo-simbolo" style="${st}" title="${esc(TP[tipo]||tipo||'Criatura')}" aria-label="${esc(TP[tipo]||tipo||'Criatura')}">${window.ico?window.ico(ic):'✦'}</span>`; };
+
     const tsz = (m) => { const t = TP[m.type?.name] || m.type?.name || "", z = SZ[m.size?.name] || m.size?.name || ""; return t && z ? `${t} (${z})` : t || z; };
 
     let TR = {}; try { TR = JSON.parse(localStorage.getItem(acervo.chave("ini_tr")) || "{}"); } catch (_) {}
@@ -454,7 +456,7 @@
       if (cont) { const n = box.querySelectorAll(".res").length; cont.textContent = n ? `${n} de ${ordenadas.length}${tipo === "spell" ? " magias" : " resultados de magia"} exibidos` : "Nenhuma magia encontrada."; }   // contagem, como "N fichas" no bestiário
     }
     function abilityRows(q, src = "") {
-      return [...ABI.entries()].map(([l, v]) => [l, v, src ? v.items.filter((x) => edOf(x.m.document) === src) : v.items]).filter(([l, v, its]) => its.length && nz(v.name + " " + nm(v.name)).includes(q)).slice(0, 15).map(([l, v, its]) => `<div class="res catalogo-cartao catalogo-habilidade" data-abopen="${esc(l)}"><span><b>${esc(nm(v.name))}</b> <span class="muted">(${esc(v.name)})</span><br><span class="muted">Habilidade de monstro · ${its.length} ${its.length > 1 ? "monstros" : "monstro"}: ${esc(its.slice(0, 3).map((x) => pt(x.m) || x.m.name).join(", "))}${its.length > 3 ? "…" : ""}</span></span></div>`).join("");
+      return [...ABI.entries()].map(([l, v]) => [l, v, src ? v.items.filter((x) => edOf(x.m.document) === src) : v.items]).filter(([l, v, its]) => its.length && nz(v.name + " " + nm(v.name)).includes(q)).slice(0, 15).map(([l, v, its]) => `<div class="res catalogo-cartao catalogo-habilidade" data-abopen="${esc(l)}"><span class="lft"><span class="av av0 catalogo-simbolo" aria-hidden="true">${ico("sparkles")}</span><span><b>${esc(nm(v.name))}</b> <span class="muted">(${esc(v.name)})</span><br><span class="muted">Habilidade de monstro · ${its.length} ${its.length > 1 ? "monstros" : "monstro"}: ${esc(its.slice(0, 3).map((x) => pt(x.m) || x.m.name).join(", "))}${its.length > 3 ? "…" : ""}</span></span></span></div>`).join("");
     }
 
     /* habilidades de classe (SRD 5.1, 2014, via Open5e; texto em inglês) */
@@ -468,7 +470,7 @@
     const encP = (s) => String(s).replace(/\n/g, " ¶ "), decP = (s) => String(s).replace(/\s*¶\s*/g, "\n");
     const cfPlain = (f) => String(cfText(f)).replace(/\r/g, "").replace(/\n\s*[*-]\s+/g, " • ").replace(/\n+/g, " ").replace(/[*_#]+/g, "").replace(/\s+/g, " ").trim();
     const cfFind = (q, max) => { const ws = q.split(/\s+/).filter(Boolean); if (!ws.length) return []; return CF.map((f, i) => [f, i]).filter(([f]) => { const hay = nz(`${f.n} ${f.p} ${CFCLS[f.u || f.c] || ""} ${f.u || f.c} ${f.c}`); return ws.every((w) => hay.includes(w)); }).slice(0, max); };
-    const classRows = (q, src = "") => cfFind(q, 400).filter(([f]) => !src || f.e === src).slice(0, 12).map(([f, i]) => `<div class="res catalogo-cartao catalogo-habilidade" data-cfopen="${i}"><span><b>${esc(cfTitle(f))}</b>${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""}<br><span class="muted">${esc(["Habilidade de classe", cfClass(f), cfLevel(f), f.e].filter(Boolean).join(" · "))}</span></span></div>`).join("");
+    const classRows = (q, src = "") => cfFind(q, 400).filter(([f]) => !src || f.e === src).slice(0, 12).map(([f, i]) => `<div class="res catalogo-cartao catalogo-habilidade" data-cfopen="${i}"><span class="lft"><span class="av av0 catalogo-simbolo" aria-hidden="true">${ico("book")}</span><span><b>${esc(cfTitle(f))}</b>${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""}<br><span class="muted">${esc(["Habilidade de classe", cfClass(f), cfLevel(f), f.e].filter(Boolean).join(" · "))}</span></span></span></div>`).join("");
 
     /* adiciona uma habilidade de classe a uma ficha própria (personagem, NPC ou monstro criado por você) */
     const cfAlvos = (i) => {
