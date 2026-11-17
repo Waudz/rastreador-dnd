@@ -158,3 +158,14 @@ a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, cu
 .personagem-card .compact-menu[open]{z-index:100}
 .personagem-card:has(.compact-menu[open]){position:relative;z-index:90;overflow:visible}
 .personagem-card .compact-menu.abrir-acima>.compact-popover{top:auto;bottom:calc(100% + 6px)}
+
+/* Seleção de iniciativa: sobrescreve o antigo layout horizontal de maior especificidade. */
+#ci-lista .ci-cartao.grupo-cartao.ci-cartao-ini{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:8px;min-height:0;height:auto;padding:12px;overflow:visible}
+#ci-lista .ci-cartao-ini .ci-topo{display:flex;align-items:center;width:100%;gap:8px;min-width:0}
+#ci-lista .ci-cartao-ini .ci-personagem.grupo-identidade{display:flex;align-items:center;flex:1 1 auto;min-width:0;width:auto;gap:10px}
+#ci-lista .ci-cartao-ini .grupo-identidade-texto{flex:1;min-width:0}
+#ci-lista .ci-cartao-ini .retrato-cartao{width:56px!important;height:56px!important;min-width:56px;min-height:56px;flex:0 0 56px;object-fit:cover}
+#ci-lista .ci-cartao-ini .ci-acoes{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;width:100%;gap:8px;margin:0;padding:0;min-height:0}
+#ci-lista .ci-cartao-ini .ci-acoes .ci-ini{min-width:0}
+#ci-lista .ci-cartao-ini .grupo-identidade-texto .hp-track{height:7px;margin-top:5px}
+@media(max-width:420px){#ci-lista.ci-grade{grid-template-columns:minmax(0,1fr)}#ci-lista .ci-cartao-ini .retrato-cartao{width:48px!important;height:48px!important;min-width:48px;min-height:48px;flex-basis:48px}#ci-lista .ci-cartao-ini .ci-acoes{gap:6px}}
