@@ -1145,3 +1145,26 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 #vez-manual #man-erro{flex:1 1 100%;margin:0;min-height:0}
 #vez-res .res-ataque{padding:5px 0}
 @media(max-width:540px){#vez-manual .vez-manual-acoes{flex:1 1 100%}}
+
+/* Layout 3: escopo exclusivo do painel de ataques e seu histórico. */
+#vez-manual:not([hidden]){display:grid!important;grid-template-columns:minmax(0,1fr);gap:10px!important;padding:12px 14px!important;border-radius:10px}
+#vez-manual .vez-etapa-cab{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+#vez-manual .vez-etapa-titulo{font-weight:800;color:var(--text);font-size:14px}
+#vez-manual .vez-etapa-contexto{font-size:13px;line-height:1.4;color:var(--muted)}
+#vez-manual .vez-etapa-contexto b{color:var(--text)}
+#vez-manual .vez-ca{display:inline-block;margin-left:5px;padding:2px 7px;border:1px solid var(--line);border-radius:6px;color:var(--text)}
+#vez-manual .vez-manual-campos{display:flex;align-items:end;flex-wrap:wrap;gap:8px 12px}
+#vez-manual .vez-manual-linha{display:flex;align-items:end;flex-wrap:wrap;gap:8px!important}
+#vez-manual .vez-manual-linha label{display:flex;flex-direction:column;gap:4px;font-size:12px}
+#vez-manual .vez-manual-linha input.num{height:36px!important;width:72px!important;text-align:center}
+#vez-manual .vez-manual-acoes{display:flex;align-items:center;gap:8px;margin:0!important}
+#vez-manual .vez-manual-acoes button{min-height:36px}
+#vez-manual #man-erro:empty{display:none}
+#vez-res{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+#vez-res .res-ataque{border:1px solid var(--line);border-radius:9px;padding:0!important;overflow:hidden}
+#vez-res .res-ataque-cab{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--line);font-size:11px;font-weight:750;color:var(--muted)}
+#vez-res .res-ataque-corpo{padding:8px 10px;line-height:1.45}
+#vez-res .res-ataque-corpo p{margin:3px 0}
+#vez-res .res-ataque-corpo .row{gap:8px;margin-top:6px}
+@media(min-width:650px){#vez-manual:not([hidden]){grid-template-columns:minmax(0,1fr) auto}#vez-manual .vez-etapa-cab{grid-column:1/-1}#vez-manual .vez-manual-campos{grid-column:1}#vez-manual .vez-manual-acoes{grid-column:2;align-self:end}#vez-manual #man-erro{grid-column:1/-1}}
+@media(max-width:649px){#vez-manual .vez-manual-acoes{flex-wrap:wrap}#vez-manual .vez-etapa-contexto{flex-basis:100%}}
