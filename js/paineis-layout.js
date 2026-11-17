@@ -68,7 +68,7 @@
       const up=()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);salvar(el)};
       window.addEventListener("pointermove",move);window.addEventListener("pointerup",up,{once:true});
     }
-    cab.addEventListener("pointerdown",mover);
+    // Layout em colunas: janelas ancoradas, sem arrastar.
     minimo.addEventListener("click",()=>{
       el.classList.add("comp-minimizada");
       const voltar=document.createElement("button");voltar.type="button";voltar.textContent=c.title;
@@ -80,10 +80,14 @@
   }
 
   function organizarConsultas(){
-    if(!ativo())return;
+    if(!ativo()){document.body.classList.remove("comp-coluna-esquerda","comp-coluna-direita");return;}
     const h=document.getElementById("vez-res"),m=document.getElementById("spd"),p=document.getElementById("ci-resumo");
     const magia=!!m&&!m.hidden, historico=!!h&&!h.hidden&&!h.classList.contains("comp-minimizada");
     const topo=62,altura=Math.max(200,innerHeight-74),espaco=10;
+    const leftOpen=historico||magia;
+    const rightOpen=!!p&&!p.hidden;
+    document.body.classList.toggle("comp-coluna-esquerda",leftOpen);
+    document.body.classList.toggle("comp-coluna-direita",rightOpen);
     const histH=magia?Math.floor(altura*.38):altura;
     if(h&&historico)Object.assign(h.style,{left:"14px",top:topo+"px",width:"300px",height:histH+"px"});
     if(m&&magia)Object.assign(m.style,{left:"14px",top:(historico?topo+histH+espaco:topo)+"px",width:"420px",height:(historico?altura-histH-espaco:altura)+"px"});
