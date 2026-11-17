@@ -482,21 +482,47 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     if (!id) { location.replace("conta.html"); return; }
     await abrir();
     if (!camp) return;
-    let atualizarGrupoTimer = null;
-    nuvem.observarPersonagens?.({campanhaId:id,aoAlterar:()=>{
-      clearTimeout(atualizarGrupoTimer);
-      atualizarGrupoTimer=setTimeout(async()=>{
-        if(document.hidden || document.querySelector("#forms form") || document.querySelector("#imp .panel"))return;
-        try { const antes=assinatura();if(await carregar()!==false && assinatura()!==antes)desenhar(); }
-        catch(e){ console.warn("Sincronização do grupo:",e); }
-      },150);
-    }});
-    nuvem.observar(async () => {
+    let atualizarGrupoTimer = null, atualizandoGrupo = false, grupoPendente = false;
+    async function sincronizarGrupo() {
+      if (document.hidden || atualizandoGrupo) { grupoPendente = true; return; }
+      if (document.querySelector("#forms form") || document.querySelector("#imp .panel")) { grupoPendente = true; return; }
       const ativo = document.activeElement;
-      if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;     // não interrompe quem está digitando
-      if (document.querySelector("#forms form") || document.querySelector("#imp .panel")) return;
-      const antes = assinatura(); if(await carregar()===false)return;
-      if (assinatura() !== antes) desenhar();     // só redesenha se algo mudou (não fecha o que o usuário abriu)
-    }, 6000);
+      if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) { grupoPendente = true; return; }
+      atualizandoGrupo = true;
+      try {
+        const consultada = id, antes = assinatura();
+        // A ficha do personagem muda com frequência: não recarregar campanhas,
+        // membros, perfis e documentos a cada ponto de dano.
+        const ps = await nuvem.get(`personagens?select=id,nome,dono_id,pv_atual,pv_max,pv_temp,ca,ficha&campanha_id=eq.${encodeURIComponent(consultada)}&order=nome`);
+        if (consultada !== id) return;
+        pers = ps;
+        if (assinatura() !== antes) await desenhar();
+        // O resumo do grupo do jogador usa RPC própria, não a lista restrita de fichas.
+        if (!mestre() && aba === "pers") await carregarGrupo();
+      } catch (e) { console.warn("Sincronização em tempo real da campanha:",e); }
+      finally {
+        atualizandoGrupo = false;
+        if (grupoPendente && !document.hidden) {
+          grupoPendente = false;
+          clearTimeout(atualizarGrupoTimer);
+          atualizarGrupoTimer = setTimeout(sincronizarGrupo,200);
+        }
+      }
+    }
+    const agendarGrupo = () => {
+      clearTimeout(atualizarGrupoTimer);
+      atualizarGrupoTimer = setTimeout(sincronizarGrupo,80);
+    };
+    nuvem.observarPersonagens?.({campanhaId:id,aoAlterar:agendarGrupo});
+    document.addEventListener("focusout",()=>{if(grupoPendente)agendarGrupo();});
+    window.addEventListener("online",agendarGrupo);
+    nuvem.observar(async () => {
+      if (document.hidden || document.querySelector("#forms form") || document.querySelector("#imp .panel")) return;
+      const ativo = document.activeElement;
+      if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;
+      const antes = assinatura();
+      if (await carregar() !== false && assinatura() !== antes) await desenhar();
+      else if (!mestre() && aba === "pers") await carregarGrupo();
+    },6000);
   })();
 })();
