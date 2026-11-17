@@ -378,7 +378,7 @@
     const podeSeparar = window.innerWidth >= 1400 && larguraLivre >= 270 &&
       window.matchMedia("(pointer:fine)").matches;
     historico.classList.toggle("vez-historico-janela", podeSeparar);
-    if (podeSeparar) historico.style.setProperty("--historico-largura", Math.min(340, Math.floor(larguraLivre)) + "px");
+    if (podeSeparar) { const largura = Math.min(340, Math.floor(larguraLivre)); historico.style.setProperty("--historico-largura", largura + "px"); document.body.style.setProperty("--feedback-historico-centro", (16 + largura / 2) + "px"); document.body.style.setProperty("--feedback-historico-largura", largura + "px"); }
     else historico.style.removeProperty("--historico-largura");
   };
   window.addEventListener("resize", atualizarJanelaHistorico, { passive: true });
