@@ -283,7 +283,7 @@
     for (let k = 1; k <= N; k++) linhas.push(`<div class="row vez-manual-linha">${opts.acertos ? `<b>Acerto${N > 1 ? " " + k + "/" + N : ""}${opts.acertos[k - 1].critico ? " (crítico)" : ""}</b>` : N > 1 ? `<b>Ataque ${k}/${N}</b>` : ""}${pedeD20 ? `<label>${D20()}d20${manualPend.dois ? " (1º dado)" : ""}<input type="number" class="num" min="1" max="20" step="1" data-man-d20="${k - 1}-0" aria-label="Resultado do d20 do ataque ${k}"></label>${manualPend.dois ? `<label>${D20()}d20 (2º dado)<input type="number" class="num" min="1" max="20" step="1" data-man-d20="${k - 1}-1" aria-label="Segundo d20 do ataque ${k}"></label>` : ""}` : ""}${temDano ? `<label>Dano (total)<input type="number" class="num" min="0" step="1" data-man-dano="${k - 1}" aria-label="Dano total do ataque ${k}"></label>` : ""}</div>`);
     if (pedeSalva) linhas.push(`<div class="row vez-manual-linha"><label>Salvaguarda de ${esc(alvo.name)} (resultado final, CD ${a.st.cd})<input type="number" class="num" step="1" data-man-salva aria-label="Resultado final da salvaguarda do alvo"></label></div>`);
     area.hidden = false;
-    area.innerHTML = `<p class="muted"><b>${esc(atacante.name)}</b> → <b>${esc(alvo.name)}</b> (CA ${num(alvo.ac)}): ${opts.acertos ? "Acertou: informe o dano total (dados mais bônus)." : etapaAtaque ? "informe o resultado natural do d20; o bônus de acerto é somado e, se acertar, peço o dano." : "informe os valores dos seus dados."}</p><div class="vez-manual-campos">${linhas.join("")}</div><div class="row vez-manual-acoes"><button type="button" class="primary" id="man-ok">Confirmar valores</button><button type="button" class="small subtle" id="man-cancelar">Cancelar</button></div><p class="err" id="man-erro" role="alert"></p>`;
+    area.innerHTML = `<p class="muted"><b>${esc(atacante.name)}</b> → <b>${esc(alvo.name)}</b> (CA ${num(alvo.ac)}): ${opts.acertos ? "Informe o dano total." : etapaAtaque ? "Informe o d20 natural; o bônus será somado." : "Informe os resultados."}</p><div class="vez-manual-campos">${linhas.join("")}</div><div class="row vez-manual-acoes"><button type="button" class="primary" id="man-ok">Confirmar valores</button><button type="button" class="small subtle" id="man-cancelar">Cancelar</button></div><p class="err" id="man-erro" role="alert"></p>`;
   }
   function confirmarManual() {
     if (!manualPend) return; const area = $("#vez-manual"), M = manualPend, lerN = (sel) => { const e = area.querySelector(sel); return e && e.value !== "" ? Number(e.value) : NaN; };
@@ -320,7 +320,20 @@
   faixa.addEventListener("change", (e) => {
     const sel = estado(), id = e.target.id;
     if (id === "vez-atacante") { sel.atacante = e.target.value; sel.manualAtacante = true; sel.manualPara = window.__ini.atual?.() ?? null; sel.idx = null; sel.circulo = null; limparResultados(); desenharVez(); }
-    else if (id === "vez-alvo") { sel.alvo = e.target.value; sel.salvaManual = false; }
+    else if (id === "vez-alvo") {
+      sel.alvo = e.target.value; sel.salvaManual = false;
+      if (manualPend) {
+        const pend = manualPend;
+        if (pend.opts.acertos || pend.parte === "dano") {
+          // Uma rolagem já resolvida pertence ao alvo original: nunca redirecionar o dano.
+          $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null;
+        } else {
+          // Atualiza nome, CA e salvaguarda sem deixar um formulário com alvo antigo.
+          pedirManual(pend.parte, pend.opts);
+        }
+      }
+      if (sel.avancado) desenharAvancado();
+    }
     else if (id === "vez-vezes") { sel.vezes = Math.max(1, Math.min(8, Math.round(num(e.target.value, 1)))); if (sel.avancado) desenharAvancado(); }
     else if (id === "atk-salva-bonus") { sel.salvaManual = true; sel.salvaBonus = num(e.target.value, 0); }
     else if (id === "vez-modo") sel.modo = e.target.value;
