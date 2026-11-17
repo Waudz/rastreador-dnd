@@ -1356,3 +1356,42 @@ body.ficha-embutida .tracker { padding:14px; }                                  
    margin-right:0!important;
  }
 }
+
+/* Layout global v2: mesma régua em todos os menus; preservar capa panorâmica. */
+@media (min-width:1400px) and (pointer:fine) {
+  :root { --comp-gap-janelas:16px; --comp-largura-historico:300px; --comp-largura-ficha:420px; }
+  body:not(.ficha-embutida) main.tracker {
+    box-sizing:border-box;
+    width:min(1400px,calc(100% - 32px));
+    max-width:1400px;
+    margin-inline:auto;
+    min-width:0;
+  }
+  body.comp-janelas-desktop {
+    --comp-gap-janelas:16px;
+    --comp-largura-historico:300px;
+    --comp-largura-ficha:420px;
+  }
+  body.comp-janelas-desktop.comp-coluna-esquerda {
+    --comp-reserva-esquerda:calc(300px + 16px + 16px);
+  }
+  body.comp-janelas-desktop.comp-coluna-direita {
+    --comp-reserva-direita:calc(420px + 16px + 16px);
+  }
+  body.comp-janelas-desktop main.tracker {
+    --comp-centro-largura:1400px;
+    width:min(1400px,calc(100vw - 32px - var(--comp-reserva-esquerda,0px) - var(--comp-reserva-direita,0px)))!important;
+    max-width:1400px!important;
+    margin-left:max(calc(16px + var(--comp-reserva-esquerda,0px)),calc((100vw + var(--comp-reserva-esquerda,0px) - var(--comp-reserva-direita,0px) - 1400px)/2))!important;
+    margin-right:0!important;
+  }
+  body.comp-janelas-desktop #dock-r #sheet:not([hidden]),
+  body.comp-janelas-desktop #dock-r #ci-resumo:not([hidden]) {
+    width:420px!important;max-width:420px!important;right:16px!important;
+  }
+  body.comp-janelas-desktop #vez-res.vez-historico-janela:not(:empty) {left:16px!important;width:300px!important;}
+}
+/* A largura é progressiva: em telas menores, a interface mantém seu fluxo responsivo. */
+@media (min-width:900px) and (max-width:1399px) {
+  body:not(.ficha-embutida) main.tracker {box-sizing:border-box;width:min(1200px,calc(100% - 32px));max-width:1200px;margin-inline:auto;}
+}
