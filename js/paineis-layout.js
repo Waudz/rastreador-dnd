@@ -90,7 +90,7 @@
     const on=ativo();document.body.classList.toggle("comp-janelas-desktop",on);
     for(const id of Object.keys(configs)){
       const el=document.getElementById(id);if(!el)continue;
-      if(on){registrar(el);const c=configs[id];if(el.dataset.janelaPreparada==="1"){const r=el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight)restaurar(el,c)}}
+      if(on){registrar(el);const c=configs[id];if(el.dataset.janelaPreparada==="1"){const r=el.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight)restaurar(el,c)}}else if(el.dataset.janelaPreparada==="1"){el.classList.remove("comp-minimizada");for(const prop of ["left","top","width","height","zIndex"])el.style[prop]="";}
     }
     window.PAINEIS_LAYOUT?.aplicar();
   }
