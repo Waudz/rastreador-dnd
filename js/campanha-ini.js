@@ -265,11 +265,19 @@
           const recente=await nuvem.get("personagens?select=id,pv_atual,pv_temp,pv_max,ca,versao,ficha&id=eq."+encodeURIComponent(c.pid));
 
           if(!recente?.[0])throw new Error("Não foi possível reler a ficha atualizada.");
-          const novo=recente[0];Object.assign(reg,novo);
-          c.hp=novo.pv_atual;c.temp=Math.max(0,Number(novo.pv_temp)||0);
-          c.maxHp=Math.max(1,novo.pv_max);c.ac=novo.ca||0;
-          enviado[c.pid]=c.hp;enviadoT[c.pid]=c.temp;
-          window.__ini.render();msg("A ficha de "+(reg.nome||"personagem")+" foi alterada em outra sessão. Os valores mais recentes foram preservados.");
+          const novo=recente[0];
+          const pvRemoto=Number(novo.pv_atual), tempRemoto=Math.max(0,Number(novo.pv_temp)||0);
+          const basePV=Number(enviado[c.pid]), baseTemp=Number(enviadoT[c.pid]??0);
+          Object.assign(reg,novo);
+          if(pvRemoto===basePV && tempRemoto===baseTemp){
+            // Apenas a versão mudou (ex.: edição de outro campo). Repetir com a versão atual.
+            const retry=await nuvem.patch("personagens?id=eq."+encodeURIComponent(c.pid)+"&versao=eq."+encodeURIComponent(novo.versao),{pv_atual:v,pv_temp:t});
+            if(retry?.[0]){Object.assign(reg,retry[0]);enviado[c.pid]=v;enviadoT[c.pid]=t;falhas=0;continue;}
+          }
+          // Nunca desfazer o dano local silenciosamente por conflito de versão.
+          // Manter pendente até conciliação explícita, sem assumir que a ficha remota venceu.
+          msg("Não foi possível sincronizar os PV de "+(reg.nome||"personagem")+". O valor do combate foi mantido; confira a ficha antes de continuar.",true);
+          falhas++;
           continue;
         }
         Object.assign(reg,r[0]);enviado[c.pid]=v;enviadoT[c.pid]=t;falhas=0;
