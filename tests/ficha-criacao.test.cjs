@@ -84,3 +84,10 @@ test('o editor carrega as descrições com as quebras de linha codificadas (¶),
   const app=require('node:fs').readFileSync('js/app.js','utf8');
   assert.match(app,/\(m\.actions \|\| \[\]\)\.map\(\(a\) => `\$\{a\.name\} \| \$\{encP\(a\.desc\)\}`\)/);assert.match(app,/\(m\.traits \|\| \[\]\)\.map\(\(t\) => `\$\{t\.name\}: \$\{encP\(t\.desc\)\}`\)/);
 });
+
+test('reparo automático: ações quebradas (parágrafo como nome) de fichas próprias voltam ao normal; ficha sem defeito não é tocada',()=>{
+  const quebradas=[{name:'Breath Weapons',desc:'The dragon uses one of the following breath weapons.'},{name:'**Fire Breath.** The dragon exhales fire in a 60-foot cone.',desc:''},{name:'**Weakening Breath.** The dragon exhales gas in a 60-foot cone.',desc:''},{name:'Change Shape',desc:'The dragon magically polymorphs.'},{name:'In a new form, the dragon retains its alignment, hit points, Hit Dice, ability to speak, proficiencies, and this action.',desc:''},{name:'Claw',desc:'Melee Weapon Attack: +14 to hit.'}];
+  const r=FC.repararAcoes(quebradas);assert.equal(r.length,5);assert.equal(JSON.stringify(r.map(a=>a.name)),JSON.stringify(['Breath Weapons','Fire Breath','Weakening Breath','Change Shape','Claw']));
+  assert.match(r[3].desc,/polymorphs\.\nIn a new form, the dragon retains/);assert.equal(r[1].desc,'The dragon exhales fire in a 60-foot cone.');
+  assert.equal(FC.repararAcoes([{name:'Bite',desc:'x'},{name:'Claw',desc:'y'}]),null);assert.equal(FC.repararAcoes([]),null);
+});

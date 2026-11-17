@@ -155,11 +155,23 @@
     const put = async (store, arr) => { const t = db.transaction(store, "readwrite"); arr.forEach((x) => t.objectStore(store).put(x)); await done(t); };
     const del = async (store, key) => { const t = db.transaction(store, "readwrite"); t.objectStore(store).delete(key); await done(t); };
     const status = (h) => { $("#dl-status").innerHTML = h; };
+    /* fichas próprias com ações quebradas (defeito antigo do editor): conserta sozinho, uma vez, e sincroniza */
+    async function repararFichas() {
+      let mudou = false;
+      for (const m of ALL) {
+        if (!m.custom || !window.FICHA_CRIACAO || !window.FICHA_CRIACAO.repararAcoes) continue;
+        const novas = window.FICHA_CRIACAO.repararAcoes(m.actions); if (!novas) continue;
+        m.actions = novas; if (m.raw && m.raw.actions != null) m.raw.actions = novas.map((a) => `${a.name} | ${String(a.desc || "").replace(/\n/g, " ¶ ")}`).join("\n");
+        m.updatedAt = Date.now(); try { await put("mon", [m]); mudou = true; } catch (_) { /* tenta de novo no próximo carregamento */ }
+      }
+      if (mudou) { queueSync(); window.FEEDBACK?.mostrar("Ações quebradas de fichas próprias foram consertadas automaticamente."); }
+    }
     async function reload() {
       ALL = window.CATALOGO?.monstros((await rq(db.transaction("mon").objectStore("mon").getAll())).filter(EDICOES.catalogo2014)) || [];
       SP = (await rq(db.transaction("spl").objectStore("spl").getAll())).filter(EDICOES.catalogo2014);
       PH = Object.fromEntries((await rq(db.transaction("img").objectStore("img").getAll())).map((x) => [x.key, x.data]));
       BY = Object.fromEntries(ALL.map((m) => [m.key, m]));
+      await repararFichas();
       if (!window.__painelRestaurado) { window.__painelRestaurado = true; const q = new URLSearchParams(location.search), emb = q.get("embutido") === "monstro" && q.get("monstro"), e = emb ? { t: "monstro", key: emb } : window.PAINEL_ESTADO && window.PAINEL_ESTADO.ler(); if (e && e.t === "monstro" && BY[e.key]) setTimeout(() => openSheet(e.key), 0); }
       ALL.sort((a, b) => a.name.localeCompare(b.name)); SP.sort((a, b) => a.name.localeCompare(b.name));
       $("#spinfo").textContent = "Catálogo D&D 2014 em português.";

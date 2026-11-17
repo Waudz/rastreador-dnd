@@ -51,6 +51,20 @@
     }
     return out;
   }
+  /* Reparo de fichas próprias salvas com o defeito antigo (parágrafo da descrição virou ação chamada pelo texto inteiro): devolve as ações corrigidas, ou null se não havia nada a consertar. */
+  const acaoQuebrada = (a) => { const n = String((a && a.name) || ""); return /\*\*/.test(n) || n.length > 70 || (!String(a.desc || "").trim() && n.trim().split(/\s+/).length > 9); };
+  function repararAcoes(acoes) {
+    if (!Array.isArray(acoes) || !acoes.some(acaoQuebrada)) return null;
+    const out = [];
+    for (const a of acoes) {
+      if (!acaoQuebrada(a)) { out.push(a); continue; }
+      const t = String(a.name).trim(), m = t.match(/^[*_]{1,3}\s*([^*_|]{2,70}?)\s*\.?\s*[*_]{1,3}\.?\s+(\S.*)$/), limpo = t.replace(/\*\*+/g, "");
+      if (m) out.push({ ...a, name: m[1].replace(/\.$/, "").trim(), desc: m[2].replace(/\*\*+/g, "").trim() });
+      else if (out.length) { const u = out[out.length - 1]; out[out.length - 1] = { ...u, desc: (u.desc ? u.desc + "\n" : "") + limpo }; }
+      else out.push({ ...a, name: limpo.slice(0, 60), desc: limpo });
+    }
+    return out;
+  }
   function parseAcao(linha, tipo = "ACTION") {
     const p = String(linha).split("|").map((s) => s.trim()), a = { name: p[0], action_type: tipo, attacks: [] };
     const custo = a.name.match(/\(\s*(?:custa|costs?)\s*(\d+)\s*a[cç][oõ]es?\b[^)]*\)/i) || a.name.match(/\(\s*costs?\s*(\d+)\s*actions?\s*\)/i);
@@ -181,5 +195,5 @@
   const limparExtras = () => preencherExtras({});
   function montarFormulario() { const alvo = $("cm-livro-ui"); if (alvo && !alvo.dataset.pronto) { alvo.innerHTML = htmlExtras(); alvo.dataset.pronto = "1"; } }
 
-  window.FICHA_CRIACAO = { normalizarLinhas, ATRIBUTOS, PERICIAS, DANOS, CONDICOES, ALINHAMENTOS, ACOES, bonusProficiencia, xpDoND, lerND, numOuNulo, tipoEn, parteDano, parseAcao, listaDefesa, aplicarExtras, extrasDeMonstro, htmlExtras, montarFormulario, lerExtras, preencherExtras, limparExtras };
+  window.FICHA_CRIACAO = { normalizarLinhas, repararAcoes, ATRIBUTOS, PERICIAS, DANOS, CONDICOES, ALINHAMENTOS, ACOES, bonusProficiencia, xpDoND, lerND, numOuNulo, tipoEn, parteDano, parseAcao, listaDefesa, aplicarExtras, extrasDeMonstro, htmlExtras, montarFormulario, lerExtras, preencherExtras, limparExtras };
 })();
