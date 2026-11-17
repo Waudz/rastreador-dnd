@@ -266,7 +266,9 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     for(const pid of selecionados)if(!pers.some(p=>p.id===pid))selecionados.delete(pid);
     cabecalho();
     if (aba === "grupo" || aba === "membros") aba = "pers"; // compatibilidade com abas antigas
+    const barrasAnteriores = window.PV_ANIMACAO?.capturar($("#conteudo"));
     $("#conteudo").innerHTML = aba === "pers" ? abaGrupoUnificado() : aba === "diario" ? abaDiario() : abaDocs();
+    window.PV_ANIMACAO?.restaurar($("#conteudo"), barrasAnteriores);
     if (aba === "pers" && !mestre()) {
       grupoBasico = grupoBasico && Array.isArray(grupoBasico) ? grupoBasico : null;
       carregarGrupo();
