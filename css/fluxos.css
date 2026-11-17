@@ -730,3 +730,19 @@ body.ficha-embutida .tracker { padding:14px; }                                  
   #ci-lista .ci-cartao-ini .ci-ini-res{flex:none;width:100%;min-height:0;margin:0}
   #ci-lista .ci-cartao-ini .ci-ini-res:empty{display:none}
 }
+
+/* Cartões de jogadores: somente consulta, sem rodapé reservado para ações. */
+.grupo-unificado .cards .personagem-card.grupo-cartao-jogador{
+  height:auto!important;min-height:0!important;max-height:none;
+  align-self:start;justify-content:flex-start;padding-bottom:12px;
+}
+.grupo-unificado .cards .personagem-card.grupo-cartao-jogador .grupo-cartao-topo{
+  display:flex!important;flex-direction:row!important;align-items:center;
+  height:auto!important;min-height:0!important;gap:10px;
+}
+.grupo-unificado .cards .personagem-card.grupo-cartao-jogador .grupo-identidade{
+  flex:1 1 auto;min-width:0;width:100%;margin:0;
+}
+.grupo-unificado .cards .personagem-card.grupo-cartao-jogador .grupo-pv-temp{
+  margin-top:4px;
+}
