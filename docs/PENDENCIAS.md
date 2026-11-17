@@ -1,5 +1,11 @@
 # Pendências e próxima tarefa
 
+## REVISÃO PÓS-EXPERIMENTOS DE JANELAS (17/11/2026, local, não publicado)
+
+**Corrigido:** (1) `js/ataque-ini.js` ainda tinha o código do histórico como janela lateral (`atualizarJanelaHistorico`, do PR #116/#117) e o CSS `#vez-res.vez-historico-janela` em `css/fluxos.css`: contrariava a decisão de manter o histórico dentro do combate e quebrava 15 testes (`document.querySelector is not a function`); removidos. Conferido no navegador em 1024 e 1500 px: histórico dentro da faixa de ataque, sem rolagem horizontal, sem erros no console. (2) **Laço infinito** em `js/campanha.js` (aba Personagens do jogador): `desenhar()` zerava `grupoBasico` quando o banco devolvia erro e `carregarGrupo()` chamava `desenhar()` de novo sem parar (estouro de pilha; travaria a tela e martelaria o servidor sem a função `grupo_fichas`). (3) `js/conta.js`: `window.addEventListener` protegido (quebrava 6 testes). (4) Testes: `personagem-save` passa a carregar `js/catalogo-itens.js` e a mensagem de cura em ficha morta mudou.
+
+**Suíte agora: 692 testes, 678 passam, 13 falham, 1 pula** (antes 30 falhas). **As 13 falhas restantes são testes desatualizados em relação a mudanças intencionais, não bugs confirmados:** 6 em `tests/ataque-ini.test.cjs` e 5 em `tests/campanha-ini.test.cjs` (esperam o controle "Treino" `#vez-treino` e textos de d20 que os PRs #106 a #113 removeram ou reescreveram) e 2 em `tests/personagem-save.test.cjs` (esperam "Não salvou" e "outra sessão"; o salvamento agora recupera conflito de versão sozinho, PR #83). **A fazer:** atualizar esses testes ao comportamento atual (ou reverter o comportamento, se o William preferir) e só então declarar a suíte aprovada.
+
 ## RESTAURAÇÃO DO LAYOUT — 17/11/2026 (prioridade atual)
 
 **Decisão do William:** voltar ao backup `backup/pre-janelas-desktop-2026-11-17`. O **histórico de combate deve ficar dentro da janela/área de combate, como antes**, e não em uma janela lateral independente. Não reintroduzir janelas flutuantes nem divisórias redimensionáveis sem nova aprovação.

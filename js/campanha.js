@@ -270,7 +270,6 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     $("#conteudo").innerHTML = aba === "pers" ? abaGrupoUnificado() : aba === "diario" ? abaDiario() : abaDocs();
     window.PV_ANIMACAO?.restaurar($("#conteudo"), barrasAnteriores);
     if (aba === "pers" && !mestre()) {
-      grupoBasico = grupoBasico && Array.isArray(grupoBasico) ? grupoBasico : null;
       carregarGrupo();
     }
   }

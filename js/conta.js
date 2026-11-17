@@ -135,10 +135,10 @@
 
   /* Atualiza a biblioteca ao voltar da ficha (inclusive após trocar/remover foto). */
   let ultimaAtualizacao = '';
-  window.addEventListener('focus', () => {
+  window.addEventListener?.('focus', () => {
     if (document.visibilityState !== 'hidden' && nuvem.usuario()) carregar().catch(() => {});
   });
-  window.addEventListener('storage', (e) => {
+  window.addEventListener?.('storage', (e) => {
     if (e.key === 'compendio:personagem-atualizado' && e.newValue !== ultimaAtualizacao && nuvem.usuario()) {
       ultimaAtualizacao = e.newValue;
       carregar().catch(() => {});
