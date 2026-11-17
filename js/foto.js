@@ -19,9 +19,8 @@
           const paint = (cv, size) => { const c = cv.getContext("2d"), k = size / S, sc = base * zoom; c.clearRect(0, 0, size, size); if (!transparente) { c.fillStyle = "#000"; c.fillRect(0, 0, size, size); } c.drawImage(im, (S / 2 + ox - im.width * sc / 2) * k, (S / 2 + oy - im.height * sc / 2) * k, im.width * sc * k, im.height * sc * k); };
           const draw = () => {
             clamp(); paint(stage, S);
-            const c = stage.getContext("2d"); c.save(); c.fillStyle = "rgba(10,9,14,.62)"; c.beginPath(); c.rect(0, 0, S, S); c.arc(S / 2, S / 2, S / 2 - 2, 0, Math.PI * 2, true); c.fill("evenodd");
-            c.strokeStyle = "#9f7940"; c.lineWidth = 2; c.beginPath(); c.arc(S / 2, S / 2, S / 2 - 2, 0, Math.PI * 2); c.stroke(); c.restore();
-            for (const [cv, sz] of [[p72, 72], [p34, 34]]) { paint(cv, sz); const c2 = cv.getContext("2d"); c2.globalCompositeOperation = "destination-in"; c2.beginPath(); c2.arc(sz / 2, sz / 2, sz / 2, 0, Math.PI * 2); c2.fill(); c2.globalCompositeOperation = "source-over"; }
+            const c = stage.getContext("2d"); c.save(); c.strokeStyle = "#9f7940"; c.lineWidth = 2; c.strokeRect(1, 1, S - 2, S - 2); c.restore();
+            for (const [cv, sz] of [[p72, 72], [p34, 34]]) paint(cv, sz);
           };
           let drag = null;
           stage.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, ox, oy }; stage.setPointerCapture(e.pointerId); });
@@ -37,15 +36,21 @@
             const b = e.target.closest("[data-c]"); if (!b) return;
             if (b.dataset.c === "no") return fim(null); if(b.dataset.c === "center"){ox=oy=0;setZoom(1);return;}
             const out = document.createElement("canvas");
-            let lado = Math.min(1024, Math.max(192, resolucao));
-            let data;
-            do {
+            let lado = Math.min(1024, Math.max(96, resolucao));
+            let data = "";
+            // Mesmo princípio das imagens dos itens: comprimir antes de gravar no JSON.
+            // WebP preserva transparência sem o peso de PNG; JPEG é compatível com fotos comuns.
+            for (; lado >= 96; lado = Math.max(95, Math.floor(lado * 0.8))) {
               out.width = out.height = lado;
               paint(out, lado);
-              data = out.toDataURL(transparente ? "image/png" : "image/jpeg", 0.85);
-              if (data.length <= limiteCaracteres || lado <= 192) break;
-              lado = Math.max(192, Math.floor(lado * 0.75));
-            } while (true);
+              for (const qualidade of [0.82, 0.68, 0.54, 0.40]) {
+                const tipo = transparente ? "image/webp" : "image/jpeg";
+                data = out.toDataURL(tipo, qualidade);
+                if (transparente && !data.startsWith("data:image/webp;")) data = out.toDataURL("image/png");
+                if (data.length <= limiteCaracteres) break;
+              }
+              if (data.length <= limiteCaracteres) break;
+            }
             if (data.length > limiteCaracteres) { no(new Error("A imagem excede o espaço disponível na ficha. Tente outra foto ou um recorte mais simples.")); fim(null); return; }
             fim(data);
           });
