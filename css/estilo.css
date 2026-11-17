@@ -768,3 +768,6 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 .grupo-cartao .hp-track>.hp-fill.low,.biblioteca-cartao .hp-track>.hp-fill.low{background:var(--red,#d65f5f)}
 /* Símbolos sem foto em retratos compactos; grade continua com 40%. */
 .ficha-foto .catalogo-simbolo .dnd-categoria-icone{width:65%;height:65%;object-fit:contain;filter:var(--comp-miniatura-sombra)}
+
+/* Ícones de títulos sem moldura: tamanho original independente das miniaturas. */
+.panel-title > .ico{width:20px;height:20px;min-width:20px;max-width:none;max-height:none;flex:0 0 20px;filter:none}
