@@ -1106,3 +1106,10 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 .controles-combate-rodape .rolagem-auto{min-height:32px;gap:8px}
 .controles-combate-rodape .rolagem-auto-dica{flex:0 1 auto;margin:0;font-size:12px;line-height:1.4}
 @media(max-width:650px){.controles-combate-rodape .rolagem-auto-bar{align-items:flex-start;gap:0 8px}.controles-combate-rodape .rolagem-auto-dica{flex:1 1 100%;padding-left:54px}}
+
+/* Centralização estável do dado na célula da iniciativa (desktop e celular). */
+.combatant .iniciativa-campo{box-sizing:border-box;align-self:center;justify-self:center;vertical-align:middle;margin:0;padding:0;line-height:normal}
+.combatant .iniciativa-campo>.iniciativa-valor{box-sizing:border-box;display:block;margin:0;padding:0;text-align:center;line-height:44px}
+.combatant .iniciativa-d20-indicador{display:grid;place-items:center;margin:0;padding:0;line-height:0;transform:none}
+.combatant .iniciativa-d20-indicador svg{display:block;width:23px;height:23px;margin:0;flex:none}
+.combatant .iniciativa-campo>.iniciativa-valor:not(:placeholder-shown)~.iniciativa-d20-indicador{display:none}

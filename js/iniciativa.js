@@ -476,8 +476,6 @@
       function render(force=false) {
         if(!force&&document.activeElement?.matches?.('#combatants [data-iniciativa]')){save();return;}
         const list = $("combatants");
-        { const av = $("aviso-gravacao"), ficha = combatants.filter((c) => c.pid), grava = ficha.filter((c) => c.sync);     // um aviso único, fora dos cartões
-          if (av) { av.hidden = !ficha.length; av.innerHTML = !ficha.length ? "" : grava.length ? `<span class="l">Gravando nas fichas: ${escapeText(grava.map((c) => c.name).join(", "))}.${grava.length < ficha.length ? " Os demais personagens estão em teste." : ""}</span><span class="c">Gravando: ${escapeText(grava.map((c) => c.name).join(", "))}</span>` : `<span class="l">Combate de teste: PV, espaços e recursos dos personagens não são gravados nas fichas.</span><span class="c">Teste: não grava nas fichas.</span>`; } }
         const ordered = sorted();
         const posVez = currentId ? ordered.findIndex((c) => c.id === currentId) : -1;
         const exibicao = posVez > 0 ? [...ordered.slice(posVez), ...ordered.slice(0, posVez)] : ordered;   // lista rotacionada: vez primeiro, quem acabou de jogar por último
