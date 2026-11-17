@@ -212,9 +212,10 @@
   const totalPO = () => { const d = DIN(); return num(d.pc, 0) / 100 + num(d.pp, 0) / 10 + num(d.po, 0); };
   const opt = (v, t, sel) => `<option value="${esc(v)}"${sel ? " selected" : ""}>${esc(t)}</option>`;
 
+  const estadoMorteHTML = () => J.estaMorto(P) ? `<div class="muted" role="status">Estado registrado: morto. Cura comum não revive. <button type="button" class="small" id="b-reviver">Corrigir estado: reviver com 1 PV</button></div>` : "";
   const blocoPV = () => `<div class="vida-cabecalho"><h2 class="panel-title">Pontos de vida</h2><div class="big" id="pv-num">${P.pv_atual}<span class="muted"> / ${J.pvMaxEf(P)} PV</span></div></div>
     <div class="hp-track" role="progressbar" aria-label="Pontos de vida" aria-valuemin="0" aria-valuemax="${J.pvMaxEf(P)}" aria-valuenow="${P.pv_atual}"><div class="hp-fill ${pctPV()<=25?'low':pctPV()<=50?'mid':''}" id="pv-barra" style="width:${pctPV()}%"></div></div>
-    <div class="vida-controles">${J.estaMorto(P)?`<div class="muted" role="status">Estado registrado: morto. Cura comum não revive. <button type="button" class="small" id="b-reviver">Corrigir estado: reviver com 1 PV</button></div>`:""}<div class="inline"><button type="button" class="danger" id="b-dano">− Dano</button><input class="num" id="qtd" type="number" min="1" value="1" aria-label="Quantidade de dano ou cura"><button type="button" id="b-cura">+ Cura</button></div><span class="muted" id="pv-temp-txt">${P.pv_temp ? '+'+P.pv_temp+' PV temporários' : 'PV temporários: 0'}</span></div>
+    <div class="vida-controles"><div id="pv-estado-morte">${estadoMorteHTML()}</div><div class="inline"><button type="button" class="danger" id="b-dano">− Dano</button><input class="num" id="qtd" type="number" min="1" value="1" aria-label="Quantidade de dano ou cura"><button type="button" id="b-cura">+ Cura</button></div><span class="muted" id="pv-temp-txt">${P.pv_temp ? '+'+P.pv_temp+' PV temporários' : 'PV temporários: 0'}</span></div>
     <details class="vida-config"><summary>Tipo de dano e ajustes de vida</summary><label class="inline"><input type="checkbox" id="critico-jogo"> Acerto crítico (duas falhas a 0 PV)</label><label>Tipo de dano (opcional) <select id="tipo-dano-jogo"><option value="">Não informado</option>${R.TIPOS_DANO.map(t=>opt(t,t,false)).join("")}</select></label><div class="row" style="margin:0"><div><label>PV máximo (ajuste manual)</label><input class="num" type="number" min="0" data-col="pv_max" value="${P.pv_max}"></div><div><label>PV temporário</label><input class="num" type="number" min="0" data-col="pv_temp" value="${P.pv_temp}"></div></div>
     <div class="row" style="margin:8px 0 0"><label class="inline" style="margin:0"><input type="checkbox" style="width:auto;height:auto" data-auto="pvAuto" ${autoOn("pvAuto") ? "checked" : ""}> PV máximo automático (dado de vida médio + Constituição)</label><div class="inline"><label style="margin:0">PV extra por nível</label><input class="num" type="number" step="1" data-f="pvExtra" value="${num(F().pvExtra, 0)}" title="Ex.: anão da colina +1, talento Robusto +2"></div></div></details>`;
 
@@ -1050,6 +1051,8 @@
     e.textContent = t.join(" ");
   }
   function atualizarPV() {
+    const estadoMorte = $("#pv-estado-morte");
+    if (estadoMorte) estadoMorte.innerHTML = estadoMorteHTML();
     $("#bloco-pv .big").innerHTML = `${P.pv_atual}<span class="muted" style="font-size:18px"> / ${J.pvMaxEf(P)}</span>`;
     $("#pv-temp-txt").innerHTML = P.pv_temp ? `+${P.pv_temp} PV temporários` : "PV temporários: 0";
     const trilho = $("#bloco-pv .hp-track"); trilho?.setAttribute("aria-valuemax", J.pvMaxEf(P)); trilho?.setAttribute("aria-valuenow", P.pv_atual);
