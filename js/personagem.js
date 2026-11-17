@@ -1317,29 +1317,43 @@
       if (!visivel) { await visaoGrupo(campGrupo, recarregar); cancelar(); return; }
     }
     try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); cancelar(); window.ESQ?.pronto($("#ficha")); } catch (e) { cancelar(); document.querySelector(".esq-topo")?.remove?.(); if (window.ESQ) window.ESQ.erro($("#ficha"), e.message, recarregar); else aviso(e.message, true); return; }
-    let atualizarFichaTimer = null;
+    let atualizarFichaTimer = null, atualizacaoRemotaPendente = false, recebendoRemoto = false;
     async function receberFichaRemota() {
-      if(pend || salvando || document.hidden)return;
-      const ativo=document.activeElement;
-      if(ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName))return;
+      if (document.hidden || recebendoRemoto) return;
+      if (pend || salvando) { atualizacaoRemotaPendente = true; return; }
+      recebendoRemoto = true;
       try {
-        const r=await carregar();
-        if(r.versao>P.versao){P=r;desenhar();$("#estado").textContent="Atualizado";}
-      } catch(e){console.warn("Sincronização da ficha:",e);}
+        const r = await carregar();
+        if (r.versao <= P.versao) { atualizacaoRemotaPendente = false; return; }
+        const ativo = document.activeElement;
+        const digitando = ativo && /^(INPUT|TEXTAREA|SELECT)$/.test(ativo.tagName);
+        if (digitando) {
+          // Atualizar PV imediatamente, sem reconstruir o formulário nem apagar a digitação.
+          const mudouPV = P.pv_atual !== r.pv_atual || P.pv_temp !== r.pv_temp || P.pv_max !== r.pv_max;
+          P.pv_atual = r.pv_atual;
+          P.pv_temp = r.pv_temp;
+          P.pv_max = r.pv_max;
+          if (mudouPV && $("#bloco-pv")) atualizarPV();
+          atualizacaoRemotaPendente = true;
+          return;
+        }
+        P = r;
+        desenhar();
+        $("#estado").textContent = "Atualizado automaticamente";
+        atualizacaoRemotaPendente = false;
+      } catch(e) { atualizacaoRemotaPendente = true; console.warn("Sincronização da ficha:",e); }
+      finally { recebendoRemoto = false; }
     }
-    const agendarFichaRemota=()=>{
+    const agendarFichaRemota = () => {
       clearTimeout(atualizarFichaTimer);
-      atualizarFichaTimer=setTimeout(receberFichaRemota,150);
+      atualizarFichaTimer = setTimeout(receberFichaRemota,150);
     };
     nuvem.observarPersonagens?.({personagemId:id,aoAlterar:agendarFichaRemota});
-    // Uma atualização recebida enquanto o usuário digita é aplicada ao sair do campo.
-    document.addEventListener("focusout",agendarFichaRemota);
-    nuvem.observar(async () => {
-      if (pend || salvando) return;
-      if(exclusivoMestre && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true){$('#ficha').innerHTML='';aviso('Este painel é exclusivo do mestre da campanha.',true);return;}
-      const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;
-      const r = await carregar();
-      if (r.versao > P.versao) { P = r; desenhar(); $("#estado").textContent = "Atualizado"; }
-    }, 5000);
+    document.addEventListener("focusout", () => {
+      if (atualizacaoRemotaPendente) setTimeout(agendarFichaRemota,0);
+    });
+    window.addEventListener("online",agendarFichaRemota);
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden)agendarFichaRemota();});
+    nuvem.observar(agendarFichaRemota,5000);
   })();
 })();
