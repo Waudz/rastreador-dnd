@@ -1037,3 +1037,23 @@ body.ficha-embutida .tracker { padding:14px; }                                  
   background-position:center;
   background-size:22px 22px;
 }
+
+/* Mesma densidade da grade de Campanha, considerando o espaço interno do painel
+   da Iniciativa: seis cartões em larguras de desktop usuais. */
+@media (min-width:760px) {
+  #ci-lista.ci-grade {
+    grid-template-columns:repeat(auto-fill,minmax(158px,1fr));
+    gap:12px;
+  }
+  /* A moldura permanece quadrada; o símbolo ocupa só 40%, como na Campanha. */
+  #ci-lista .ci-cartao-ini .ci-personagem>.catalogo-simbolo
+    > :is(.ico,.rpg-ico,.dnd-categoria-icone,.dnd-pessoa-padrao) {
+    box-sizing:content-box;
+    width:var(--comp-miniatura-icone-tamanho,40%)!important;
+    height:var(--comp-miniatura-icone-tamanho,40%)!important;
+    max-width:var(--comp-miniatura-icone-tamanho,40%)!important;
+    max-height:var(--comp-miniatura-icone-tamanho,40%)!important;
+    object-fit:contain;
+    flex:0 0 auto;
+  }
+}
