@@ -1168,3 +1168,10 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 #vez-res .res-ataque-corpo .row{gap:8px;margin-top:6px}
 @media(min-width:650px){#vez-manual:not([hidden]){grid-template-columns:minmax(0,1fr) auto}#vez-manual .vez-etapa-cab{grid-column:1/-1}#vez-manual .vez-manual-campos{grid-column:1}#vez-manual .vez-manual-acoes{grid-column:2;align-self:end}#vez-manual #man-erro{grid-column:1/-1}}
 @media(max-width:649px){#vez-manual .vez-manual-acoes{flex-wrap:wrap}#vez-manual .vez-etapa-contexto{flex-basis:100%}}
+
+/* Histórico do ataque: janela independente somente com espaço real à esquerda. */
+#vez-res.vez-historico-janela:not(:empty){position:fixed;left:16px;top:150px;bottom:22px;width:var(--historico-largura,300px);max-height:calc(100dvh - 172px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;z-index:2;margin:0;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 22px #0003;align-content:start}
+#vez-res.vez-historico-janela:not(:empty)::before{content:"HISTÓRICO DO COMBATE";display:block;padding:1px 2px 9px;font-weight:800;font-size:12px;letter-spacing:.035em;color:var(--text);border-bottom:1px solid var(--line)}
+#vez-res.vez-historico-janela:not(:empty) .res-ataque{min-width:0}
+#vez-res.vez-historico-janela:not(:empty) .res-ataque-corpo{overflow-wrap:anywhere}
+@media(max-width:1399px),(pointer:coarse){#vez-res.vez-historico-janela:not(:empty){position:static;width:auto;max-height:none;overflow:visible;margin-top:10px;padding:0;background:transparent;border:0;box-shadow:none}#vez-res.vez-historico-janela:not(:empty)::before{display:none}}
