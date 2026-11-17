@@ -1,4 +1,4 @@
-    window.recortarFoto = function(file, resolucao = 640) {
+    window.recortarFoto = function(file, resolucao = 640, limiteCaracteres = 2700000) {
       return new Promise((ok, no) => {
         const url = URL.createObjectURL(file), im = new Image();
         im.onerror = () => { URL.revokeObjectURL(url); no(new Error("imagem inválida")); };
@@ -43,10 +43,10 @@
               out.width = out.height = lado;
               paint(out, lado);
               data = out.toDataURL(transparente ? "image/png" : "image/jpeg", 0.85);
-              if (!transparente || data.length <= 2700000 || lado <= 192) break;
+              if (data.length <= limiteCaracteres || lado <= 192) break;
               lado = Math.max(192, Math.floor(lado * 0.75));
             } while (true);
-            if (data.length > 2700000) { no(new Error("Imagem PNG muito grande. Use uma imagem menor.")); fim(null); return; }
+            if (data.length > limiteCaracteres) { no(new Error("A imagem excede o espaço disponível na ficha. Tente outra foto ou um recorte mais simples.")); fim(null); return; }
             fim(data);
           });
           draw();

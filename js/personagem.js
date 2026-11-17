@@ -1272,7 +1272,10 @@
   /* ---------- foto ---------- */
 
   async function trocarFoto(file) {
-    try { const foto=await window.recortarFoto(file);if(!foto)return; F().foto=foto;document.querySelector(".ficha-foto .av")?.replaceWith(Object.assign(document.createElement("div"),{innerHTML:fotoHTML()}).firstElementChild); if (!document.querySelector("#b-remover-foto")) document.querySelector("#b-foto")?.insertAdjacentHTML("afterend", '<button type="button" class="small subtle ficha-trocar-foto" id="b-remover-foto">Remover foto</button>'); agendar({ficha:P.ficha}); }
+    try { const tamanhoAtual=new TextEncoder().encode(JSON.stringify({...F(),foto:""})).length;
+      const espaco=Math.max(0,290000-tamanhoAtual);
+      if(espaco<15000)throw new Error("A ficha já está próxima do limite de armazenamento. Não foi possível incluir outra foto.");
+      const foto=await window.recortarFoto(file,640,Math.min(180000,espaco));if(!foto)return; F().foto=foto;document.querySelector(".ficha-foto .av")?.replaceWith(Object.assign(document.createElement("div"),{innerHTML:fotoHTML()}).firstElementChild); if (!document.querySelector("#b-remover-foto")) document.querySelector("#b-foto")?.insertAdjacentHTML("afterend", '<button type="button" class="small subtle ficha-trocar-foto" id="b-remover-foto">Remover foto</button>'); agendar({ficha:P.ficha}); }
     catch(e){aviso("Não consegui usar a imagem: "+e.message,true);}
   }
 

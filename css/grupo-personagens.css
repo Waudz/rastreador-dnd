@@ -169,3 +169,8 @@ a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, cu
 #ci-lista .ci-cartao-ini .ci-acoes .ci-ini{min-width:0}
 #ci-lista .ci-cartao-ini .grupo-identidade-texto .hp-track{height:7px;margin-top:5px}
 @media(max-width:420px){#ci-lista.ci-grade{grid-template-columns:minmax(0,1fr)}#ci-lista .ci-cartao-ini .retrato-cartao{width:48px!important;height:48px!important;min-width:48px;min-height:48px;flex-basis:48px}#ci-lista .ci-cartao-ini .ci-acoes{gap:6px}}
+
+/* Menu de personagem ancorado na janela, sem scroll nem recorte pelo cartão. */
+.personagem-card .compact-menu[open]>.compact-popover{position:fixed!important;top:0;left:0;right:auto!important;bottom:auto!important;z-index:10000!important;max-height:none!important;overflow:visible!important}
+.personagem-card .compact-popover .compact-lista{max-height:none!important;overflow:visible!important}
+.grupo-abrir-painel{cursor:pointer}

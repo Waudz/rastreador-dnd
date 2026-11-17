@@ -71,6 +71,7 @@
     return `<article class="card personagem-card grupo-cartao" data-id="${esc(p.id)}"><div class="grupo-cartao-topo">
       ${mestre()?G.checkbox(p,selecionados.has(p.id)):''}${G.identidade(p,{jogador:nomes[p.dono_id]||'Sem vínculo',vida:true,barraVida:v})}
       <div class="grupo-cartao-acoes">${mestre()?`<a class="grupo-icone" href="${esc(G.destino(id,[p.id]))}" title="Adicionar à iniciativa" aria-label="Adicionar ${esc(p.nome)} à iniciativa">${ico('swords')}</a>`:''}
+      <button type="button" class="grupo-icone grupo-abrir-painel" data-abrir-painel="${esc(p.id)}" title="Abrir painel lateral" aria-label="Abrir painel lateral de ${esc(p.nome)}">${ico('chevron-left')}</button>
       <details class="compact-menu"><summary title="Mais opções" aria-label="Mais opções de ${esc(p.nome)}">${ico('more')}</summary><div class="compact-popover"><a href="personagem.html?id=${encodeURIComponent(p.id)}">Abrir ficha</a>${dono}<button type="button" class="small danger" data-excluir-pers="${esc(p.id)}">Excluir personagem</button></div></details></div></div>
 ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''}</article>`;
   };
@@ -339,6 +340,7 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     const t = e.target, c = (s) => t.closest(s);
     try {
       let b;
+      const abrirPainel=c('[data-abrir-painel]');if(abrirPainel){const pid=abrirPainel.dataset.abrirPainel;const nome=pers.find(p=>p.id===pid)?.nome;if(window.LEITOR_FICHAS)window.LEITOR_FICHAS.personagem(pid,nome);else location.href='personagem.html?id='+encodeURIComponent(pid);return;}
       const cartao=c('.personagem-card');if(cartao&&!c('a,button,input,select,textarea,summary,label,details')){if(window.LEITOR_FICHAS)window.LEITOR_FICHAS.personagem(cartao.dataset.id,pers.find(p=>p.id===cartao.dataset.id)?.nome);else location.href='personagem.html?id='+encodeURIComponent(cartao.dataset.id);return;}
       if(c('[data-camp-aparencia]')){if(!responsavelVisual())return;const painel=$('#aparencia-painel');painel.hidden=false;painel.open=true;$('#conteudo').hidden=true;document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);window.CAMPANHA_VISUAL.montar({id,mestre:responsavelVisual()});painel.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
       if(c('#aparencia-voltar')){if(window.CAMPANHA_VISUAL?.sair())fecharAparencia();return;}
@@ -445,22 +447,26 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
   }
 
   document.addEventListener('toggle',e=>{if(e.target.matches?.('#grupo-convite')&&e.target.open)mostrarConvite();},true);
-  /* Posiciona o menu de ações no lado com espaço para exibir todas as opções. */
-  document.addEventListener('toggle', e => {
-    const menu = e.target;
-    if (!menu.matches?.('.personagem-card .compact-menu')) return;
-    if (!menu.open) { menu.classList.remove('abrir-acima'); return; }
-    requestAnimationFrame(() => {
-      if (!menu.open || !menu.isConnected) return;
-      const pop = menu.querySelector('.compact-popover');
-      if (!pop) return;
-      menu.classList.remove('abrir-acima');
-      const trigger = menu.querySelector('summary')?.getBoundingClientRect() || menu.getBoundingClientRect();
-      const disponivelAbaixo = window.innerHeight - trigger.bottom - 12;
-      const disponivelAcima = trigger.top - 12;
-      if (pop.scrollHeight > disponivelAbaixo && disponivelAcima > disponivelAbaixo) menu.classList.add('abrir-acima');
-    });
-  }, true);
+  /* Popover fixo no viewport: evita recorte e rolagem interna em cartões. */
+  function posicionarMenu(menu) {
+    if (!menu.open || !menu.isConnected) return;
+    const pop=menu.querySelector('.compact-popover'),trigger=menu.querySelector('summary');
+    if(!pop||!trigger)return;
+    const r=trigger.getBoundingClientRect(),w=Math.min(280,window.innerWidth-24);
+    pop.style.width=w+'px';pop.style.left=Math.max(12,Math.min(window.innerWidth-w-12,r.right-w))+'px';
+    const h=pop.offsetHeight,baixo=window.innerHeight-r.bottom-12,alto=r.top-12;
+    pop.style.top=(h>baixo&&alto>baixo?Math.max(12,r.top-h-6):Math.min(window.innerHeight-h-12,r.bottom+6))+'px';
+  }
+  document.addEventListener('toggle',e=>{
+    const menu=e.target;
+    if(!menu.matches?.('.personagem-card .compact-menu'))return;
+    if(menu.open){document.querySelectorAll('.personagem-card .compact-menu[open]').forEach(outro=>{if(outro!==menu)outro.open=false;});requestAnimationFrame(()=>posicionarMenu(menu));}
+    else {const pop=menu.querySelector('.compact-popover');if(pop){pop.style.top='';pop.style.left='';pop.style.width='';}}
+  },true);
+  window.addEventListener('resize',()=>document.querySelectorAll('.personagem-card .compact-menu[open]').forEach(posicionarMenu));
+  window.addEventListener('scroll',()=>document.querySelectorAll('.personagem-card .compact-menu[open]').forEach(menu=>{menu.open=false;}),true);
+  window.addEventListener('focus',()=>{if(id&&aba==='pers')recarregar();});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&id&&aba==='pers')recarregar();});
   /* A aparência substitui a lista (não aparece por cima nem embaixo); fechar, ou trocar de aba, volta ao conteúdo. */
   function fecharAparencia() { const p = $('#aparencia-painel'); if (p) { p.hidden = true; p.open = false; } $('#conteudo').hidden = false; }
 
