@@ -70,6 +70,9 @@
       P.versao = r[0].versao;
       $("#estado").textContent = "Salvo";
       if(!pend) notificar('ficha-salva');
+      if (Object.prototype.hasOwnProperty.call(corpo, 'ficha')) {
+        try { localStorage.setItem('compendio:personagem-atualizado', JSON.stringify({id, instante:Date.now()})); } catch (_) {}
+      }
     } catch (e) { falhou = true; pend = { ...corpo, ...(pend || {}) }; $("#estado").innerHTML = `<span class="err">Não salvou: ${esc(e.message)}</span>`; }
     finally { salvando = false; if(pend && !falhou){clearTimeout(timer);timer=setTimeout(enviar,0);} }
   }
