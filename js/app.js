@@ -366,16 +366,17 @@
       aplicarVistaCatalogo(tipo);
     });
     function renderBestiary() {
-      const q = nz($("#bq").value.trim()), f = $("#bf").value;
+      const q = nz($("#bq").value.trim()), f = $("#bf").value, tipo = $("#bf-tipo").value;
       renderGlobalDeleted();
-      const ws = q.split(/\s+/).filter(Boolean), encontrados = ALL.filter((m) => inF(m, f) && ws.every((w) => hay(m).includes(w)));
+      const ws = q.split(/\s+/).filter(Boolean), encontrados = ALL.filter((m) => inF(m, f) && (!tipo || (catOf(m) === "monster" && (m.type?.name === tipo || TP[tipo] === m.type?.name))) && ws.every((w) => hay(m).includes(w)));
       const list = ordenarCatalogo(encontrados, $("#b-ordem")?.value || "nome-asc", m => pt(m) || m.name);
       $("#bcount").textContent = `${list.length} fichas`;
       aplicarVistaCatalogo("bestiario");
       $("#blist").innerHTML = list.slice(0, shown).map(rowFull).join("") + (list.length > shown ? `<button class="small" data-more="1">Mostrar mais (${list.length - shown})</button>` : "") || '<div class="catalogo-vazio" role="status"><strong>Nenhuma ficha encontrada</strong><p>Ajuste a busca ou limpe os filtros para ver outras fichas.</p></div>';
     }
     $("#bf").onchange = () => { shown = 40; renderBestiary(); };
-    $("#bf-limpar").onclick = () => { $("#bq").value = ""; $("#bf").value = ""; $("#b-ordem").value = "nome-asc"; guardarOrdem("bestiario", "nome-asc"); shown = 40; renderBestiary(); };
+    $("#bf-tipo").onchange = () => { shown = 40; renderBestiary(); };
+    $("#bf-limpar").onclick = () => { $("#bq").value = ""; $("#bf").value = ""; $("#bf-tipo").value = ""; $("#b-ordem").value = "nome-asc"; guardarOrdem("bestiario", "nome-asc"); shown = 40; renderBestiary(); };
     $("#b-ordem")?.addEventListener("change", () => { guardarOrdem("bestiario", $("#b-ordem").value); shown = 40; renderBestiary(); });
     $("#bq").addEventListener("input", () => { shown = 40; renderBestiary(); });
 
