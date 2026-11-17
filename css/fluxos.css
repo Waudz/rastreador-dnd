@@ -1245,3 +1245,11 @@ body.ficha-embutida .tracker { padding:14px; }                                  
  body.comp-janelas-desktop #dock-r #ci-resumo > #ci-resumo-corpo iframe{height:100%;min-height:0}
  body.comp-janelas-desktop #dock-r .comp-flutuante-cab{flex-shrink:0}
 }
+
+/* Consultas desktop: histórico e magia empilhados, ficha preservada à direita. */
+@media(min-width:1400px) and (pointer:fine){
+ body.comp-janelas-desktop #vez-res.vez-historico-janela:not(:empty){max-height:none!important;overflow-y:auto!important}
+ body.comp-janelas-desktop #dock-r #spd:not([hidden]){max-height:calc(100dvh - 74px)!important}
+ body.comp-janelas-desktop #dock-r #ci-resumo:not([hidden]){max-height:calc(100dvh - 74px)!important}
+ body.comp-janelas-desktop #dock-r #spd #spd-body{min-height:0;flex:1 1 auto;overflow-y:auto;overflow-x:hidden}
+}
