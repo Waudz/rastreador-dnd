@@ -922,3 +922,50 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 #ci-lista .ci-cartao-ini .ci-ini-icone svg { width:18px; height:18px; }
 #ci-lista .ci-cartao-ini .ci-ini:focus-within .ci-ini-icone,
 #ci-lista .ci-cartao-ini .ci-ini:has(input:not(:placeholder-shown)) .ci-ini-icone { display:none; }
+
+/* Iniciativa: inputs e botões de rolagem com a mesma altura e alinhamento.
+   Mantém larguras próprias e ícone d20 sem distorção. */
+#ci-lista .ci-cartao-ini .ci-acoes {
+  align-items:flex-end;
+}
+#ci-lista .ci-cartao-ini .ci-ini input,
+#ci-lista .ci-cartao-ini .ci-acoes .d20-btn,
+#ci-lista .ci-cartao-ini .ci-acoes button.primary {
+  box-sizing:border-box;
+  height:40px!important;
+  min-height:40px!important;
+  max-height:40px;
+  margin-top:0;
+  margin-bottom:0;
+}
+#ci-lista .ci-cartao-ini .ci-acoes .d20-btn {
+  width:40px;
+  min-width:40px;
+  flex:0 0 40px;
+  padding:0;
+}
+#ci-lista .ci-cartao-ini .ci-acoes .d20-btn svg {
+  width:20px;
+  height:20px;
+}
+#ci-lista .ci-cartao-ini .ci-ini-icone { bottom:10px; }
+#add-form .add-ini #ini-mod,
+#add-form .add-ini #initiative,
+#add-form .add-ini #add-d20 {
+  box-sizing:border-box;
+  height:40px!important;
+  min-height:40px!important;
+  max-height:40px;
+  margin-top:0;
+  margin-bottom:0;
+}
+#add-form .add-ini #add-d20 {
+  width:40px;
+  min-width:40px;
+  flex:0 0 40px;
+  padding:0;
+}
+#add-form .add-ini #add-d20 svg {
+  width:20px;
+  height:20px;
+}
