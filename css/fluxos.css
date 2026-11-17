@@ -1338,3 +1338,21 @@ body.ficha-embutida .tracker { padding:14px; }                                  
  body.comp-janelas-desktop #dock-r #ci-resumo:not([hidden]){right:14px!important}
  body.comp-janelas-desktop #dock-r #sheet:not([hidden]){right:14px!important}
 }
+
+/* Largura moderada compartilhada pelas abas, sem esticar ao tamanho da tela. */
+@media(min-width:1400px) and (pointer:fine){
+ body:not(.ficha-embutida) main.tracker{
+   width:min(1320px,calc(100% - 28px));
+   max-width:1320px;
+   margin-left:auto;
+   margin-right:auto;
+ }
+ /* Na iniciativa, respeitar as colunas ocupadas e centralizar no espaço livre. */
+ body.comp-janelas-desktop main.tracker{
+   --comp-centro-largura:1320px;
+   width:min(var(--comp-centro-largura),calc(100vw - 28px - var(--comp-reserva-esquerda,0px) - var(--comp-reserva-direita,0px)))!important;
+   max-width:var(--comp-centro-largura)!important;
+   margin-left:max(calc(14px + var(--comp-reserva-esquerda,0px)),calc((100vw + var(--comp-reserva-esquerda,0px) - var(--comp-reserva-direita,0px) - var(--comp-centro-largura))/2))!important;
+   margin-right:0!important;
+ }
+}
