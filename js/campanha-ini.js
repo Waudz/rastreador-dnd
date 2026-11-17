@@ -135,6 +135,7 @@
   function mostrarResultados(linhas){
     const el=$('#ci-resultado');if(!el)return;
     el.innerHTML=linhas.length?'<strong>Iniciativa</strong><ul>'+linhas.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>':'';
+    el.hidden=!linhas.length;
     if(linhas.length)window.FEEDBACK?.mostrar(linhas.length===1?linhas[0]:linhas.length+' iniciativas definidas. Veja o resultado dos dados no painel Personagens.');
   }
   async function adicionarSelecionados(ids){
