@@ -771,3 +771,9 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 
 /* Ícones de títulos sem moldura: tamanho original independente das miniaturas. */
 .panel-title > .ico{width:20px;height:20px;min-width:20px;max-width:none;max-height:none;flex:0 0 20px;filter:none}
+
+/* Barra de PV visível também em links de personagem e listas de campanha. */
+.grupo-identidade-texto .hp-track{display:block;position:relative;width:100%;min-width:90px;height:7px;margin-top:5px;overflow:hidden;border-radius:99px;background:#101820}
+.grupo-identidade-texto .hp-fill{display:block;height:100%;border-radius:inherit;background:var(--green,#409b79)}
+.grupo-identidade-texto .hp-fill.mid{background:var(--gold,#d4ae72)}
+.grupo-identidade-texto .hp-fill.low{background:var(--red,#d65f5f)}
