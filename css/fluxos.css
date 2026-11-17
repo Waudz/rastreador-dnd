@@ -277,7 +277,7 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
 }
 .combatant:not(.editing) > .row-actions .small { white-space:nowrap; }
 @media (min-width:700px) { .combatant:not(.editing) { grid-template-columns:48px minmax(130px,1fr) 56px max-content; } }
-@media (min-width:1400px) { .combatant:not(.editing) { grid-template-columns:48px minmax(170px,1fr) 56px minmax(430px,2fr) max-content; } }
+@media (min-width:1400px) { .combatant:not(.editing) { grid-template-columns:48px minmax(140px,1fr) 56px minmax(260px,2fr) max-content; } }
 /* rolagem manual: rótulo acima do campo, sem sobrepor o número */
 .vez-manual label { display:flex; flex-direction:column; align-items:flex-start; gap:4px; margin:0; font-size:12px; }
 .vez-manual label svg { vertical-align:-3px; margin-right:4px; }
