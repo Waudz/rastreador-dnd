@@ -1,5 +1,30 @@
 # Pendências e próxima tarefa
 
+## RESTAURAÇÃO DO LAYOUT — 17/11/2026 (prioridade atual)
+
+**Decisão do William:** voltar ao backup `backup/pre-janelas-desktop-2026-11-17`. O **histórico de combate deve ficar dentro da janela/área de combate, como antes**, e não em uma janela lateral independente. Não reintroduzir janelas flutuantes nem divisórias redimensionáveis sem nova aprovação.
+
+**O que foi restaurado nesta mudança:** conteúdo de `css/estilo.css`, `css/fluxos.css`, `js/paineis-layout.js` e `js/painel-detalhes.js` exatamente da branch de backup anterior às janelas desktop. Demais funcionalidades e dados não foram revertidos. Este rollback substitui os experimentos de layout publicados pelos PRs #125 e #127. As propostas não publicadas dos PRs #128 (sobreposição) e #129 (editar personagem) não entram neste rollback; não mesclar sem reavaliar.
+
+**Histórico das tentativas (não assumir como concluídas):**
+- PR #125: ajustes de espaçamento e ancoragem; não eliminou as regras conflitantes.
+- PR #127: painéis laterais com X, redimensionamento horizontal, limites de largura e persistência local; publicado, mas os prints mostraram sobreposição e distribuição incorreta.
+- PR #126: proposta de correção dos testes de layout com DOM simulado, separada e ainda não integrada.
+- PR #128: proposta de correção de reservas laterais e largura do combate, **não publicada**.
+- PR #129: proposta de abrir o editor de personagem na página principal quando acionado dentro do iframe, **não publicada**.
+- O workflow **Validar fichas e banco** apresentou falhas (33 testes no diagnóstico anterior); não declarar a suíte aprovada sem nova execução.
+
+**Pendências para quando o William autorizar nova reformulação:**
+1. Auditar e consolidar regras antigas de layout antes de alterar posições. Evitar CSS adicional com `!important` e cálculos contraditórios.
+2. Se uma nova disposição lateral for desejada, usar uma estrutura única de colunas (CSS Grid) para histórico, conteúdo e ficha, com **16 px de distância constante**, sem sobreposição e com largura mínima legível do combate. O histórico só volta a ser lateral se houver pedido explícito.
+3. Se aprovado, usar apenas X para fechar painéis, redimensionamento **horizontal** com limites, duplo clique para restaurar e largura persistida; no celular, usar layout responsivo sem arraste.
+4. Garantir que título “Dungeons & Dragons”, botão Campanhas e cabeçalho não invadam a área de outros painéis.
+5. **Editar Personagem deve abrir em página completa**, nunca dentro do iframe da ficha lateral. Visualizar ficha pode continuar lateral. Testar navegação, foco, perfil e abertura acidental da interface de celular no PC.
+6. Validar visualmente as combinações de painéis, larguras de desktop, meia tela e celular; executar os testes automatizados e corrigir as falhas antes de publicar outra reformulação.
+
+---
+
+
 **Eremita (15/11, cache v198):** o equipamento do antecedente passa a ser o Porta-Mapas ou Pergaminhos do catalogo (srd51:item/case-map-or-scroll) em vez do texto livre; fichas ja criadas nao sao alteradas.
 
 **Detalhes como icone (i) (14/11, cache v196):** botao compacto com aria-label/title em lista, grade e barra lateral (mesmo data-inv-detalhes); em 375 px a quantidade ficou um pouco menor na lista estreita para caber Usar + (i) na mesma linha. Alabarda sem "Alcance" duplicado (INV_RESUMO.mecanico).
