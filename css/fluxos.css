@@ -1031,7 +1031,7 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 }
 
 /* Ícone no campo de iniciativa pendente do combatente (não no campo de seleção). */
-.combatant input.iniciativa-valor:placeholder-shown:not(:focus) {
+.combatant input.iniciativa-valor:placeholder-shown {
   background-image:var(--ini-d20);
   background-repeat:no-repeat;
   background-position:center;
