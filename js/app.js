@@ -766,7 +766,15 @@
     document.addEventListener("mouseout", (e) => { if (!e.relatedTarget?.closest?.(".hab,[data-fxtip]")) tip.style.display = "none"; });
 
 
-    window.__ini.avatar = (key, name, size, foto) => (foto && /^data:image\//.test(foto) ? `<img class="av" style="width:${size}px;height:${size}px" src="${esc(foto)}" alt="">` : av(BY[key] || { name }, size));
+    window.__ini.avatar = (key, name, size, foto, pid) => {
+      if (foto && /^data:image\\//.test(foto)) return `<img class="av" style="width:${size}px;height:${size}px" src="${esc(foto)}" alt="">`;
+      const ficha = pid && window.__ini.fichaDe?.(pid);
+      if (pid || ficha) {
+        const src = window.FICHA_COMPONENTES?.simboloClasse?.(ficha || {}) || "icones/dnd/classes/character.svg";
+        return `<span class="av av0 catalogo-simbolo" style="width:${size}px;height:${size}px" aria-label="Ícone do personagem"><img class="dnd-categoria-icone" src="${esc(src)}" alt=""></span>`;
+      }
+      return key && BY[key] ? av(BY[key], size) : `<span class="av av0 catalogo-simbolo" style="width:${size}px;height:${size}px" aria-label="Criatura"><img class="dnd-categoria-icone" src="icones/dnd/classes/character.svg" alt=""></span>`;
+    };
     const fileIn = $("#ph-file");
     const toSquare = (file, size) => new Promise((ok, no) => { const url = URL.createObjectURL(file), im = new Image(); im.onload = () => { const c = document.createElement("canvas"); c.width = c.height = size; const q = Math.min(im.width, im.height); c.getContext("2d").drawImage(im, (im.width - q) / 2, (im.height - q) / 2, q, q, 0, 0, size, size); URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", 0.85)); }; im.onerror = () => no(new Error("imagem inválida")); im.src = url; });
 
