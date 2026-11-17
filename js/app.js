@@ -649,9 +649,9 @@
         armor_class: parseInt($("#cm-ac").value) || 10, hit_points: parseInt($("#cm-hp").value) || 1, hit_dice: $("#cm-hd").value.trim(),
         speed: { walk: parseInt($("#cm-sp").value) || 0, unit: "feet" }, ability_scores: ab, modifiers: md, saving_throws: {}, skill_bonuses: {},
         initiative_bonus: md.dexterity, passive_perception: 10 + md.wisdom, resistances_and_immunities: {}, spells: cmSpells.slice(),
-        raw: { traits: $("#cm-traits").value, actions: $("#cm-acts").value },
+        raw: { traits: $("#cm-traits").value, actions: window.FICHA_CRIACAO.normalizarLinhas(lines("#cm-acts")).join("\n") },
         traits: lines("#cm-traits").map((l) => { const i = l.indexOf(":"), t = i < 0 ? { name: l, desc: "" } : { name: l.slice(0, i).trim(), desc: decP(l.slice(i + 1).trim()) }, ref = ((editKey && BY[editKey]?.traits) || []).find((x) => x.name === t.name && x.cf)?.cf || cfPend[t.name]; return ref ? { ...t, cf: ref } : t; }),
-        actions: lines("#cm-acts").map(parseAct) };
+        actions: window.FICHA_CRIACAO.normalizarLinhas(lines("#cm-acts")).map(parseAct) };
       window.FICHA_CRIACAO.aplicarExtras(m, window.FICHA_CRIACAO.lerExtras());   // defesas, sentidos, perícias, salvaguardas, tipos de ação (tudo opcional)
       const edited = !!editKey;
       if (editGlobal) {

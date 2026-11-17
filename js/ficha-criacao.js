@@ -35,6 +35,22 @@
     while ((m = re.exec(texto))) { const tipo = m[5] && tipoEn(m[5]) ? m[5] : ""; out.push({ n: +m[1], f: +m[2], b: m[3] ? (m[3] === "-" ? -1 : 1) * +m[4] : 0, t: tipo }); if (!tipo && m[5]) re.lastIndex = m.index + m[0].length - m[5].length; }
     return out;
   }
+  /* Texto colado direto no campo de ações: "**Nome.** texto" ou "Nome. texto" vira "Nome | texto"; um parágrafo longo sem nome continua a ação anterior (em vez de virar uma ação chamada pelo texto inteiro). */
+  function normalizarLinhas(lista) {
+    const out = [];
+    for (const bruta of lista || []) {
+      const l = String(bruta).trim(); if (!l) continue;
+      if (l.includes("|")) { out.push(l); continue; }
+      const t = l.replace(/^[-•]\s*/, "");
+      let m = t.match(/^[*_]{1,3}\s*([^*_|]{2,70}?)\s*\.?\s*[*_]{1,3}\.?\s+(\S.*)$/);                   // **Nome.** texto
+      if (!m) { const n = t.match(/^([A-ZÀ-Ý][^.|:*_]{1,60}?)\.\s+(\S.*)$/); if (n && n[1].trim().split(/\s+/).length <= 6) m = n; }   // Nome. texto
+      if (m) { out.push(m[1].replace(/\.$/, "").trim() + " | " + m[2].replace(/\*\*+/g, "").trim()); continue; }
+      const limpo = t.replace(/\*\*+/g, "");
+      if (out.length && (limpo.length > 40 || /[.!?]$/.test(limpo))) out[out.length - 1] += " ¶ " + limpo;       // continuação da ação anterior
+      else out.push(limpo);                                                                                         // só o nome da ação
+    }
+    return out;
+  }
   function parseAcao(linha, tipo = "ACTION") {
     const p = String(linha).split("|").map((s) => s.trim()), a = { name: p[0], action_type: tipo, attacks: [] };
     const custo = a.name.match(/\(\s*(?:custa|costs?)\s*(\d+)\s*a[cç][oõ]es?\b[^)]*\)/i) || a.name.match(/\(\s*costs?\s*(\d+)\s*actions?\s*\)/i);
@@ -89,7 +105,7 @@
     const percep = sk.perception != null ? sk.perception : mod((m.ability_scores || {}).wisdom ?? 10), pp = numOuNulo(s.passiva); m.passive_perception = pp != null ? pp : 10 + percep;
     if (String(ex.idiomas || "").trim()) m.languages = { as_string: String(ex.idiomas).trim(), data: [] };
     const raw = { ...(m.raw || {}) }, acoes = [...(m.actions || []).filter((a) => !a.action_type || a.action_type === "ACTION")];
-    for (const [id, tipo] of ACOES) { const txt = (ex.acoes || {})[id] || ""; raw[id] = txt; for (const l of linhas(txt)) acoes.push(parseAcao(l, tipo)); }
+    for (const [id, tipo] of ACOES) { const txt = (ex.acoes || {})[id] || ""; raw[id] = txt; for (const l of normalizarLinhas(linhas(txt))) acoes.push(parseAcao(l, tipo)); }
     m.actions = acoes; m.raw = raw; return m;
   }
 
@@ -165,5 +181,5 @@
   const limparExtras = () => preencherExtras({});
   function montarFormulario() { const alvo = $("cm-livro-ui"); if (alvo && !alvo.dataset.pronto) { alvo.innerHTML = htmlExtras(); alvo.dataset.pronto = "1"; } }
 
-  window.FICHA_CRIACAO = { ATRIBUTOS, PERICIAS, DANOS, CONDICOES, ALINHAMENTOS, ACOES, bonusProficiencia, xpDoND, lerND, numOuNulo, tipoEn, parteDano, parseAcao, listaDefesa, aplicarExtras, extrasDeMonstro, htmlExtras, montarFormulario, lerExtras, preencherExtras, limparExtras };
+  window.FICHA_CRIACAO = { normalizarLinhas, ATRIBUTOS, PERICIAS, DANOS, CONDICOES, ALINHAMENTOS, ACOES, bonusProficiencia, xpDoND, lerND, numOuNulo, tipoEn, parteDano, parseAcao, listaDefesa, aplicarExtras, extrasDeMonstro, htmlExtras, montarFormulario, lerExtras, preencherExtras, limparExtras };
 })();

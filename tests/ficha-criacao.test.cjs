@@ -66,3 +66,8 @@ test('importador em inglês e dano alternativo: sinaliza o que precisa de revis�
   assert.equal(v.tamanho,'Large');assert.deepEqual(v.deslocamentos,{walk:40,swim:30});assert.deepEqual(v.salvaguardas,{strength:5});assert.deepEqual(v.resistencias,['bludgeoning','piercing','slashing']);assert.equal(v.naoMagico.res,true);assert.deepEqual(v.condicoes,['charmed','frightened']);assert.equal(v.sentidos.blindsight,30);
   assert.match(v.acoes.acao[0],/^Slam \| \+5 \| 1d10\+3 bludgeoning \|/);assert.ok(v.avisos.some(a=>/alternativas/.test(a)),'dano alternativo sinalizado');
 });
+test('texto colado direto no campo de ações: "**Nome.** texto" vira ação com nome; parágrafo solto continua a ação anterior; só o nome segue sendo ação',()=>{
+  const n=FC.normalizarLinhas(['Breath Weapons (Recharge 5-6) | Usa um sopro:','**Fire Breath.** The dragon exhales fire in a 60-foot cone.','Change Shape | The dragon changes.','In a new form, the dragon retains its alignment, hit points and Hit Dice, as well as this action.','Multiattack']);
+  assert.equal(n.length,4);assert.equal(n[1],'Fire Breath | The dragon exhales fire in a 60-foot cone.');assert.match(n[2],/^Change Shape \| The dragon changes\. ¶ In a new form/);assert.equal(n[3],'Multiattack');
+  assert.ok(!n.some(l=>/\*\*/.test(l)),'sem marcas de markdown');assert.equal(FC.parseAcao(n[1],'ACTION').name,'Fire Breath');
+});
