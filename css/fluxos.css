@@ -1131,3 +1131,17 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 .ataque-resultado-erro{color:#f18b88}
 .ataque-resultado-critico{color:#e6bc72}
 @media(max-width:600px){#vez-manual .vez-manual-campos{gap:8px}#vez-manual .vez-manual-linha label{max-width:112px}}
+
+/* Segunda etapa: formulário de rolagem manual sem espaços vazios. */
+#vez-manual:not([hidden]){display:flex;flex-wrap:wrap;align-items:end;column-gap:14px;row-gap:7px;padding:9px 11px!important}
+#vez-manual>p.muted{flex:1 1 100%;margin:0!important;line-height:1.35}
+#vez-manual .vez-manual-campos{flex:0 1 auto;gap:6px 10px}
+#vez-manual .vez-manual-linha{gap:6px!important}
+#vez-manual .vez-manual-linha label{gap:2px;line-height:1.25}
+#vez-manual .vez-manual-linha label svg{width:14px;height:14px;vertical-align:middle}
+#vez-manual .vez-manual-linha input.num{width:68px!important;height:33px}
+#vez-manual .vez-manual-acoes{flex:0 1 auto;align-self:end;margin:0!important;gap:6px}
+#vez-manual .vez-manual-acoes button{min-height:33px;padding:6px 10px}
+#vez-manual #man-erro{flex:1 1 100%;margin:0;min-height:0}
+#vez-res .res-ataque{padding:5px 0}
+@media(max-width:540px){#vez-manual .vez-manual-acoes{flex:1 1 100%}}
