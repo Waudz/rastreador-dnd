@@ -11,7 +11,7 @@
   const emPainel = ["painel","leitura"].includes(modoLeitura);
   if (emPainel) document.body.classList.add('ficha-embutida');
   const notificar = tipo => { if(emPainel && window.parent !== window) window.parent.postMessage({tipo,id},location.origin); };
-  let editandoFicha = false, P = null, camp = null, souMestre = false, donoNome = "", pend = null, salvando = false, timer = null, catalogo = null, magiasCat = null;
+  let ultimaVersaoSalva = null, editandoFicha = false, P = null, camp = null, souMestre = false, donoNome = "", pend = null, salvando = false, timer = null, catalogo = null, magiasCat = null;
   const ATR = [["for", "FOR"], ["des", "DES"], ["con", "CON"], ["int", "INT"], ["sab", "SAB"], ["car", "CAR"]];
   const MOEDAS = [["pc", "Cobre (PC)"], ["pp", "Prata (PP)"], ["po", "Ouro (PO)"]];
   const CLASSES = { Barbarian: "Bárbaro", Bard: "Bardo", Cleric: "Clérigo", Druid: "Druida", Fighter: "Guerreiro", Monk: "Monge", Paladin: "Paladino", Ranger: "Patrulheiro", Rogue: "Ladino", Sorcerer: "Feiticeiro", Warlock: "Bruxo", Wizard: "Mago" };
@@ -65,9 +65,28 @@
     const corpo = JSON.parse(JSON.stringify(pend)); pend = null; salvando = true; let falhou = false;
     try {
       if(exclusivoMestre && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true) throw new Error('Este painel é exclusivo do mestre da campanha.');
-      const r = await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}&versao=eq.${encodeURIComponent(P.versao)}`, corpo);
-      if (!r || !r[0]) throw new Error("O personagem não foi atualizado: a ficha mudou em outra sessão ou você perdeu o acesso. Reabra a ficha antes de salvar.");
+      let r = await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}&versao=eq.${encodeURIComponent(P.versao)}`, corpo);
+      if (!r?.[0]) {
+        const remoto = await carregar();
+        const original = ultimaVersaoSalva || P;
+        // Repetir automaticamente somente se NENHUM campo enviado mudou no servidor.
+        // A ficha é um objeto único: não substituir magias/itens alterados por outra sessão.
+        const conflito = Object.keys(corpo).some(k => JSON.stringify(remoto[k]) !== JSON.stringify(original[k]));
+        if (conflito) {
+          P = remoto;
+          ultimaVersaoSalva = JSON.parse(JSON.stringify(remoto));
+          desenhar();
+          pend = null;
+          $("#estado").textContent = "Ficha sincronizada";
+          aviso("Outra sessão alterou os mesmos dados. A ficha foi atualizada automaticamente; confira os PV e repita a ação se necessário.",true);
+          return;
+        }
+        P.versao = remoto.versao;
+        r = await nuvem.patch(`personagens?id=eq.${encodeURIComponent(id)}&versao=eq.${encodeURIComponent(remoto.versao)}`, corpo);
+      }
+      if (!r?.[0]) throw new Error("Outra sessão atualizou a ficha durante o salvamento. Aguarde a sincronização e tente novamente.");
       P.versao = r[0].versao;
+      ultimaVersaoSalva = JSON.parse(JSON.stringify(r[0]));
       $("#estado").textContent = "Salvo";
       if(!pend) notificar('ficha-salva');
       if (Object.prototype.hasOwnProperty.call(corpo, 'ficha')) {
@@ -1316,7 +1335,7 @@
       let visivel = true; try { visivel = !!(await nuvem.get(`personagens?select=id&id=eq.${encodeURIComponent(id)}`))[0]; } catch (_) {}
       if (!visivel) { await visaoGrupo(campGrupo, recarregar); cancelar(); return; }
     }
-    try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); cancelar(); window.ESQ?.pronto($("#ficha")); } catch (e) { cancelar(); document.querySelector(".esq-topo")?.remove?.(); if (window.ESQ) window.ESQ.erro($("#ficha"), e.message, recarregar); else aviso(e.message, true); return; }
+    try { P = await carregar(); ultimaVersaoSalva = JSON.parse(JSON.stringify(P)); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); cancelar(); window.ESQ?.pronto($("#ficha")); } catch (e) { cancelar(); document.querySelector(".esq-topo")?.remove?.(); if (window.ESQ) window.ESQ.erro($("#ficha"), e.message, recarregar); else aviso(e.message, true); return; }
     let atualizarFichaTimer = null, atualizacaoRemotaPendente = false, recebendoRemoto = false;
     async function receberFichaRemota() {
       if (document.hidden || recebendoRemoto) return;
@@ -1333,11 +1352,13 @@
           P.pv_atual = r.pv_atual;
           P.pv_temp = r.pv_temp;
           P.pv_max = r.pv_max;
+          // A versão local permanece antiga até ser possível reconciliar a ficha inteira.
           if (mudouPV && $("#bloco-pv")) atualizarPV();
           atualizacaoRemotaPendente = true;
           return;
         }
         P = r;
+        ultimaVersaoSalva = JSON.parse(JSON.stringify(r));
         desenhar();
         $("#estado").textContent = "Atualizado automaticamente";
         atualizacaoRemotaPendente = false;
