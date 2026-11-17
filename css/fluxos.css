@@ -1175,3 +1175,16 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 #vez-res.vez-historico-janela:not(:empty) .res-ataque{min-width:0}
 #vez-res.vez-historico-janela:not(:empty) .res-ataque-corpo{overflow-wrap:anywhere}
 @media(max-width:1399px),(pointer:coarse){#vez-res.vez-historico-janela:not(:empty){position:static;width:auto;max-height:none;overflow:visible;margin-top:10px;padding:0;background:transparent;border:0;box-shadow:none}#vez-res.vez-historico-janela:not(:empty)::before{display:none}}
+
+/* Ajustes finos do histórico fixo e da etapa de dados — sem afetar os cartões de iniciativa. */
+#vez-manual .vez-manual-linha label{display:inline-flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:5px;white-space:normal}
+#vez-manual .vez-manual-linha label input.num{display:block;margin:0}
+#vez-res .res-ataque{box-sizing:border-box;width:100%;min-width:0;background:var(--panel);overflow:hidden}
+#vez-res .res-ataque-corpo{box-sizing:border-box;min-width:0;overflow-wrap:anywhere;word-break:normal;padding:9px 10px 11px}
+#vez-res .res-ataque-corpo p,#vez-res .res-ataque-corpo .row{max-width:100%;min-width:0;overflow-wrap:anywhere}
+#vez-res.vez-historico-janela:not(:empty){top:62px;bottom:12px;height:calc(100dvh - 74px);max-height:none;min-height:0;padding:12px 12px 18px;overflow-x:hidden;overflow-y:auto;align-content:start;scrollbar-gutter:stable}
+#vez-res.vez-historico-janela:not(:empty) .res-ataque{flex:0 0 auto;background:var(--panel)}
+#vez-res.vez-historico-janela:not(:empty) .res-ataque:last-child{margin-bottom:4px}
+/* Feedback de PV: sobreposição intencional, centralizada na base da janela de histórico. */
+@media(min-width:1400px) and (pointer:fine){body:has(#vez-res.vez-historico-janela:not(:empty)) .app-feedback{left:calc(16px + var(--feedback-historico-centro, 170px));transform:translateX(-50%);bottom:25px;max-width:calc(var(--feedback-historico-largura, 340px) - 28px);width:max-content;box-sizing:border-box;z-index:20;justify-content:center;text-align:center}}
+@media(max-width:1399px),(pointer:coarse){#vez-res.vez-historico-janela:not(:empty){height:auto;min-height:0;max-height:none;overflow:visible;padding:0}}
