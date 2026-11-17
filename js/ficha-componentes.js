@@ -17,8 +17,16 @@
   function espacos(total,usados) {
     return `<span class="espacos-magia" role="img" aria-label="${total-usados} de ${total} espaços disponíveis">${Array.from({length:total},(_,i)=>`<i class="espaco${i<total-usados?' disponivel':''}" aria-hidden="true"></i>`).join('')}</span>`;
   }
-  function retrato(nome,src,tamanho=56){
-    return typeof src==='string'&&/^data:image\//.test(src)?`<img class="av retrato-cartao" width="${tamanho}" height="${tamanho}" src="${esc(src)}" alt="Retrato de ${esc(nome)}">`:`<span class="av av0 retrato-cartao" style="width:${tamanho}px;height:${tamanho}px" aria-hidden="true">${esc(String(nome||'?').charAt(0).toUpperCase())}</span>`;
+  function simboloClasse(ficha={}) {
+    const ids = resumoPersonagem(ficha).ids;
+    const id = String(ids[0] || "").toLowerCase();
+    const nomes = {barbarian:"barbaro",bard:"bardo",cleric:"clerigo",druid:"druida",fighter:"guerreiro",monk:"monge",paladin:"paladino",ranger:"patrulheiro",rogue:"ladino",sorcerer:"feiticeiro",warlock:"bruxo",wizard:"mago",artificer:"artifice"};
+    const chave = nomes[id] || id;
+    const validos = new Set(["barbaro","bardo","clerigo","druida","guerreiro","monge","paladino","patrulheiro","ladino","feiticeiro","bruxo","mago","artifice"]);
+    return validos.has(chave) ? "icones/dnd/classes/" + chave + ".svg" : "icones/dnd/classes/character.svg";
+  }
+  function retrato(nome,src,tamanho=56,ficha={}){
+    return typeof src==='string'&&/^data:image\//.test(src)?`<img class="av retrato-cartao" width="${tamanho}" height="${tamanho}" src="${esc(src)}" alt="Retrato de ${esc(nome)}">`:`<span class="av av0 retrato-cartao" style="width:${tamanho}px;height:${tamanho}px" aria-hidden="true"><img class="dnd-categoria-icone" src="${simboloClasse(ficha)}" alt=""></span>`;
   }
   function resumoPersonagem(f={}){
     f=f||{};
@@ -29,5 +37,5 @@
     const normal=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     return lista.filter(p=>{const r=resumoPersonagem(p.ficha);return normal(p.nome).includes(normal(filtro.nome))&&(!filtro.campanha||(p.campanha||{}).id===filtro.campanha)&&(!filtro.classe||r.ids.includes(filtro.classe))&&(!filtro.nivel||r.nivel===Number(filtro.nivel));});
   }
-  window.FICHA_COMPONENTES={esc,icone,estatistica,atributo,cabecalho,vidaBase,espacos,retrato,resumoPersonagem,filtrarPersonagens};
+  window.FICHA_COMPONENTES={esc,icone,estatistica,atributo,cabecalho,vidaBase,espacos,retrato,simboloClasse,resumoPersonagem,filtrarPersonagens};
 })();
