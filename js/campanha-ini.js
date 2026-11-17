@@ -254,7 +254,7 @@
         if(!r?.[0]){
           // Outra sessão salvou primeiro: reler a ficha, sem sobrescrever o jogador.
           const recente=await nuvem.get("personagens?select=id,pv_atual,pv_temp,pv_max,ca,versao,ficha&id=eq."+encodeURIComponent(c.pid));
-          if(re centePlaceholder) {}
+
           if(!recente?.[0])throw new Error("Não foi possível reler a ficha atualizada.");
           const novo=recente[0];Object.assign(reg,novo);
           c.hp=novo.pv_atual;c.temp=Math.max(0,Number(novo.pv_temp)||0);
