@@ -1484,3 +1484,63 @@ body.ficha-embutida .tracker { padding:14px; }                                  
  body.comp-janelas-desktop main.tracker .header .subtitle{max-width:100%;overflow-wrap:break-word}
  body.comp-janelas-desktop main.tracker .header .round-box{flex:0 0 auto}
 }
+
+
+/* Layout desktop final: uma única régua horizontal para o centro e os painéis.
+   As larguras laterais são variáveis e a área central jamais invade a ficha. */
+@media (min-width:1400px) and (pointer:fine) {
+  body.comp-janelas-desktop {
+    --comp-margem:16px;
+    --comp-gap:16px;
+    --comp-reserva-esquerda:0px;
+    --comp-reserva-direita:0px;
+  }
+  body.comp-janelas-desktop.comp-coluna-esquerda {
+    --comp-reserva-esquerda:calc(var(--comp-largura-historico) + var(--comp-gap));
+  }
+  body.comp-janelas-desktop.comp-coluna-direita {
+    --comp-reserva-direita:calc(var(--comp-largura-ficha) + var(--comp-gap));
+  }
+  html body.comp-janelas-desktop main.tracker {
+    box-sizing:border-box!important;
+    position:relative;
+    min-width:0!important;
+    max-width:1400px!important;
+    width:min(1400px,calc(100vw - 2 * var(--comp-margem) - var(--comp-reserva-esquerda) - var(--comp-reserva-direita)))!important;
+    margin-left:max(calc(var(--comp-margem) + var(--comp-reserva-esquerda)),calc((100vw - var(--comp-reserva-direita) + var(--comp-reserva-esquerda) - 1400px)/2))!important;
+    margin-right:0!important;
+    padding-left:0!important;
+    padding-right:0!important;
+    transform:none!important;
+  }
+  html body.comp-janelas-desktop main.tracker > * {
+    max-width:100%;
+    min-width:0;
+  }
+  html body.comp-janelas-desktop #dock-r #ci-resumo:not([hidden]),
+  html body.comp-janelas-desktop #dock-r #sheet:not([hidden]) {
+    box-sizing:border-box!important;
+    position:fixed!important;
+    left:auto!important;
+    right:var(--comp-margem)!important;
+    width:var(--comp-largura-ficha)!important;
+    max-width:var(--comp-largura-ficha)!important;
+  }
+  html body.comp-janelas-desktop #vez-res.vez-historico-janela:not(:empty),
+  html body.comp-janelas-desktop #dock-r #spd:not([hidden]) {
+    box-sizing:border-box!important;
+    position:fixed!important;
+    left:var(--comp-margem)!important;
+    right:auto!important;
+    width:var(--comp-largura-historico)!important;
+    max-width:var(--comp-largura-historico)!important;
+  }
+  html body.comp-janelas-desktop .combat-bar,
+  html body.comp-janelas-desktop .turn-actions {
+    min-width:0;
+    flex-wrap:wrap;
+  }
+  html body.comp-janelas-desktop .combat-bar-info{min-width:0;flex:1 1 220px}
+  html body.comp-janelas-desktop .header{min-width:0;max-width:100%;flex-wrap:wrap}
+  html body.comp-janelas-desktop .header>div:first-child{min-width:0;flex:1 1 260px}
+}
