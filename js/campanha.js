@@ -502,7 +502,7 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
       } catch (e) { console.warn("Sincronização em tempo real da campanha:",e); }
       finally {
         atualizandoGrupo = false;
-        if (grupoPendente && !document.hidden) {
+        if (grupoPendente && !document.hidden && !document.querySelector("#forms form") && !document.querySelector("#imp .panel") && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")) {
           grupoPendente = false;
           clearTimeout(atualizarGrupoTimer);
           atualizarGrupoTimer = setTimeout(sincronizarGrupo,200);
