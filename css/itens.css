@@ -37,3 +37,7 @@
 .itens-modal.raridade-muito-rara .inv-det-img,.itens-modal.raridade-muito-rara .inv-thumb{border-color:#A98AE6}
 .itens-modal.raridade-lendaria .inv-det-img,.itens-modal.raridade-lendaria .inv-thumb{border-color:#D4AE72}
 .itens-modal.raridade-artefato .inv-det-img,.itens-modal.raridade-artefato .inv-thumb{border-color:#E5806A}
+/* botão Adicionar sem quebrar o texto; a origem encolhe antes do botão */
+.inv-cat-add button[data-cat-add]{white-space:nowrap;flex:none;min-width:92px}
+.inv-cat-add select{flex:0 1 150px;min-width:0;max-width:170px}
+.inv-cat-add input{flex:none}
