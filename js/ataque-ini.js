@@ -367,5 +367,25 @@
   }
   window.addEventListener?.("ini:rolagem", () => { $("#vez-manual").hidden = true; $("#vez-manual").innerHTML = ""; manualPend = null; desenharVez(); });
   window.__ini.aoAlterar?.(() => { if (!document.activeElement?.closest?.("#acoes-da-vez")) desenharVez(); });
+  // O histórico continua sendo um único elemento. Só vira janela independente
+  // quando há espaço REAL à esquerda do combate, nunca em meia tela ou celular.
+  const historico = $("#vez-res");
+  const atualizarJanelaHistorico = () => {
+    if (!historico) return;
+    const tracker = document.querySelector("main.tracker");
+    const caixa = tracker?.getBoundingClientRect();
+    const larguraLivre = caixa ? caixa.left - 32 : 0;
+    const podeSeparar = window.innerWidth >= 1400 && larguraLivre >= 270 &&
+      window.matchMedia("(pointer:fine)").matches;
+    historico.classList.toggle("vez-historico-janela", podeSeparar);
+    if (podeSeparar) historico.style.setProperty("--historico-largura", Math.min(340, Math.floor(larguraLivre)) + "px");
+    else historico.style.removeProperty("--historico-largura");
+  };
+  window.addEventListener("resize", atualizarJanelaHistorico, { passive: true });
+  if (typeof ResizeObserver !== "undefined") {
+    const tracker = document.querySelector("main.tracker");
+    if (tracker) new ResizeObserver(atualizarJanelaHistorico).observe(tracker);
+  }
+  atualizarJanelaHistorico();
   desenharVez();
 })();
