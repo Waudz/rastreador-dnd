@@ -7,6 +7,11 @@
   function identidade(p,{resumo=false,jogador='',vida=false,barraVida=null}={}){
     const f=p.ficha||{},r=C.resumoPersonagem(f),texto=[r.classes||f.classe,r.nivel?'Nível '+r.nivel:'', 'CA '+p.ca].filter(Boolean).join(' · ');
     const retrato=f.foto?C.retrato(p.nome,f.foto,76,f):'<span class="av av0 retrato-cartao catalogo-simbolo" style="width:76px;height:76px" aria-hidden="true">'+iconeClasse(f)+'</span>';
+    // Na seleção da iniciativa, vida:true também deve renderizar o preenchimento.
+    const pvMax=Number(p.pv_max),pvAtual=Number(p.pv_atual);
+    if (barraVida===null && vida && Number.isFinite(pvMax) && pvMax>0 && Number.isFinite(pvAtual)) {
+      barraVida=Math.max(0,Math.min(100,100*pvAtual/pvMax));
+    }
     const corpo=retrato+'<span class="grupo-identidade-texto"><b>'+esc(p.nome)+'</b><small>'+esc(texto)+'</small>'+(jogador?'<small>'+esc(jogador)+'</small>':'')+(vida?'<small class="grupo-pv-resumo">PV '+p.pv_atual+'/'+p.pv_max+'</small>':'')+(barraVida!==null?'<span class="hp-track" role="meter" aria-label="Pontos de vida de '+esc(p.nome)+'" aria-valuemin="0" aria-valuemax="'+Math.max(1,p.pv_max)+'" aria-valuenow="'+p.pv_atual+'"><span class="hp-fill '+(barraVida<=25?'low':barraVida<=50?'mid':'')+'" style="width:'+barraVida+'%"></span></span>':'')+'</span>';
     return resumo?'<button type="button" class="ci-personagem grupo-identidade" data-ci-resumo="'+esc(p.id)+'" aria-label="Ver resumo de '+esc(p.nome)+'">'+corpo+'</button>':'<a class="grupo-identidade" href="personagem.html?id='+encodeURIComponent(p.id)+'">'+corpo+'</a>';
   }
