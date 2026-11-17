@@ -48,3 +48,6 @@ test("troca de página mais leve: o painel só reabre depois do carregamento e s
 test("celular: barra do topo do painel com a mesma cor e linha da barra principal (combina com a web)", () => {
   const css = ler("css/fichas.css"); assert.match(css, /\n\.sh-top,\.ci-resumo-topo\{background:var\(--bg\);border-bottom:1px solid var\(--line\)\}/);
 });
+test("janelas modais com a aba lateral aberta não cobrem a barra do topo nem a aba", () => {
+  const css = ler("css/fichas.css"); assert.match(css, /body\.com-ficha-lateral \.inv-ov,body\.com-ficha-lateral \.crop-ov,body\.com-ficha-lateral \.comp-janela-ov\{top:var\(--cab-h,0px\);right:var\(--painel-reserva-direita,0px\)\}/);
+});

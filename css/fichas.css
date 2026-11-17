@@ -490,3 +490,8 @@ html.monstro-embutido body{overflow:hidden;padding:0!important}
 
 /* Celular e telas pequenas: a barra do topo do painel (ficha, monstro, magia) usa a mesma cor e a mesma linha da barra principal, como na web (a altura continua a do celular) */
 .sh-top,.ci-resumo-topo{background:var(--bg);border-bottom:1px solid var(--line)}
+
+/* Janelas modais (detalhes do item, recorte de foto, janela padrão) com a aba lateral aberta: escurecem só a página, sem cobrir a barra do topo nem a aba */
+@media(min-width:1200px){
+  body.com-ficha-lateral .inv-ov,body.com-ficha-lateral .crop-ov,body.com-ficha-lateral .comp-janela-ov{top:var(--cab-h,0px);right:var(--painel-reserva-direita,0px)}
+}
