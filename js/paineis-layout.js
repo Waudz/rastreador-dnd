@@ -51,7 +51,7 @@
     const minimo=document.createElement("button");minimo.type="button";minimo.textContent="—";minimo.title="Minimizar janela";
     
     const fechar=document.createElement("button");fechar.type="button";fechar.textContent="×";fechar.title="Fechar janela";
-    acoes.append(minimo,fechar);cab.append(titulo,acoes);el.prepend(cab);
+    acoes.append(fechar);cab.append(titulo,acoes);el.prepend(cab);
     
     const ativar=()=>{el.style.zIndex=String(++ordem)};
     el.addEventListener("pointerdown",ativar);
@@ -69,28 +69,23 @@
       window.addEventListener("pointermove",move);window.addEventListener("pointerup",up,{once:true});
     }
     // Layout em colunas: janelas ancoradas, sem arrastar.
-    minimo.addEventListener("click",()=>{
-      if(el.classList.contains("comp-minimizada"))return;
-      el.classList.add("comp-minimizada");
-      const voltar=document.createElement("button");voltar.type="button";voltar.textContent=c.title;
-      voltar.dataset.janelaId=el.id;
-      voltar.onclick=()=>{
-        el.classList.remove("comp-minimizada");
-        voltar.remove();
-        ativar();
+    fechar.addEventListener("click",()=>{
+      if(el.id==="vez-res"){
+        el.classList.add("comp-historico-fechado");
+        const abrir=document.getElementById("comp-abrir-historico");
+        if(abrir)abrir.hidden=false;
         organizarConsultas();
-      };
-      barra.append(voltar);
-      organizarConsultas();
+      }else{
+        window.PAINEL?.fecharVista?.(el.id);
+      }
     });
-    fechar.addEventListener("click",()=>{if(el.id==="vez-res"){minimo.click()}else{window.PAINEL?.fecharVista?.(el.id)}});
     restaurar(el,c);ativar();
   }
 
   function organizarConsultas(){
     if(!ativo()){document.body.classList.remove("comp-coluna-esquerda","comp-coluna-direita");document.body.style.removeProperty("--comp-magia-topo");return;}
     const h=document.getElementById("vez-res"),m=document.getElementById("spd"),p=document.getElementById("ci-resumo");
-    const visivel=el=>!!el&&!el.hidden&&!el.classList.contains("comp-minimizada");
+    const visivel=el=>!!el&&!el.hidden&&!el.classList.contains("comp-historico-fechado");
     const magia=visivel(m), historico=visivel(h);
     const topo=62,altura=Math.max(200,innerHeight-74),espaco=10;
     const leftOpen=historico||magia;
@@ -109,12 +104,12 @@
     const on=ativo();document.body.classList.toggle("comp-janelas-desktop",on);
     for(const id of Object.keys(configs)){
       const el=document.getElementById(id);if(!el)continue;
-      if(on){registrar(el);const c=configs[id];if(el.dataset.janelaPreparada==="1")restaurar(el,c)}else if(el.dataset.janelaPreparada==="1"){el.classList.remove("comp-minimizada");barra.querySelector(`[data-janela-id="${id}"]`)?.remove();for(const prop of ["left","top","width","height","zIndex"])el.style[prop]="";}
+      if(on){registrar(el);const c=configs[id];if(el.dataset.janelaPreparada==="1")restaurar(el,c)}else if(el.dataset.janelaPreparada==="1"){el.classList.remove("comp-historico-fechado");for(const prop of ["left","top","width","height","zIndex"])el.style[prop]="";}
     }
     organizarConsultas();
     window.PAINEIS_LAYOUT?.aplicar();
   }
-  document.addEventListener("DOMContentLoaded",()=>{document.body.append(barra);atualizar();
+  document.addEventListener("DOMContentLoaded",()=>{atualizar();\n    const tools=document.getElementById("lista-ferramentas");\n    if(tools){const abrir=document.createElement("button");abrir.id="comp-abrir-historico";abrir.type="button";abrir.className="small subtle";abrir.textContent="Abrir histórico";abrir.hidden=true;abrir.addEventListener("click",()=>{document.getElementById("vez-res")?.classList.remove("comp-historico-fechado");abrir.hidden=true;organizarConsultas()});tools.prepend(abrir);}
     document.addEventListener("click",e=>{
       const btn=e.target.closest("#ci-resumo-fechar,#sh-close,#spd-close");
       if(!btn||!ativo())return;
