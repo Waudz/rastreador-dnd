@@ -100,6 +100,7 @@
   const selecionados=new Set(), digitadas = {}, resultadosCartao = {};   // digitadas: iniciativa informada à mão (dado físico) por personagem
   const ocupadas = new Set();
   const basesPV = new Map();
+  const sincronizandoPV = new Set();
   function bloquear(){
     pers=[];camps=[];ocupadas.clear();basesPV.clear();box.hidden=true;
     fecharResumo();$('#ci-lista').innerHTML='';$('#ci-resumo-corpo').innerHTML='';resumoId=null;
@@ -182,7 +183,7 @@
           if (p.ficha?.foto && c.foto !== p.ficha.foto) { c.foto = p.ficha.foto; mudouFoto = true; }
           continue;
         }
-        if(p && !ocupadas.has(p.id) && enviado[p.id] === c.hp && (c.hp !== p.pv_atual || c.maxHp !== p.pv_max || c.ac !== p.ca)) {
+        if(p && !ocupadas.has(p.id) && !sincronizandoPV.has(p.id) && enviado[p.id] === c.hp && (enviadoT[p.id]??0)===(Math.max(0,Number(c.temp)||0)) && (c.hp !== p.pv_atual || c.maxHp !== p.pv_max || c.ac !== p.ca)) {
           c.hp=p.pv_atual;c.temp=Math.max(0,Number(p.pv_temp)||0);c.maxHp=p.pv_max;c.ac=p.ca;enviado[p.id]=p.pv_atual;enviadoT[p.id]=c.temp;mudouFoto=true;
         }
         if (p?.ficha?.foto && c.foto !== p.ficha.foto) { c.foto = p.ficha.foto; mudouFoto = true; }
@@ -249,10 +250,11 @@
   setInterval(async()=>{
     if(!sincroniza() || falhas>5)return;
     for(const c of window.__ini.list()){
-      if(!c.pid || c.sync!==true || ocupadas.has(c.pid) || !pers.some(p=>p.id===c.pid))continue;     // sem sync marcado é combate de teste: nunca grava
+      if(!c.pid || c.sync!==true || ocupadas.has(c.pid) || sincronizandoPV.has(c.pid) || !pers.some(p=>p.id===c.pid))continue;     // sem sync marcado é combate de teste: nunca grava
       const v=Math.max(0,Math.min(c.maxHp,Math.round(c.hp))),t=Math.max(0,Math.round(Number(c.temp)||0));
       if(enviado[c.pid]===undefined){enviado[c.pid]=v;enviadoT[c.pid]=t;continue;}
       if(enviado[c.pid]===v&&(enviadoT[c.pid]??0)===t)continue;
+      sincronizandoPV.add(c.pid);
       try{
         if(await nuvem.rpc('eh_mestre',{c:atual}) !== true){bloquear();return;}
         const reg=pers.find(p=>p.id===c.pid);
@@ -273,6 +275,7 @@
         Object.assign(reg,r[0]);enviado[c.pid]=v;enviadoT[c.pid]=t;falhas=0;
       }
       catch(e){falhas++;msg("Não foi possível salvar os PV na ficha: "+e.message,true);}
+      finally{sincronizandoPV.delete(c.pid);}
     }
   },2500);
   window.addEventListener('message',async e=>{
@@ -312,13 +315,16 @@
       if(novo?.id && Number.isFinite(Number(novo.pv_atual)) && Number.isFinite(Number(novo.pv_max))) {
         const p=pers.find(p=>p.id===novo.id);
         if(p) {
+          // Ignorar eventos antigos: podem chegar depois da gravação do dano atual.
+          if(Number.isFinite(Number(novo.versao)) && Number.isFinite(Number(p.versao)) && Number(novo.versao)<Number(p.versao))return;
+          p.versao=novo.versao??p.versao;
           p.pv_atual=novo.pv_atual;
           p.pv_max=novo.pv_max;
           p.pv_temp=novo.pv_temp??p.pv_temp;
           p.ca=novo.ca??p.ca;
           // Só atualizar o combatente se não há alteração local aguardando gravação.
           const c=window.__ini.list().find(c=>c.pid===novo.id);
-          if(c && !ocupadas.has(novo.id) && (jogador || enviado[novo.id]===c.hp)) {
+          if(c && !ocupadas.has(novo.id) && !sincronizandoPV.has(novo.id) && (jogador || (enviado[novo.id]===c.hp && (enviadoT[novo.id]??0)===(Math.max(0,Number(c.temp)||0))))) {
             c.hp=novo.pv_atual;c.maxHp=Math.max(1,novo.pv_max);
             c.temp=Math.max(0,Number(novo.pv_temp)||0);c.ac=novo.ca??c.ac;
             enviado[novo.id]=c.hp;enviadoT[novo.id]=c.temp;
