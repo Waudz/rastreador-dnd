@@ -1188,3 +1188,30 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 /* Feedback de PV: sobreposição intencional, centralizada na base da janela de histórico. */
 @media(min-width:1400px) and (pointer:fine){body:has(#vez-res.vez-historico-janela:not(:empty)) .app-feedback{left:calc(16px + var(--feedback-historico-centro, 170px));transform:translateX(-50%);bottom:25px;max-width:calc(var(--feedback-historico-largura, 340px) - 28px);width:max-content;box-sizing:border-box;z-index:20;justify-content:center;text-align:center}}
 @media(max-width:1399px),(pointer:coarse){#vez-res.vez-historico-janela:not(:empty){height:auto;min-height:0;max-height:none;overflow:visible;padding:0}}
+
+/* Janelas experimentais: apenas desktop amplo. O DOM original permanece intacto. */
+@media(min-width:1400px) and (pointer:fine){
+  body.comp-janelas-desktop #dock-r:not([hidden]){position:static!important;width:0!important;height:0!important;min-width:0!important;min-height:0!important;overflow:visible!important;pointer-events:none!important}
+  body.comp-janelas-desktop #dock-r>[id]:not([hidden]){position:fixed!important;box-sizing:border-box!important;max-width:calc(100vw - 16px)!important;max-height:calc(100dvh - 60px)!important;min-width:0!important;min-height:0!important;right:auto!important;bottom:auto!important;transform:none!important;pointer-events:auto!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:0 12px 35px #0009!important}
+  body.comp-janelas-desktop #dock-r>[id]:not([hidden])>.sh-top,
+  body.comp-janelas-desktop #dock-r>[id]:not([hidden])>.ci-resumo-topo{flex:0 0 auto}
+  body.comp-janelas-desktop #dock-r>[id]:not([hidden])>#sheet-body,
+  body.comp-janelas-desktop #dock-r>[id]:not([hidden])>#spd-body{flex:1 1 auto;min-height:0;overflow:auto}
+  body.comp-janelas-desktop #vez-res.vez-historico-janela:not(:empty){position:fixed!important;right:auto!important;bottom:auto!important;max-height:calc(100dvh - 60px)!important;min-height:0!important;display:flex!important;flex-direction:column!important;overflow-y:auto!important;overflow-x:hidden!important;box-shadow:0 12px 35px #0008!important}
+  body.comp-janelas-desktop #vez-res.vez-historico-janela:not(:empty)::before{display:none}
+  body.comp-janelas-desktop .comp-flutuante-cab{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:8px;flex:0 0 auto;padding:8px 10px;margin:-12px -12px 10px;background:var(--panel);border-bottom:1px solid var(--line);cursor:move;touch-action:none;user-select:none}
+  body.comp-janelas-desktop #dock-r .comp-flutuante-cab{margin:0}
+  body.comp-janelas-desktop .comp-flutuante-acoes{display:flex;gap:4px}
+  body.comp-janelas-desktop .comp-flutuante-acoes button{padding:2px 9px;min-height:28px}
+  body.comp-janelas-desktop .comp-flutuante-resize{position:absolute;bottom:0;right:0;width:24px;height:24px;cursor:nwse-resize;z-index:5;touch-action:none}
+  body.comp-janelas-desktop .comp-flutuante-resize::after{content:"";position:absolute;right:5px;bottom:5px;width:10px;height:10px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold)}
+  body.comp-janelas-desktop .comp-minimizada{display:none!important}
+  body.comp-janelas-desktop #comp-janelas-minimizadas:not(:empty){position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:120;display:flex;gap:6px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+  body.comp-janelas-desktop #comp-janelas-minimizadas button{white-space:nowrap}
+  body.comp-janelas-desktop.com-ficha-lateral main.tracker{margin-right:auto!important}
+}
+#comp-janelas-minimizadas{display:none}
+@media(max-width:1399px),(pointer:coarse){
+  .comp-flutuante-cab,.comp-flutuante-resize{display:none!important}
+  #dock-r>[id],#vez-res{min-width:0}
+}
