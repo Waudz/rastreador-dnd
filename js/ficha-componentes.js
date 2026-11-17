@@ -20,10 +20,10 @@
   function simboloClasse(ficha={}) {
     const ids = resumoPersonagem(ficha).ids;
     const id = String(ids[0] || "").toLowerCase();
-    const nomes = {barbarian:"barbaro",bard:"bardo",cleric:"clerigo",druid:"druida",fighter:"guerreiro",monk:"monge",paladin:"paladino",ranger:"patrulheiro",rogue:"ladino",sorcerer:"feiticeiro",warlock:"bruxo",wizard:"mago",artificer:"artifice"};
-    const chave = nomes[id] || id;
-    const validos = new Set(["barbaro","bardo","clerigo","druida","guerreiro","monge","paladino","patrulheiro","ladino","feiticeiro","bruxo","mago","artifice"]);
-    return validos.has(chave) ? "icones/dnd/classes/" + chave + ".svg" : "icones/dnd/classes/character.svg";
+    const aliases = {barbaro:"barbarian",bardo:"bard",clerigo:"cleric",druida:"druid",guerreiro:"fighter",monge:"monk",paladino:"paladin",patrulheiro:"ranger",ladino:"rogue",feiticeiro:"sorcerer",bruxo:"warlock",mago:"wizard",artifice:"artificer"};
+    const chave = aliases[id] || id;
+    const validos = new Set(["barbarian","bard","cleric","druid","fighter","monk","paladin","ranger","rogue","sorcerer","warlock","wizard","artificer"]);
+    return "icones/dnd/classes/" + (validos.has(chave) ? chave : "character") + ".svg";
   }
   function retrato(nome,src,tamanho=56,ficha={}){
     return typeof src==='string'&&/^data:image\//.test(src)?`<img class="av retrato-cartao" width="${tamanho}" height="${tamanho}" src="${esc(src)}" alt="Retrato de ${esc(nome)}">`:`<span class="av av0 retrato-cartao" style="width:${tamanho}px;height:${tamanho}px" aria-hidden="true"><img class="dnd-categoria-icone" src="${simboloClasse(ficha)}" alt=""></span>`;
