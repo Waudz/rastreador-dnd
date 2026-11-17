@@ -5,13 +5,13 @@ test('personagem e monstro recebem a mesma reserva em desktop e nenhuma em janel
  for(const width of [320,375,390,430,768,960,1199,1200,1366,1920]){
    const p=fixture(width,'personagem'),m=fixture(width,'monstro');
    assert.equal(p.vars['--painel-reserva-direita'],m.vars['--painel-reserva-direita']);
-   assert.equal(p.vars['--painel-reserva-direita'],width>=1200?Math.max(440,Math.min(900,width-1030))+'px':'0px');
+   assert.equal(p.vars['--painel-reserva-direita'],width>=1200?Math.max(440,Math.min(760,Math.round(width*0.36)))+'px':'0px');
    assert.equal(p.L.medir(width).modo,width>=1200?'lateral':'empilhado');
  }
 });
 test('redimensionamento e fechamento recalculam a reserva dos painéis',()=>{
  const f=fixture(1920,'monstro');f.c.innerWidth=960;f.L.aplicar();assert.equal(f.vars['--painel-reserva-direita'],'0px');f.c.innerWidth=800;f.L.aplicar();assert.equal(f.vars['--painel-reserva-direita'],'0px');
- f.c.innerWidth=1440;f.L.aplicar();assert.equal(f.vars['--painel-reserva-direita'],'440px');
+ f.c.innerWidth=1440;f.L.aplicar();assert.equal(f.vars['--painel-reserva-direita'],'518px');
  const vazio=fixture(1440,'nenhum');assert.equal(vazio.vars['--painel-reserva-direita'],'0px');
 });
 
