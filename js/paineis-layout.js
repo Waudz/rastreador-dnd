@@ -23,6 +23,8 @@
    Não move elementos do DOM: preserva eventos, formulários e estado dos painéis. */
 (() => {
   "use strict";
+  // O gerenciador visual só existe no navegador; os testes do cálculo de layout usam um DOM mínimo.
+  if (typeof document.createElement !== "function" || typeof document.addEventListener !== "function") return;
   const configs = {
     "ci-resumo": {minW:480,minH:450,w:480,h:650,title:"Ficha do personagem"},
     "sheet": {minW:440,minH:400,w:440,h:610,title:"Ficha do monstro"},
