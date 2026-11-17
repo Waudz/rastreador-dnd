@@ -496,7 +496,7 @@
       if (!f || !m) return;
       const nome = cfTitle(f);
       if ((m.traits || []).some((t) => t.name === nome)) { msg(`${esc(m.name)} já tem “${esc(nome)}”.`); return; }
-      const traitsRaw = m.raw?.traits ?? (m.traits || []).map((t) => `${t.name}: ${t.desc}`).join("\n");
+      const traitsRaw = m.raw?.traits ?? (m.traits || []).map((t) => `${t.name}: ${encP(t.desc)}`).join("\n");
       const actsRaw = m.raw?.actions ?? (m.actions || []).map((x) => `${x.name} | ${x.desc}`).join("\n");
       const linha = `${nome}: ${encP(cfBody(f))}`;
       m.traits = [...(m.traits || []), { name: nome, desc: cfBody(f), cf: cfKey(f) }];
@@ -587,7 +587,7 @@
       $("#cm-cr").value = catOf(m) === "monster" ? cr(m.challenge_rating) : (m.level ?? 1); $("#cm-ac").value = m.armor_class; $("#cm-hp").value = m.hit_points;
       $("#cm-hd").value = m.hit_dice || ""; $("#cm-sp").value = m.speed?.walk ?? 30; ABIL.forEach(([a]) => ($("#ab-" + a).value = m.ability_scores?.[a] ?? 10));
       $("#cm-traits").value = m.raw?.traits ?? (m.traits || []).map((t) => `${t.name}: ${t.desc}`).join("\n");
-      $("#cm-acts").value = m.raw?.actions ?? (m.actions || []).map((a) => `${a.name} | ${a.desc}`).join("\n");
+      $("#cm-acts").value = m.raw?.actions ?? (m.actions || []).map((a) => `${a.name} | ${encP(a.desc)}`).join("\n");   // quebras de linha da descrição viram ¶ (voltam a quebras ao salvar)
       window.FICHA_CRIACAO.preencherExtras(window.FICHA_CRIACAO.extrasDeMonstro(m));
       refreshLineChips(); $("#cm-save").textContent = editGlobal ? "Publicar alterações globais" : "Salvar alterações"; $("#cm-cancel").hidden = false; $("#cm-msg").textContent = editGlobal ? "Edição global: as alterações serão vistas por todos os usuários." : "";
       abrirCriacao();

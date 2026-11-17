@@ -71,3 +71,16 @@ test('texto colado direto no campo de ações: "**Nome.** texto" vira ação com
   assert.equal(n.length,4);assert.equal(n[1],'Fire Breath | The dragon exhales fire in a 60-foot cone.');assert.match(n[2],/^Change Shape \| The dragon changes\. ¶ In a new form/);assert.equal(n[3],'Multiattack');
   assert.ok(!n.some(l=>/\*\*/.test(l)),'sem marcas de markdown');assert.equal(FC.parseAcao(n[1],'ACTION').name,'Fire Breath');
 });
+
+test('editar uma ficha com descrições de várias linhas (Dragão de Ouro Adulto do SRD) e salvar mantém as mesmas ações',()=>{
+  const j=JSON.parse(require('node:fs').readFileSync('dados/bestiario/srd-2014.json','utf8')),m=(Array.isArray(j)?j:j.monsters||Object.values(j)).find(x=>x.name==='Adult Gold Dragon');
+  assert.ok(m&&m.actions.some(a=>/\n/.test(a.desc)),'o dragão tem descrição com várias linhas');
+  const encP=s=>String(s).replace(/\n/g,' ¶ '),campo=m.actions.map(a=>a.name+' | '+encP(a.desc)).join('\n');
+  const volta=FC.normalizarLinhas(campo.split('\n').map(s=>s.trim()).filter(Boolean)).map(l=>FC.parseAcao(l,'ACTION'));
+  assert.equal(volta.length,m.actions.length,'mesmo número de ações, sem ações criadas a partir de parágrafos');
+  assert.equal(JSON.stringify(volta.map(a=>a.name)),JSON.stringify(m.actions.map(a=>a.name)));assert.ok(volta.find(a=>a.name==='Breath Weapons').desc.includes('Fire Breath'),'os sopros continuam dentro da descrição');
+});
+test('o editor carrega as descrições com as quebras de linha codificadas (¶), não cruas',()=>{
+  const app=require('node:fs').readFileSync('js/app.js','utf8');
+  assert.match(app,/\(m\.actions \|\| \[\]\)\.map\(\(a\) => `\$\{a\.name\} \| \$\{encP\(a\.desc\)\}`\)/);assert.match(app,/\(m\.traits \|\| \[\]\)\.map\(\(t\) => `\$\{t\.name\}: \$\{encP\(t\.desc\)\}`\)/);
+});
