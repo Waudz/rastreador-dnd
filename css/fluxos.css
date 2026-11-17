@@ -1439,7 +1439,7 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 /* Layout de colunas redimensionáveis: largura única controlada pelo gerenciador. */
 @media(min-width:1400px) and (pointer:fine){
  body.comp-janelas-desktop{--comp-gap-janelas:16px;--comp-largura-historico:300px;--comp-largura-ficha:420px}
- body.comp-janelas-desktop.comp-coluna-esquerda{--comp-reserva-esquerda:calc(var(--comp-largura-historico) + 32px)}
+ body.comp-janelas-desktop.comp-coluna-esquerda{--comp-reserva-esquerda:calc(var(--comp-largura-historico) + 16px)}
  body.comp-janelas-desktop.comp-coluna-direita{--comp-reserva-direita:calc(var(--comp-largura-ficha) + 32px)}
  body.comp-janelas-desktop main.tracker{
    width:min(1400px,calc(100vw - 32px - var(--comp-reserva-esquerda,0px) - var(--comp-reserva-direita,0px)))!important;
@@ -1472,3 +1472,15 @@ body.ficha-embutida .tracker { padding:14px; }                                  
  body.comp-janelas-desktop .comp-flutuante-cab>button{margin-left:auto;cursor:pointer}
 }
 @media(max-width:1399px), (pointer:coarse){.comp-divisoria,.comp-flutuante-cab{display:none!important}}
+
+/* Cabeçalho não pode forçar o combate além do espaço concedido pela grade. */
+@media(min-width:1400px) and (pointer:fine){
+ body.comp-janelas-desktop main.tracker .header{
+   min-width:0;max-width:100%;flex-wrap:wrap;gap:12px;
+ }
+ body.comp-janelas-desktop main.tracker .header>div:first-child{min-width:0;flex:1 1 320px}
+ body.comp-janelas-desktop main.tracker .header h1,
+ body.comp-janelas-desktop main.tracker .header .eyebrow,
+ body.comp-janelas-desktop main.tracker .header .subtitle{max-width:100%;overflow-wrap:break-word}
+ body.comp-janelas-desktop main.tracker .header .round-box{flex:0 0 auto}
+}
