@@ -201,3 +201,15 @@ a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, cu
 .grupo-unificado .personagem-card .grupo-cartao-acoes>.compact-menu[open]>summary{
   color:var(--text);border-color:var(--line);
 }
+
+/* Distribui as três ações em posições esquerda, centro e direita do rodapé. */
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo>.grupo-cartao-acoes{
+  display:flex;justify-content:space-between;align-items:center;
+  width:100%;gap:0;
+}
+/* Fotos de personagens na seleção de iniciativa seguem as bordas neutras do catálogo. */
+#ci-lista .ci-cartao-ini .ci-personagem .retrato-cartao,
+#ci-lista .ci-cartao-ini .ci-personagem img.av,
+#ci-lista .ci-cartao-ini .ci-personagem .catalogo-simbolo{
+  border:1px solid var(--line);border-radius:10px;
+}
