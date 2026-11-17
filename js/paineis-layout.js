@@ -19,107 +19,90 @@
   window.addEventListener?.('resize',()=>window.reorganizarPaineis());
 })();
 
-/* Gerenciador experimental de janelas para o desktop da iniciativa.
-   Não move elementos do DOM: preserva eventos, formulários e estado dos painéis. */
+/* Painéis ancorados: sem arrastar janelas, somente divisórias horizontais. */
 (() => {
   "use strict";
-  const configs = {
-    "ci-resumo": {minW:480,minH:450,w:480,h:650,title:"Ficha do personagem"},
-    "sheet": {minW:440,minH:400,w:440,h:610,title:"Ficha do monstro"},
-    "spd": {minW:420,minH:300,w:420,h:540,title:"Magia"},
-    "vez-res": {minW:300,minH:250,w:300,h:650,title:"Histórico do combate"}
-  };
-  const ativo=()=>innerWidth>=1400 && matchMedia("(pointer:fine)").matches;
-  const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
-  let ordem=40;
-  const barra=document.createElement("div");barra.id="comp-janelas-minimizadas";barra.setAttribute("aria-label","Janelas minimizadas");
-  function salvar(el){try{const r=el.getBoundingClientRect();localStorage.setItem("comp5e-janela-pos-"+el.id,JSON.stringify({x:r.left,y:r.top}));}catch(_){}}
-  function restaurar(el,c){
-    let data=null;try{data=JSON.parse(localStorage.getItem("comp5e-janela-pos-"+el.id)||"null");}catch(_){}
-    const w=Math.min(c.w,innerWidth-24),h=Math.min(c.h,innerHeight-76);
-    const x=clamp(data?.x??(el.id==="vez-res"?16:innerWidth-w-20),8,innerWidth-w-8);
-    const y=clamp(data?.y??(el.id==="vez-res"?62:76),52,innerHeight-h-8);
-    Object.assign(el.style,{left:x+"px",top:y+"px",width:w+"px",height:h+"px"});
+  if(typeof document.createElement!=="function"||typeof document.addEventListener!=="function")return;
+  const ids=["vez-res","spd","ci-resumo","sheet"];
+  const ativo=()=>innerWidth>=1400&&matchMedia("(pointer:fine)").matches;
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const numero=(key,padrao)=>{try{return Number(localStorage.getItem(key))||padrao}catch(_){return padrao}};
+  let esquerda=clamp(numero("comp5e-coluna-esquerda",300),240,420);
+  let direita=clamp(numero("comp5e-coluna-direita",420),320,560);
+  const visivel=el=>!!el&&!el.hidden&&!el.classList.contains("comp-historico-fechado");
+  function ajustar(){
+    const h=document.getElementById("vez-res"),m=document.getElementById("spd");
+    const p=document.getElementById("ci-resumo"),mon=document.getElementById("sheet");
+    const esq=visivel(h)||visivel(m),dir=visivel(p)||visivel(mon);
+    const disponivel=Math.max(0,innerWidth-32-720-(esq?16:0)-(dir?16:0));
+    if(esq&&dir&&esquerda+direita>disponivel){
+      direita=Math.max(320,Math.min(direita,disponivel-esquerda));
+      esquerda=Math.max(240,Math.min(esquerda,disponivel-direita));
+    }
+    document.body.classList.toggle("comp-coluna-esquerda",ativo()&&esq);
+    document.body.classList.toggle("comp-coluna-direita",ativo()&&dir);
+    document.body.style.setProperty("--comp-largura-historico",esquerda+"px");
+    document.body.style.setProperty("--comp-largura-ficha",direita+"px");
+    const topo=70,altura=Math.max(200,innerHeight-86),gap=16;
+    const histH=visivel(h)&&visivel(m)?Math.floor(altura*.45):altura;
+    if(ativo()){
+      if(visivel(h))Object.assign(h.style,{left:"16px",top:topo+"px",width:esquerda+"px",height:histH+"px"});
+      if(visivel(m))Object.assign(m.style,{left:"16px",top:(visivel(h)?topo+histH+gap:topo)+"px",width:esquerda+"px",height:(visivel(h)?altura-histH-gap:altura)+"px"});
+      for(const el of [p,mon])if(visivel(el))Object.assign(el.style,{left:"auto",right:"16px",top:topo+"px",width:direita+"px",height:altura+"px"});
+    }
+    document.body.style.setProperty("--comp-magia-topo",(visivel(h)?topo+histH+gap:topo)+"px");
   }
+  function salvar(lado){try{localStorage.setItem("comp5e-coluna-"+lado,String(lado==="esquerda"?esquerda:direita))}catch(_){}}
   function registrar(el){
     if(!el||el.dataset.janelaPreparada)return;
-    const c=configs[el.id];if(!c)return;
     el.dataset.janelaPreparada="1";
+    const titulos={"vez-res":"Histórico do combate","spd":"Magia","ci-resumo":"Ficha do personagem","sheet":"Ficha do monstro"};
     const cab=document.createElement("div");cab.className="comp-flutuante-cab";
-    const titulo=document.createElement("strong");titulo.textContent=c.title;
-    const acoes=document.createElement("span");acoes.className="comp-flutuante-acoes";
-    const minimo=document.createElement("button");minimo.type="button";minimo.textContent="—";minimo.title="Minimizar janela";
-    
-    const fechar=document.createElement("button");fechar.type="button";fechar.textContent="×";fechar.title="Fechar janela";
-    acoes.append(fechar);cab.append(titulo,acoes);el.prepend(cab);
-    
-    const ativar=()=>{el.style.zIndex=String(++ordem)};
-    el.addEventListener("pointerdown",ativar);
-    function mover(e){
-      if(!ativo()||e.button!==0)return;
-      if(e.target.closest("button,input,select,a"))return;
-      e.preventDefault();ativar();
-      const r=el.getBoundingClientRect(),sx=e.clientX,sy=e.clientY;
-      const move=ev=>{
-        const dx=ev.clientX-sx,dy=ev.clientY-sy;
-        el.style.left=clamp(r.left+dx,8,innerWidth-r.width-8)+"px";
-        el.style.top=clamp(r.top+dy,52,innerHeight-r.height-8)+"px";
-      };
-      const up=()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);salvar(el)};
-      window.addEventListener("pointermove",move);window.addEventListener("pointerup",up,{once:true});
-    }
-    // Layout em colunas: janelas ancoradas, sem arrastar.
+    const titulo=document.createElement("strong");titulo.textContent=titulos[el.id];
+    const fechar=document.createElement("button");fechar.type="button";fechar.textContent="×";fechar.title="Fechar painel";
+    cab.append(titulo,fechar);el.prepend(cab);
     fechar.addEventListener("click",()=>{
-      if(el.id==="vez-res"){
-        el.classList.add("comp-historico-fechado");
-        const abrir=document.getElementById("comp-abrir-historico");
-        if(abrir)abrir.hidden=false;
-        organizarConsultas();
-      }else{
-        window.PAINEL?.fecharVista?.(el.id);
-      }
+      if(el.id==="vez-res"){el.classList.add("comp-historico-fechado");const b=document.getElementById("comp-abrir-historico");if(b)b.hidden=false;ajustar();}
+      else window.PAINEL?.fecharVista?.(el.id);
     });
-    restaurar(el,c);ativar();
-  }
-
-  function organizarConsultas(){
-    if(!ativo()){document.body.classList.remove("comp-coluna-esquerda","comp-coluna-direita");document.body.style.removeProperty("--comp-magia-topo");return;}
-    const h=document.getElementById("vez-res"),m=document.getElementById("spd"),p=document.getElementById("ci-resumo");
-    const visivel=el=>!!el&&!el.hidden&&!el.classList.contains("comp-historico-fechado");
-    const magia=visivel(m), historico=visivel(h);
-    const topo=70,altura=Math.max(200,innerHeight-86),espaco=16;
-    const leftOpen=historico||magia;
-    const rightOpen=visivel(p)||visivel(document.getElementById("sheet"));
-    document.body.classList.toggle("comp-coluna-esquerda",leftOpen);
-    document.body.classList.toggle("comp-coluna-direita",rightOpen);
-    const histH=magia&&historico?Math.floor(altura*.45):altura;
-    document.body.style.setProperty("--comp-magia-topo",(historico?topo+histH+espaco:topo)+"px");
-    if(h&&historico)Object.assign(h.style,{left:"16px",top:topo+"px",width:"300px",height:histH+"px"});
-    if(m&&magia)Object.assign(m.style,{left:"16px",top:(historico?topo+histH+espaco:topo)+"px",width:"300px",height:(historico?altura-histH-espaco:altura)+"px"});
-    if(visivel(p))Object.assign(p.style,{left:Math.max(8,innerWidth-436)+"px",top:topo+"px",width:"420px",height:altura+"px"});
-    const monstro=document.getElementById("sheet");
-    if(visivel(monstro))Object.assign(monstro.style,{left:Math.max(8,innerWidth-436)+"px",top:topo+"px",width:"420px",height:altura+"px"});
+    const lado=el.id==="vez-res"||el.id==="spd"?"esquerda":"direita";
+    const alca=document.createElement("div");alca.className="comp-divisoria";alca.setAttribute("role","separator");
+    alca.setAttribute("aria-orientation","vertical");alca.setAttribute("aria-label","Redimensionar painel "+lado);
+    alca.tabIndex=0;el.append(alca);
+    const atualizarLargura=n=>{
+      if(!ativo())return;
+      const outra=lado==="esquerda"?document.body.classList.contains("comp-coluna-direita")?direita+16:0:document.body.classList.contains("comp-coluna-esquerda")?esquerda+16:0;
+      const max=Math.max(lado==="esquerda"?240:320,Math.min(lado==="esquerda"?420:560,innerWidth-32-720-16-outra));
+      if(lado==="esquerda")esquerda=clamp(n,240,max);else direita=clamp(n,320,max);
+      ajustar();
+    };
+    alca.addEventListener("pointerdown",e=>{
+      if(!ativo()||e.button!==0)return;
+      e.preventDefault();const start=e.clientX,original=lado==="esquerda"?esquerda:direita;
+      alca.setPointerCapture?.(e.pointerId);
+      const move=ev=>atualizarLargura(original+(ev.clientX-start)*(lado==="esquerda"?1:-1));
+      const up=()=>{alca.removeEventListener("pointermove",move);alca.removeEventListener("pointerup",up);salvar(lado)};
+      alca.addEventListener("pointermove",move);alca.addEventListener("pointerup",up,{once:true});
+    });
+    alca.addEventListener("dblclick",()=>{atualizarLargura(lado==="esquerda"?300:420);salvar(lado)});
+    alca.addEventListener("keydown",e=>{if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();const dir=e.key==="ArrowRight"?1:-1;atualizarLargura((lado==="esquerda"?esquerda:direita)+dir*(lado==="esquerda"?16:-16));salvar(lado)});
   }
   function atualizar(){
     const on=ativo();document.body.classList.toggle("comp-janelas-desktop",on);
-    for(const id of Object.keys(configs)){
-      const el=document.getElementById(id);if(!el)continue;
-      if(on){registrar(el);const c=configs[id];if(el.dataset.janelaPreparada==="1")restaurar(el,c)}else if(el.dataset.janelaPreparada==="1"){el.classList.remove("comp-historico-fechado");for(const prop of ["left","top","width","height","zIndex"])el.style[prop]="";}
+    for(const id of ids){const el=document.getElementById(id);if(!el)continue;
+      if(on)registrar(el);
+      else if(el.dataset.janelaPreparada){el.classList.remove("comp-historico-fechado");for(const prop of ["left","right","top","width","height","zIndex"])el.style[prop]="";}
     }
-    organizarConsultas();
-    window.PAINEIS_LAYOUT?.aplicar();
+    ajustar();window.PAINEIS_LAYOUT?.aplicar();
   }
-  document.addEventListener("DOMContentLoaded",()=>{atualizar();
+  document.addEventListener("DOMContentLoaded",()=>{
     const tools=document.getElementById("lista-ferramentas");
-    if(tools){const abrir=document.createElement("button");abrir.id="comp-abrir-historico";abrir.type="button";abrir.className="small subtle";abrir.textContent="Abrir histórico";abrir.hidden=true;abrir.addEventListener("click",()=>{document.getElementById("vez-res")?.classList.remove("comp-historico-fechado");abrir.hidden=true;organizarConsultas()});tools.prepend(abrir);}
-    document.addEventListener("click",e=>{
-      const btn=e.target.closest("#ci-resumo-fechar,#sh-close,#spd-close");
-      if(!btn||!ativo())return;
-      e.preventDefault();e.stopImmediatePropagation();
-      const id=btn.id==="ci-resumo-fechar"?"ci-resumo":btn.id==="sh-close"?"sheet":"spd";
-      window.PAINEL?.fecharVista?.(id);
-    },true);
-    const o=new MutationObserver(()=>requestAnimationFrame(organizarConsultas));for(const id of ["spd","ci-resumo","sheet","vez-res"]){const el=document.getElementById(id);if(el)o.observe(el,{attributes:true,attributeFilter:["hidden","class"]})}});
+    if(tools){const abrir=document.createElement("button");abrir.id="comp-abrir-historico";abrir.type="button";abrir.className="small subtle";abrir.textContent="Abrir histórico";abrir.hidden=true;abrir.addEventListener("click",()=>{document.getElementById("vez-res")?.classList.remove("comp-historico-fechado");abrir.hidden=true;ajustar()});tools.prepend(abrir)}
+    document.addEventListener("click",e=>{const btn=e.target.closest?.("#ci-resumo-fechar,#sh-close,#spd-close");if(!btn||!ativo())return;e.preventDefault();e.stopImmediatePropagation();window.PAINEL?.fecharVista?.(btn.id==="ci-resumo-fechar"?"ci-resumo":btn.id==="sh-close"?"sheet":"spd")},true);
+    const observer=new MutationObserver(()=>requestAnimationFrame(ajustar));
+    for(const id of ids){const el=document.getElementById(id);if(el)observer.observe(el,{attributes:true,attributeFilter:["hidden","class"]})}
+    atualizar();
+  });
   window.addEventListener("resize",atualizar,{passive:true});
   window.COMP_DESKTOP_WINDOWS={ativo,registrar,atualizar};
 })();
