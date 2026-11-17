@@ -5,7 +5,7 @@ test('personagem e monstro recebem a mesma reserva em desktop e nenhuma em janel
  for(const width of [320,375,390,430,768,960,1199,1200,1366,1920]){
    const p=fixture(width,'personagem'),m=fixture(width,'monstro');
    assert.equal(p.vars['--painel-reserva-direita'],m.vars['--painel-reserva-direita']);
-   assert.equal(p.vars['--painel-reserva-direita'],width>=1200?'440px':'0px');
+   assert.equal(p.vars['--painel-reserva-direita'],width>=1200?Math.max(440,Math.min(900,width-1030))+'px':'0px');
    assert.equal(p.L.medir(width).modo,width>=1200?'lateral':'empilhado');
  }
 });
