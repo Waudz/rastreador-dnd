@@ -905,24 +905,6 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 #camp-ini #ci-lista { margin-top:4px!important; }
 #camp-ini .ci-rodape { justify-content:flex-end; margin-top:8px; }
 #camp-ini .ci-rodape #ci-recarregar { margin-left:auto; }
-/* Campo manual: o mesmo ícone d20, em vez do placeholder textual. */
-#ci-lista .ci-cartao-ini .ci-ini { position:relative; }
-#ci-lista .ci-cartao-ini .ci-ini-icone {
-  position:absolute;
-  left:10px;
-  bottom:12px;
-  width:20px;
-  height:20px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:var(--muted,#9db0c4);
-  pointer-events:none;
-}
-#ci-lista .ci-cartao-ini .ci-ini-icone svg { width:18px; height:18px; }
-#ci-lista .ci-cartao-ini .ci-ini:focus-within .ci-ini-icone,
-#ci-lista .ci-cartao-ini .ci-ini:has(input:not(:placeholder-shown)) .ci-ini-icone { display:none; }
-
 /* Iniciativa: inputs e botões de rolagem com a mesma altura e alinhamento.
    Mantém larguras próprias e ícone d20 sem distorção. */
 #ci-lista .ci-cartao-ini .ci-acoes {
@@ -948,7 +930,6 @@ body.ficha-embutida .tracker { padding:14px; }                                  
   width:20px;
   height:20px;
 }
-#ci-lista .ci-cartao-ini .ci-ini-icone { bottom:10px; }
 #add-form .add-ini #ini-mod,
 #add-form .add-ini #initiative,
 #add-form .add-ini #add-d20 {
@@ -1047,4 +1028,12 @@ body.ficha-embutida .tracker { padding:14px; }                                  
   #ci-lista .ci-cartao-ini .ci-no-combate {
     margin-top:auto;
   }
+}
+
+/* Ícone no campo de iniciativa pendente do combatente (não no campo de seleção). */
+.combatant input.iniciativa-valor:placeholder-shown:not(:focus) {
+  background-image:var(--ini-d20);
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:22px 22px;
 }
