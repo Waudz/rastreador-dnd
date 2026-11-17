@@ -512,7 +512,7 @@
             <article data-sem-ampliar class="combatant ${isActive ? "active" : ""} ${currentId && posicao === 1 ? "proximo" : ""} ${isDefeated ? "defeated" : ""} ${c.morto ? "estado-morto" : c.estavel ? "estado-estavel" : Number(c.hp) <= 0 ? "estado-inconsciente" : ""}" aria-current="${isActive?'step':'false'}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
               <input class="initiative iniciativa-valor" type="number" step="1" data-iniciativa="${c.id}" value="${pendente(c) ? "" : Number(c.initiative)}" placeholder=" " aria-label="Iniciativa de ${escapeText(c.name)}" title="Iniciativa pendente: informe o resultado da rolagem, já com o modificador">
               <div class="id-bloco">
-                <span class="avfx">${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 40, c.foto) : ""}</span>
+                <span class="avfx">${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 40, c.foto, c.pid) : ""}</span>
                 <div class="id-texto">
                 <div class="name"><span class="nome-texto">${escapeText(c.name)}</span>${isActive ? ` <span aria-label="turno atual" class="turn-mark">${ico("turn")}</span>` : ""}</div>
                 <div class="kind">${isActive?'<span class="turno-badge">Turno atual</span> · ':currentId && posicao === 1 ? '<span class="proximo-badge">Próximo</span> · ':''}${escapeText(c.kind)}${isDefeated ? (c.morto ? " · Morto" : c.kind === "Personagem" ? (c.estavel ? " · Estável (0 PV)" : " · Inconsciente (0 PV)") : " · Inconsciente/derrotado") : ""}${pendente(c) ? " · iniciativa pendente" : ""}</div>

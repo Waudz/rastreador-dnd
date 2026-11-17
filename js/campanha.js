@@ -445,6 +445,22 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
   }
 
   document.addEventListener('toggle',e=>{if(e.target.matches?.('#grupo-convite')&&e.target.open)mostrarConvite();},true);
+  /* Posiciona o menu de ações no lado com espaço para exibir todas as opções. */
+  document.addEventListener('toggle', e => {
+    const menu = e.target;
+    if (!menu.matches?.('.personagem-card .compact-menu')) return;
+    if (!menu.open) { menu.classList.remove('abrir-acima'); return; }
+    requestAnimationFrame(() => {
+      if (!menu.open || !menu.isConnected) return;
+      const pop = menu.querySelector('.compact-popover');
+      if (!pop) return;
+      menu.classList.remove('abrir-acima');
+      const trigger = menu.querySelector('summary')?.getBoundingClientRect() || menu.getBoundingClientRect();
+      const disponivelAbaixo = window.innerHeight - trigger.bottom - 12;
+      const disponivelAcima = trigger.top - 12;
+      if (pop.scrollHeight > disponivelAbaixo && disponivelAcima > disponivelAbaixo) menu.classList.add('abrir-acima');
+    });
+  }, true);
   /* A aparência substitui a lista (não aparece por cima nem embaixo); fechar, ou trocar de aba, volta ao conteúdo. */
   function fecharAparencia() { const p = $('#aparencia-painel'); if (p) { p.hidden = true; p.open = false; } $('#conteudo').hidden = false; }
 
