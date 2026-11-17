@@ -1324,3 +1324,17 @@ body.ficha-embutida .tracker { padding:14px; }                                  
  body.comp-janelas-desktop #dock-r #sheet:not([hidden]){z-index:45}
  body.comp-janelas-desktop #comp-abrir-historico[hidden]{display:none!important}
 }
+
+/* Mesmo intervalo visual dos cartões centrais: 10px entre janelas e conteúdo. */
+@media(min-width:1400px) and (pointer:fine){
+ body.comp-janelas-desktop{--comp-gap-janelas:10px;--comp-largura-historico:300px;--comp-largura-ficha:480px}
+ body.comp-janelas-desktop.comp-coluna-esquerda{
+   --comp-reserva-esquerda:calc(var(--comp-largura-historico) + 14px + var(--comp-gap-janelas))
+ }
+ body.comp-janelas-desktop.comp-coluna-direita{
+   --comp-reserva-direita:calc(var(--comp-largura-ficha) + 14px + var(--comp-gap-janelas))
+ }
+ body.comp-janelas-desktop #vez-res.vez-historico-janela:not(:empty){left:14px!important}
+ body.comp-janelas-desktop #dock-r #ci-resumo:not([hidden]){right:14px!important}
+ body.comp-janelas-desktop #dock-r #sheet:not([hidden]){right:14px!important}
+}
