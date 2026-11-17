@@ -457,7 +457,14 @@
       if (cont) { const n = box.querySelectorAll(".res").length; cont.textContent = n ? `${n} ${tipo === "class" ? "habilidades de classe" : tipo === "monster" ? "habilidades de monstro" : tipo === "spell" ? "magias" : "resultados"} exibidos` : "Nenhum resultado encontrado."; }   // contagem, como "N fichas" no bestiário
     }
     function abilityRows(q, src = "") {
-      return [...ABI.entries()].map(([l, v]) => [l, v, src ? v.items.filter((x) => edOf(x.m.document) === src) : v.items]).filter(([l, v, its]) => its.length && nz(v.name + " " + nm(v.name)).includes(q)).slice(0, 15).map(([l, v, its]) => `<div class="res catalogo-cartao catalogo-habilidade" data-abopen="${esc(l)}"><span class="lft"><span class="av av0 catalogo-simbolo" aria-hidden="true">${ico("sparkles")}</span><span><b>${esc(nm(v.name))}</b> <span class="muted">(${esc(v.name)})</span><br><span class="muted">Habilidade de monstro · ${its.length} ${its.length > 1 ? "monstros" : "monstro"}: ${esc(its.slice(0, 3).map((x) => pt(x.m) || x.m.name).join(", "))}${its.length > 3 ? "…" : ""}</span></span></span></div>`).join("");
+      return [...ABI.entries()].map(([l, v]) => [l, v, src ? v.items.filter((x) => edOf(x.m.document) === src) : v.items])
+        .filter(([l, v, its]) => its.length && nz(v.name + " " + nm(v.name)).includes(q))
+        .map(([l, v, its]) => {
+          const tipos = [...new Set(its.map(x => x.m?.type?.name).filter(Boolean))];
+          const ic = tipos.length === 1 ? tipoIcones[tipos[0]] : "";
+          const simbolo = ic ? `<img class="dnd-categoria-icone" src="icones/dnd/monstros/${esc(ic)}.svg" alt="">` : ico("sparkles");
+          return `<div class="res catalogo-cartao catalogo-habilidade" data-abopen="${esc(l)}"><span class="lft"><span class="av av0 catalogo-simbolo" aria-hidden="true">${simbolo}</span><span><b>${esc(nm(v.name))}</b> <span class="muted">(${esc(v.name)})</span><br><span class="muted">Habilidade de monstro · ${its.length} ${its.length > 1 ? "monstros" : "monstro"}: ${esc(its.slice(0, 3).map((x) => pt(x.m) || x.m.name).join(", "))}${its.length > 3 ? "…" : ""}</span></span></span></div>`;
+        }).join("");
     }
 
     /* habilidades de classe (SRD 5.1, 2014, via Open5e; texto em inglês) */
@@ -471,7 +478,10 @@
     const encP = (s) => String(s).replace(/\n/g, " ¶ "), decP = (s) => String(s).replace(/\s*¶\s*/g, "\n");
     const cfPlain = (f) => String(cfText(f)).replace(/\r/g, "").replace(/\n\s*[*-]\s+/g, " • ").replace(/\n+/g, " ").replace(/[*_#]+/g, "").replace(/\s+/g, " ").trim();
     const cfFind = (q, max) => { const ws = q.split(/\s+/).filter(Boolean); return CF.map((f, i) => [f, i]).filter(([f]) => { const hay = nz(`${f.n} ${f.p} ${CFCLS[f.u || f.c] || ""} ${f.u || f.c} ${f.c}`); return ws.every((w) => hay.includes(w)); }).slice(0, max); };
-    const classRows = (q, src = "") => cfFind(q, 400).filter(([f]) => !src || f.e === src).slice(0, 12).map(([f, i]) => `<div class="res catalogo-cartao catalogo-habilidade" data-cfopen="${i}"><span class="lft"><span class="av av0 catalogo-simbolo" aria-hidden="true">${ico("book")}</span><span><b>${esc(cfTitle(f))}</b>${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""}<br><span class="muted">${esc(["Habilidade de classe", cfClass(f), cfLevel(f), f.e].filter(Boolean).join(" · "))}</span></span></span></div>`).join("");
+    const classRows = (q, src = "") => cfFind(q, CF.length).filter(([f]) => !src || f.e === src).map(([f, i]) => {
+      const srcIcone = window.FICHA_COMPONENTES?.simboloClasse?.({classes:[{c:f.u || f.c,n:1}]}) || "icones/dnd/classes/character.svg";
+      return `<div class="res catalogo-cartao catalogo-habilidade" data-cfopen="${i}"><span class="lft"><span class="av av0 catalogo-simbolo" aria-hidden="true"><img class="dnd-categoria-icone" src="${esc(srcIcone)}" alt=""></span><span><b>${esc(cfTitle(f))}</b>${f.p ? ` <span class="muted">(${esc(f.n)})</span>` : ""}<br><span class="muted">${esc(["Habilidade de classe", cfClass(f), cfLevel(f), f.e].filter(Boolean).join(" · "))}</span></span></span></div>`;
+    }).join("");
 
     /* adiciona uma habilidade de classe a uma ficha própria (personagem, NPC ou monstro criado por você) */
     const cfAlvos = (i) => {
