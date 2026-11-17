@@ -1215,3 +1215,18 @@ body.ficha-embutida .tracker { padding:14px; }                                  
   .comp-flutuante-cab,.comp-flutuante-resize{display:none!important}
   #dock-r>[id],#vez-res{min-width:0}
 }
+
+/* Alinhar o campo de iniciativa à foto, mesmo com nome e status em várias linhas. */
+.combatant:not(.editing) > .iniciativa-campo{align-self:start!important;margin-top:0!important}
+.combatant:not(.editing) > .id-bloco{align-self:start!important}
+.combatant:not(.editing) > .id-bloco > .avfx{align-self:flex-start!important}
+.combatant:not(.editing) > .id-bloco > .id-texto{min-width:0}
+/* Janelas desktop: neutralizar largura/posição da antiga gaveta sem ocultar seu conteúdo. */
+@media(min-width:1400px) and (pointer:fine){
+ body.comp-janelas-desktop #dock-r:not([hidden]){position:static!important;inset:auto!important;width:0!important;height:0!important;padding:0!important;margin:0!important;border:0!important;overflow:visible!important;visibility:visible!important}
+ body.comp-janelas-desktop #dock-r:not([hidden]) > aside:not([hidden]){position:fixed!important;top:76px;left:auto;right:20px;bottom:auto;width:470px;height:min(650px,calc(100dvh - 90px));margin:0!important;visibility:visible!important;opacity:1!important;transform:none!important;pointer-events:auto!important}
+ body.comp-janelas-desktop #dock-r:not([hidden]) > aside#ci-resumo:not([hidden]){display:flex!important}
+ body.comp-janelas-desktop #dock-r:not([hidden]) > aside#sheet:not([hidden]),
+ body.comp-janelas-desktop #dock-r:not([hidden]) > aside#spd:not([hidden]){display:flex!important}
+ body.comp-janelas-desktop #dock-r:not([hidden]) > aside:not([hidden]) .comp-flutuante-cab{display:flex!important}
+}
