@@ -1318,16 +1318,22 @@
     }
     try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); cancelar(); window.ESQ?.pronto($("#ficha")); } catch (e) { cancelar(); document.querySelector(".esq-topo")?.remove?.(); if (window.ESQ) window.ESQ.erro($("#ficha"), e.message, recarregar); else aviso(e.message, true); return; }
     let atualizarFichaTimer = null;
-    nuvem.observarPersonagens?.({personagemId:id,aoAlterar:()=>{
+    async function receberFichaRemota() {
+      if(pend || salvando || document.hidden)return;
+      const ativo=document.activeElement;
+      if(ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName))return;
+      try {
+        const r=await carregar();
+        if(r.versao>P.versao){P=r;desenhar();$("#estado").textContent="Atualizado";}
+      } catch(e){console.warn("Sincronização da ficha:",e);}
+    }
+    const agendarFichaRemota=()=>{
       clearTimeout(atualizarFichaTimer);
-      atualizarFichaTimer=setTimeout(async()=>{
-        if(pend || salvando || document.hidden)return;
-        const ativo=document.activeElement;
-        if(ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName))return;
-        try { const r=await carregar();if(r.versao>P.versao){P=r;desenhar();$("#estado").textContent="Atualizado";} }
-        catch(e){console.warn("Sincronização da ficha:",e);}
-      },150);
-    }});
+      atualizarFichaTimer=setTimeout(receberFichaRemota,150);
+    };
+    nuvem.observarPersonagens?.({personagemId:id,aoAlterar:agendarFichaRemota});
+    // Uma atualização recebida enquanto o usuário digita é aplicada ao sair do campo.
+    document.addEventListener("focusout",agendarFichaRemota);
     nuvem.observar(async () => {
       if (pend || salvando) return;
       if(exclusivoMestre && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true){$('#ficha').innerHTML='';aviso('Este painel é exclusivo do mestre da campanha.',true);return;}
