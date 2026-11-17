@@ -783,3 +783,6 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 .combatant .hp-track>.hp-fill{display:block;position:relative;min-width:0;height:100%;border-radius:inherit;background:var(--green,#409b79)}
 .combatant .hp-track>.hp-fill.mid{background:var(--gold,#d4ae72)}
 .combatant .hp-track>.hp-fill.low{background:var(--red,#d65f5f)}
+
+/* Ícone de classe na iniciativa: retrato 40px, símbolo 28px como nas listas. */
+.combatant .avfx .catalogo-simbolo>.dnd-categoria-icone{width:70%!important;height:70%!important;max-width:70%!important;max-height:70%!important;object-fit:contain;filter:var(--comp-miniatura-sombra)}
