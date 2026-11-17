@@ -974,7 +974,7 @@
   const fotoHTML = () => { const f = F().foto; return f && /^data:image\//.test(f) ? `<img class="av" style="width:72px;height:72px;margin:0" src="${esc(f)}" alt="Foto">` : `<span class="av av0 catalogo-simbolo" style="width:72px;height:72px;margin:0"><img class="dnd-categoria-icone" src="${C.simboloClasse(F())}" alt="Ícone da classe"></span>`; };
 
   function desenhar() {
-    IV.normalizar(INV(), "p" + (P.id || id)); IE.sincronizarPassivos(P);
+    IV.normalizar(INV(), "p" + (P.id || id)); if (IE?.sincronizarPassivos) IE.sincronizarPassivos(P); else if (!soLeitura) throw new Error("O módulo de efeitos dos itens não foi carregado. Atualize o aplicativo e tente novamente.");
     const f = F(), outro = souMestre && P.dono_id !== nuvem.usuario().id, rs = racaSel(), c = conj();
     const mostraMag = c.habilidades.length || MAG().length || magiaRacial();
     $("#ficha").innerHTML = `
