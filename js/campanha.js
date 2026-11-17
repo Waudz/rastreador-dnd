@@ -222,7 +222,7 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     } catch (e) { if (consultada === id) grupoBasico = { erro: e.message || "indisponível" }; }
     if (consultada === id && aba === "pers" && !mestre()) { const box = $("#grupo-leitura"); if (box) box.innerHTML = abaGrupo(); }
   }
-  const avatarGrupo = (nome, foto) => foto && /^data:image\//.test(foto) ? `<img class="av" src="${esc(foto)}" alt="Foto de ${esc(nome)}">` : `<span class="av av0">${esc((nome || "?").charAt(0).toUpperCase())}</span>`;
+  const avatarGrupo = (nome, foto) => foto && /^data:image\//.test(foto) ? `<img class="av" src="${esc(foto)}" alt="Foto de ${esc(nome)}">` : `<span class="av av0 catalogo-simbolo"><img class="dnd-categoria-icone" src="icones/dnd/classes/character.svg" alt=""></span>`;
   function cartaoGrupo(p) {
     const f = p.ficha || {}, r = window.FICHA_COMPONENTES?.resumoPersonagem ? window.FICHA_COMPONENTES.resumoPersonagem(f) : { classes: f.classe || "", nivel: Number(f.nivel) || 0 };
     const linha = [f.raca, r.classes, r.nivel ? "Nível " + r.nivel : ""].filter(Boolean).join(" · ");
