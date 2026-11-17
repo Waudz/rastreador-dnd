@@ -255,6 +255,27 @@
     return () => { ativo = false; clearTimeout(t); };
   }
 
+  /* Eventos do banco: apenas sinalizam mudança; cada tela busca a ficha autorizada
+     via REST/RLS, sem confiar em payloads de outras contas. */
+  function observarPersonagens({ campanhaId, personagemId, aoAlterar } = {}) {
+    if (!sb || typeof aoAlterar !== "function" || (!campanhaId && !personagemId)) return () => {};
+    const filtro = personagemId ? "id=eq." + personagemId : "campanha_id=eq." + campanhaId;
+    const canal = sb.channel("personagens-" + filtro + "-" + Math.random().toString(36).slice(2))
+      .on("postgres_changes", { event: "*", schema: "public", table: "personagens", filter: filtro }, (evento) => {
+        if (!document.hidden) aoAlterar(evento);
+      }).subscribe();
+    let ativo = true;
+    const aoVisivel = () => { if (ativo && !document.hidden) aoAlterar({ tipo: "reconectar" }); };
+    document.addEventListener("visibilitychange", aoVisivel);
+    window.addEventListener("online", aoVisivel);
+    return () => {
+      ativo = false;
+      document.removeEventListener("visibilitychange", aoVisivel);
+      window.removeEventListener("online", aoVisivel);
+      sb.removeChannel(canal);
+    };
+  }
+
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
   /* botão de mostrar/ocultar senha: <div class="pw"><input type="password"><button type="button" class="pw-eye"></button></div> */
@@ -278,6 +299,6 @@
     catalogoPublico: (campos) => http(`${base}/rest/v1/catalogo_publicado?select=${campos === 'atualizado_em' ? 'atualizado_em' : 'dados,atualizado_em'}&id=eq.2014`, {headers:{apikey:C.chave},cache:'no-store'}),
     /* só caminhos de imagem do catálogo (itens e monstros), legíveis por visitantes sem conta; exige a função public.catalogo_imagens_publicas (docs/PLANO-IMAGENS-PUBLICAS.md) */
     catalogoImagensPublicas: () => http(`${base}/rest/v1/rpc/catalogo_imagens_publicas`, { method: "POST", headers: { apikey: C.chave, "Content-Type": "application/json" }, body: "{}", cache: "no-store" }),
-    enviarArquivo, urlDoArquivo, apagarArquivos, observar, esc, olhos, copiar
+    enviarArquivo, urlDoArquivo, apagarArquivos, observar, observarPersonagens, esc, olhos, copiar
   };
 })();

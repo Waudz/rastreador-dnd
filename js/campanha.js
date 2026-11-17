@@ -482,6 +482,15 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     if (!id) { location.replace("conta.html"); return; }
     await abrir();
     if (!camp) return;
+    let atualizarGrupoTimer = null;
+    nuvem.observarPersonagens?.({campanhaId:id,aoAlterar:()=>{
+      clearTimeout(atualizarGrupoTimer);
+      atualizarGrupoTimer=setTimeout(async()=>{
+        if(document.hidden || document.querySelector("#forms form") || document.querySelector("#imp .panel"))return;
+        try { const antes=assinatura();if(await carregar()!==false && assinatura()!==antes)desenhar(); }
+        catch(e){ console.warn("Sincronização do grupo:",e); }
+      },150);
+    }});
     nuvem.observar(async () => {
       const ativo = document.activeElement;
       if (ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName)) return;     // não interrompe quem está digitando
