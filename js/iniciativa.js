@@ -506,7 +506,7 @@
           if (c.id === editId) return editTpl(c);
           const isActive = c.id === currentId;
           const isDefeated = Number(c.hp) <= 0 || !!c.morto;
-          const pct = Math.max(0, Math.min(100, (Number(c.hp) / Number(c.maxHp)) * 100));
+          const pct = Number(c.maxHp) > 0 ? Math.max(0, Math.min(100, (Number(c.hp) / Number(c.maxHp)) * 100)) : 0;
           const hpClass = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
           return `
             <article data-sem-ampliar class="combatant ${isActive ? "active" : ""} ${currentId && posicao === 1 ? "proximo" : ""} ${isDefeated ? "defeated" : ""} ${c.morto ? "estado-morto" : c.estavel ? "estado-estavel" : Number(c.hp) <= 0 ? "estado-inconsciente" : ""}" aria-current="${isActive?'step':'false'}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
