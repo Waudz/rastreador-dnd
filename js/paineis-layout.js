@@ -29,11 +29,12 @@
   const numero=(key,padrao)=>{try{return Number(localStorage.getItem(key))||padrao}catch(_){return padrao}};
   let esquerda=clamp(numero("comp5e-coluna-esquerda",300),240,420);
   let direita=clamp(numero("comp5e-coluna-direita",420),320,560);
-  const visivel=el=>!!el&&!el.hidden&&!el.classList.contains("comp-historico-fechado");
+  const visivel=el=>!!el&&!el.hidden&&!el.closest?.("[hidden]")&&!el.classList.contains("comp-historico-fechado");
+  const historicoVisivel=el=>visivel(el)&&el.classList.contains("vez-historico-janela")&&!!el.textContent.trim();
   function ajustar(){
     const h=document.getElementById("vez-res"),m=document.getElementById("spd");
     const p=document.getElementById("ci-resumo"),mon=document.getElementById("sheet");
-    const esq=visivel(h)||visivel(m),dir=visivel(p)||visivel(mon);
+    const esq=historicoVisivel(h)||visivel(m),dir=visivel(p)||visivel(mon);
     const disponivel=Math.max(0,innerWidth-32-720-(esq?16:0)-(dir?16:0));
     if(esq&&dir&&esquerda+direita>disponivel){
       direita=Math.max(320,Math.min(direita,disponivel-esquerda));
@@ -44,10 +45,10 @@
     document.body.style.setProperty("--comp-largura-historico",esquerda+"px");
     document.body.style.setProperty("--comp-largura-ficha",direita+"px");
     const topo=70,altura=Math.max(200,innerHeight-86),gap=16;
-    const histH=visivel(h)&&visivel(m)?Math.floor(altura*.45):altura;
+    const histH=historicoVisivel(h)&&visivel(m)?Math.floor(altura*.45):altura;
     if(ativo()){
-      if(visivel(h))Object.assign(h.style,{left:"16px",top:topo+"px",width:esquerda+"px",height:histH+"px"});
-      if(visivel(m))Object.assign(m.style,{left:"16px",top:(visivel(h)?topo+histH+gap:topo)+"px",width:esquerda+"px",height:(visivel(h)?altura-histH-gap:altura)+"px"});
+      if(historicoVisivel(h))Object.assign(h.style,{left:"16px",top:topo+"px",width:esquerda+"px",height:histH+"px"});
+      if(visivel(m))Object.assign(m.style,{left:"16px",top:(historicoVisivel(h)?topo+histH+gap:topo)+"px",width:esquerda+"px",height:(historicoVisivel(h)?altura-histH-gap:altura)+"px"});
       for(const el of [p,mon])if(visivel(el))Object.assign(el.style,{left:"auto",right:"16px",top:topo+"px",width:direita+"px",height:altura+"px"});
     }
     document.body.style.setProperty("--comp-magia-topo",(visivel(h)?topo+histH+gap:topo)+"px");
