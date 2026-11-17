@@ -1282,3 +1282,27 @@ body.ficha-embutida .tracker { padding:14px; }                                  
  }
  body.comp-janelas-desktop #dock-r #spd .comp-flutuante-cab{margin:0}
 }
+
+/* Correção definitiva: desligar a reserva da gaveta antiga no modo desktop. */
+@media(min-width:1400px) and (pointer:fine){
+ html:has(body.comp-janelas-desktop){--painel-reserva-direita:0px!important;--ficha-painel:0px}
+ body.comp-janelas-desktop{--painel-reserva-direita:0px!important}
+ body.comp-janelas-desktop.com-ficha-lateral main.tracker{
+   margin-left:calc(14px + var(--comp-reserva-esquerda,0px))!important;
+   margin-right:calc(14px + var(--comp-reserva-direita,0px))!important;
+ }
+ body.comp-janelas-desktop main.tracker{
+   width:auto!important;
+   max-width:none!important;
+   transform:none!important;
+   padding-left:0!important;
+   padding-right:0!important;
+ }
+ body.comp-janelas-desktop #dock-r #spd:not([hidden]){
+   width:300px!important;max-width:300px!important;
+   top:62px; /* JS define a posição abaixo do histórico quando necessário. */
+ }
+ body.comp-janelas-desktop #dock-r #sheet:not([hidden]){
+   right:14px!important;left:auto!important;
+ }
+}
