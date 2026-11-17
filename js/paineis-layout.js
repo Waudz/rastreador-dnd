@@ -83,7 +83,7 @@
     });
     let tamanho=1;
     tamanhos.addEventListener("click",()=>{tamanho=(tamanho+1)%3;const f=[.8,1,1.25][tamanho];const w=clamp(Math.round(c.w*f),c.minW,innerWidth-24),h=clamp(Math.round(c.h*f),c.minH,innerHeight-76);el.style.width=w+"px";el.style.height=h+"px";const r=el.getBoundingClientRect();el.style.left=clamp(r.left,8,innerWidth-w-8)+"px";el.style.top=clamp(r.top,52,innerHeight-h-8)+"px";salvar(el)});
-    fechar.addEventListener("click",()=>{if(el.id==="vez-res"){el.classList.add("comp-historico-fechado")}else{const btn=el.querySelector("#ci-resumo-fechar,#sh-close,#spd-close");btn?.click()}});
+    fechar.addEventListener("click",()=>{if(el.id==="vez-res"){minimo.click()}else{const btn=el.querySelector("#ci-resumo-fechar,#sh-close,#spd-close");btn?.click()}});
     restaurar(el,c);ativar();
   }
   function atualizar(){
