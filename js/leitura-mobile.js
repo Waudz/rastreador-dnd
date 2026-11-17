@@ -29,7 +29,7 @@
     if(!nivel)window.scrollTo({top:scroll,behavior:'instant'});
   });
   painel.encerrar=()=>{pilha=[];orig.fechar();atualizar();};
-  window.addEventListener('pageshow',()=>{if(history.state?.compendioLeitura){history.replaceState({...history.state,compendioLeitura:0},'');}pilha=[];orig.fechar();atualizar();});
+  window.addEventListener('pageshow',(e)=>{if(history.state?.compendioLeitura){history.replaceState({...history.state,compendioLeitura:0},'');}pilha=[];if(e&&e.persisted){const g=window.PAINEL_ESTADO&&window.PAINEL_ESTADO.ler();orig.fechar();if(g)window.PAINEL_ESTADO.gravar(g);}atualizar();});   // carga normal: o painel guardado reabre (leitor-fichas.js); só a volta pelo cache do navegador limpa a tela
   window.addEventListener('resize',atualizar);
   document.addEventListener('click',e=>{if(e.target.closest('[data-leitura-voltar]'))painel.voltar();});
   const topo=document.createElement('div');topo.className='leitura-mobile-topo';topo.hidden=true;

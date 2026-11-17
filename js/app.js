@@ -160,6 +160,7 @@
       SP = (await rq(db.transaction("spl").objectStore("spl").getAll())).filter(EDICOES.catalogo2014);
       PH = Object.fromEntries((await rq(db.transaction("img").objectStore("img").getAll())).map((x) => [x.key, x.data]));
       BY = Object.fromEntries(ALL.map((m) => [m.key, m]));
+      if (!window.__painelRestaurado) { window.__painelRestaurado = true; const e = window.PAINEL_ESTADO && window.PAINEL_ESTADO.ler(); if (e && e.t === "monstro" && BY[e.key]) setTimeout(() => openSheet(e.key), 0); }
       ALL.sort((a, b) => a.name.localeCompare(b.name)); SP.sort((a, b) => a.name.localeCompare(b.name));
       $("#spinfo").textContent = "Catálogo D&D 2014 em português.";
       abiIndex(); buildFilter(); renderBestiary(); spSearch(); if (document.activeElement === $("#name")) sugg(); window.__ini.render();
@@ -423,7 +424,7 @@
         gerenciar:((m.custom||window.CATALOGO?.admin())?'<button class="small primary" data-edit="'+esc(m.key)+'">Editar ficha</button> ':'')+'<button class="small" data-ph="'+esc(m.key)+'">'+(PH[m.key]?'Trocar foto':'Adicionar foto')+'</button>'+(PH[m.key]?'<button class="small subtle" data-phx="'+esc(m.key)+'">'+(m.custom?'Remover foto':'Voltar à foto padrão')+'</button>':'')
       });
       document.dispatchEvent(new Event('ficha:fechar-personagem'));
-      window.PAINEL.mostrar("sheet"); $("#sheet").scrollTop = 0; $("#sheet-body").scrollTop = 0; $("#sh-close").focus();
+      window.PAINEL.mostrar("sheet"); window.PAINEL_ESTADO?.salvar({ t: "monstro", key: k }); $("#sheet").scrollTop = 0; $("#sheet-body").scrollTop = 0; $("#sh-close").focus();
     }
 
     /* magias: lista no painel, texto na aba lateral */
@@ -713,7 +714,7 @@
       if (sg) return pick(sg.dataset.sug);
       const ao = t.closest("[data-abopen]"); if (ao) return openAbility(ao.dataset.abopen, 0, "panel");
       const ax = t.closest("[data-abix]"); if (ax) return openAbility(ax.dataset.l, +ax.dataset.abix);
-      const fav = t.closest("#blist .av"); if (fav) { const v = fav.closest(".res")?.querySelector("[data-view]"); if (v) return openSheet(v.dataset.view); }
+      const fav = t.closest("#blist .av"); if (fav) { const foto = fav.tagName === "IMG" ? fav : null; if (foto && window.VISUALIZADOR) return window.VISUALIZADOR.abrir({ src: foto.currentSrc || foto.src, titulo: fav.closest(".res")?.querySelector("b")?.textContent || "", origem: foto }); const v = fav.closest(".res")?.querySelector("[data-view]"); if (v) return openSheet(v.dataset.view); }   // foto real: amplia; sem foto (ícone do tipo): abre a ficha
       const pb = t.closest("[data-ph]"); if (pb) return askPhoto(pb.dataset.ph);
       const px = t.closest("[data-phx]"); if (px) { const k = px.dataset.phx; if(!BY[k]?.custom){if(!window.CATALOGO?.admin())return;try{await CATALOGO.salvar('monstro',k,null,{imagem:null});}catch(e){status(esc(e.message));return;}}else{delete PH[k];await del('img',k);touch(k);}renderBestiary();window.__ini.render();return openSheet(k); }
       const ck = t.closest("[data-cfk]"); if (ck) { const ix = CF.findIndex((f) => cfKey(f) === ck.dataset.cfk); if (ix >= 0) openClassFeature(ix, "sheet"); return; }

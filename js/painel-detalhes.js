@@ -37,9 +37,10 @@
       if (!v) return fechar();
       esconderTodas(a.id); v.hidden = false; atualizar(true);
       a.rolagens.forEach(function (r) { r[0].scrollTop = r[1]; });
+      if (raiz.PAINEL_ESTADO) raiz.PAINEL_ESTADO.voltar();
       return a.id;
     }
-    function fechar() { anterior = null; esconderTodas(null); atualizar(); }
+    function fechar() { anterior = null; esconderTodas(null); atualizar(); if (raiz.PAINEL_ESTADO) raiz.PAINEL_ESTADO.limpar(); }
     return { encerrar: fechar, mostrar: mostrar, empilhar: empilhar, voltar: voltar, fechar: fechar, visivel: visivel, temAnterior: function () { return !!anterior; }, VISTAS: VISTAS };
   }
   if (raiz.addEventListener) raiz.addEventListener("message", function(e) {
@@ -51,5 +52,15 @@
   });
   var api = { criar: criar, VISTAS: VISTAS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
-  else { raiz.PainelDetalhes = api; raiz.PAINEL = criar(raiz.document, function () { if (raiz.reorganizarPaineis) raiz.reorganizarPaineis(); }); }
+  else {
+    /* o painel lateral continua aberto, com os mesmos dados, quando se troca de página na mesma guia (cada página restaura ao carregar) */
+    var CHAVE = "compendio:painel-lateral";
+    raiz.PAINEL_ESTADO = {
+      ler: function () { try { var v = JSON.parse(raiz.sessionStorage.getItem(CHAVE) || "null"); return v && typeof v === "object" ? v : null; } catch (_) { return null; } },
+      gravar: function (o) { try { raiz.sessionStorage.setItem(CHAVE, JSON.stringify(o)); } catch (_) { /* sem armazenamento: o painel só não persiste */ } },
+      salvar: function (o) { var atual = this.ler(); if (o.t === "magia" && atual && atual.t !== "magia") o.base = atual; else if (o.t === "magia" && atual && atual.base) o.base = atual.base; this.gravar(o); },
+      voltar: function () { var e = this.ler(); if (e && e.base) this.gravar(e.base); else this.limpar(); },
+      limpar: function () { try { raiz.sessionStorage.removeItem(CHAVE); } catch (_) { /* nada a limpar */ } }
+    };
+    raiz.PainelDetalhes = api; raiz.PAINEL = criar(raiz.document, function () { if (raiz.reorganizarPaineis) raiz.reorganizarPaineis(); }); }
 })(typeof window !== "undefined" ? window : this);

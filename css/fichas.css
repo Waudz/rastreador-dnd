@@ -478,3 +478,6 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 /* O modal aberto na ficha embutida ocupa a tela toda sem encerrar a aba lateral. */
 body:has(#ci-resumo.comp-modal-ativo) #ci-ficha-frame{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:250!important;background:transparent!important}
 body:has(#ci-resumo.comp-modal-ativo) #ci-resumo{overflow:visible!important}
+
+/* Barra do topo do painel lateral (ficha, monstro, magia): mesma altura e mesma cor da barra principal da página */
+body[data-painel="lateral"] .sh-top,body[data-painel="lateral"] .ci-resumo-topo{box-sizing:border-box;height:var(--cab-h,61px);min-height:var(--cab-h,61px);background:var(--bg);border-bottom:1px solid var(--line)}

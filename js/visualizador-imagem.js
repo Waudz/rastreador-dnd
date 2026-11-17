@@ -87,7 +87,7 @@
 
   /* ----- clique automático em imagens de conteúdo ----- */
   function elegivel(el) {
-    if (!el || el.tagName !== "IMG" || !el.src || el.closest(SEL_INTERATIVO)) return false;
+    if (!el || el.tagName !== "IMG" || !el.src || el.classList.contains("dnd-categoria-icone") || el.closest(SEL_INTERATIVO)) return false;
     const r = el.getBoundingClientRect(); return r.width >= 24 && r.height >= 24;
   }
   let dica = null;
