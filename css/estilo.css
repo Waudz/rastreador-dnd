@@ -752,7 +752,7 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 
 
 /* Bestiário: alternância de visualização à direita, backups no rodapé. */
-#bestiario .catalogo-filtros .inv-vista, #bestiario .catalogo-filtros [role="group"].inv-vista {margin-left:auto}
+.vista-monstros .catalogo-filtros .inv-vista {margin-left:auto}
 .bestiario-backup-acoes{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
 @media(max-width:520px){.bestiario-backup-acoes>button{flex:1 1 140px}}
 
