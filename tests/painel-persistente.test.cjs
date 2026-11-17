@@ -39,3 +39,9 @@ test("ficha de monstro em páginas sem bestiário: moldura com o bestiário embu
   assert.match(ler("iniciativa.html"), /<html lang="pt-BR" data-bestiario>/); assert.match(ler("js/navegacao.js"), /monstro-embutido/); assert.match(ler("js/app.js"), /embutido"\) === "monstro"/);
   assert.match(ler("css/fichas.css"), /html\.monstro-embutido #dock-r\{position:fixed!important;inset:0!important/);
 });
+test("troca de página mais leve: o painel só reabre depois do carregamento e sem o aviso de sair", () => {
+  const l = ler("js/leitor-fichas.js");
+  assert.match(l, /window\.addEventListener\('load',\(\)=>setTimeout\(restaurar,300\),\{once:true\}\)/);
+  assert.ok(!/addEventListener\('beforeunload'/.test(l), "o aviso de sair da página foi retirado do leitor");
+  const h = ler("itens.html"); assert.ok(h.indexOf("js/itens.js") < h.indexOf("js/leitor-fichas.js") || h.indexOf("ordenacao-catalogos.js") < h.indexOf("js/leitor-fichas.js"), "a lista de itens carrega antes do painel lateral");
+});
