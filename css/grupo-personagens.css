@@ -174,3 +174,30 @@ a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, cu
 .personagem-card .compact-menu[open]>.compact-popover{position:fixed!important;top:0;left:0;right:auto!important;bottom:auto!important;z-index:10000!important;max-height:none!important;overflow:visible!important}
 .personagem-card .compact-popover .compact-lista{max-height:none!important;overflow:visible!important}
 .grupo-abrir-painel{cursor:pointer}
+
+/* Ações dos personagens: três controles idênticos, ícones centralizados e cor neutra. */
+.grupo-unificado .personagem-card .grupo-cartao-acoes{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+}
+.grupo-unificado .personagem-card .grupo-cartao-acoes>.grupo-icone,
+.grupo-unificado .personagem-card .grupo-cartao-acoes>.compact-menu>summary{
+  display:flex;align-items:center;justify-content:center;
+  box-sizing:border-box;flex:0 0 40px;width:40px;height:40px;min-width:40px;
+  margin:0;padding:0;line-height:1;border:1px solid var(--line);
+  border-radius:10px;background:var(--panel);color:var(--text);
+}
+.grupo-unificado .personagem-card .grupo-cartao-acoes>.compact-menu{
+  display:flex;align-items:center;justify-content:center;flex:0 0 40px;
+  width:40px;height:40px;margin:0;padding:0;
+}
+.grupo-unificado .personagem-card .grupo-cartao-acoes .ico{
+  display:block;flex:none;width:20px;height:20px;margin:0;
+  stroke:currentColor;vertical-align:middle;
+}
+.grupo-unificado .personagem-card .grupo-cartao-acoes>.grupo-icone:hover,
+.grupo-unificado .personagem-card .grupo-cartao-acoes>.compact-menu>summary:hover{
+  color:var(--text);border-color:var(--muted);
+}
+.grupo-unificado .personagem-card .grupo-cartao-acoes>.compact-menu[open]>summary{
+  color:var(--text);border-color:var(--line);
+}
