@@ -68,6 +68,12 @@
   const cartaoPers = (p) => {
     const G=window.GRUPO_PERSONAGENS, v=pct(p.pv_atual,p.pv_max);
     const dono=mestre()?`<div class="jogador-vinculo"><label>Jogador<select data-dono="${esc(p.id)}"><option value="">Vincular conta…</option>${membros.map(m=>`<option value="${esc(m.usuario_id)}" ${p.dono_id===m.usuario_id?'selected':''}>${esc(nomes[m.usuario_id]||'Jogador')}</option>`).join('')}</select></label></div>`:'';
+    if (!mestre()) {
+      const link='personagem.html?id='+encodeURIComponent(p.id);
+      return `<article class="card personagem-card grupo-cartao grupo-cartao-jogador" data-id="${esc(p.id)}">
+        <div class="grupo-cartao-topo">${G.identidade(p,{jogador:nomes[p.dono_id]||'Sem vínculo',vida:true,barraVida:v})}</div>
+        ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''}</article>`;
+    }
     return `<article class="card personagem-card grupo-cartao" data-id="${esc(p.id)}"><div class="grupo-cartao-topo">
       ${mestre()?G.checkbox(p,selecionados.has(p.id)):''}${G.identidade(p,{jogador:nomes[p.dono_id]||'Sem vínculo',vida:true,barraVida:v})}
       <div class="grupo-cartao-acoes">${mestre()?`<a class="grupo-icone" href="${esc(G.destino(id,[p.id]))}" title="Adicionar à iniciativa" aria-label="Adicionar ${esc(p.nome)} à iniciativa">${ico('swords')}</a>`:''}
@@ -242,13 +248,11 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
 
   function cartaoGrupoLeitura(p) {
     const G=window.GRUPO_PERSONAGENS;
-    const dados={...p,ficha:p.ficha||{}};
-    const identidade=G.identidade(dados,{jogador:nomes[p.dono_id]||'Jogador',vida:true,barraVida:pct(p.pv_atual,p.pv_max)});
     const link='personagem.html?id='+encodeURIComponent(p.id)+'&grupo='+encodeURIComponent(id);
+    const identidade=G.identidade({...p,ficha:p.ficha||{}},{jogador:nomes[p.dono_id]||'Jogador',vida:true,barraVida:pct(p.pv_atual,p.pv_max)});
     const corpo=identidade.replace('personagem.html?id='+encodeURIComponent(p.id)+'"',link+'"');
-    return `<article class="card personagem-card grupo-cartao grupo-cartao-leitura" data-id="${esc(p.id)}" data-somente-leitura="true">
-      <div class="grupo-cartao-topo">${corpo}
-      <div class="grupo-cartao-acoes"><a class="grupo-icone" href="${link}" title="Consultar ficha" aria-label="Consultar ficha de ${esc(p.nome)}">${ico('book')}</a></div></div>
+    return `<article class="card personagem-card grupo-cartao grupo-cartao-jogador grupo-cartao-leitura" data-id="${esc(p.id)}" data-somente-leitura="true">
+      <div class="grupo-cartao-topo">${corpo}</div>
       ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''}</article>`;
   }
   function abaGrupoUnificado() {
