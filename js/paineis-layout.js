@@ -34,7 +34,7 @@
     const h=document.getElementById("vez-res"),m=document.getElementById("spd");
     const p=document.getElementById("ci-resumo"),mon=document.getElementById("sheet");
     const esq=visivel(h)||visivel(m),dir=visivel(p)||visivel(mon);
-    const disponivel=Math.max(0,innerWidth-32-560-(esq?16:0)-(dir?16:0));
+    const disponivel=Math.max(0,innerWidth-32-720-(esq?16:0)-(dir?16:0));
     if(esq&&dir&&esquerda+direita>disponivel){
       direita=Math.max(320,Math.min(direita,disponivel-esquerda));
       esquerda=Math.max(240,Math.min(esquerda,disponivel-direita));
@@ -72,7 +72,7 @@
     const atualizarLargura=n=>{
       if(!ativo())return;
       const outra=lado==="esquerda"?document.body.classList.contains("comp-coluna-direita")?direita+16:0:document.body.classList.contains("comp-coluna-esquerda")?esquerda+16:0;
-      const max=Math.max(lado==="esquerda"?240:320,Math.min(lado==="esquerda"?420:560,innerWidth-32-560-16-outra));
+      const max=Math.max(lado==="esquerda"?240:320,Math.min(lado==="esquerda"?420:560,innerWidth-32-720-16-outra));
       if(lado==="esquerda")esquerda=clamp(n,240,max);else direita=clamp(n,320,max);
       ajustar();
     };
