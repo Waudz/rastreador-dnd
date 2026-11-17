@@ -133,10 +133,10 @@
   /* iniciativa informada à mão (vazio = não informada); aceita inteiros razoáveis */
   const numeroDe=pid=>{const t=String(digitadas[pid]??'').trim();if(t==='')return undefined;const n=Number(t);return Number.isInteger(n)&&n>=-20&&n<=60?n:NaN;};
   function mostrarResultados(linhas){
-    const el=$('#ci-resultado');if(!el)return;
-    el.innerHTML=linhas.length?'<strong>Iniciativa</strong><ul>'+linhas.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>':'';
-    el.hidden=!linhas.length;
-    if(linhas.length)window.FEEDBACK?.mostrar(linhas.length===1?linhas[0]:linhas.length+' iniciativas definidas. Veja o resultado dos dados no painel Personagens.');
+    // O feedback temporário da lateral já apresenta a mensagem; não duplicar em painel fixo.
+    const el=$('#ci-resultado');
+    if(el){el.innerHTML='';el.hidden=true;}
+    if(linhas.length)window.FEEDBACK?.mostrar(linhas.length===1?linhas[0]:linhas.length+' personagens adicionados à iniciativa.');
   }
   async function adicionarSelecionados(ids){
     if(!podeUsar())return;

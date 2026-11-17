@@ -1092,3 +1092,10 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 @media (max-width:1499px){
   .ci-avisos-laterais{position:static;width:min(100%,480px);margin:12px 0;}
 }
+
+/* Indicador d20 como SVG real, independente de data URI e de background do input. */
+.combatant .iniciativa-campo{position:relative;display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;width:48px;min-width:48px;height:44px}
+.combatant .iniciativa-campo>.iniciativa-valor{position:relative;z-index:1;width:100%;height:100%;background-image:none!important}
+.combatant .iniciativa-d20-indicador{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:var(--gold,#d4ae72);z-index:2}
+.combatant .iniciativa-d20-indicador svg{width:23px;height:23px;display:block;fill:currentColor;stroke:currentColor}
+.combatant .iniciativa-campo>.iniciativa-valor:not(:placeholder-shown)~.iniciativa-d20-indicador{display:none}

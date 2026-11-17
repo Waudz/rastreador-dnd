@@ -511,7 +511,7 @@
           const hpClass = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
           return `
             <article data-sem-ampliar class="combatant ${isActive ? "active" : ""} ${currentId && posicao === 1 ? "proximo" : ""} ${isDefeated ? "defeated" : ""} ${c.morto ? "estado-morto" : c.estavel ? "estado-estavel" : Number(c.hp) <= 0 ? "estado-inconsciente" : ""}" aria-current="${isActive?'step':'false'}" data-key="${escapeText(c.key || "")}" data-pid="${escapeText(c.pid || "")}">
-              <input class="initiative iniciativa-valor" type="number" step="1" data-iniciativa="${c.id}" value="${pendente(c) ? "" : Number(c.initiative)}" placeholder=" " style="--ini-d20:url(data:image/svg+xml,${encodeURIComponent(ico("d20"))})" aria-label="Iniciativa de ${escapeText(c.name)}" title="Iniciativa pendente: informe o resultado da rolagem, já com o modificador">
+              <span class="iniciativa-campo"><input class="initiative iniciativa-valor" type="number" step="1" data-iniciativa="${c.id}" value="${pendente(c) ? "" : Number(c.initiative)}" placeholder=" " aria-label="Iniciativa de ${escapeText(c.name)}" title="Iniciativa pendente: informe o resultado da rolagem, já com o modificador"><span class="iniciativa-d20-indicador" aria-hidden="true">${ico("d20")}</span></span>
               <div class="id-bloco">
                 <span class="avfx">${window.__ini && window.__ini.avatar ? window.__ini.avatar(c.key, c.name, 40, c.foto, c.pid) : ""}</span>
                 <div class="id-texto">
