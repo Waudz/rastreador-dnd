@@ -1,5 +1,42 @@
 # Pendências e próxima tarefa
 
+## IDEIAS FUTURAS — ENCICLOPÉDIA, REGRAS RÁPIDAS E DESCRIÇÕES DO BESTIÁRIO (17/11/2026 — NÃO IMPLEMENTAR AGORA)
+
+**Prioridade atual:** testar e estabilizar as funcionalidades existentes. As ideias abaixo são backlog, sem iniciar desenvolvimento ou modificar o aplicativo nesta fase.
+
+### Enciclopédia da campanha (wiki própria de cada campanha)
+- Páginas de NPCs (retrato, personalidade, relações, situação), cidades e locais (mapas, descrições, estabelecimentos), facções, missões, acontecimentos e resumos das sessões.
+- Links entre registros: NPCs relacionados a cidades, locais, missões e eventos.
+- Conteúdo privado do mestre e conteúdo visível aos jogadores, liberado conforme as descobertas da campanha.
+- Não confundir com a aba global de regras de D&D.
+
+### Aba global de Regras rápidas — D&D 5e 2014
+- Consulta por pesquisa e categorias; cada verbete com resumo curto, explicação, exemplo e fonte, quando possível com favoritos.
+- **Combate:** ações e reações, ataques, vantagem/desvantagem, crítico, oportunidade, agarrar, empurrar, duas armas, cobertura, combate montado.
+- **Dano e ambiente:** queda, fogo e calor, lava, água fervente, ácido, venenos, armadilhas, frio extremo, sufocamento/afogamento, fome e sede; diferenciar regra oficial de dano improvisado decidido pelo mestre.
+- **PV e recuperação:** 0 PV, testes contra a morte, dano massivo, estabilização, cura, PV temporários, resistência/vulnerabilidade/imunidade, descansos e exaustão.
+- **Condições:** efeitos de todas as condições oficiais, concentração e interrupções.
+- **Movimento/exploração:** saltos, escalada, natação, terreno difícil, furtividade, surpresa, iluminação, visão no escuro, percepção passiva, ritmo de viagem.
+- **Magias:** componentes, foco, mãos livres, concentração, rituais, alcance, áreas de efeito, reações, armaduras e conjuração no mesmo turno.
+- **Testes:** perícias, salvaguardas, testes resistidos, auxílio, CDs, ferramentas, inspiração e testes passivos.
+- **Equipamentos/objetos:** carga, empurrar/levantar, armaduras, armas improvisadas, munição, PV/resistência de objetos, fechaduras e serviços.
+- **Viagem/sobrevivência e ferramentas do mestre:** navegação, forrageamento, clima, perseguições, dificuldades, armadilhas e encontros.
+- Calculadoras opcionais: dano de queda (1d6 por 3 m, máximo 20d6), CD de concentração, capacidade de carga, saltos e distâncias de viagem.
+- Identificar explicitamente **regra oficial (SRD 5.1 / fonte permitida de 2014)**, **orientação do mestre** e **regra da casa**. Não copiar textos protegidos do Livro do Jogador ou Livro do Mestre.
+
+### Bestiário — descrições dos monstros
+- Acrescentar descrições textuais/lore aos monstros, de modo semelhante às descrições já apresentadas para itens: aparência, comportamento, habitat, hábitos e contexto narrativo quando houver fonte confiável.
+- Exibir descrição na ficha/detalhes do monstro, separada das estatísticas, ações e habilidades mecânicas; preservar layout e funcionamento existentes.
+- Priorizar dados de fontes autorizadas (SRD 5.1, conteúdo próprio ou material com licença adequada); não inventar descrições apresentadas como oficiais nem copiar textos protegidos.
+- Definir depois se monstros personalizados poderão ter descrições editáveis pelo mestre e se o conteúdo será visível aos jogadores.
+
+### Outras expansões futuras
+- Encontros prontos com criaturas, recompensas e loot vinculados ao combate.
+- Lojas, tesouros e loot integrados ao catálogo/inventário. **Fluxo de compra ainda não decidido:** mestre adiciona item e desconta moedas, ou jogador procura e adiciona o item após autorização; não implementar checkout/compra automática sem decisão posterior.
+
+---
+
+
 ## REVISÃO PÓS-EXPERIMENTOS DE JANELAS (17/11/2026, local, não publicado)
 
 **Corrigido:** (1) `js/ataque-ini.js` ainda tinha o código do histórico como janela lateral (`atualizarJanelaHistorico`, do PR #116/#117) e o CSS `#vez-res.vez-historico-janela` em `css/fluxos.css`: contrariava a decisão de manter o histórico dentro do combate e quebrava 15 testes (`document.querySelector is not a function`); removidos. Conferido no navegador em 1024 e 1500 px: histórico dentro da faixa de ataque, sem rolagem horizontal, sem erros no console. (2) **Laço infinito** em `js/campanha.js` (aba Personagens do jogador): `desenhar()` zerava `grupoBasico` quando o banco devolvia erro e `carregarGrupo()` chamava `desenhar()` de novo sem parar (estouro de pilha; travaria a tela e martelaria o servidor sem a função `grupo_fichas`). (3) `js/conta.js`: `window.addEventListener` protegido (quebrava 6 testes). (4) Testes: `personagem-save` passa a carregar `js/catalogo-itens.js` e a mensagem de cura em ficha morta mudou.
