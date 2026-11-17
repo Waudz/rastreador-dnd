@@ -848,6 +848,7 @@
         render: () => render(),
         rolagemAuto,
         list: () => combatants,
+        definirSyncFichas: (ativo) => { for(const c of combatants)if(c.pid)c.sync=!!ativo;save();render(); },
         atual: () => currentId,
         aplicarDano, curar, darTemp, aplicarPV, lerQuantidade, maisOpcoes, limparIniciativa, rolarAte, desfazerGrupoPV, estatisticas: () => stats, incapaz, salvaMorte, salvaMorteD20, estabilizar, marcarMorto, usarRecurso, usarEspaco, defesasDoCombatente, desfazerUltimo, moverTurno: moveTurn, rodada: () => round,
         trocarContexto,
