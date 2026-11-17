@@ -5,10 +5,12 @@
  let dock=$('#dock-r');if(!dock){dock=document.createElement('div');dock.id='dock-r';dock.className='dock';dock.hidden=true;document.querySelector('main').append(dock);}
  if(!$('#ci-resumo'))dock.insertAdjacentHTML('beforeend','<aside id="ci-resumo" class="ci-resumo" aria-label="Ficha do personagem" hidden><div class="ci-resumo-topo"><span>Personagem</span><button type="button" id="ci-resumo-fechar">Voltar</button></div><div id="ci-resumo-corpo"></div></aside>');
  if(!$('#spd'))dock.insertAdjacentHTML('beforeend','<aside id="spd" class="drawer" aria-label="Magia" hidden><div class="sh-top"><button type="button" id="spd-voltar">Voltar</button><span>Magia</span><button type="button" id="spd-close">Fechar</button></div><div id="spd-body"></div></aside>');
- function personagem(id,nome='Personagem',grupo=''){
+ function personagem(id,nome='Personagem',grupo='',modoFicha=''){
   if(salvando&&idAtual.split('|')[0]!==id){window.FEEDBACK?.mostrar('Aguarde a ficha terminar de salvar.');return false;}
   foco=document.activeElement;
-  if(idAtual!==id+'|'+grupo||!$('#ci-ficha-frame')){$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(id)+'" title="Ficha de '+esc(nome)+'" src="personagem.html?id='+encodeURIComponent(id)+'&modo='+(location.pathname.endsWith('/iniciativa.html')?'painel':'leitura')+(grupo?'&grupo='+encodeURIComponent(grupo):'')+'"></iframe>';idAtual=id+'|'+grupo;}
+  const modoAbertura=modoFicha==='leitura'?'leitura':modoFicha==='painel'?'painel':location.pathname.endsWith('/iniciativa.html')?'painel':'leitura';
+  const chave=id+'|'+grupo+'|'+modoAbertura;
+  if(idAtual!==chave||!$('#ci-ficha-frame')){$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(id)+'" title="Ficha de '+esc(nome)+'" src="personagem.html?id='+encodeURIComponent(id)+'&modo='+modoAbertura+(grupo?'&grupo='+encodeURIComponent(grupo):'')+'"></iframe>';idAtual=chave;}
   window.PAINEL.mostrar('ci-resumo');$('#ci-resumo-fechar')?.focus();return true;
  }
  async function magia(dados){
