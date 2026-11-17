@@ -75,7 +75,7 @@
       voltar.onclick=()=>{el.classList.remove("comp-minimizada");voltar.remove();ativar()};
       barra.append(voltar);
     });
-    fechar.addEventListener("click",()=>{if(el.id==="vez-res"){minimo.click()}else{const btn=el.querySelector("#ci-resumo-fechar,#sh-close,#spd-close");btn?.click()}});
+    fechar.addEventListener("click",()=>{if(el.id==="vez-res"){minimo.click()}else{window.PAINEL?.fecharVista?.(el.id)}});
     restaurar(el,c);ativar();
   }
 
@@ -83,7 +83,7 @@
     if(!ativo())return;
     const h=document.getElementById("vez-res"),m=document.getElementById("spd"),p=document.getElementById("ci-resumo");
     const magia=!!m&&!m.hidden, historico=!!h&&!h.hidden&&!h.classList.contains("comp-minimizada");
-    const topo=62,altura=Math.max(450,innerHeight-74),espaco=10;
+    const topo=62,altura=Math.max(200,innerHeight-74),espaco=10;
     const histH=magia?Math.floor(altura*.38):altura;
     if(h&&historico)Object.assign(h.style,{left:"14px",top:topo+"px",width:"300px",height:histH+"px"});
     if(m&&magia)Object.assign(m.style,{left:"14px",top:(historico?topo+histH+espaco:topo)+"px",width:"420px",height:(historico?altura-histH-espaco:altura)+"px"});
@@ -98,7 +98,15 @@
     organizarConsultas();
     window.PAINEIS_LAYOUT?.aplicar();
   }
-  document.addEventListener("DOMContentLoaded",()=>{document.body.append(barra);atualizar();const o=new MutationObserver(()=>requestAnimationFrame(organizarConsultas));for(const id of ["spd","ci-resumo","vez-res"]){const el=document.getElementById(id);if(el)o.observe(el,{attributes:true,attributeFilter:["hidden","class"]})}});
+  document.addEventListener("DOMContentLoaded",()=>{document.body.append(barra);atualizar();
+    document.addEventListener("click",e=>{
+      const btn=e.target.closest("#ci-resumo-fechar,#sh-close,#spd-close");
+      if(!btn||!ativo())return;
+      e.preventDefault();e.stopImmediatePropagation();
+      const id=btn.id==="ci-resumo-fechar"?"ci-resumo":btn.id==="sh-close"?"sheet":"spd";
+      window.PAINEL?.fecharVista?.(id);
+    },true);
+    const o=new MutationObserver(()=>requestAnimationFrame(organizarConsultas));for(const id of ["spd","ci-resumo","vez-res"]){const el=document.getElementById(id);if(el)o.observe(el,{attributes:true,attributeFilter:["hidden","class"]})}});
   window.addEventListener("resize",atualizar,{passive:true});
   window.COMP_DESKTOP_WINDOWS={ativo,registrar,atualizar};
 })();
