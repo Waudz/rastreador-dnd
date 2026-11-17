@@ -1081,3 +1081,14 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 @media(prefers-reduced-motion:reduce) {
   .hp-track .hp-fill,.grupo-barra>.grupo-barra-cheia { transition:none!important; }
 }
+
+/* Avisos de iniciativa: faixa independente dos cartões e dos pop-ups de feedback. */
+.ci-avisos-laterais[hidden]{display:none!important}
+.ci-avisos-laterais{box-sizing:border-box;max-width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);text-align:left;overflow-wrap:anywhere}
+.ci-avisos-laterais ul{margin-bottom:0}
+@media (min-width:1500px){
+  .ci-avisos-laterais{position:fixed;left:16px;top:190px;width:250px;max-height:calc(100vh - 220px);overflow-y:auto;z-index:1;box-shadow:0 4px 18px #0002}
+}
+@media (max-width:1499px){
+  .ci-avisos-laterais{position:static;width:min(100%,480px);margin:12px 0;}
+}
