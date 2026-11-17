@@ -329,12 +329,30 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
   }
 
   /* ---------- leitor: abre o documento nesta mesma página ---------- */
-  let pilha = [], blobAtual = null;
+  let pilha = [], blobAtual = null, leitorHistorico = false;
   const soltarBlob = () => { if (blobAtual) { URL.revokeObjectURL(blobAtual); blobAtual = null; } };
   function fecharLeitor() { $("#leitor").hidden = true; $("#leitor-corpo").innerHTML = ""; soltarBlob(); pilha = []; document.body.style.overflow = ""; }
+  window.addEventListener("popstate", () => {
+    if (!leitorHistorico) return;
+    leitorHistorico = false;
+    fecharLeitor();
+    aba = "docs";
+    desenhar();
+  });
+  function fecharLeitorComHistorico() {
+    if (leitorHistorico) history.back();
+    else fecharLeitor();
+  }
   async function abrirDoc(idd, voltando) {
     const d = docPorId(idd); if (!d) return;
-    if (!voltando) pilha.push(idd);
+    if (!voltando) {
+      if (!leitorHistorico) {
+        aba = "docs";
+        history.pushState({compendioLeitor:true}, "", location.href);
+        leitorHistorico = true;
+      }
+      pilha.push(idd);
+    }
     soltarBlob(); $("#leitor").hidden = false; document.body.style.overflow = "hidden"; $("#leitor").scrollTop = 0;
     $("#leitor-titulo").textContent = d.tipo === "arquivo" ? (d.titulo || d.arquivo_nome) : d.titulo;
     $("#leitor-voltar").hidden = pilha.length < 2; $("#leitor-baixar").hidden = true;
@@ -405,9 +423,9 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
         await nuvem.apagar(`documentos?id=eq.${encodeURIComponent(d.id)}`); return recarregar();
       }
       if ((b = c("[data-doclink]"))) { e.preventDefault(); return abrirDoc(b.dataset.doclink); }
-      if (c("#leitor-fechar")) return fecharLeitor();
+      if (c("#leitor-fechar")) return fecharLeitorComHistorico();
       if (c("#leitor-voltar")) { pilha.pop(); return abrirDoc(pilha[pilha.length - 1], true); }
-      if (t.id === "leitor") return fecharLeitor();
+      if (t.id === "leitor") return fecharLeitorComHistorico();
       if (c("#r-inserir")) { const v = $("#r-link").value; if (v && docPorId(v) && !anexosForm.includes(v)) { anexosForm.push(v); atualizarAnexosForm(); } return; }
       if ((b = c("[data-tirar]"))) { anexosForm = anexosForm.filter((x) => x !== b.dataset.tirar); atualizarAnexosForm(); return; }
       if (c("#r-anexar")) return $("#r-anexo").click();
