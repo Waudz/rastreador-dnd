@@ -1395,3 +1395,42 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 @media (min-width:900px) and (max-width:1399px) {
   body:not(.ficha-embutida) main.tracker {box-sizing:border-box;width:min(1200px,calc(100% - 32px));max-width:1200px;margin-inline:auto;}
 }
+
+
+/* Painéis ancorados v3: o combate utiliza apenas o espaço realmente disponível. */
+@media (min-width:1400px) and (pointer:fine) {
+  body.comp-janelas-desktop {
+    --comp-gap-janelas:16px;
+    --comp-largura-historico:300px;
+    --comp-largura-ficha:420px;
+  }
+  body.comp-janelas-desktop.comp-coluna-esquerda {
+    --comp-reserva-esquerda:332px;
+  }
+  body.comp-janelas-desktop.comp-coluna-direita {
+    --comp-reserva-direita:452px;
+  }
+  body.comp-janelas-desktop main.tracker {
+    box-sizing:border-box!important;
+    width:min(1400px,calc(100vw - 32px - var(--comp-reserva-esquerda,0px) - var(--comp-reserva-direita,0px)))!important;
+    max-width:1400px!important;
+    margin-left:max(calc(16px + var(--comp-reserva-esquerda,0px)),calc((100vw + var(--comp-reserva-esquerda,0px) - var(--comp-reserva-direita,0px) - 1400px)/2))!important;
+    margin-right:0!important;
+    min-width:0!important;
+  }
+  body.comp-janelas-desktop #vez-res.vez-historico-janela:not(:empty) {
+    left:16px!important;top:70px!important;width:300px!important;
+    max-height:calc(100dvh - 86px)!important;
+  }
+  body.comp-janelas-desktop #dock-r #spd:not([hidden]) {
+    left:16px!important;right:auto!important;width:300px!important;
+    max-width:300px!important;
+  }
+  body.comp-janelas-desktop #dock-r #ci-resumo:not([hidden]),
+  body.comp-janelas-desktop #dock-r #sheet:not([hidden]) {
+    right:16px!important;left:auto!important;top:70px!important;
+    width:420px!important;max-width:420px!important;
+    max-height:calc(100dvh - 86px)!important;
+  }
+  body.comp-janelas-desktop .comp-flutuante-cab {cursor:default!important;}
+}

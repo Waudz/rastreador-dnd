@@ -87,18 +87,18 @@
     const h=document.getElementById("vez-res"),m=document.getElementById("spd"),p=document.getElementById("ci-resumo");
     const visivel=el=>!!el&&!el.hidden&&!el.classList.contains("comp-historico-fechado");
     const magia=visivel(m), historico=visivel(h);
-    const topo=62,altura=Math.max(200,innerHeight-74),espaco=10;
+    const topo=70,altura=Math.max(200,innerHeight-86),espaco=16;
     const leftOpen=historico||magia;
     const rightOpen=visivel(p)||visivel(document.getElementById("sheet"));
     document.body.classList.toggle("comp-coluna-esquerda",leftOpen);
     document.body.classList.toggle("comp-coluna-direita",rightOpen);
-    const histH=magia?Math.floor(altura*.38):altura;
+    const histH=magia&&historico?Math.floor(altura*.45):altura;
     document.body.style.setProperty("--comp-magia-topo",(historico?topo+histH+espaco:topo)+"px");
-    if(h&&historico)Object.assign(h.style,{left:"14px",top:topo+"px",width:"300px",height:histH+"px"});
-    if(m&&magia)Object.assign(m.style,{left:"14px",top:(historico?topo+histH+espaco:topo)+"px",width:"300px",height:(historico?altura-histH-espaco:altura)+"px"});
-    if(visivel(p))Object.assign(p.style,{left:Math.max(8,innerWidth-496)+"px",top:topo+"px",width:"480px",height:altura+"px"});
+    if(h&&historico)Object.assign(h.style,{left:"16px",top:topo+"px",width:"300px",height:histH+"px"});
+    if(m&&magia)Object.assign(m.style,{left:"16px",top:(historico?topo+histH+espaco:topo)+"px",width:"300px",height:(historico?altura-histH-espaco:altura)+"px"});
+    if(visivel(p))Object.assign(p.style,{left:Math.max(8,innerWidth-436)+"px",top:topo+"px",width:"420px",height:altura+"px"});
     const monstro=document.getElementById("sheet");
-    if(visivel(monstro))Object.assign(monstro.style,{left:Math.max(8,innerWidth-456)+"px",top:topo+"px",width:"440px",height:altura+"px"});
+    if(visivel(monstro))Object.assign(monstro.style,{left:Math.max(8,innerWidth-436)+"px",top:topo+"px",width:"420px",height:altura+"px"});
   }
   function atualizar(){
     const on=ativo();document.body.classList.toggle("comp-janelas-desktop",on);
