@@ -767,7 +767,7 @@
 
 
     window.__ini.avatar = (key, name, size, foto, pid) => {
-      if (foto && /^data:image\\//.test(foto)) return `<img class="av" style="width:${size}px;height:${size}px" src="${esc(foto)}" alt="">`;
+      if (foto && /^data:image\//.test(foto)) return `<img class="av" style="width:${size}px;height:${size}px" src="${esc(foto)}" alt="">`;
       const ficha = pid && window.__ini.fichaDe?.(pid);
       if (pid || ficha) {
         const src = window.FICHA_COMPONENTES?.simboloClasse?.(ficha || {}) || "icones/dnd/classes/character.svg";
