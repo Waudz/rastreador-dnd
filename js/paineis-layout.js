@@ -88,7 +88,7 @@
   }
 
   function organizarConsultas(){
-    if(!ativo()){document.body.classList.remove("comp-coluna-esquerda","comp-coluna-direita");return;}
+    if(!ativo()){document.body.classList.remove("comp-coluna-esquerda","comp-coluna-direita");document.body.style.removeProperty("--comp-magia-topo");return;}
     const h=document.getElementById("vez-res"),m=document.getElementById("spd"),p=document.getElementById("ci-resumo");
     const visivel=el=>!!el&&!el.hidden&&!el.classList.contains("comp-minimizada");
     const magia=visivel(m), historico=visivel(h);
@@ -98,9 +98,12 @@
     document.body.classList.toggle("comp-coluna-esquerda",leftOpen);
     document.body.classList.toggle("comp-coluna-direita",rightOpen);
     const histH=magia?Math.floor(altura*.38):altura;
+    document.body.style.setProperty("--comp-magia-topo",(historico?topo+histH+espaco:topo)+"px");
     if(h&&historico)Object.assign(h.style,{left:"14px",top:topo+"px",width:"300px",height:histH+"px"});
     if(m&&magia)Object.assign(m.style,{left:"14px",top:(historico?topo+histH+espaco:topo)+"px",width:"300px",height:(historico?altura-histH-espaco:altura)+"px"});
     if(visivel(p))Object.assign(p.style,{left:Math.max(8,innerWidth-496)+"px",top:topo+"px",width:"480px",height:altura+"px"});
+    const monstro=document.getElementById("sheet");
+    if(visivel(monstro))Object.assign(monstro.style,{left:Math.max(8,innerWidth-456)+"px",top:topo+"px",width:"440px",height:altura+"px"});
   }
   function atualizar(){
     const on=ativo();document.body.classList.toggle("comp-janelas-desktop",on);
