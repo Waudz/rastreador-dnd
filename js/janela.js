@@ -2,7 +2,7 @@
    Adotada gradualmente por cada área, preservando os formulários existentes. */
 (() => {
   "use strict";
-  function abrir({ titulo, conteudo, largura = "media", classe = "", fecharAoFundo = true, aoFechar } = {}) {
+  function abrir({ titulo, conteudo, largura = "media", classe = "", fecharAoFundo = true, aoFechar, focoInicial = "campo" } = {}) {
     const anterior = document.activeElement;
     const ov = document.createElement("div");
     ov.className = "comp-janela-ov";
@@ -39,7 +39,7 @@
     ov.addEventListener("keydown", tecla);
     document.body.append(ov);
     if (window.parent !== window) window.parent.postMessage({tipo:"comp-modal-ficha",aberto:true},location.origin);
-    (corpo.querySelector('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled])') || x).focus({preventScroll:true});
+    (focoInicial === "fechar" ? x : (corpo.querySelector('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled])') || x)).focus({preventScroll:true});
     return { ov, box, corpo, fechar };
   }
   window.COMP_JANELA = Object.freeze({ abrir });
