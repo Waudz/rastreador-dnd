@@ -68,32 +68,48 @@
       const up=()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",up);salvar(el)};
       window.addEventListener("pointermove",move);window.addEventListener("pointerup",up,{once:true});
     }
-    cab.addEventListener("pointerdown",mover);
+    // Layout em colunas: janelas ancoradas, sem arrastar.
     minimo.addEventListener("click",()=>{
+      if(el.classList.contains("comp-minimizada"))return;
       el.classList.add("comp-minimizada");
       const voltar=document.createElement("button");voltar.type="button";voltar.textContent=c.title;
-      voltar.onclick=()=>{el.classList.remove("comp-minimizada");voltar.remove();ativar()};
+      voltar.dataset.janelaId=el.id;
+      voltar.onclick=()=>{
+        el.classList.remove("comp-minimizada");
+        voltar.remove();
+        ativar();
+        organizarConsultas();
+      };
       barra.append(voltar);
+      organizarConsultas();
     });
     fechar.addEventListener("click",()=>{if(el.id==="vez-res"){minimo.click()}else{window.PAINEL?.fecharVista?.(el.id)}});
     restaurar(el,c);ativar();
   }
 
   function organizarConsultas(){
-    if(!ativo())return;
+    if(!ativo()){document.body.classList.remove("comp-coluna-esquerda","comp-coluna-direita");document.body.style.removeProperty("--comp-magia-topo");return;}
     const h=document.getElementById("vez-res"),m=document.getElementById("spd"),p=document.getElementById("ci-resumo");
-    const magia=!!m&&!m.hidden, historico=!!h&&!h.hidden&&!h.classList.contains("comp-minimizada");
+    const visivel=el=>!!el&&!el.hidden&&!el.classList.contains("comp-minimizada");
+    const magia=visivel(m), historico=visivel(h);
     const topo=62,altura=Math.max(200,innerHeight-74),espaco=10;
+    const leftOpen=historico||magia;
+    const rightOpen=visivel(p)||visivel(document.getElementById("sheet"));
+    document.body.classList.toggle("comp-coluna-esquerda",leftOpen);
+    document.body.classList.toggle("comp-coluna-direita",rightOpen);
     const histH=magia?Math.floor(altura*.38):altura;
+    document.body.style.setProperty("--comp-magia-topo",(historico?topo+histH+espaco:topo)+"px");
     if(h&&historico)Object.assign(h.style,{left:"14px",top:topo+"px",width:"300px",height:histH+"px"});
-    if(m&&magia)Object.assign(m.style,{left:"14px",top:(historico?topo+histH+espaco:topo)+"px",width:"420px",height:(historico?altura-histH-espaco:altura)+"px"});
-    if(p&&!p.hidden)Object.assign(p.style,{left:Math.max(8,innerWidth-496)+"px",top:topo+"px",width:"480px",height:altura+"px"});
+    if(m&&magia)Object.assign(m.style,{left:"14px",top:(historico?topo+histH+espaco:topo)+"px",width:"300px",height:(historico?altura-histH-espaco:altura)+"px"});
+    if(visivel(p))Object.assign(p.style,{left:Math.max(8,innerWidth-496)+"px",top:topo+"px",width:"480px",height:altura+"px"});
+    const monstro=document.getElementById("sheet");
+    if(visivel(monstro))Object.assign(monstro.style,{left:Math.max(8,innerWidth-456)+"px",top:topo+"px",width:"440px",height:altura+"px"});
   }
   function atualizar(){
     const on=ativo();document.body.classList.toggle("comp-janelas-desktop",on);
     for(const id of Object.keys(configs)){
       const el=document.getElementById(id);if(!el)continue;
-      if(on){registrar(el);const c=configs[id];if(el.dataset.janelaPreparada==="1")restaurar(el,c)}else if(el.dataset.janelaPreparada==="1"){el.classList.remove("comp-minimizada");for(const prop of ["left","top","width","height","zIndex"])el.style[prop]="";}
+      if(on){registrar(el);const c=configs[id];if(el.dataset.janelaPreparada==="1")restaurar(el,c)}else if(el.dataset.janelaPreparada==="1"){el.classList.remove("comp-minimizada");barra.querySelector(`[data-janela-id="${id}"]`)?.remove();for(const prop of ["left","top","width","height","zIndex"])el.style[prop]="";}
     }
     organizarConsultas();
     window.PAINEIS_LAYOUT?.aplicar();
@@ -106,7 +122,7 @@
       const id=btn.id==="ci-resumo-fechar"?"ci-resumo":btn.id==="sh-close"?"sheet":"spd";
       window.PAINEL?.fecharVista?.(id);
     },true);
-    const o=new MutationObserver(()=>requestAnimationFrame(organizarConsultas));for(const id of ["spd","ci-resumo","vez-res"]){const el=document.getElementById(id);if(el)o.observe(el,{attributes:true,attributeFilter:["hidden","class"]})}});
+    const o=new MutationObserver(()=>requestAnimationFrame(organizarConsultas));for(const id of ["spd","ci-resumo","sheet","vez-res"]){const el=document.getElementById(id);if(el)o.observe(el,{attributes:true,attributeFilter:["hidden","class"]})}});
   window.addEventListener("resize",atualizar,{passive:true});
   window.COMP_DESKTOP_WINDOWS={ativo,registrar,atualizar};
 })();

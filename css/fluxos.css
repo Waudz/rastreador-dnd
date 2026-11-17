@@ -1253,3 +1253,56 @@ body.ficha-embutida .tracker { padding:14px; }                                  
  body.comp-janelas-desktop #dock-r #ci-resumo:not([hidden]){max-height:calc(100dvh - 74px)!important}
  body.comp-janelas-desktop #dock-r #spd #spd-body{min-height:0;flex:1 1 auto;overflow-y:auto;overflow-x:hidden}
 }
+
+/* Desktop largo: três colunas reservadas. Nunca sobrepor o combate. */
+@media(min-width:1400px) and (pointer:fine){
+ body.comp-janelas-desktop main.tracker{
+   box-sizing:border-box!important;
+   width:auto!important;max-width:none!important;
+   margin-left:calc(14px + var(--comp-reserva-esquerda,0px))!important;
+   margin-right:calc(14px + var(--comp-reserva-direita,0px))!important;
+   min-width:0!important;
+ }
+ body.comp-janelas-desktop.comp-coluna-esquerda{--comp-reserva-esquerda:320px}
+ body.comp-janelas-desktop.comp-coluna-direita{--comp-reserva-direita:496px}
+ body.comp-janelas-desktop .comp-flutuante-cab{cursor:default!important;touch-action:auto!important}
+ body.comp-janelas-desktop #vez-res.vez-historico-janela:not(:empty){
+   left:14px!important;top:62px!important;width:300px!important;right:auto!important;
+   max-width:none!important;
+ }
+ body.comp-janelas-desktop #dock-r #spd:not([hidden]){
+   left:14px!important;right:auto!important;top:var(--comp-magia-topo,62px)!important;
+   width:300px!important;max-width:300px!important;
+ }
+ body.comp-janelas-desktop #dock-r #ci-resumo:not([hidden]){
+   left:auto!important;right:14px!important;top:62px!important;width:480px!important;
+ }
+ body.comp-janelas-desktop #dock-r #sheet:not([hidden]){
+   left:auto!important;right:14px!important;top:62px!important;width:440px!important;
+ }
+ body.comp-janelas-desktop #dock-r #spd .comp-flutuante-cab{margin:0}
+}
+
+/* Correção definitiva: desligar a reserva da gaveta antiga no modo desktop. */
+@media(min-width:1400px) and (pointer:fine){
+ html:has(body.comp-janelas-desktop){--painel-reserva-direita:0px!important;--ficha-painel:0px}
+ body.comp-janelas-desktop{--painel-reserva-direita:0px!important}
+ body.comp-janelas-desktop.com-ficha-lateral main.tracker{
+   margin-left:calc(14px + var(--comp-reserva-esquerda,0px))!important;
+   margin-right:calc(14px + var(--comp-reserva-direita,0px))!important;
+ }
+ body.comp-janelas-desktop main.tracker{
+   width:auto!important;
+   max-width:none!important;
+   transform:none!important;
+   padding-left:0!important;
+   padding-right:0!important;
+ }
+ body.comp-janelas-desktop #dock-r #spd:not([hidden]){
+   width:300px!important;max-width:300px!important;
+   top:62px; /* JS define a posição abaixo do histórico quando necessário. */
+ }
+ body.comp-janelas-desktop #dock-r #sheet:not([hidden]){
+   right:14px!important;left:auto!important;
+ }
+}
