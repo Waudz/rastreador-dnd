@@ -6,6 +6,10 @@
 
 **Suíte agora (17/11): 692 testes, 691 passam, 0 falham, 1 pula (depende de arquivo privado).** Os 13 testes que falhavam eram desatualizados e foram ajustados ao comportamento atual: sem o controle Treino (o mestre usa o Modo de teste do combate, que por padrão está desligado, ou seja, o mestre grava PV na ficha); etapas manuais de ataque ("1. Resolver ataque", "2. Informar dano"); resultado da iniciativa mostrado no aviso temporário (`FEEDBACK`) e não num painel fixo; e o salvamento da ficha, que recupera conflito de versão sozinho (aviso "Outra sessão alterou os mesmos dados").
 
+## FICHA DO PERSONAGEM EM JANELA (17/11/2026, local, cache v261, nao publicado)
+
+Em tela larga (>= 1200 px) com mouse, a ficha do personagem abre numa **janela centralizada** (ate 1100 px, 94% da altura, fundo escurecido) em vez da aba lateral de 440 px, que fazia o iframe da ficha cair no layout de celular. Fecha por `Fechar ×`, clique no fundo ou Esc. Nada muda no celular, no toque nem em telas estreitas (painel empilhado, botao Voltar). Implementacao minima: `js/paineis-layout.js` marca `body[data-ficha-janela]` e nao reserva espaco lateral; `js/leitor-fichas.js` fecha por fundo e Esc; CSS restrito em `css/fichas.css` (`@media(min-width:1200px) and (pointer:fine)`). Fichas de monstro e magias continuam no painel lateral. Sem janelas arrastaveis nem redimensionaveis. Testes: `tests/janela-ficha.test.cjs`. **Pendente:** (a) `Editar personagem` ainda abre dentro do iframe da janela (deve abrir em pagina completa); (b) conferir no PC real com campanha e jogadores.
+
 ## RESTAURAÇÃO DO LAYOUT — 17/11/2026 (prioridade atual)
 
 **Decisão do William:** voltar ao backup `backup/pre-janelas-desktop-2026-11-17`. O **histórico de combate deve ficar dentro da janela/área de combate, como antes**, e não em uma janela lateral independente. Não reintroduzir janelas flutuantes nem divisórias redimensionáveis sem nova aprovação.
