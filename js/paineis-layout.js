@@ -109,7 +109,9 @@
     organizarConsultas();
     window.PAINEIS_LAYOUT?.aplicar();
   }
-  document.addEventListener("DOMContentLoaded",()=>{atualizar();\n    const tools=document.getElementById("lista-ferramentas");\n    if(tools){const abrir=document.createElement("button");abrir.id="comp-abrir-historico";abrir.type="button";abrir.className="small subtle";abrir.textContent="Abrir histórico";abrir.hidden=true;abrir.addEventListener("click",()=>{document.getElementById("vez-res")?.classList.remove("comp-historico-fechado");abrir.hidden=true;organizarConsultas()});tools.prepend(abrir);}
+  document.addEventListener("DOMContentLoaded",()=>{atualizar();
+    const tools=document.getElementById("lista-ferramentas");
+    if(tools){const abrir=document.createElement("button");abrir.id="comp-abrir-historico";abrir.type="button";abrir.className="small subtle";abrir.textContent="Abrir histórico";abrir.hidden=true;abrir.addEventListener("click",()=>{document.getElementById("vez-res")?.classList.remove("comp-historico-fechado");abrir.hidden=true;organizarConsultas()});tools.prepend(abrir);}
     document.addEventListener("click",e=>{
       const btn=e.target.closest("#ci-resumo-fechar,#sh-close,#spd-close");
       if(!btn||!ativo())return;
