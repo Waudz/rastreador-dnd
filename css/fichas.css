@@ -478,11 +478,3 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 /* O modal aberto na ficha embutida ocupa a tela toda sem encerrar a aba lateral. */
 body:has(#ci-resumo.comp-modal-ativo) #ci-ficha-frame{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:250!important;background:transparent!important}
 body:has(#ci-resumo.comp-modal-ativo) #ci-resumo{overflow:visible!important}
-
-/* Ficha do personagem em JANELA: só em tela larga (>= 1200 px) com mouse (js/paineis-layout.js marca body[data-ficha-janela]). Celular e telas estreitas não mudam. */
-@media(min-width:1200px) and (pointer:fine){
-  body[data-ficha-janela="1"] #dock-r{position:fixed;inset:0;z-index:90;width:auto;max-width:none;height:auto;margin:0;padding:3vh 24px;display:grid;place-items:center;background:rgba(8,7,12,.72);border:0;box-shadow:none}
-  body[data-ficha-janela="1"] #dock-r>#ci-resumo{position:relative;flex:none;width:min(1100px,100%);height:min(94vh,980px);max-width:100%;border:1px solid var(--gold-dark);border-radius:14px;overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.6);background:var(--bg)}
-  body[data-ficha-janela="1"] #ci-resumo .ci-resumo-topo{padding:10px 16px}
-  body[data-ficha-janela="1"] #ci-resumo-fechar{min-width:92px;min-height:40px;font-weight:800}
-}
