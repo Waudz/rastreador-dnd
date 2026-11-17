@@ -896,3 +896,29 @@ body.ficha-embutida .tracker { padding:14px; }                                  
     margin-top:auto;
   }
 }
+
+/* Iniciativa: título próximo aos cartões; avisos reais continuam visíveis. */
+#camp-ini[open] > summary.panel-title { margin-bottom:6px!important; padding-bottom:0; }
+#camp-ini #ci-msg:empty,
+#camp-ini #ci-resultado:empty,
+#camp-ini #ci-selecao:empty { display:none!important; margin:0!important; padding:0!important; }
+#camp-ini #ci-lista { margin-top:4px!important; }
+#camp-ini .ci-rodape { justify-content:flex-end; margin-top:8px; }
+#camp-ini .ci-rodape #ci-recarregar { margin-left:auto; }
+/* Campo manual: o mesmo ícone d20, em vez do placeholder textual. */
+#ci-lista .ci-cartao-ini .ci-ini { position:relative; }
+#ci-lista .ci-cartao-ini .ci-ini-icone {
+  position:absolute;
+  left:10px;
+  bottom:12px;
+  width:20px;
+  height:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--muted,#9db0c4);
+  pointer-events:none;
+}
+#ci-lista .ci-cartao-ini .ci-ini-icone svg { width:18px; height:18px; }
+#ci-lista .ci-cartao-ini .ci-ini:focus-within .ci-ini-icone,
+#ci-lista .ci-cartao-ini .ci-ini:has(input:not(:placeholder-shown)) .ci-ini-icone { display:none; }
