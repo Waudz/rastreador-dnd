@@ -786,3 +786,6 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 
 /* Ícone de classe na iniciativa: retrato 40px, símbolo 28px como nas listas. */
 .combatant .avfx .catalogo-simbolo>.dnd-categoria-icone{width:70%!important;height:70%!important;max-width:70%!important;max-height:70%!important;object-fit:contain;filter:var(--comp-miniatura-sombra)}
+
+/* Ícones de dados: dimensão legível dentro dos botões, sem alterar outros pictogramas. */
+button svg[data-icon="d20"],button .ico-d20,button .icon-d20{width:1.25em;height:1.25em;flex-shrink:0}
