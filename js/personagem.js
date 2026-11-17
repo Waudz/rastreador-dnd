@@ -460,7 +460,7 @@
     if (window.COMP_JANELA) {
       const j = window.COMP_JANELA.abrir({
         titulo: "Editar item: " + (it.nome || "Novo item"),
-        conteudo, largura: "media", classe: "inv-modal-box inv-editor-modal",
+        conteudo, largura: "media", classe: "inv-modal-box inv-editor-modal", focoInicial: "fechar",
         aoFechar: () => { if (editorInv?.ov === j.ov) editorInv = null; redesenharInv(); }
       });
       j.ov.id = "inv-editor-modal";
