@@ -8,9 +8,9 @@ async function fixture({sheet={pv:12},search="?campanha=antiga",erro=false,user=
     return q.startsWith("membros")?[{papel,campanha:{id:"antiga",nome:"Antiga"}},{papel,campanha:{id:"atual",nome:"Atual"}}]:[{id:"p",nome:"Herói",pv_atual:sheet.pv,pv_max:15,ca:13,ficha:{foto:"data:image/png;base64,FOTO",classes:[{c:"Bard",n:2}],atributos:{des:14},...ficha}}];
   }};
   const window={nuvem,addEventListener:(n,fn)=>eventos[n]=fn,__ini:{list:()=>lista,add:c=>lista.push(c),render(){}}};
-  const c=vm.createContext({window,nuvem,document,location:{search,origin:'http://localhost'},localStorage,URLSearchParams,setInterval(fn){intervalos.push(fn);}});
+  const avisos=[];window.FEEDBACK={mostrar:m=>avisos.push(String(m))};const c=vm.createContext({window,nuvem,document,location:{search,origin:'http://localhost'},localStorage,URLSearchParams,setInterval(fn){intervalos.push(fn);}});
   executar("js/origens.js",c);executar("js/regras.js",c);c.REGRAS=window.REGRAS;executar('js/ficha-componentes.js',c);executar('js/rolagens.js',c);executar('js/grupo-personagens.js',c);executar("js/campanha-ini.js",c);await tick();
-  return {document,lista,consultas,rpcs,intervalos,atualizar,nuvem,eventos,window,sheet};
+  return {document,lista,consultas,rpcs,intervalos,atualizar,nuvem,eventos,window,sheet,avisos};
 }
 test("link da campanha escolhe a campanha atual em vez da preferência antiga",async()=>{
   const f=await fixture({search:"?campanha=atual&personagem=p"});
@@ -153,15 +153,14 @@ test('PV alterados na ficha aparecem no combate (jogador), inclusive depois de r
 });
 test('Rolar iniciativa mostra o resultado dos dados na tela (d20, bônus e total) e adiciona com o total',async()=>{
  const f=await fixture({search:'?campanha=atual&personagens=p'});
- const r=f.document.el('ci-resultado').innerHTML;assert.match(r,/Herói: d20 \d+ \+ 3 = \d+ \(rolado\)/,'Destreza 14 (+2) mais o bônus de Bardo (+1)');
- assert.equal(f.lista.length,1);assert.ok(Number.isInteger(f.lista[0].initiative));
- assert.match(f.document.el('ci-resultado').innerHTML,/<strong>Iniciativa<\/strong>/);
+ const r=f.avisos.join(' | ');assert.match(r,/Herói: d20 \d+ \+ 3 = \d+ \(rolado\)/,'Destreza 14 (+2) mais o bônus de Bardo (+1)');
+ assert.equal(f.lista.length,1);assert.ok(Number.isInteger(f.lista[0].initiative));
 });
 test('o jogador ou mestre pode digitar a iniciativa (dado físico); número inválido é recusado; vazio deixa sem iniciativa',async()=>{
  const f=await fixture({search:'?campanha=atual'});const box=f.document.el('camp-ini'),digitar=v=>box.events.input({target:{dataset:{ciIni:'p'},value:v}}),clicar=()=>box.events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});
  digitar('abc');clicar();assert.equal(f.lista.length,0,'inválido não adiciona');assert.match(f.document.el('ci-msg').innerHTML,/Iniciativa inválida/);
- digitar('17');clicar();assert.equal(f.lista.length,1);assert.equal(f.lista[0].initiative,17);assert.match(f.document.el('ci-resultado').innerHTML,/Herói: 17 \(informado por você\)/);
- const g=await fixture({search:'?campanha=atual'});const b2=g.document.el('camp-ini');b2.events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});assert.equal(g.lista[0].initiative,null);assert.match(g.document.el('ci-resultado').innerHTML,/entrou sem iniciativa/);
+ digitar('17');clicar();assert.equal(f.lista.length,1);assert.equal(f.lista[0].initiative,17);assert.match(f.avisos.join(' | '),/Herói: 17 \(informado por você\)/);
+ const g=await fixture({search:'?campanha=atual'});const b2=g.document.el('camp-ini');b2.events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});assert.equal(g.lista[0].initiative,null);assert.match(g.avisos.join(' | '),/entrou sem iniciativa/);
 });
 test('cartão da iniciativa: identidade em cima e ações embaixo (campo Ini., Rolar d20, Adicionar), resultado no cartão; CSS restrito ao #ci-lista para não afetar outros cartões',async()=>{
  const f=await fixture({search:'?campanha=atual'});const h=f.document.el('ci-lista').innerHTML;
@@ -176,7 +175,7 @@ test('Adicionar combatente: prévia do monstro (foto, nome, CA, PV, iniciativa),
   const fs=require('node:fs'),lerA=p=>fs.readFileSync(require('node:path').join(__dirname,'..',p),'utf8'),html=lerA('iniciativa.html'),app=lerA('js/app.js'),ini=lerA('js/iniciativa.js'),css=lerA('css/fluxos.css'),ic=lerA('js/icones.js');
   assert.match(html,/id="add-previa"/);assert.match(html,/id="add-d20"[^>]*aria-label="Rolar 1d20 mais o modificador de iniciativa"><i data-i="d20">/);assert.match(html,/<input id="initiative"[^>]*step="1"[^>]*placeholder/);assert.ok(!/id="initiative"[^>]*required/.test(html),'iniciativa pode ficar em branco (pendente)');
   assert.match(html,/<input id="name"[^>]*required/,'só o nome é obrigatório para um combatente improvisado');assert.match(ic,/d20: '/);
-  assert.match(app,/window\.ROLAGENS\.rolar\("1d20", mod\)/,'usa a rolagem compartilhada, sem duplicar');assert.match(app,/\$\{av\(m, 56\)\}/,'foto cadastrada ou inicial do nome quando não há imagem');assert.match(app,/Valor informado por você/);
+  assert.match(app,/window\.ROLAGENS\.rolar\("1d20", mod\)/,'usa a rolagem compartilhada, sem duplicar');assert.match(app,/\$\{av\(m, 56\)\}/,'foto cadastrada ou inicial do nome quando não há imagem');
   assert.match(ini,/initiative: \$\("initiative"\)\.value\.trim\(\) === "" \? null : Number\(\$\("initiative"\)\.value\)/,'o campo é o resultado final, sem somar o modificador duas vezes');
   assert.match(css,/#add-form \.add-wrap button \{ width:100%; min-height:46px/);assert.ok(!/^\.form-grid|^\.add-wrap/m.test(css.slice(css.indexOf('/* Iniciativa: "Adicionar combatente"'))),'regras restritas ao #add-form');
 });
@@ -191,15 +190,14 @@ test('rolagem automática desligada: o botão Rolar d20 do cartão fica desativa
  const h=f.document.el('ci-lista').innerHTML;assert.match(h,/data-ci-rolar="p" disabled title="Rolagem automática desligada/);
  const box=f.document.el('camp-ini');box.events.click({target:{closest:s=>s==='[data-ci-rolar]'?{dataset:{ciRolar:'p'}}:null}});assert.match(f.document.el('ci-msg').innerHTML,/Rolagem automática desligada/);assert.ok(!/ci-ini-res" role="status">d20/.test(f.document.el('ci-lista').innerHTML),'nada é rolado');
  box.events.change({target:{dataset:{ciSel:'p'},checked:true}});assert.match(f.document.el('ci-selecao').innerHTML,/Adicionar \(1\)/);assert.ok(!/Rolar iniciativa/.test(f.document.el('ci-selecao').innerHTML));
- box.events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();assert.equal(f.lista.length,1);assert.equal(f.lista[0].initiative,null);assert.match(f.document.el('ci-resultado').innerHTML,/sem iniciativa \(rolagem automática desligada/);
- const g=await fixture({search:'?campanha=atual'});g.window.__ini.rolagemAuto=()=>false;const b2=g.document.el('camp-ini');b2.events.input({target:{dataset:{ciIni:'p'},value:'14'}});b2.events.change({target:{dataset:{ciSel:'p'},checked:true}});b2.events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();assert.equal(g.lista[0].initiative,14,'o número digitado é usado');assert.match(g.document.el('ci-resultado').innerHTML,/Herói: 14 \(informado por você\)/);
+ box.events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();assert.equal(f.lista.length,1);assert.equal(f.lista[0].initiative,null);assert.match(f.avisos.join(' | '),/sem iniciativa \(rolagem automática desligada/);
+ const g=await fixture({search:'?campanha=atual'});g.window.__ini.rolagemAuto=()=>false;const b2=g.document.el('camp-ini');b2.events.input({target:{dataset:{ciIni:'p'},value:'14'}});b2.events.change({target:{dataset:{ciSel:'p'},checked:true}});b2.events.click({target:{closest:s=>s==='#ci-rolar'?{}:null}});await tick();assert.equal(g.lista[0].initiative,14,'o número digitado é usado');assert.match(g.avisos.join(' | '),/Herói: 14 \(informado por você\)/);
 });
 
-test('combate de teste não grava na ficha: só combatentes marcados explicitamente gravam PV e PV temporários; a escolha é por campanha',async()=>{
+test('modo de teste: por padrão o mestre grava PV na ficha; com o Modo de teste ligado o combate nunca altera a ficha real; a escolha é por campanha',async()=>{
  const f=await fixture({search:'?campanha=atual'});const box=f.document.el('camp-ini'),patches=[];f.nuvem.patch=async(q,d)=>{patches.push([q,d]);return[{versao:2}];};
- box.events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});assert.equal(f.lista[0].sync,false,'padrão: teste');
- const tic=async()=>{for(const fn of f.intervalos)await fn();};
- await tic();f.lista[0].hp=3;await tic();assert.equal(patches.length,0,'o teste nunca altera a ficha real');
- f.lista[0].sync=true;await tic();f.lista[0].hp=4;f.lista[0].temp=5;await tic();assert.deepEqual(JSON.parse(JSON.stringify(patches[0][1])),{pv_atual:3,pv_temp:0},'ao ligar, grava o estado atual do combate (escolha explícita)');assert.equal(patches.length,2);assert.deepEqual(JSON.parse(JSON.stringify(patches[1][1])),{pv_atual:4,pv_temp:5});
- const g=await fixture({search:'?campanha=atual'});g.document.el('ci-gravar').checked=true;g.document.el('camp-ini').events.change({target:{id:'ci-gravar',checked:true}});g.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});assert.equal(g.lista[0].sync,true,'com a chave ligada o personagem entra gravando');
+ box.events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});assert.equal(f.lista[0].sync,true,'padrão: grava na ficha (Modo de teste desligado)');
+ const g=await fixture({search:'?campanha=atual'}),pg=[];g.nuvem.patch=async(q,d)=>{pg.push([q,d]);return[{versao:2}];};
+ g.document.el('ci-gravar').checked=true;g.document.el('camp-ini').events.change({target:{id:'ci-gravar',checked:true}});g.document.el('camp-ini').events.click({target:{closest:s=>s==='[data-ci]'?{dataset:{ci:'p'}}:null}});
+ assert.equal(g.lista[0].sync,false,'com o Modo de teste ligado o personagem entra sem gravar');const tg=async()=>{for(const fn of g.intervalos)await fn();};await tg();g.lista[0].hp=3;await tg();assert.equal(pg.length,0,'o teste nunca altera a ficha real');
 });

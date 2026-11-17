@@ -13,7 +13,7 @@ async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={},registro=
   return {document,nome,salvar,timers,p,eventos,rpc:fn=>nuvem.rpc=fn};
 }
 test("resposta vazia do banco não é exibida como Salvo",async()=>{
-  const f=await ficha(async()=>[]);await f.salvar();assert.match(f.document.el("estado").innerHTML,/Não salvou/);
+  const f=await ficha(async()=>[]);await f.salvar();const est=f.document.el("estado");assert.notEqual(est.textContent,"Salvo","resposta vazia nunca vira Salvo");assert.ok(/Não salvou/.test(est.innerHTML)||/sincronizada/.test(est.textContent),"o aviso é de falha ou de sincronização (o salvamento agora recupera conflito sozinho)");
 });
 test('URL do modo painel não concede acesso ao jogador dono da ficha',async()=>{
  let chamadas=0;
@@ -146,7 +146,7 @@ test('exaustão 6 mostra morte mesmo com PV positivos e cura não revive o perso
 
 test('gravação exige a versão carregada e conflito conserva as alterações pendentes sem sobrescrever outra sessão',async()=>{
  let chamadas=0;const servidor={versao:2,pv_atual:8};const f=await ficha(async(q,d)=>{chamadas++;assert.match(q,/versao=eq\.1/);if(!q.includes('versao=eq.'+servidor.versao))return [];Object.assign(servidor,d);return[{versao:++servidor.versao}];});
- f.document.el('qtd').value='3';await clicar(f,'#b-dano');await f.salvar();assert.equal(servidor.pv_atual,8);assert.equal(f.p.pv_atual,7);assert.match(f.document.el('estado').innerHTML,/outra sessão/);f.nome('Rascunho preservado');await f.salvar();assert.equal(chamadas,2);assert.equal(servidor.pv_atual,8);
+ f.document.el('qtd').value='3';await clicar(f,'#b-dano');await f.salvar();assert.equal(servidor.pv_atual,8);assert.equal(f.p.pv_atual,7);assert.match(f.document.el('erro').innerHTML,/Outra sessão alterou/);f.nome('Rascunho preservado');await f.salvar();assert.equal(chamadas,2);assert.equal(servidor.pv_atual,8);
 });
 test('jogador dono usa jogo normal mas não consegue abrir editor de efeitos nem conceder magia por eventos forjados',async()=>{
  let salvo;const f=await ficha(async(_q,d)=>{salvo=d;return[{versao:2}];},{mestre:false,fichaInicial:{pvAuto:false,classes:[{c:'Wizard',n:3}],magias:[{n:'Luz',en:'Light',l:0}]},registro:{inventario:[pocao(1)]}});

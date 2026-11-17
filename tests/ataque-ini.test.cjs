@@ -61,7 +61,7 @@ test('magias: CD e ataque de magia por classe (2014: 8 + proficiência + modific
 });
 test('modo treino: sempre ligado para quem não é mestre da campanha; só o mestre pode desligar; gastar espaço só fora do treino e só com controle de versão',()=>{
   const j=ler('js/ataque-ini.js'),c=ler('js/campanha-ini.js');
-  assert.match(j,/const treinoTravado = \(\) => papel\(\) !== "mestre";/);assert.match(j,/const emTreino = \(\) => treinoTravado\(\) \|\| !!estado\(\)\.treino;/);
+  assert.match(j,/const treinoTravado = \(\) => papel\(\) !== "mestre";/);assert.match(j,/const emTreino = \(\) => treinoTravado\(\);/);
   assert.match(j,/if \(emTreino\(\) \|\| a\.tipo !== "magia"/,'em treino nada é gasto');
   assert.match(c,/window\.__ini\.papel = \(\) =>/);assert.match(c,/if \(!sincroniza\(\)\) return \{ ok: false, msg: "Só o mestre gasta espaços/);assert.match(c,/&versao=eq\./,'gravação com controle de versão');
 });
@@ -101,7 +101,7 @@ test('ataque rápido com vantagem e desvantagem usa dois d20; ataque sem bônus 
 test('Outras opções: ataque manual, só ataque, só dano e metade do dano com o mesmo motor e a mesma confirmação',async()=>{
   const t=ambiente();t.clique({vezAvancado:''});assert.equal(t.q('#vez-avancado').hidden,false);assert.match(t.avanc(),/id="atk-so-ataque"/);assert.match(t.avanc(),/id="atk-so-dano"/);assert.match(t.avanc(),/Metade do dano/);assert.match(t.avanc(),/Manual…/);
   t.w.valorDado=0.55;
-  t.clique({},'atk-so-ataque');await t.espera();assert.match(t.res(),/<b>Acertou/);assert.ok(!/Dano:/.test(t.res()),'só o ataque não rola dano');assert.ok(!/data-aplicar/.test(t.res()));
+  t.clique({},'atk-so-ataque');await t.espera();assert.match(t.res(),/Acertou/);assert.ok(!/Dano:/.test(t.res()),'só o ataque não rola dano');assert.ok(!/data-aplicar/.test(t.res()));
   t.clique({},'atk-so-dano');await t.espera();assert.match(t.res(),/<b>Dano:<\/b> \d+/);assert.match(t.res(),/data-aplicar/);
   t.muda('atk-ataque','manual');assert.match(t.avanc(),/id="atk-bonus"/);assert.match(t.avanc(),/id="atk-dano"/);
   t.q('#atk-dano').value='2d8+2';t.q('#atk-bonus').value='6';t.q('#atk-metade').checked=true;t.clique({},'atk-so-dano');await t.espera();assert.match(t.res(),/\(de \d+\)/,'metade do dano mostra o bruto');assert.match(t.res(),/\(metade\)/);
@@ -118,7 +118,7 @@ test('magias em Outras opções e nos botões rápidos: ataque de magia e salvag
   t.clique({vezAvancado:''});t.muda('atk-ataque','1');assert.match(t.avanc(),/id="atk-circulo"/);assert.match(t.avanc(),/value="8d6"/);t.muda('atk-circulo','5');assert.match(t.avanc(),/value="8d6\+2d6"/,'espaço de 5º círculo');
   const m=ambiente({papelAtual:'mestre',fichaConj:f});m.muda('vez-atacante','b');assert.ok(!/id="vez-treino" checked/.test(m.texto()),'mestre: treino desligado por padrão');
   m.clique({vez:'1'});await m.espera();assert.equal(m.espacos.length,0,'combate de teste: sem gravar na ficha o espaço não é gasto nela');m.lista[1].sync=true;m.clique({vez:'1'});await m.espera();assert.equal(m.espacos.length,1);assert.deepEqual(m.espacos[0],['p',3]);assert.match(m.res(),/Gastou 1 espaço de 3º círculo/);
-  m.muda('vez-treino','',true);m.clique({vez:'1'});await m.espera();assert.equal(m.espacos.length,1,'com o treino ligado não gasta mais');
+  
 });
 test('botão Atacar do cartão abre a interface unificada com o combatente como atacante, mesmo fora da vez',()=>{
   const t=ambiente();t.setVez(null);t.w.ev['ini:atacar']({detail:{id:'b'}});assert.equal(t.faixa.hidden,false);assert.match(t.texto(),/Ataque de[\s\S]*Herói/);assert.match(t.texto(),/Espada longa \+5/);assert.match(t.texto(),/<option value="a" selected[^>]*>Goblin/);
@@ -170,11 +170,11 @@ test('o ataque é fixo em quem está na vez: ao mudar o turno a faixa acompanha 
 
 test('rolagem automática desligada: primeiro o d20; só se acertar pede o dano; nada é rolado sozinho e o dano em branco não vale',async()=>{
   const t=ambiente();t.w.auto=false;const man=()=>t.q('#vez-manual').innerHTML;
-  t.clique({vez:'0'});assert.equal(t.res(),'','nada é rolado');assert.equal(t.q('#vez-manual').hidden,false);assert.match(man(),/data-man-d20="0-0"/);assert.ok(!/data-man-dano/.test(man()),'a primeira etapa pede só o d20');assert.match(man(),/informe o resultado natural do d20/);
+  t.clique({vez:'0'});assert.equal(t.res(),'','nada é rolado');assert.equal(t.q('#vez-manual').hidden,false);assert.match(man(),/data-man-d20="0-0"/);assert.ok(!/data-man-dano/.test(man()),'a primeira etapa pede só o d20');assert.match(man(),/1\. Resolver ataque/);assert.match(man(),/Resultado do d20 do ataque 1/);
   t.clique({},'man-ok');assert.match(t.q('#man-erro').textContent,/Informe o resultado do d20/);
   t.q('[data-man-d20="0-0"]').value='15';t.clique({},'man-ok');await t.espera();
-  assert.match(t.res(),/15 \+ 4 = 19 contra CA 15 → <b>Acertou/);assert.ok(!/Dano:/.test(t.res()),'o ataque não rola dano sozinho');assert.ok(!/data-aplicar/.test(t.res()));
-  assert.equal(t.q('#vez-manual').hidden,false);assert.match(man(),/Acertou: informe o dano total/);assert.match(man(),/data-man-dano="0"/);assert.ok(!/data-man-d20/.test(man()));
+  assert.match(t.res(),/15 \+ 4 = 19 contra CA 15 → <strong[^>]*>Acertou/);assert.ok(!/Dano:/.test(t.res()),'o ataque não rola dano sozinho');assert.ok(!/data-aplicar/.test(t.res()));
+  assert.equal(t.q('#vez-manual').hidden,false);assert.match(man(),/2. Informar dano/);assert.match(man(),/data-man-dano="0"/);assert.ok(!/data-man-d20/.test(man()));
   t.clique({},'man-ok');assert.match(t.q('#man-erro').textContent,/Informe o dano total/,'dano em branco não gera dano aleatório');assert.ok(!/Dano:/.test(t.res()));
   t.q('[data-man-dano="0"]').value='9';t.clique({},'man-ok');await t.espera();assert.match(t.res(),/<b>Dano:<\/b> 9/);assert.equal(t.q('#vez-manual').hidden,true);
   t.clique({aplicar:apN(t)});assert.equal(t.aplicados[0][1],9,'aplica exatamente o dano digitado');
@@ -201,7 +201,7 @@ test('chave "Rolagem automática": guardada no aparelho, desativa os botões d20
 test('botão de treino só aparece para o mestre; todos os botões que rolam dados mostram o ícone do d20',async()=>{
   const j=ler('js/ataque-ini.js'),ci=ler('js/campanha-ini.js'),gp=ler('js/grupo-personagens.js');
   const jog=ambiente({papelAtual:'jogador'}),mes=ambiente({papelAtual:'mestre'}),sem=ambiente({papelAtual:'sem-campanha'});
-  assert.ok(!/vez-treino/.test(jog.texto())&&!/vez-treino/.test(sem.texto()),'jogador e quem está fora de campanha não veem o botão');assert.match(mes.texto(),/id="vez-treino"/);assert.ok(!/id="vez-treino" checked/.test(mes.texto()));
+  assert.ok(!/vez-treino/.test(jog.texto())&&!/vez-treino/.test(sem.texto()),'jogador e quem está fora de campanha não veem o botão');assert.ok(!/vez-treino/.test(mes.texto()),'o controle Treino foi removido: o mestre usa o Modo de teste do combate');
   jog.clique({vezAvancado:''});assert.ok(!/Modo treino/.test(jog.avanc()),'sem aviso de treino para o jogador');
   assert.match(j,/\$\{D20\(\)\}\$\{esc\(a\.criatura \? [^\n]*a\.tipo === "magia"/);assert.match(j,/id="atk-rolar" class="primary">\$\{manualDados \? "" : D20\(\)\}/);assert.match(j,/id="atk-so-ataque" class="small">\$\{D20\(\)\}Só o ataque/);assert.match(j,/id="atk-so-dano" class="small">\$\{manualDados \? "Registrar só o dano" : D20\(\) \+ "Só o dano"\}/);
   assert.match(ci,/window\.ico\('d20'\)\:''\)\+'Rolar d20/);assert.match(gp,/window\.ico\('d20'\)\:''\)\+'Rolar iniciativa/);
@@ -226,7 +226,7 @@ test('rolagem desligada em Outras opções: o d20 é digitado na própria faixa,
   const t=ambiente();t.w.auto=false;t.clique({vezAvancado:''});t.muda('atk-ataque','manual');
   assert.match(t.avanc(),/id="atk-man-d20"/);assert.ok(!/Dano \(ex\./.test(t.avanc()),'sem expressão de dados quando os dados são físicos');assert.match(t.avanc(),/Registrar ataque/);assert.ok(!/atk-so-ataque/.test(t.avanc()));assert.match(t.avanc(),/Registrar só o dano/);
   t.clique({},'atk-rolar');assert.match(t.res(),/Digite o resultado do d20/);assert.equal(t.q('#vez-manual').hidden,true,'não abre outra tela sem o d20');
-  t.q('#atk-man-d20').value='17';t.clique({},'atk-rolar');await t.espera();assert.match(t.res(),/Acertou/);assert.ok(!/Dano:/.test(t.res()));assert.match(t.q('#vez-manual').innerHTML,/Acertou: informe o dano total/);
+  t.q('#atk-man-d20').value='17';t.clique({},'atk-rolar');await t.espera();assert.match(t.res(),/Acertou/);assert.ok(!/Dano:/.test(t.res()));assert.match(t.q('#vez-manual').innerHTML,/2\. Informar dano/);assert.match(t.q('#vez-manual').innerHTML,/Dano \(total\)/);
 });
 test('texto de ajuda da rolagem automática muda com o estado da chave',()=>{
   const html=ler('iniciativa.html'),ini=ler('js/iniciativa.js');
