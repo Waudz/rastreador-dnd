@@ -71,7 +71,7 @@
     return `<article class="card personagem-card grupo-cartao" data-id="${esc(p.id)}"><div class="grupo-cartao-topo">
       ${mestre()?G.checkbox(p,selecionados.has(p.id)):''}${G.identidade(p,{jogador:nomes[p.dono_id]||'Sem vínculo',vida:true,barraVida:v})}
       <div class="grupo-cartao-acoes">${mestre()?`<a class="grupo-icone" href="${esc(G.destino(id,[p.id]))}" title="Adicionar à iniciativa" aria-label="Adicionar ${esc(p.nome)} à iniciativa">${ico('swords')}</a>`:''}
-      <button type="button" class="grupo-icone grupo-abrir-painel" data-abrir-painel="${esc(p.id)}" title="Abrir painel lateral" aria-label="Abrir painel lateral de ${esc(p.nome)}">${ico('chevron-left')}</button>
+      <button type="button" class="grupo-icone grupo-abrir-painel" data-abrir-painel="${esc(p.id)}" title="Abrir painel lateral" aria-label="Abrir painel lateral de ${esc(p.nome)}">${ico('turn')}</button>
       <details class="compact-menu"><summary title="Mais opções" aria-label="Mais opções de ${esc(p.nome)}">${ico('more')}</summary><div class="compact-popover"><a href="personagem.html?id=${encodeURIComponent(p.id)}">Abrir ficha</a>${dono}<button type="button" class="small danger" data-excluir-pers="${esc(p.id)}">Excluir personagem</button></div></details></div></div>
 ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''}</article>`;
   };
