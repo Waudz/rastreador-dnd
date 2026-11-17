@@ -211,7 +211,7 @@
     function pick(k) {
       const m = ALL.find((x) => x.key === k); if (!m) return;
       $("#name").value = uniq(pt(m) || m.name); $("#kind").value = CAT[catOf(m)];
-      $("#ini-mod").value = iniBonus(m); $("#initiative").value = ""; $("#add-conta").textContent = "";   // a iniciativa sai do botão d20 ou do seu dado
+      $("#ini-mod").value = iniBonus(m); $("#initiative").value = ""; $("#initiative").dataset.resultadoFinal = "0"; $("#add-conta").textContent = "";   // a iniciativa sai do botão d20 ou do seu dado
       $("#hp").value = $("#maxHp").value = m.hit_points; $("#ac").value = m.armor_class;
       window.__ini.pending = m.key; sug.hidden = true;
       const p = $("#add-previa"); p.hidden = false; posicionarIni(true);
@@ -223,9 +223,9 @@
     $("#add-d20").addEventListener("click", () => {
       if (window.__ini.rolagemAuto && !window.__ini.rolagemAuto()) { $("#add-conta").textContent = "Rolagem automática desligada: digite a iniciativa."; return; }
       const mod = Math.round(Number($("#ini-mod").value) || 0), r = window.ROLAGENS.rolar("1d20", mod);
-      $("#initiative").value = r.total; $("#add-conta").textContent = `d20 ${r.dados[0]} ${sinal(mod).replace("+", "+ ").replace("-", "- ")} = ${r.total}`;
+      $("#initiative").value = r.total; $("#initiative").dataset.resultadoFinal = "1"; $("#add-conta").textContent = `d20 ${r.dados[0]} ${sinal(mod).replace("+", "+ ").replace("-", "- ")} = ${r.total}`;
     });
-    $("#initiative").addEventListener("input", () => { $("#add-conta").textContent = $("#initiative").value === "" ? "" : "Valor informado por você"; });
+    $("#initiative").addEventListener("input", () => { $("#initiative").dataset.resultadoFinal = "0"; const v=$("#initiative").value; const mod=Math.round(Number($("#ini-mod").value)||0); $("#add-conta").textContent = v === "" ? "" : `d20 ${v} ${sinal(mod)} = ${Number(v)+mod}`; });
     $("#add-form").addEventListener("submit", () => { limparPrevia(); });
     /* ---- Monstros recentes: últimos 15 efetivamente adicionados ao combate (js/recentes.js); clicar usa o mesmo caminho da pesquisa (pick) ---- */
     const REC = window.RECENTES, recBox = $("#recentes"), recBtn = $("#recentes-btn"), chaveRec = () => acervo.chave("ini_recentes");
