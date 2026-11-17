@@ -234,11 +234,11 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
   function abaGrupo() {
     if (grupoBasico === null) return '<span class="muted" role="status">Carregando o grupo…</span>';
     if (!Array.isArray(grupoBasico)) return '<div class="panel"><p class="err">Não foi possível carregar o grupo agora.</p><p class="muted">Este recurso depende de uma atualização do banco de dados que ainda pode não ter sido aplicada.</p><button type="button" class="small" id="grupo-tentar">Tentar novamente</button></div>';
-    return grupoBasico.length ? `<p class="muted">Foto, nome, jogador, PV e CA dos personagens do grupo. Toque em um personagem para ver a ficha dele em modo leitura. Inventário, dinheiro e observações não aparecem.</p><h3 class="sub">Mestre</h3>${membros.filter((m) => m.papel === "mestre").map(cartaoMestre).join("") || '<p class="muted">Sem mestre listado.</p>'}<h3 class="sub">Jogadores</h3>${grupoBasico.map(cartaoGrupo).join("")}` : '<div class="estado-vazio"><strong>Nenhum personagem no grupo ainda</strong><p>Quando os jogadores tiverem personagens vinculados, eles aparecem aqui.</p></div>';
+    return grupoBasico.length ? `<p class="muted">Consulte os personagens dos demais jogadores em modo leitura.</p>${grupoBasico.filter(p => p.dono_id !== meuId()).map(cartaoGrupo).join("") || '<p class="muted">Nenhum outro personagem vinculado ao grupo.</p>'}` : '<div class="estado-vazio"><strong>Nenhum personagem no grupo ainda</strong><p>Quando os jogadores tiverem personagens vinculados, eles aparecem aqui.</p></div>';
   }
 
   function abaGrupoUnificado() {
-    const personagens = abaPers() + (!mestre() ? '<details class="grupo-secao-recolhida" open><summary>Visão do grupo</summary><div id="grupo-leitura" class="grupo-secao-corpo">' + abaGrupo() + '</div></details>' : '');
+    const personagens = abaPers() + (!mestre() ? '<section class="grupo-outros-personagens" aria-label="Personagens dos outros jogadores"><h3 class="sub">Personagens do grupo</h3><div id="grupo-leitura" class="grupo-secao-corpo">' + abaGrupo() + '</div></section>' : '');
     const participantes = mestre() ? abaMembros() : membros.map(m => '<div class="res"><span><b>' + esc(nomes[m.usuario_id] || "Jogador") + '</b> <span class="badge ' + (m.papel === "mestre" ? "" : "jog") + '">' + (m.papel === "mestre" ? "Mestre" : "Jogador") + '</span></span></div>').join('');
     return '<section class="grupo-unificado" aria-label="Personagens da campanha">' + personagens +
       '<details class="grupo-secao-recolhida"><summary>Participantes (' + membros.length + ')</summary><div class="grupo-secao-corpo">' + participantes + '</div></details>' +
