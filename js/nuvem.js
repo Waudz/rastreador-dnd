@@ -263,7 +263,13 @@
     const canal = sb.channel("personagens-" + filtro + "-" + Math.random().toString(36).slice(2))
       .on("postgres_changes", { event: "*", schema: "public", table: "personagens", filter: filtro }, (evento) => {
         if (!document.hidden) aoAlterar(evento);
-      }).subscribe();
+      }).subscribe((estado, erro) => {
+        // A assinatura pode falhar silenciosamente e deixar a tela dependendo do polling.
+        console.info("[Realtime personagens]", filtro, estado, erro?.message || "");
+        if (estado === "SUBSCRIBED" && !document.hidden) aoAlterar({tipo:"inscrito"});
+        if (estado === "CHANNEL_ERROR" || estado === "TIMED_OUT" || estado === "CLOSED")
+          console.warn("[Realtime personagens] Canal indisponível; consulta periódica permanece ativa.", filtro, estado, erro);
+      });
     let ativo = true;
     const aoVisivel = () => { if (ativo && !document.hidden) aoAlterar({ tipo: "reconectar" }); };
     document.addEventListener("visibilitychange", aoVisivel);
