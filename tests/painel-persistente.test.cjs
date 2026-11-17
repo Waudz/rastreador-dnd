@@ -45,3 +45,6 @@ test("troca de página mais leve: o painel só reabre depois do carregamento e s
   assert.ok(!/addEventListener\('beforeunload'/.test(l), "o aviso de sair da página foi retirado do leitor");
   const h = ler("itens.html"); assert.ok(h.indexOf("js/itens.js") < h.indexOf("js/leitor-fichas.js") || h.indexOf("ordenacao-catalogos.js") < h.indexOf("js/leitor-fichas.js"), "a lista de itens carrega antes do painel lateral");
 });
+test("celular: barra do topo do painel com a mesma cor e linha da barra principal (combina com a web)", () => {
+  const css = ler("css/fichas.css"); assert.match(css, /\n\.sh-top,\.ci-resumo-topo\{background:var\(--bg\);border-bottom:1px solid var\(--line\)\}/);
+});
