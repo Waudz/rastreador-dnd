@@ -218,12 +218,13 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
   const ordemAba = ["pers", "diario", "docs", "grupo", "membros"];
   async function carregarGrupo() {
     const consultada = id;
+    const anterior = JSON.stringify(grupoBasico);
     try {
       let r;
       try { r = await nuvem.rpc("grupo_fichas", { p_campanha: id }); } catch (_) { r = await nuvem.rpc("grupo_basico", { p_campanha: id }); }   // sem a função completa, só os dados básicos
       if (consultada === id) grupoBasico = Array.isArray(r) ? r : [];
     } catch (e) { if (consultada === id) grupoBasico = { erro: e.message || "indisponível" }; }
-    if (consultada === id && aba === "pers" && !mestre()) await desenhar();
+    if (consultada === id && aba === "pers" && !mestre() && anterior !== JSON.stringify(grupoBasico)) await desenhar();
   }
   const avatarGrupo = (nome, foto) => foto && /^data:image\//.test(foto) ? `<img class="av" src="${esc(foto)}" alt="Foto de ${esc(nome)}">` : `<span class="av av0 catalogo-simbolo"><img class="dnd-categoria-icone" src="icones/dnd/classes/character.svg" alt=""></span>`;
   function cartaoGrupo(p) {
