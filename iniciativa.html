@@ -262,12 +262,16 @@
         <select id="bf" aria-label="Categoria do bestiário"></select>
         <select id="b-ordem" aria-label="Ordenar monstros"><option value="nome-asc">Nome: A–Z</option><option value="nome-desc">Nome: Z–A</option></select>
         <button type="button" class="small subtle" id="bf-limpar">Limpar filtros</button><span class="inv-vista" role="group" aria-label="Modo de exibição do bestiário"><button type="button" class="small" data-cat-vista="bestiario:lista" aria-pressed="true">Lista</button><button type="button" class="small" data-cat-vista="bestiario:grade" aria-pressed="false">Grade</button></span>
-        <button type="button" class="small" id="exportar-criacoes">Exportar criações</button>
-        <button type="button" class="small" id="importar-criacoes">Importar criações</button><input type="file" id="importar-arquivo" accept="application/json,.json" hidden>
+
       </div>
       <p id="dl-status" class="muted" role="status"></p>
       <div class="muted" id="bcount"></div>
       <div id="blist"></div>
+      <div class="bestiario-backup-acoes" aria-label="Backup das criações">
+        <button type="button" class="small" id="exportar-criacoes">Exportar criações</button>
+        <button type="button" class="small" id="importar-criacoes">Importar criações</button>
+        <input type="file" id="importar-arquivo" accept="application/json,.json" hidden>
+      </div>
     </section>
 
 
