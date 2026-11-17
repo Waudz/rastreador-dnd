@@ -1230,3 +1230,18 @@ body.ficha-embutida .tracker { padding:14px; }                                  
  body.comp-janelas-desktop #dock-r:not([hidden]) > aside#spd:not([hidden]){display:flex!important}
  body.comp-janelas-desktop #dock-r:not([hidden]) > aside:not([hidden]) .comp-flutuante-cab{display:flex!important}
 }
+
+/* Desktop: janelas com dimensões fixas, sem alças ou botão de redimensionar. */
+@media(min-width:1400px) and (pointer:fine){
+ body.comp-janelas-desktop .comp-flutuante-resize{display:none!important}
+ body.comp-janelas-desktop #dock-r #ci-resumo:not([hidden]){width:480px!important;max-width:calc(100vw - 24px)!important;resize:none!important}
+ body.comp-janelas-desktop #dock-r #sheet:not([hidden]){width:440px!important;max-width:calc(100vw - 24px)!important;resize:none!important}
+ body.comp-janelas-desktop #dock-r #spd:not([hidden]){width:420px!important;max-width:calc(100vw - 24px)!important;resize:none!important}
+ body.comp-janelas-desktop #vez-res.vez-historico-janela:not(:empty){width:300px!important;max-width:calc(100vw - 24px)!important;resize:none!important}
+ body.comp-janelas-desktop #dock-r #ci-resumo > .ci-resumo-topo,
+ body.comp-janelas-desktop #dock-r #sheet > .sh-top,
+ body.comp-janelas-desktop #dock-r #spd > .sh-top{display:none!important}
+ body.comp-janelas-desktop #dock-r #ci-resumo > #ci-resumo-corpo{flex:1 1 auto;min-height:0;overflow:auto}
+ body.comp-janelas-desktop #dock-r #ci-resumo > #ci-resumo-corpo iframe{height:100%;min-height:0}
+ body.comp-janelas-desktop #dock-r .comp-flutuante-cab{flex-shrink:0}
+}
