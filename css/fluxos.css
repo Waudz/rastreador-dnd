@@ -648,3 +648,85 @@ body.ficha-embutida .tracker { padding:14px; }                                  
     grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
   }
 }
+
+/* Correção mobile: lista da campanha e seleção da iniciativa.
+   O modo grade da campanha permanece inalterado. */
+@media(max-width:759px){
+  /* Lista: a identidade não pode disputar uma coluna de 40px com os três botões. */
+  .grupo-unificado .cards.grupo-personagens-lista{
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .grupo-unificado .grupo-personagens-lista>.personagem-card.grupo-cartao{
+    box-sizing:border-box;display:block;width:100%;height:auto;min-height:0;
+    padding:12px;overflow:visible;
+  }
+  .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-cartao-topo{
+    display:grid;grid-template-columns:24px minmax(0,1fr);
+    align-items:center;gap:8px 10px;width:100%;min-width:0;
+  }
+  .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-cartao-topo>.grupo-marcar{
+    position:static;grid-column:1;grid-row:1;align-self:center;
+    width:24px;min-height:24px;
+  }
+  .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-cartao-topo>.grupo-identidade{
+    grid-column:2;grid-row:1;display:flex;flex-direction:row;
+    align-items:center;gap:10px;min-width:0;width:100%;flex:none;
+  }
+  .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-identidade>.retrato-cartao,
+  .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-identidade>.av{
+    box-sizing:border-box;flex:0 0 64px!important;width:64px!important;
+    height:64px!important;min-width:64px!important;min-height:64px!important;
+    max-width:64px!important;max-height:64px!important;aspect-ratio:1/1;
+  }
+  .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-identidade-texto{
+    display:block;flex:1 1 auto;min-width:0;width:auto;
+  }
+  .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-identidade-texto b,
+  .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-identidade-texto small{
+    overflow-wrap:break-word;word-break:normal;white-space:normal;
+  }
+  .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-cartao-topo>.grupo-cartao-acoes{
+    grid-column:1/-1;grid-row:2;display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    justify-items:center;align-items:center;justify-self:stretch;
+    width:100%;min-width:0;max-width:none;flex:none;margin:0;padding:4px 0 0;
+  }
+  /* Seleção da iniciativa: cartões compactos, sem retratos ou espaços gigantes. */
+  #ci-lista.ci-grade{
+    display:grid;grid-template-columns:minmax(0,1fr);gap:10px;
+    align-items:start;
+  }
+  #ci-lista>.ci-cartao.grupo-cartao.ci-cartao-ini{
+    box-sizing:border-box;display:flex;flex-direction:column;
+    align-items:stretch;justify-content:flex-start;
+    width:100%;height:auto!important;min-height:0!important;
+    max-height:none;padding:12px;gap:10px;flex:none;
+  }
+  #ci-lista .ci-cartao-ini .ci-topo{
+    display:flex;flex-direction:row;align-items:center;gap:8px;
+    width:100%;min-width:0;flex:none;
+  }
+  #ci-lista .ci-cartao-ini .ci-personagem.grupo-identidade{
+    display:flex;flex-direction:row;align-items:center;
+    flex:1 1 auto;width:auto;min-width:0;min-height:0;
+    padding:0;gap:10px;
+  }
+  #ci-lista .ci-cartao-ini .ci-personagem>.retrato-cartao,
+  #ci-lista .ci-cartao-ini .ci-personagem>.av{
+    box-sizing:border-box;flex:0 0 56px!important;
+    width:56px!important;height:56px!important;
+    min-width:56px!important;min-height:56px!important;
+    max-width:56px!important;max-height:56px!important;
+    aspect-ratio:1/1;
+  }
+  #ci-lista .ci-cartao-ini .grupo-identidade-texto{
+    display:block;flex:1 1 auto;min-width:0;width:auto;
+  }
+  #ci-lista .ci-cartao-ini .ci-acoes{
+    display:flex;flex-direction:row;align-items:flex-end;
+    justify-content:flex-start;flex-wrap:wrap;gap:8px;
+    width:100%;min-width:0;flex:none;margin:0;padding:0;
+  }
+  #ci-lista .ci-cartao-ini .ci-ini-res{flex:none;width:100%;min-height:0;margin:0}
+  #ci-lista .ci-cartao-ini .ci-ini-res:empty{display:none}
+}
