@@ -136,3 +136,9 @@ a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, cu
 }
 .grupo-unificado .grupo-personagens-grade .grupo-cartao-topo>.grupo-identidade>.catalogo-simbolo .ico{width:48px;height:48px}
 .grupo-unificado .grupo-personagens-grade .grupo-cartao-topo>.grupo-cartao-acoes{display:flex;flex-direction:row;justify-content:flex-end;gap:6px;width:100%;margin-top:auto}
+
+/* Popover completo: sem scroll interno, sobre os cartões vizinhos. */
+.grupo-unificado .compact-menu[open]{z-index:60}
+.grupo-unificado .compact-menu>.compact-popover{max-height:none;overflow:visible;overscroll-behavior:auto}
+.grupo-unificado .compact-popover .jogador-vinculo{max-height:none;overflow:visible}
+.grupo-unificado .grupo-cartao:has(.compact-menu[open]){z-index:50}
