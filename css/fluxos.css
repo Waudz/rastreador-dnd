@@ -1306,3 +1306,21 @@ body.ficha-embutida .tracker { padding:14px; }                                  
    right:14px!important;left:auto!important;
  }
 }
+
+/* Desktop: sem minimizar, sem dock flutuante, centro limitado e nunca atrás da ficha. */
+@media(min-width:1400px) and (pointer:fine){
+ body.comp-janelas-desktop #comp-janelas-minimizadas,
+ body.comp-janelas-desktop .comp-flutuante-acoes button[title="Minimizar janela"]{display:none!important}
+ body.comp-janelas-desktop #vez-res.comp-historico-fechado{display:none!important}
+ body.comp-janelas-desktop main.tracker{
+   box-sizing:border-box!important;
+   width:calc(100vw - 28px - var(--comp-reserva-esquerda,0px) - var(--comp-reserva-direita,0px))!important;
+   max-width:1200px!important;
+   margin-left:max(calc(14px + var(--comp-reserva-esquerda,0px)),calc((100vw - var(--comp-reserva-direita,0px) + var(--comp-reserva-esquerda,0px) - 1200px)/2))!important;
+   margin-right:0!important;
+   min-width:0!important;
+ }
+ body.comp-janelas-desktop #dock-r #ci-resumo:not([hidden]),
+ body.comp-janelas-desktop #dock-r #sheet:not([hidden]){z-index:45}
+ body.comp-janelas-desktop #comp-abrir-historico[hidden]{display:none!important}
+}
