@@ -201,7 +201,7 @@
   let geracaoContexto=0,pararConsulta=null;
   async function iniciar(novoPedido){
     if(!conta){box.hidden=true;return;}
-    const g=++geracaoContexto;buscando=false;pararConsulta?.();pararConsulta=null;selecionados.clear();pers=[];ultimaGrade=null;carregou=false;
+    const g=++geracaoContexto;buscando=false;pararConsulta?.();pararConsulta=null;pararRealtimePersonagens?.();pararRealtimePersonagens=null;realtimeCampanha=null;selecionados.clear();pers=[];ultimaGrade=null;carregou=false;
     window.__ini.selecaoPendente?.(0,null);
     try{
       const ms=window.CAMPANHAS_UI?.carregar?await window.CAMPANHAS_UI.carregar(true):await nuvem.get('membros?select=papel,campanha:campanhas(id,nome)&usuario_id=eq.'+encodeURIComponent(conta));
@@ -288,8 +288,6 @@
     }});
   }
   window.addEventListener("campanha:alterada",()=>{realtimeCampanha=null;pararRealtimePersonagens?.();pararRealtimePersonagens=null;});
-  const assinarPersonagensOriginal=assinarPersonagens;
-  window.__assinarPersonagensCampanha=assinarPersonagensOriginal;
   let estavaEmCombate=null;
   window.__ini.aoAlterar?.(()=>{desenhar();const em=!!document.querySelector('.combatant.active');if(em!==estavaEmCombate){estavaEmCombate=em;if(em){box.open=false;const add=$('#adicionar-combatente');if(add)add.open=false;}else if(!window.__ini.list().length){const add=$('#adicionar-combatente');if(add)add.open=true;}}});
   iniciar();
