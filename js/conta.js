@@ -15,7 +15,7 @@
     $('#biblioteca-contagem').textContent=lista.length+' de '+personagensConta.length+' personagens';
     $('#personagens').innerHTML=lista.length?lista.map(p=>{
       const f=p.ficha||{},r=C.resumoPersonagem(f);
-      return `<a class="card biblioteca-cartao" href="personagem.html?id=${encodeURIComponent(p.id)}"><div class="biblioteca-identidade">${C.retrato(p.nome,f.foto)}<div><h3>${esc(p.nome)}</h3><p>${esc([f.raca,r.classes].filter(Boolean).join(' · ')||'Ficha em criação')}</p>${r.nivel?`<span class="badge">Nível ${r.nivel}</span>`:''}</div></div><p class="biblioteca-campanha">${esc(p.campanha?.nome||'Campanha não informada')}</p>${barraPV(p.pv_atual,p.pv_max)}<span class="biblioteca-abrir">Abrir ficha <span aria-hidden="true">↗</span></span></a>`;
+      return `<a class="card biblioteca-cartao" href="personagem.html?id=${encodeURIComponent(p.id)}"><div class="biblioteca-identidade">${C.retrato(p.nome,f.foto,56,f)}<div><h3>${esc(p.nome)}</h3><p>${esc([f.raca,r.classes].filter(Boolean).join(' · ')||'Ficha em criação')}</p>${r.nivel?`<span class="badge">Nível ${r.nivel}</span>`:''}</div></div><p class="biblioteca-campanha">${esc(p.campanha?.nome||'Campanha não informada')}</p>${barraPV(p.pv_atual,p.pv_max)}<span class="biblioteca-abrir">Abrir ficha <span aria-hidden="true">↗</span></span></a>`;
     }).join(''):personagensConta.length?'<div class="estado-vazio"><strong>Nenhum personagem corresponde aos filtros</strong><p>Altere a busca ou use Limpar filtros para ver sua biblioteca.</p></div>':`<div class="estado-vazio"><strong>Sua biblioteca de personagens</strong><p>Seus personagens como jogador aparecem aqui. Como mestre, acesse os personagens dentro da campanha.</p>${podeCriarPersonagem?'<button type="button" class="small primary" id="biblioteca-primeiro">Criar meu primeiro personagem</button>':'<a class="btnlike small" href="conta.html?aba=campanhas&gerenciar=1">Ver campanhas</a>'}</div>`;
     const primeiro=$('#biblioteca-primeiro');if(primeiro)primeiro.onclick=()=>{$('#form-pers').hidden=false;$('#p-nome').focus();};
   }
@@ -133,7 +133,18 @@
 
 
 
-  /* ---------- início ---------- */
+  /* Atualiza a biblioteca ao voltar da ficha (inclusive após trocar/remover foto). */
+  let ultimaAtualizacao = '';
+  window.addEventListener('focus', () => {
+    if (document.visibilityState !== 'hidden' && nuvem.usuario()) carregar().catch(() => {});
+  });
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'compendio:personagem-atualizado' && e.newValue !== ultimaAtualizacao && nuvem.usuario()) {
+      ultimaAtualizacao = e.newValue;
+      carregar().catch(() => {});
+    }
+  });
+    /* ---------- início ---------- */
   (async () => {
     nuvem.olhos();
     const guarda = setTimeout(() => { if (document.documentElement.classList.contains("conta-verificando")) falhaAbertura("A conexão está lenta e seus dados ainda não chegaram."); }, 20000);   // nem a sessão respondeu: aviso, sem desconectar
