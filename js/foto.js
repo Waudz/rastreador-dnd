@@ -1,4 +1,4 @@
-    window.recortarFoto = function(file, resolucao = 192) {
+    window.recortarFoto = function(file, resolucao = 640) {
       return new Promise((ok, no) => {
         const url = URL.createObjectURL(file), im = new Image();
         im.onerror = () => { URL.revokeObjectURL(url); no(new Error("imagem inválida")); };
