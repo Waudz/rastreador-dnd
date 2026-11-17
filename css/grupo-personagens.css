@@ -213,3 +213,17 @@ a.grupo-ficha:hover, a.grupo-ficha:focus-visible { border-color:var(--accent, cu
 #ci-lista .ci-cartao-ini .ci-personagem .catalogo-simbolo{
   border:1px solid var(--line);border-radius:10px;
 }
+
+/* Ações da grade: três colunas iguais, ícones centralizados em cada botão. */
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-topo>.grupo-cartao-acoes{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;
+  justify-content:stretch;justify-items:center;gap:0;width:100%;min-width:0;margin:0;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-acoes>.grupo-icone,
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-acoes>.compact-menu{
+  justify-self:center;margin:0;
+}
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-acoes>.grupo-icone .ico,
+.grupo-unificado .grupo-personagens-grade .personagem-card .grupo-cartao-acoes>.compact-menu>summary .ico{
+  display:block;margin:auto;width:20px;height:20px;
+}
