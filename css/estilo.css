@@ -749,3 +749,14 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
   max-height:var(--comp-miniatura-icone-tamanho);
 }
 
+
+
+/* Bestiário: alternância de visualização à direita, backups no rodapé. */
+#bestiario .catalogo-filtros .inv-vista, #bestiario .catalogo-filtros [role="group"].inv-vista {margin-left:auto}
+.bestiario-backup-acoes{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+@media(max-width:520px){.bestiario-backup-acoes>button{flex:1 1 140px}}
+
+/* Miniaturas compactas: ícones mais legíveis em listas; grades continuam em 40%. */
+#blist:not(.catalogo-grade) .catalogo-simbolo > :is(.dnd-categoria-icone,.rpg-ico,.ico),
+#spells:not(.catalogo-grade) .catalogo-simbolo > :is(.dnd-categoria-icone,.rpg-ico,.ico),
+.grupo-unificado .grupo-personagens-lista .catalogo-simbolo > :is(.dnd-categoria-icone,.rpg-ico,.ico,.dnd-pessoa-padrao){width:70%;height:70%;max-width:70%;max-height:70%}
