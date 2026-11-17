@@ -20,12 +20,14 @@
       /* em janela estreita o painel fica empilhado abaixo da página: leva a tela até ele */
       if (mostrando && doc.body && doc.body.dataset && doc.body.dataset.painel === "empilhado") { var d = el("dock-r"); if (d && d.scrollIntoView) d.scrollIntoView({ block: "start" }); }
     }
+    function desktop() { return !!(doc.defaultView && doc.defaultView.COMP_DESKTOP_WINDOWS && doc.defaultView.COMP_DESKTOP_WINDOWS.ativo()); }
     function esconderTodas(menos) { VISTAS.forEach(function (id) { var e = el(id); if (e && id !== menos) e.hidden = true; }); }
     /* mostra uma vista sozinha e esquece o histórico */
-    function mostrar(id) { var e = el(id); if (!e) return; anterior = null; esconderTodas(id); e.hidden = false; atualizar(true); }
+    function mostrar(id) { var e = el(id); if (!e) return; anterior = null; if (!desktop()) esconderTodas(id); e.hidden = false; atualizar(true); }
     /* mostra uma vista por cima da atual, lembrando como voltar */
     function empilhar(id) {
       var e = el(id); if (!e) return;
+      if (desktop()) { anterior = null; e.hidden = false; e.scrollTop = 0; atualizar(true); return; }
       var atual = visivel();
       if (atual && atual.id !== id) { anterior = { id: atual.id, rolagens: rolantes(atual).map(function (r) { return [r, r.scrollTop]; }) }; atual.hidden = true; }
       else if (!atual) anterior = null;
@@ -40,7 +42,8 @@
       return a.id;
     }
     function fechar() { anterior = null; esconderTodas(null); atualizar(); }
-    return { encerrar: fechar, mostrar: mostrar, empilhar: empilhar, voltar: voltar, fechar: fechar, visivel: visivel, temAnterior: function () { return !!anterior; }, VISTAS: VISTAS };
+    function fecharVista(id) { if (!desktop()) return fechar(); var e=el(id); if(e)e.hidden=true; atualizar(); }
+    return { encerrar: fechar, mostrar: mostrar, empilhar: empilhar, voltar: voltar, fechar: fechar, fecharVista: fecharVista, visivel: visivel, temAnterior: function () { return !!anterior; }, VISTAS: VISTAS };
   }
   if (raiz.addEventListener) raiz.addEventListener("message", function(e) {
     if (e.origin !== raiz.location.origin || !e.data || e.data.tipo !== "comp-modal-ficha") return;
