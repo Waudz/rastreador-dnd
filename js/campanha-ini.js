@@ -190,7 +190,7 @@
         if (!p) { msg("Esse personagem não está disponível nesta campanha.",true); }
         else { adicionar(p); adicionouPedido = true; msg("Personagem adicionado à iniciativa."); }
       } else msg("");
-      desenhar();carregou=true;
+      desenhar();carregou=true;assinarPersonagens();
     } catch(e) { if(atual!==campanhaConsultada||geracaoConsultada!==geracaoContexto)return;if(!carregou&&window.ESQ)window.ESQ.erro($("#ci-lista"),"Não foi possível carregar os personagens: "+e.message+".",()=>carregar(),""); else msg("Não foi possível carregar os personagens: "+e.message,true); }
     finally { if(atual===campanhaConsultada&&geracaoConsultada===geracaoContexto)buscando = false; }
   }
@@ -276,6 +276,20 @@
       enviado[pid]=p.pv_atual;ocupadas.delete(pid);basesPV.delete(pid);window.__ini.render();desenhar();
     } catch(e){msg(e.message,true);}
   });
+  let pararRealtimePersonagens=null, realtimeCampanha=null, atualizarCombateTimer=null;
+  function assinarPersonagens() {
+    if(!atual || !podeUsar())return;
+    if(realtimeCampanha===atual)return;
+    pararRealtimePersonagens?.();
+    realtimeCampanha=atual;
+    pararRealtimePersonagens=nuvem.observarPersonagens?.({campanhaId:atual,aoAlterar:()=>{
+      clearTimeout(atualizarCombateTimer);
+      atualizarCombateTimer=setTimeout(()=>{if(podeUsar())carregar();},150);
+    }});
+  }
+  window.addEventListener("campanha:alterada",()=>{realtimeCampanha=null;pararRealtimePersonagens?.();pararRealtimePersonagens=null;});
+  const assinarPersonagensOriginal=assinarPersonagens;
+  window.__assinarPersonagensCampanha=assinarPersonagensOriginal;
   let estavaEmCombate=null;
   window.__ini.aoAlterar?.(()=>{desenhar();const em=!!document.querySelector('.combatant.active');if(em!==estavaEmCombate){estavaEmCombate=em;if(em){box.open=false;const add=$('#adicionar-combatente');if(add)add.open=false;}else if(!window.__ini.list().length){const add=$('#adicionar-combatente');if(add)add.open=true;}}});
   iniciar();
