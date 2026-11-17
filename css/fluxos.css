@@ -845,3 +845,54 @@ body.ficha-embutida .tracker { padding:14px; }                                  
   }
   #ci-lista .ci-cartao-ini .ci-ini-res:empty {display:none;}
 }
+
+/* Seleção da iniciativa: rodapé discreto, botão no canto inferior direito. */
+#camp-ini .ci-rodape {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:12px;
+}
+#camp-ini .ci-rodape p { margin:0; flex:1 1 auto; min-width:0; }
+#camp-ini .ci-rodape #ci-recarregar { flex:0 0 auto; }
+@media(max-width:520px) {
+  #camp-ini .ci-rodape { flex-wrap:wrap; }
+  #camp-ini .ci-rodape #ci-recarregar { margin-left:auto; }
+}
+/* Cartões uniformes no PC: retratos quadrados e rodapé de ações alinhado. */
+@media(min-width:760px) {
+  #ci-lista.ci-grade {
+    grid-auto-rows:1fr;
+    align-items:stretch;
+  }
+  #ci-lista>.ci-cartao.grupo-cartao.ci-cartao-ini {
+    height:100%!important;
+    min-height:0!important;
+    align-self:stretch;
+    justify-content:flex-start;
+  }
+  #ci-lista .ci-cartao-ini .ci-personagem>.retrato-cartao,
+  #ci-lista .ci-cartao-ini .ci-personagem>.av {
+    flex:0 0 96px!important;
+    width:96px!important;
+    height:96px!important;
+    min-width:96px!important;
+    min-height:96px!important;
+    max-width:96px!important;
+    max-height:96px!important;
+    aspect-ratio:1/1!important;
+    border-radius:10px;
+    margin:0 auto;
+    overflow:hidden;
+  }
+  #ci-lista .ci-cartao-ini .ci-personagem>.retrato-cartao img,
+  #ci-lista .ci-cartao-ini .ci-personagem>.av img {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  #ci-lista .ci-cartao-ini .ci-acoes {
+    margin-top:auto;
+  }
+}
