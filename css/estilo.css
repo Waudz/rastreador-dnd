@@ -277,7 +277,6 @@ select{width:100%;min-width:0;height:39px;padding:0 10px;border:1px solid var(--
 .dock[hidden],.drawer[hidden]{display:none}
 #dock-r{right:0;border-left:1px solid var(--gold-dark)}
 .drawer{flex:1 1 0;min-height:0;overflow:auto;padding:18px}
-.drawer+.drawer:not([hidden]){border-top:2px solid var(--gold-dark)}
 .sh-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .drawer h3{margin:0 0 4px;font-family:Georgia,serif;font-size:24px}
 .ln{margin:2px 0 0}.rr{margin:2px 0 4px;color:var(--gold)}

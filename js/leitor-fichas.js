@@ -4,6 +4,7 @@
  const esc=nuvem.esc,$=s=>document.querySelector(s);let catalogo=null,idAtual='',salvando=false,foco=null;
  let dock=$('#dock-r');if(!dock){dock=document.createElement('div');dock.id='dock-r';dock.className='dock';dock.hidden=true;document.querySelector('main').append(dock);}
  if(!$('#ci-resumo'))dock.insertAdjacentHTML('beforeend','<aside id="ci-resumo" class="ci-resumo" aria-label="Ficha do personagem" hidden><div class="ci-resumo-topo"><span>Personagem</span><button type="button" id="ci-resumo-fechar">Voltar</button></div><div id="ci-resumo-corpo"></div></aside>');
+ if(!$('#sheet')&&!document.documentElement.hasAttribute('data-bestiario'))dock.insertAdjacentHTML('beforeend','<aside id="sheet" class="drawer" aria-label="Ficha do monstro" hidden><div class="sh-top"><span class="muted">Ficha do monstro</span><button type="button" class="small" id="sh-close">Fechar (Esc)</button></div><div id="sheet-body"></div></aside>');
  if(!$('#spd'))dock.insertAdjacentHTML('beforeend','<aside id="spd" class="drawer" aria-label="Magia" hidden><div class="sh-top"><button type="button" id="spd-voltar">Voltar</button><span>Magia</span><button type="button" id="spd-close">Fechar</button></div><div id="spd-body"></div></aside>');
  function personagem(id,nome='Personagem',grupo='',modoFicha='',restaurando=false){
   if(salvando&&idAtual.split('|')[0]!==id){window.FEEDBACK?.mostrar('Aguarde a ficha terminar de salvar.');return false;}
@@ -13,6 +14,8 @@
   if(idAtual!==chave||!$('#ci-ficha-frame')){$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(id)+'" title="Ficha de '+esc(nome)+'" src="personagem.html?id='+encodeURIComponent(id)+'&modo='+modoAbertura+(grupo?'&grupo='+encodeURIComponent(grupo):'')+'"></iframe>';idAtual=chave;{const q=$('#ci-ficha-frame');if(q)q.addEventListener('load',()=>{try{const p=q.contentWindow.location.pathname;if(!/\/personagem\.html$/.test(p))window.location.href=q.contentWindow.location.href;}catch(_){}});}}
   window.PAINEL.mostrar('ci-resumo');window.PAINEL_ESTADO?.salvar({t:'ficha',id,nome,grupo,modo:modoAbertura});if(!restaurando)$('#ci-resumo-fechar')?.focus();return true;
  }
+ /* páginas sem bestiário: a ficha do monstro abre numa moldura com o próprio bestiário embutido (iniciativa.html?embutido=monstro), igual à ficha do jogador */
+ function monstro(key){if(!key||document.documentElement.hasAttribute('data-bestiario'))return false;const corpo=$('#sheet-body');if(!corpo)return false;corpo.innerHTML='<iframe id="mon-ficha-frame" title="Ficha do monstro" src="iniciativa.html?aba=monstros&embutido=monstro&monstro='+encodeURIComponent(key)+'"></iframe>';window.PAINEL.mostrar('sheet');window.PAINEL_ESTADO?.salvar({t:'monstro',key});return true;}
  async function magia(dados){
   try{let m=typeof dados==='string'?null:dados;
    if(!m){if(!catalogo)catalogo=fetch('dados/magias.json').then(r=>{if(!r.ok)throw Error('Catálogo indisponível.');return r.json();});m=(await catalogo).find(m=>[m.en,m.n].some(n=>n?.toLowerCase()===String(dados).toLowerCase()));}
@@ -32,8 +35,10 @@
  window.addEventListener('message',e=>{const f=$('#ci-ficha-frame');if(e.origin!==location.origin||!f?.contentWindow||e.source!==f.contentWindow||e.data?.id!==f.dataset.personagem)return;if(e.data.tipo==='ficha-magia')magia(e.data.magia||e.data.en);if(e.data.tipo==='ficha-fechar')window.PAINEL.voltar();if(e.data.tipo==='ficha-salvando')salvando=true;if(e.data.tipo==='ficha-salva'){salvando=false;document.dispatchEvent(new CustomEvent('personagem:atualizado',{detail:{id:e.data.id}}));}});
  window.addEventListener('beforeunload',e=>{if(salvando){e.preventDefault();e.returnValue='';}});
  window.addEventListener('pagehide',()=>{const guardado=window.PAINEL_ESTADO&&window.PAINEL_ESTADO.ler();window.PAINEL.encerrar?.();if(guardado)window.PAINEL_ESTADO.gravar(guardado);document.body.classList.remove('leitura-mobile');});
- window.LEITOR_FICHAS={personagem,magia};
+ window.LEITOR_FICHAS={personagem,magia,monstro};
+ document.addEventListener('click',e=>{if(!document.documentElement.hasAttribute('data-bestiario')&&e.target.closest('#sh-close')){e.preventDefault();window.PAINEL.fechar();}});
+ window.addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.tipo==='monstro-fechar')window.PAINEL.fechar();});
  /* ao carregar qualquer página: reabre o painel lateral que estava aberto na página anterior (ficha do personagem e magia; ficha de monstro é restaurada pelo bestiário) */
  setTimeout(()=>{const e=window.PAINEL_ESTADO&&window.PAINEL_ESTADO.ler();if(!e)return;const ficha=e.t==='ficha'?e:e.t==='magia'&&e.base&&e.base.t==='ficha'?e.base:null;
-  if(ficha)personagem(ficha.id,ficha.nome,ficha.grupo,ficha.modo,true);if(e.t==='magia')magia(e.dados);},0);
+  if(ficha)personagem(ficha.id,ficha.nome,ficha.grupo,ficha.modo,true);if(e.t==='magia')magia(e.dados);if(e.t==='monstro')monstro(e.key);},0);
 })();

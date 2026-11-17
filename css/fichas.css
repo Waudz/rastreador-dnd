@@ -481,3 +481,9 @@ body:has(#ci-resumo.comp-modal-ativo) #ci-resumo{overflow:visible!important}
 
 /* Barra do topo do painel lateral (ficha, monstro, magia): mesma altura e mesma cor da barra principal da página */
 body[data-painel="lateral"] .sh-top,body[data-painel="lateral"] .ci-resumo-topo{box-sizing:border-box;height:var(--cab-h,61px);min-height:var(--cab-h,61px);background:var(--bg);border-bottom:1px solid var(--line)}
+
+/* Ficha de monstro em páginas sem bestiário: moldura com o bestiário embutido, que cobre a própria página */
+#sheet-body:has(>#mon-ficha-frame){padding:0;overflow:hidden}
+#mon-ficha-frame{display:block;border:0;width:100%;height:100%;background:var(--bg)}
+html.monstro-embutido #dock-r{position:fixed!important;inset:0!important;width:100%!important;max-width:none!important;height:100%!important;margin:0!important;border:0!important;border-radius:0!important;z-index:99999}
+html.monstro-embutido body{overflow:hidden;padding:0!important}

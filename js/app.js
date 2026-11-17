@@ -160,7 +160,7 @@
       SP = (await rq(db.transaction("spl").objectStore("spl").getAll())).filter(EDICOES.catalogo2014);
       PH = Object.fromEntries((await rq(db.transaction("img").objectStore("img").getAll())).map((x) => [x.key, x.data]));
       BY = Object.fromEntries(ALL.map((m) => [m.key, m]));
-      if (!window.__painelRestaurado) { window.__painelRestaurado = true; const e = window.PAINEL_ESTADO && window.PAINEL_ESTADO.ler(); if (e && e.t === "monstro" && BY[e.key]) setTimeout(() => openSheet(e.key), 0); }
+      if (!window.__painelRestaurado) { window.__painelRestaurado = true; const q = new URLSearchParams(location.search), emb = q.get("embutido") === "monstro" && q.get("monstro"), e = emb ? { t: "monstro", key: emb } : window.PAINEL_ESTADO && window.PAINEL_ESTADO.ler(); if (e && e.t === "monstro" && BY[e.key]) setTimeout(() => openSheet(e.key), 0); }
       ALL.sort((a, b) => a.name.localeCompare(b.name)); SP.sort((a, b) => a.name.localeCompare(b.name));
       $("#spinfo").textContent = "Catálogo D&D 2014 em português.";
       abiIndex(); buildFilter(); renderBestiary(); spSearch(); if (document.activeElement === $("#name")) sugg(); window.__ini.render();
@@ -387,7 +387,7 @@
     window.reorganizarPaineis=layout;
     let focoFicha = null;
     /* painel único: window.PAINEL (js/painel-detalhes.js) decide qual vista aparece e como voltar */
-    const closeSheet = () => { window.PAINEL.fechar(); $("#tip").style.display = "none"; focoFicha?.focus?.(); };
+    const closeSheet = () => { if (document.documentElement.classList.contains("monstro-embutido")) { try { window.parent.postMessage({ tipo: "monstro-fechar" }, location.origin); } catch (_) { /* sem pai */ } } window.PAINEL.fechar(); $("#tip").style.display = "none"; focoFicha?.focus?.(); };
     const voltarPainel = () => { window.PAINEL.voltar(); $("#tip").style.display = "none"; };
     window.abrirMagiaNoPainel = (id) => openSpell(id);
 
@@ -714,7 +714,7 @@
       if (sg) return pick(sg.dataset.sug);
       const ao = t.closest("[data-abopen]"); if (ao) return openAbility(ao.dataset.abopen, 0, "panel");
       const ax = t.closest("[data-abix]"); if (ax) return openAbility(ax.dataset.l, +ax.dataset.abix);
-      const fav = t.closest("#blist .av"); if (fav) { const foto = fav.tagName === "IMG" ? fav : null; if (foto && window.VISUALIZADOR) return window.VISUALIZADOR.abrir({ src: foto.currentSrc || foto.src, titulo: fav.closest(".res")?.querySelector("b")?.textContent || "", origem: foto }); const v = fav.closest(".res")?.querySelector("[data-view]"); if (v) return openSheet(v.dataset.view); }   // foto real: amplia; sem foto (ícone do tipo): abre a ficha
+      const fav = t.closest("#blist .av"); if (fav) { const v = fav.closest(".res")?.querySelector("[data-view]"); if (v) return openSheet(v.dataset.view); }   // foto ou ícone na lista: abre a aba lateral (o zoom é na foto dentro da ficha)
       const pb = t.closest("[data-ph]"); if (pb) return askPhoto(pb.dataset.ph);
       const px = t.closest("[data-phx]"); if (px) { const k = px.dataset.phx; if(!BY[k]?.custom){if(!window.CATALOGO?.admin())return;try{await CATALOGO.salvar('monstro',k,null,{imagem:null});}catch(e){status(esc(e.message));return;}}else{delete PH[k];await del('img',k);touch(k);}renderBestiary();window.__ini.render();return openSheet(k); }
       const ck = t.closest("[data-cfk]"); if (ck) { const ix = CF.findIndex((f) => cfKey(f) === ck.dataset.cfk); if (ix >= 0) openClassFeature(ix, "sheet"); return; }

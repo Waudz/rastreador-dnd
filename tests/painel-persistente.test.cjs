@@ -26,7 +26,16 @@ test("cada página restaura o painel: ficha e magia (leitor), monstro (bestiári
   assert.match(ler("js/app.js"), /e\.t === "monstro" && BY\[e\.key\]\) setTimeout\(\(\) => openSheet\(e\.key\), 0\)/);
   const h = ler("itens.html"); for (const s of ["paineis-layout.js", "painel-detalhes.js", "leitor-fichas.js", "magias-ui.js"]) assert.ok(h.includes("js/" + s), s);
 });
-test("barra do topo da aba lateral com a mesma altura e cor da barra principal; foto do bestiário amplia a foto", () => {
+test("barra do topo da aba lateral igual à principal e sem a barra dourada entre vistas", () => {
   const css = ler("css/fichas.css"); assert.match(css, /body\[data-painel="lateral"\] \.sh-top,body\[data-painel="lateral"\] \.ci-resumo-topo\{box-sizing:border-box;height:var\(--cab-h,61px\);min-height:var\(--cab-h,61px\);background:var\(--bg\)/);
-  assert.match(ler("js/app.js"), /foto && window\.VISUALIZADOR\) return window\.VISUALIZADOR\.abrir/); assert.match(ler("js/visualizador-imagem.js"), /dnd-categoria-icone/);
+  assert.ok(!/\.drawer\+\.drawer/.test(ler("css/estilo.css")), "a borda dourada de 2 px desalinhava as barras do topo");
+});
+test("foto ou ícone do monstro na lista abre a aba lateral; o zoom fica na foto dentro da ficha", () => {
+  const app = ler("js/app.js"); assert.match(app, /const fav = t\.closest\("#blist \.av"\); if \(fav\) \{ const v = fav\.closest\("\.res"\)\?\.querySelector\("\[data-view\]"\); if \(v\) return openSheet\(v\.dataset\.view\); \}/);
+  assert.match(ler("iniciativa.html"), /<div id="blist" data-sem-ampliar><\/div>/);
+});
+test("ficha de monstro em páginas sem bestiário: moldura com o bestiário embutido, como a ficha do jogador", () => {
+  const l = ler("js/leitor-fichas.js"); assert.match(l, /function monstro\(key\)/); assert.match(l, /iniciativa\.html\?aba=monstros&embutido=monstro&monstro=/); assert.match(l, /if\(e\.t==='monstro'\)monstro\(e\.key\)/);
+  assert.match(ler("iniciativa.html"), /<html lang="pt-BR" data-bestiario>/); assert.match(ler("js/navegacao.js"), /monstro-embutido/); assert.match(ler("js/app.js"), /embutido"\) === "monstro"/);
+  assert.match(ler("css/fichas.css"), /html\.monstro-embutido #dock-r\{position:fixed!important;inset:0!important/);
 });
