@@ -483,5 +483,6 @@ body:has(#ci-resumo.comp-modal-ativo) #ci-resumo{overflow:visible!important}
    no lugar da aba colada na borda. Celular, toque e telas menores não entram neste bloco. */
 @media(min-width:900px) and (pointer:fine){
   body[data-ficha-janela="1"] #dock-r{position:fixed;top:calc(var(--cab-h,64px) + 12px);right:16px;bottom:16px;left:auto;width:var(--ficha-painel);max-width:calc(100vw - 32px);height:auto;min-height:0;margin:0;z-index:80;border:1px solid var(--gold-dark);border-radius:14px;box-shadow:0 18px 60px rgba(0,0,0,.55);overflow:hidden;background:var(--bg)}
+  body[data-ficha-janela="1"] .appheader{margin-right:calc((var(--pad-corpo,24px) + var(--painel-reserva-direita,0px)) * -1)}
   body[data-ficha-janela="1"] #dock-r>#ci-resumo,body[data-ficha-janela="1"] #dock-r>#sheet,body[data-ficha-janela="1"] #dock-r>#spd{border-radius:0}
 }

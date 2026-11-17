@@ -10,7 +10,10 @@
   foco=document.activeElement;
   const modoAbertura=modoFicha==='leitura'?'leitura':modoFicha==='painel'?'painel':location.pathname.endsWith('/iniciativa.html')?'painel':'leitura';
   const chave=id+'|'+grupo+'|'+modoAbertura;
-  if(idAtual!==chave||!$('#ci-ficha-frame')){$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(id)+'" title="Ficha de '+esc(nome)+'" src="personagem.html?id='+encodeURIComponent(id)+'&modo='+modoAbertura+(grupo?'&grupo='+encodeURIComponent(grupo):'')+'"></iframe>';idAtual=chave;}
+  /* computador com mouse: janela nativa só com os dados (sem iframe, sem menus). Celular, toque e leitura de outros jogadores seguem com a ficha em quadro. */
+  if(modoAbertura==='painel'&&window.FICHA_JANELA&&window.FICHA_JANELA.disponivel()){idAtual=chave;window.PAINEL.mostrar('ci-resumo');window.FICHA_JANELA.abrir(id,$('#ci-resumo-corpo'));$('#ci-resumo-fechar')?.focus();return true;}
+  if(window.FICHA_JANELA)window.FICHA_JANELA.limpar($('#ci-resumo-corpo'));
+  if(idAtual!==chave||!$('#ci-ficha-frame')){$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(id)+'" title="Ficha de '+esc(nome)+'" src="personagem.html?id='+encodeURIComponent(id)+'&modo='+modoAbertura+(grupo?'&grupo='+encodeURIComponent(grupo):'')+'"></iframe>';idAtual=chave;{const q=$('#ci-ficha-frame');if(q)q.addEventListener('load',()=>{try{const p=q.contentWindow.location.pathname;if(!/\/personagem\.html$/.test(p))window.location.href=q.contentWindow.location.href;}catch(_){}});}}
   window.PAINEL.mostrar('ci-resumo');$('#ci-resumo-fechar')?.focus();return true;
  }
  async function magia(dados){

@@ -15,7 +15,7 @@ test('Ficha completa só aparece na ficha embutida e abre a ficha em página pr�
 });
 test('Editar Personagem abre o criador guiado em modo de edição',()=>{
  const js=ler('js/personagem.js');
- assert.match(js,/if\(c\("#editar-ficha"\)\)\{location\.href="criar-personagem\.html\?id="\+encodeURIComponent\(id\)\+"&modo=editar";return;\}/);
+ assert.match(js,/if\(c\("#editar-ficha"\)\)\{\(emPainel&&window\.parent!==window\?window\.top:window\)\.location\.href="criar-personagem\.html\?id="\+encodeURIComponent\(id\)\+"&modo=editar";return;\}/,'dentro da janela, Editar abre na janela principal e não dentro do quadro');
 });
 test('retratos usam um único padrão quadrado e o avatar da conta é a única exceção circular',()=>{
  const base=ler('css/estilo.css'),fichas=ler('css/fichas.css');

@@ -10,6 +10,8 @@
   const modoLeitura=new URLSearchParams(location.search).get("modo"),exclusivoMestre=modoLeitura==="painel";
   const emPainel = ["painel","leitura"].includes(modoLeitura);
   if (emPainel) document.body.classList.add('ficha-embutida');
+  /* a janela mostra só a ficha: links para outras páginas (Editar personagem, Subir de nível, Ficha completa) abrem na janela principal, não dentro da janela */
+  if (emPainel && window.parent !== window) document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[href]'); if (!a || a.target || e.defaultPrevented) return; let u; try { u = new URL(a.href, location.href); } catch (_) { return; } if (u.origin !== location.origin || (u.pathname === location.pathname && !u.search)) return; e.preventDefault(); window.top.location.href = u.href; }, true);
   const notificar = tipo => { if(emPainel && window.parent !== window) window.parent.postMessage({tipo,id},location.origin); };
   let ultimaVersaoSalva = null, editandoFicha = false, P = null, camp = null, souMestre = false, donoNome = "", pend = null, salvando = false, timer = null, catalogo = null, magiasCat = null;
   const ATR = [["for", "FOR"], ["des", "DES"], ["con", "CON"], ["int", "INT"], ["sab", "SAB"], ["car", "CAR"]];
@@ -1232,7 +1234,7 @@
     if ((b = c("[data-per]"))) { const k=b.dataset.per, f=F(), fontes=R.fontesPericias(f); f.especializacoes=fontes.especializadas; const i=f.especializacoes.indexOf(k); if(i>=0)f.especializacoes.splice(i,1); else if(fontes.basicas.includes(k)&&f.especializacoes.length<R.limiteEspecializacao(CLS()))f.especializacoes.push(k); $("#bloco-per").innerHTML = blocoPer(); agendar({ ficha: P.ficha }); return; }
     if ((b = c("[data-rm-idi]"))) { IDX().splice(+b.dataset.rmIdi, 1); desenhar(); agendar({ ficha: P.ficha }); return; }
     if (c("#add-idi")) { const v = ($("#idi-txt").value.trim() || $("#idi-sel").value); if (v && !IDI().includes(v) && !IDX().includes(v)) { IDX().push(v); desenhar(); agendar({ ficha: P.ficha }); } return; }
-    if(c("#editar-ficha")){location.href="criar-personagem.html?id="+encodeURIComponent(id)+"&modo=editar";return;}
+    if(c("#editar-ficha")){(emPainel&&window.parent!==window?window.top:window).location.href="criar-personagem.html?id="+encodeURIComponent(id)+"&modo=editar";return;}
     if(c("#excluir-personagem")){if(!(await perguntar("Excluir "+P.nome+" e sua ficha?", { titulo: "Excluir personagem", ok: "Excluir", perigo: true })))return;try{await nuvem.apagar("personagens?id=eq."+encodeURIComponent(id));location.href="campanha.html?id="+encodeURIComponent(P.campanha_id);}catch(e){aviso(e.message,true);}return;}
     if (c("#add-atq")) { ATQ().push({ nome: "Personalizado", atr: "for", dado: "1d6", tipo: "cortante", magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = listaAtq(); agendar({ ficha: P.ficha }); return; }
     if (c("#add-atq-arma")) { const v = $("#atq-arma").value; if (v === "") return; const a = R.ARMAS[+v]; ATQ().push({ nome: a[0], atr: a[3], dado: a[1], tipo: a[2], magico: 0, extra: 0, prof: true }); $("#lista-atq").innerHTML = listaAtq(); $("#atq-arma").value = ""; agendar({ ficha: P.ficha }); const idx = ATQ().length - 1; escolherNoInventario({ tipo: "arma", nome: a[0] }, a[0], (uid) => EF().vincularLinha(P, idx, uid)); return; }

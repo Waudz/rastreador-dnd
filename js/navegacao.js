@@ -1,6 +1,7 @@
 /* O menu reflete uma permissão consultada no servidor, nunca parâmetros da URL. */
 (() => {
  const esc=nuvem.esc;
+ try{if(window.parent!==window&&parent.location.origin===location.origin)document.documentElement.classList.add('na-janela');}catch(_){}   // dentro da janela de ficha: sem menus nem rodapé
  const nav=document.createElement('header');nav.className='appheader';const ic=nome=>window.ico?window.ico(nome):'';
  const links=[['conta.html?aba=campanhas','Campanhas','book'],['iniciativa.html?aba=iniciativa','Iniciativa','swords'],['conta.html?aba=personagens','Personagens','users'],['iniciativa.html?aba=monstros','Monstros','skull'],['iniciativa.html?aba=magias','Magias','sparkles'],['itens.html','Itens','bag']];
  const rotaAtual=location.pathname.split('/').pop(),abaPedida=new URLSearchParams(location.search).get('aba'),abaAtual=abaPedida==='consulta'?'monstros':abaPedida;   // 'consulta' era o endereço antigo de Monstros e Magias

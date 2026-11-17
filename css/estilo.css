@@ -789,3 +789,6 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 
 /* Ícones de dados: dimensão legível dentro dos botões, sem alterar outros pictogramas. */
 button svg[data-icon="d20"],button .ico-d20,button .icon-d20{width:1.25em;height:1.25em;flex-shrink:0}
+
+/* Página dentro da janela de ficha (iframe): só os dados, nada de menus do site */
+html.na-janela .appheader,html.na-janela .rodape-licenca,html.na-janela .nova-versao{display:none!important}
