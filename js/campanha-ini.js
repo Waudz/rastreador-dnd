@@ -300,9 +300,28 @@
     if(realtimeCampanha===atual)return;
     pararRealtimePersonagens?.();
     realtimeCampanha=atual;
-    pararRealtimePersonagens=nuvem.observarPersonagens?.({campanhaId:atual,aoAlterar:()=>{
+    pararRealtimePersonagens=nuvem.observarPersonagens?.({campanhaId:atual,aoAlterar:(evento)=>{
+      const novo=evento?.new;
+      if(novo?.id && Number.isFinite(Number(novo.pv_atual)) && Number.isFinite(Number(novo.pv_max))) {
+        const p=pers.find(p=>p.id===novo.id);
+        if(p) {
+          p.pv_atual=novo.pv_atual;
+          p.pv_max=novo.pv_max;
+          p.pv_temp=novo.pv_temp??p.pv_temp;
+          p.ca=novo.ca??p.ca;
+          // Só atualizar o combatente se não há alteração local aguardando gravação.
+          const c=window.__ini.list().find(c=>c.pid===novo.id);
+          if(c && !ocupadas.has(novo.id) && (jogador || enviado[novo.id]===c.hp)) {
+            c.hp=novo.pv_atual;c.maxHp=Math.max(1,novo.pv_max);
+            c.temp=Math.max(0,Number(novo.pv_temp)||0);c.ac=novo.ca??c.ac;
+            enviado[novo.id]=c.hp;enviadoT[novo.id]=c.temp;
+            window.__ini.render();
+          }
+          desenhar();
+        }
+      }
       clearTimeout(atualizarCombateTimer);
-      atualizarCombateTimer=setTimeout(()=>{if(podeUsar())carregar();},150);
+      atualizarCombateTimer=setTimeout(()=>{if(podeUsar())carregar();},50);
     }});
   }
   window.addEventListener("campanha:alterada",()=>{realtimeCampanha=null;pararRealtimePersonagens?.();pararRealtimePersonagens=null;});
