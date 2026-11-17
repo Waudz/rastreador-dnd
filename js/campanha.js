@@ -80,6 +80,8 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
   function abaPers() {
     const donos = membros.map((m) => `<option value="${esc(m.usuario_id)}"${m.usuario_id === meuId() ? " selected" : ""}>${esc(nomes[m.usuario_id] || "Jogador")}</option>`).join("");
     const jog = pers.filter((p) => !(p.ficha || {}).npc), npcs = pers.filter((p) => (p.ficha || {}).npc);
+    const outros = !mestre() && Array.isArray(grupoBasico) ? grupoBasico.filter(p => p.dono_id !== meuId()) : [];
+    const carregandoOutros = !mestre() && grupoBasico === null;
     return `${mestre()?window.GRUPO_PERSONAGENS.barra("grupo",selecionados.size):""}<div class="bar"><span class="grow"></span><button type="button" class="small" id="abre-imp">Importar do bestiário</button><button type="button" class="small" id="abre-novo">Novo personagem</button></div>
       <form id="form-novo" class="row" hidden>
         <input id="n-nome" maxlength="80" placeholder="Nome" style="flex:1 1 200px" required>
@@ -88,7 +90,7 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
       </form>
       <div id="imp"></div>
       <div class="row grupo-vista-controles"><span class="muted">Visualização</span><span class="inv-vista" role="group" aria-label="Modo de exibição do grupo"><button type="button" class="small ${vistaGrupo === "lista" ? "ativo" : ""}" data-grupo-vista="lista" aria-pressed="${vistaGrupo === "lista"}">Lista</button><button type="button" class="small ${vistaGrupo === "grade" ? "ativo" : ""}" data-grupo-vista="grade" aria-pressed="${vistaGrupo === "grade"}">Grade</button></span></div>
-      <div class="cards grupo-personagens-${vistaGrupo}">${jog.length ? jog.map(cartaoPers).join("") : '<span class="muted">Nenhum personagem aqui ainda.</span>'}</div>
+      <div class="cards grupo-personagens-${vistaGrupo}">${jog.map(cartaoPers).join("")}${outros.map(cartaoGrupoLeitura).join("")}${carregandoOutros ? '<span class="muted">Carregando personagens do grupo…</span>' : ""}${!jog.length && !outros.length && !carregandoOutros ? '<span class="muted">Nenhum personagem aqui ainda.</span>' : ""}</div>
       ${npcs.length ? `<h2 class="panel-title" style="margin:16px 0 8px">NPCs</h2><div class="cards grupo-personagens-${vistaGrupo}">${npcs.map(cartaoPers).join("")}</div>` : ""}`;
   }
 
@@ -221,7 +223,7 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
       try { r = await nuvem.rpc("grupo_fichas", { p_campanha: id }); } catch (_) { r = await nuvem.rpc("grupo_basico", { p_campanha: id }); }   // sem a função completa, só os dados básicos
       if (consultada === id) grupoBasico = Array.isArray(r) ? r : [];
     } catch (e) { if (consultada === id) grupoBasico = { erro: e.message || "indisponível" }; }
-    if (consultada === id && aba === "pers" && !mestre()) { const box = $("#grupo-leitura"); if (box) box.innerHTML = abaGrupo(); }
+    if (consultada === id && aba === "pers" && !mestre()) await desenhar();
   }
   const avatarGrupo = (nome, foto) => foto && /^data:image\//.test(foto) ? `<img class="av" src="${esc(foto)}" alt="Foto de ${esc(nome)}">` : `<span class="av av0 catalogo-simbolo"><img class="dnd-categoria-icone" src="icones/dnd/classes/character.svg" alt=""></span>`;
   function cartaoGrupo(p) {
@@ -237,8 +239,19 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     return grupoBasico.length ? `<p class="muted">Consulte os personagens dos demais jogadores em modo leitura.</p>${grupoBasico.filter(p => p.dono_id !== meuId()).map(cartaoGrupo).join("") || '<p class="muted">Nenhum outro personagem vinculado ao grupo.</p>'}` : '<div class="estado-vazio"><strong>Nenhum personagem no grupo ainda</strong><p>Quando os jogadores tiverem personagens vinculados, eles aparecem aqui.</p></div>';
   }
 
+  function cartaoGrupoLeitura(p) {
+    const G=window.GRUPO_PERSONAGENS;
+    const dados={...p,ficha:p.ficha||{}};
+    const identidade=G.identidade(dados,{jogador:nomes[p.dono_id]||'Jogador',vida:true,barraVida:pct(p.pv_atual,p.pv_max)});
+    const link='personagem.html?id='+encodeURIComponent(p.id)+'&grupo='+encodeURIComponent(id);
+    const corpo=identidade.replace('personagem.html?id='+encodeURIComponent(p.id)+'"',link+'"');
+    return `<article class="card personagem-card grupo-cartao grupo-cartao-leitura" data-id="${esc(p.id)}" data-somente-leitura="true">
+      <div class="grupo-cartao-topo">${corpo}
+      <div class="grupo-cartao-acoes"><a class="grupo-icone" href="${link}" title="Consultar ficha" aria-label="Consultar ficha de ${esc(p.nome)}">${ico('book')}</a></div></div>
+      ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''}</article>`;
+  }
   function abaGrupoUnificado() {
-    const personagens = abaPers() + (!mestre() ? '<section class="grupo-outros-personagens" aria-label="Personagens dos outros jogadores"><h3 class="sub">Personagens do grupo</h3><div id="grupo-leitura" class="grupo-secao-corpo">' + abaGrupo() + '</div></section>' : '');
+    const personagens = abaPers();
     const participantes = mestre() ? abaMembros() : membros.map(m => '<div class="res"><span><b>' + esc(nomes[m.usuario_id] || "Jogador") + '</b> <span class="badge ' + (m.papel === "mestre" ? "" : "jog") + '">' + (m.papel === "mestre" ? "Mestre" : "Jogador") + '</span></span></div>').join('');
     return '<section class="grupo-unificado" aria-label="Personagens da campanha">' + personagens +
       '<details class="grupo-secao-recolhida"><summary>Participantes (' + membros.length + ')</summary><div class="grupo-secao-corpo">' + participantes + '</div></details>' +
@@ -341,7 +354,7 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     try {
       let b;
       const abrirPainel=c('[data-abrir-painel]');if(abrirPainel){const pid=abrirPainel.dataset.abrirPainel;const nome=pers.find(p=>p.id===pid)?.nome;if(window.LEITOR_FICHAS)window.LEITOR_FICHAS.personagem(pid,nome);else location.href='personagem.html?id='+encodeURIComponent(pid);return;}
-      const cartao=c('.personagem-card');if(cartao&&!c('a,button,input,select,textarea,summary,label,details')){if(window.LEITOR_FICHAS)window.LEITOR_FICHAS.personagem(cartao.dataset.id,pers.find(p=>p.id===cartao.dataset.id)?.nome);else location.href='personagem.html?id='+encodeURIComponent(cartao.dataset.id);return;}
+      const cartao=c('.personagem-card');if(cartao&&!c('a,button,input,select,textarea,summary,label,details')){if(cartao.dataset.somenteLeitura){location.href='personagem.html?id='+encodeURIComponent(cartao.dataset.id)+'&grupo='+encodeURIComponent(id);return;}if(window.LEITOR_FICHAS)window.LEITOR_FICHAS.personagem(cartao.dataset.id,pers.find(p=>p.id===cartao.dataset.id)?.nome);else location.href='personagem.html?id='+encodeURIComponent(cartao.dataset.id);return;}
       if(c('[data-camp-aparencia]')){if(!responsavelVisual())return;const painel=$('#aparencia-painel');painel.hidden=false;painel.open=true;$('#conteudo').hidden=true;document.querySelectorAll('details.compact-menu[open]').forEach(d=>d.open=false);window.CAMPANHA_VISUAL.montar({id,mestre:responsavelVisual()});painel.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
       if(c('#aparencia-voltar')){if(window.CAMPANHA_VISUAL?.sair())fecharAparencia();return;}
       if(c('[data-camp-convite]')){mostrarConvite();return;}
