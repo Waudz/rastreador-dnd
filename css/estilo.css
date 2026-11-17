@@ -777,3 +777,9 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 .grupo-identidade-texto .hp-fill{display:block;height:100%;border-radius:inherit;background:var(--green,#409b79)}
 .grupo-identidade-texto .hp-fill.mid{background:var(--gold,#d4ae72)}
 .grupo-identidade-texto .hp-fill.low{background:var(--red,#d65f5f)}
+
+/* PV do combate: div de preenchimento precisa ser bloco (altura:100% sozinha não basta). */
+.combatant .hp-track{display:block;position:relative;width:100%;min-width:0;height:7px;overflow:hidden;border-radius:99px;background:#101820}
+.combatant .hp-track>.hp-fill{display:block;position:relative;min-width:0;height:100%;border-radius:inherit;background:var(--green,#409b79)}
+.combatant .hp-track>.hp-fill.mid{background:var(--gold,#d4ae72)}
+.combatant .hp-track>.hp-fill.low{background:var(--red,#d65f5f)}
