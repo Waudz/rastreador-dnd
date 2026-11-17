@@ -89,8 +89,8 @@
   };
   const rolagemAuto=()=>window.__ini.rolagemAuto?window.__ini.rolagemAuto():true;
   window.addEventListener?.('ini:rolagem',()=>{ultimaGrade=null;desenhar();});
-  const gravar = () => !jogador && !!($('#ci-gravar') && $('#ci-gravar').checked);     // escolha explícita: por padrão o combate é de teste e não grava na ficha
-  const chaveGravar = () => 'ini_gravar_fichas:' + atual;
+  const gravar = () => !jogador && !!atual && !($('#ci-gravar') && $('#ci-gravar').checked);     // por padrão o mestre sincroniza; checkbox ativa o modo de teste
+  const chaveGravar = () => 'ini_modo_teste:' + atual;
   const selecionados=new Set(), digitadas = {}, resultadosCartao = {};   // digitadas: iniciativa informada à mão (dado físico) por personagem
   const ocupadas = new Set();
   const basesPV = new Map();
@@ -211,7 +211,7 @@
       const c=window.CAMPANHAS_UI?.validar?window.CAMPANHAS_UI.validar(ms,preferida):camps.find(c=>c.id===preferida);
       if(!c){if(preferida)window.CAMPANHAS_UI?.esquecer(preferida);atual='';jogador=false;window.__ini.trocarContexto?.('');contextoVisual(true);box.hidden=true;await window.CAMPANHAS_UI?.montarSeletor({});return;}   // sem campanha ativa: rastreador próprio, independente do mestre
       jogador=c.papel==='jogador';const titulo=box.querySelector('summary');if(titulo)titulo.textContent=jogador?'Meus personagens':'Personagens';
-      atual=c.id;{const g=$('#ci-gravar'),r=$('#ci-gravar-rotulo'),d=$('#ci-gravar-dica');if(g){try{g.checked=!jogador&&localStorage.getItem(chaveGravar())==='1';}catch(_){g.checked=false;}}if(r)r.hidden=jogador;if(d)d.hidden=jogador;}window.CAMPANHAS_UI?.lembrar(atual);window.__ini.trocarContexto?.(atual);contextoVisual(true);box.open=true;
+      atual=c.id;{const g=$('#ci-gravar'),area=$('#ci-gravar-area');if(g){try{g.checked=localStorage.getItem(chaveGravar())==='1';}catch(_){g.checked=false;}}if(area)area.hidden=jogador;}window.CAMPANHAS_UI?.lembrar(atual);window.__ini.trocarContexto?.(atual);if(!jogador)window.__ini.definirSyncFichas?.(gravar());contextoVisual(true);box.open=true;
       await carregar();if(g!==geracaoContexto)return;
       await window.CAMPANHAS_UI?.montarSeletor({...c,podeEditarVisual:false});
       pararConsulta=nuvem.observar?.(carregar,5000);
@@ -229,7 +229,7 @@
     if(e.target.closest('#ci-rolar')){adicionarSelecionados([...selecionados]).catch(e=>msg(e.message,true));return;}
     if(e.target.closest("#ci-recarregar")){falhas=0;carregou=false;forcarSync=true;carregar();}
   });
-  box.addEventListener("change",e=>{if(e.target.id==='ci-gravar'){try{localStorage.setItem(chaveGravar(),e.target.checked?'1':'0');}catch(_){}msg(e.target.checked?'Os personagens adicionados a partir de agora gravam PV e PV temporários na ficha real.':'Combate de teste: a ficha real não será alterada.');}});
+  document.addEventListener("change",e=>{if(e.target.id==='ci-gravar'){if(jogador||!atual)return;try{localStorage.setItem(chaveGravar(),e.target.checked?'1':'0');}catch(_){}window.__ini.definirSyncFichas?.(gravar());msg(e.target.checked?'Modo de teste: este combate não altera as fichas.':'Sincronização ativada: os PV dos personagens vinculados serão gravados nas fichas.');}});
   box.addEventListener("input",e=>{if(e.target.dataset?.ciIni!==undefined)digitadas[e.target.dataset.ciIni]=e.target.value;});
   box.addEventListener("change",e=>{
     if(e.target.dataset?.ciSel){if(!podeUsar())return;const pid=e.target.dataset.ciSel;if(!pers.some(p=>p.id===pid&&!emCombate(p)))return;e.target.checked?selecionados.add(pid):selecionados.delete(pid);desenhar();document.querySelector('[data-ci-sel="'+pid+'"]')?.focus();return;}

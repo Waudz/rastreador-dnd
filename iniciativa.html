@@ -105,6 +105,7 @@
         </div>
       </div>
 
+      <div class="rolagem-auto-bar" id="ci-gravar-area" hidden><label class="rolagem-auto"><input type="checkbox" id="ci-gravar"><span class="rolagem-auto-texto">Modo de teste (não alterar fichas)</span></label><p class="muted rolagem-auto-dica" id="ci-gravar-dica">Desmarcado (padrão): os PV e PV temporários dos personagens vinculados são gravados nas fichas. Marcado: este combate não altera as fichas.</p></div>
       <div class="rolagem-auto-bar">
         <label class="rolagem-auto"><input type="checkbox" id="rolagem-auto" checked><span class="rolagem-auto-chave" aria-hidden="true"></span><span class="rolagem-auto-texto">Rolagem automática de dados: <b id="rolagem-auto-estado">ligada</b></span></label>
         <p class="muted rolagem-auto-dica" id="rolagem-auto-dica">Ligada: os botões d20 e de ataque rolam os dados.</p>
@@ -129,8 +130,7 @@
     </section>
     <details class="vista-iniciativa panel" id="camp-ini" hidden>
       <summary class="panel-title" style="cursor:pointer">Personagens</summary>
-      <div class="bar ci-filtros"><button type="button" class="small" id="ci-recarregar">Atualizar personagens</button><label class="inline" id="ci-gravar-rotulo" title="Desligado = combate de teste: os PV do combate nunca alteram a ficha real"><input type="checkbox" id="ci-gravar" style="width:auto;height:auto"> Gravar PV nas fichas reais</label></div>
-      <p class="muted" id="ci-gravar-dica">Desligado (padrão): é um teste, a ficha real não muda. Ligado: ao adicionar, o personagem passa a gravar PV e PV temporários na ficha.</p>
+      <div class="bar ci-filtros"><button type="button" class="small" id="ci-recarregar">Atualizar personagens</button></div>
       <div id="ci-msg" class="muted"></div>
       <div id="ci-resultado" class="ci-resultado" role="status" aria-live="polite"></div>
       <div id="ci-selecao"></div><div id="ci-lista" class="ci-grade"></div>
