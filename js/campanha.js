@@ -511,7 +511,7 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     }
     const agendarGrupo = () => {
       clearTimeout(atualizarGrupoTimer);
-      atualizarGrupoTimer = setTimeout(sincronizarGrupo,80);
+      atualizarGrupoTimer = setTimeout(sincronizarGrupo,20);
     };
     nuvem.observarPersonagens?.({campanhaId:id,aoAlterar:agendarGrupo});
     document.addEventListener("focusout",()=>{if(grupoPendente)agendarGrupo();});
