@@ -118,7 +118,7 @@
     if (resumoId && resumoId !== p.id && ocupadas.has(resumoId)) { msg('Aguarde a ficha terminar de salvar antes de trocar de personagem.'); return; }
     if (resumoId === p.id && !$("#ci-resumo").hidden) return;
     resumoId=p.id;focoAnterior=document.activeElement;
-    if(window.LEITOR_FICHAS){if(!window.LEITOR_FICHAS.personagem(p.id,p.nome))return;}else{$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(p.id)+'" title="Ficha de '+esc(p.nome)+'" src="personagem.html?id='+encodeURIComponent(p.id)+'&modo=painel"></iframe>';$('#ci-resumo').hidden=false;window.reorganizarPaineis?.();}
+    if(window.LEITOR_FICHAS){if(!window.LEITOR_FICHAS.personagem(p.id,p.nome,'',jogador?'leitura':'painel'))return;}else{$('#ci-resumo-corpo').innerHTML='<iframe id="ci-ficha-frame" data-personagem="'+esc(p.id)+'" title="Ficha de '+esc(p.nome)+'" src="personagem.html?id='+encodeURIComponent(p.id)+'&modo='+(jogador?'leitura':'painel')+'"></iframe>';$('#ci-resumo').hidden=false;window.reorganizarPaineis?.();}
   }
   function fecharResumo(){if(window.PAINEL)window.PAINEL.fechar();$("#ci-resumo").hidden=true;document.body.classList.remove('com-ficha-lateral');window.reorganizarPaineis?.();focoAnterior?.focus?.();}
 
