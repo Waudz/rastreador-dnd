@@ -212,7 +212,7 @@
   const totalPO = () => { const d = DIN(); return num(d.pc, 0) / 100 + num(d.pp, 0) / 10 + num(d.po, 0); };
   const opt = (v, t, sel) => `<option value="${esc(v)}"${sel ? " selected" : ""}>${esc(t)}</option>`;
 
-  const estadoMorteHTML = () => J.estaMorto(P) ? `<div class="muted" role="status">Estado registrado: morto. Cura comum não revive. <button type="button" class="small" id="b-reviver">Corrigir estado: reviver com 1 PV</button></div>` : "";
+  const estadoMorteHTML = () => J.estaMorto(P) ? `<div class="muted" role="status">Estado registrado: morto. Cura comum não revive. <button type="button" class="small" id="b-reviver">Reviver com 1 PV</button></div>` : "";
   const blocoPV = () => `<div class="vida-cabecalho"><h2 class="panel-title">Pontos de vida</h2><div class="big" id="pv-num">${P.pv_atual}<span class="muted"> / ${J.pvMaxEf(P)} PV</span></div></div>
     <div class="hp-track" role="progressbar" aria-label="Pontos de vida" aria-valuemin="0" aria-valuemax="${J.pvMaxEf(P)}" aria-valuenow="${P.pv_atual}"><div class="hp-fill ${pctPV()<=25?'low':pctPV()<=50?'mid':''}" id="pv-barra" style="width:${pctPV()}%"></div></div>
     <div class="vida-controles"><div id="pv-estado-morte">${estadoMorteHTML()}</div><div class="inline"><button type="button" class="danger" id="b-dano">− Dano</button><input class="num" id="qtd" type="number" min="1" value="1" aria-label="Quantidade de dano ou cura"><button type="button" id="b-cura">+ Cura</button></div><span class="muted" id="pv-temp-txt">${P.pv_temp ? '+'+P.pv_temp+' PV temporários' : 'PV temporários: 0'}</span></div>
@@ -1091,7 +1091,7 @@
       if(r.concentracao)(F().testesConcentracao??=[]).push(r.concentracao.cd);
       if(!F().concentracao)F().testesConcentracao=[];
       aviso(r.mensagens.concat(r.concentracao?'Concentração: salvaguarda CD '+r.concentracao.cd:[]).join('. ')||'Dano aplicado.');
-    }else{const r=J.cura(P,n);if(r.morto){aviso('A ficha está marcada como morta. Use “Corrigir estado: reviver com 1 PV” para desfazer esse estado antes de curar.',true);return;}}
+    }else{const r=J.cura(P,n);if(r.morto){aviso('A ficha está marcada como morta. Use “Reviver com 1 PV” para desfazer esse estado antes de curar.',true);return;}}
     salvarJogo();
   }
   function usarDado(d,modo='app') {
@@ -1318,16 +1318,22 @@
     }
     try { P = await carregar(); await contexto(); migrar(); try {await carregarCatalogo();} catch (_) {aviso("Catálogo indisponível. Tente novamente quando houver conexão.",true);} aplicarAuto(true); desenhar(); cancelar(); window.ESQ?.pronto($("#ficha")); } catch (e) { cancelar(); document.querySelector(".esq-topo")?.remove?.(); if (window.ESQ) window.ESQ.erro($("#ficha"), e.message, recarregar); else aviso(e.message, true); return; }
     let atualizarFichaTimer = null;
-    nuvem.observarPersonagens?.({personagemId:id,aoAlterar:()=>{
+    async function receberFichaRemota() {
+      if(pend || salvando || document.hidden)return;
+      const ativo=document.activeElement;
+      if(ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName))return;
+      try {
+        const r=await carregar();
+        if(r.versao>P.versao){P=r;desenhar();$("#estado").textContent="Atualizado";}
+      } catch(e){console.warn("Sincronização da ficha:",e);}
+    }
+    const agendarFichaRemota=()=>{
       clearTimeout(atualizarFichaTimer);
-      atualizarFichaTimer=setTimeout(async()=>{
-        if(pend || salvando || document.hidden)return;
-        const ativo=document.activeElement;
-        if(ativo && /INPUT|TEXTAREA|SELECT/.test(ativo.tagName))return;
-        try { const r=await carregar();if(r.versao>P.versao){P=r;desenhar();$("#estado").textContent="Atualizado";} }
-        catch(e){console.warn("Sincronização da ficha:",e);}
-      },150);
-    }});
+      atualizarFichaTimer=setTimeout(receberFichaRemota,150);
+    };
+    nuvem.observarPersonagens?.({personagemId:id,aoAlterar:agendarFichaRemota});
+    // Uma atualização recebida enquanto o usuário digita é aplicada ao sair do campo.
+    document.addEventListener("focusout",agendarFichaRemota);
     nuvem.observar(async () => {
       if (pend || salvando) return;
       if(exclusivoMestre && await nuvem.rpc('eh_mestre',{c:P.campanha_id}) !== true){$('#ficha').innerHTML='';aviso('Este painel é exclusivo do mestre da campanha.',true);return;}

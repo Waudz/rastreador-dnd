@@ -122,7 +122,7 @@
     const usados = new Set(window.__ini.list().map(c => c.name));
     let nome = p.nome, n = 2; while (usados.has(nome)) nome = p.nome+" "+n++;
     window.__ini.add({name:nome,kind:f.npc?"NPC":"Personagem",initiative:Number.isFinite(numero)?numero:rolar?window.GRUPO_PERSONAGENS.rolar(p):null,hp:p.pv_atual,maxHp:Math.max(1,p.pv_max),ac:p.ca||0,key:"",pid:p.id,campanhaId:atual,foto:f.foto||"",sync:gravar()});
-    enviado[p.id] = p.pv_atual;
+    enviado[p.id] = p.pv_atual;enviadoT[p.id]=Math.max(0,Number(p.pv_temp)||0);
   }
   /* iniciativa informada à mão (vazio = não informada); aceita inteiros razoáveis */
   const numeroDe=pid=>{const t=String(digitadas[pid]??'').trim();if(t==='')return undefined;const n=Number(t);return Number.isInteger(n)&&n>=-20&&n<=60?n:NaN;};
@@ -160,7 +160,7 @@
         if(atual!==campanhaConsultada||geracaoConsultada!==geracaoContexto)return;
         if(mestre !== true){window.CAMPANHAS_UI?.esquecer(atual);bloquear();contextoVisual(false);return;}
       }
-      const lista = await nuvem.get("personagens?select=id,nome,pv_atual,pv_max,ca,ficha&campanha_id=eq."+encodeURIComponent(campanhaConsultada)+(jogador?"&dono_id=eq."+encodeURIComponent(conta):"")+"&order=nome");
+      const lista = await nuvem.get("personagens?select=id,nome,pv_atual,pv_temp,pv_max,ca,versao,ficha&campanha_id=eq."+encodeURIComponent(campanhaConsultada)+(jogador?"&dono_id=eq."+encodeURIComponent(conta):"")+"&order=nome");
       if (!mesmaConta() || atual !== campanhaConsultada||geracaoConsultada!==geracaoContexto) return;
       pers = lista;
       if(resumoId && !pers.some(p=>p.id===resumoId)){fecharResumo();$('#ci-resumo-corpo').innerHTML='';resumoId=null;}
@@ -170,13 +170,13 @@
         /* A ficha é a fonte dos PV, CA e PV máximo: quando ela muda (ou o jogador pede "Atualizar personagens"), o combate acompanha. O jogador não grava na ficha. */
         if (p && (jogador || forcarSync)) {
           const assinatura = [p.pv_atual, p.pv_max, p.ca].join("|");
-          if (forcarSync || (vistos[p.id] !== undefined && vistos[p.id] !== assinatura)) { c.hp = p.pv_atual; c.maxHp = Math.max(1, p.pv_max); c.ac = p.ca || 0; enviado[p.id] = p.pv_atual; mudouFoto = true; }
+          if (forcarSync || (vistos[p.id] !== undefined && vistos[p.id] !== assinatura)) { c.hp = p.pv_atual; c.maxHp = Math.max(1, p.pv_max); c.ac = p.ca || 0; c.temp=Math.max(0,Number(p.pv_temp)||0);enviado[p.id] = p.pv_atual;enviadoT[p.id]=c.temp; mudouFoto = true; }
           vistos[p.id] = assinatura;
           if (p.ficha?.foto && c.foto !== p.ficha.foto) { c.foto = p.ficha.foto; mudouFoto = true; }
           continue;
         }
         if(p && !ocupadas.has(p.id) && enviado[p.id] === c.hp && (c.hp !== p.pv_atual || c.maxHp !== p.pv_max || c.ac !== p.ca)) {
-          c.hp=p.pv_atual;c.maxHp=p.pv_max;c.ac=p.ca;enviado[p.id]=p.pv_atual;mudouFoto=true;
+          c.hp=p.pv_atual;c.temp=Math.max(0,Number(p.pv_temp)||0);c.maxHp=p.pv_max;c.ac=p.ca;enviado[p.id]=p.pv_atual;enviadoT[p.id]=c.temp;mudouFoto=true;
         }
         if (p?.ficha?.foto && c.foto !== p.ficha.foto) { c.foto = p.ficha.foto; mudouFoto = true; }
       }
@@ -246,7 +246,25 @@
       const v=Math.max(0,Math.min(c.maxHp,Math.round(c.hp))),t=Math.max(0,Math.round(Number(c.temp)||0));
       if(enviado[c.pid]===undefined){enviado[c.pid]=v;enviadoT[c.pid]=t;continue;}
       if(enviado[c.pid]===v&&(enviadoT[c.pid]??0)===t)continue;
-      try{if(await nuvem.rpc('eh_mestre',{c:atual}) !== true){bloquear();return;}const r=await nuvem.patch("personagens?id=eq."+encodeURIComponent(c.pid),{pv_atual:v,pv_temp:t});if(!r?.[0])throw new Error("A ficha não confirmou a atualização.");enviado[c.pid]=v;enviadoT[c.pid]=t;falhas=0;}
+      try{
+        if(await nuvem.rpc('eh_mestre',{c:atual}) !== true){bloquear();return;}
+        const reg=pers.find(p=>p.id===c.pid);
+        if(!reg || !Number.isInteger(reg.versao))throw new Error("Versão da ficha indisponível; recarregue os personagens.");
+        const r=await nuvem.patch("personagens?id=eq."+encodeURIComponent(c.pid)+"&versao=eq."+encodeURIComponent(reg.versao),{pv_atual:v,pv_temp:t});
+        if(!r?.[0]){
+          // Outra sessão salvou primeiro: reler a ficha, sem sobrescrever o jogador.
+          const recente=await nuvem.get("personagens?select=id,pv_atual,pv_temp,pv_max,ca,versao,ficha&id=eq."+encodeURIComponent(c.pid));
+
+          if(!recente?.[0])throw new Error("Não foi possível reler a ficha atualizada.");
+          const novo=recente[0];Object.assign(reg,novo);
+          c.hp=novo.pv_atual;c.temp=Math.max(0,Number(novo.pv_temp)||0);
+          c.maxHp=Math.max(1,novo.pv_max);c.ac=novo.ca||0;
+          enviado[c.pid]=c.hp;enviadoT[c.pid]=c.temp;
+          window.__ini.render();msg("A ficha de "+(reg.nome||"personagem")+" foi alterada em outra sessão. Os valores mais recentes foram preservados.");
+          continue;
+        }
+        Object.assign(reg,r[0]);enviado[c.pid]=v;enviadoT[c.pid]=t;falhas=0;
+      }
       catch(e){falhas++;msg("Não foi possível salvar os PV na ficha: "+e.message,true);}
     }
   },2500);
