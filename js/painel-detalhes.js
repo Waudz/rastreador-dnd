@@ -27,7 +27,7 @@
     /* mostra uma vista por cima da atual, lembrando como voltar */
     function empilhar(id) {
       var e = el(id); if (!e) return;
-      if (desktop()) { anterior = null; e.hidden = false; e.scrollTop = 0; atualizar(true); return; }
+      if (desktop()) { anterior = null; if(id==="ci-resumo"||id==="sheet"){var outro=el(id==="ci-resumo"?"sheet":"ci-resumo");if(outro)outro.hidden=true;} e.hidden = false; e.scrollTop = 0; atualizar(true); return; }
       var atual = visivel();
       if (atual && atual.id !== id) { anterior = { id: atual.id, rolagens: rolantes(atual).map(function (r) { return [r, r.scrollTop]; }) }; atual.hidden = true; }
       else if (!atual) anterior = null;

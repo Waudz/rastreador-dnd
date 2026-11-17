@@ -789,3 +789,8 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 
 /* Ícones de dados: dimensão legível dentro dos botões, sem alterar outros pictogramas. */
 button svg[data-icon="d20"],button .ico-d20,button .icon-d20{width:1.25em;height:1.25em;flex-shrink:0}
+
+/* Largura moderada comum às abas; capa panorâmica de campanha permanece independente. */
+@media(min-width:1400px) and (pointer:fine){
+ body:not(.ficha-embutida) main.tracker{width:min(1200px,calc(100% - 28px));max-width:1200px;margin-inline:auto}
+}
