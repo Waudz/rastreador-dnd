@@ -565,7 +565,7 @@
           id: (Date.now().toString(36) + Math.random().toString(36).slice(2, 7)),
           name,
           kind: $("kind").value,
-          initiative: $("initiative").value.trim() === "" ? null : Number($("initiative").value),   // resultado final (d20 + modificador); em branco fica pendente
+          initiative: $("initiative").value.trim() === "" ? null : Number($("initiative").value) + ($("initiative").dataset.resultadoFinal === "1" ? 0 : Math.round(Number($("ini-mod").value) || 0)),   // manual: d20 + modificador; botão automático já fornece o total
           hp: Math.min(hp, maxHp),
           maxHp,
           ac: Math.max(0, Number($("ac").value) || 0),
