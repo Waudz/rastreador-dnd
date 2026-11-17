@@ -1057,3 +1057,27 @@ body.ficha-embutida .tracker { padding:14px; }                                  
     flex:0 0 auto;
   }
 }
+
+/* Campo d20 em cartão estreito: texto inteiro visível, sem padding lateral excessivo. */
+@media(min-width:760px) {
+  #ci-lista .ci-cartao-ini .ci-ini input {
+    padding:0 2px!important;
+    text-align:center;
+    font-size:12px;
+    line-height:1.2;
+    text-overflow:clip;
+  }
+  #ci-lista .ci-cartao-ini .ci-ini input::placeholder {
+    font-size:12px;
+    opacity:1;
+  }
+}
+/* Mesma transição de PV em ficha, campanha e combate, inclusive em atualizações remotas. */
+.hp-track>.hp-fill,
+.hp-track .hp-fill,
+.grupo-barra>.grupo-barra-cheia {
+  transition:width .38s ease-in-out;
+}
+@media(prefers-reduced-motion:reduce) {
+  .hp-track .hp-fill,.grupo-barra>.grupo-barra-cheia { transition:none!important; }
+}

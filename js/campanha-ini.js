@@ -104,7 +104,7 @@
     window.__ini.selecaoPendente?.(selecionados.size,()=>adicionarSelecionados([...selecionados]));
     let barra=G.barra('ci',selecionados.size);if(!rolagemAuto())barra=barra.replace(/(?:<svg[\s\S]*?<\/svg>)?Rolar iniciativa \((\d+)\)/,'Adicionar ($1)');if($('#ci-selecao').innerHTML!==barra)$('#ci-selecao').innerHTML=barra;
     const html=pers.length?pers.map(p=>'<article class="ci-cartao grupo-cartao ci-cartao-ini"><div class="ci-topo">'+G.checkbox(p,selecionados.has(p.id),'ci-sel',emCombate(p))+G.identidade(p,{resumo:true,vida:true})+'</div>'+(emCombate(p)?'<span class="muted ci-no-combate">No combate</span>':'<div class="ci-acoes"><label class="ci-ini"><span>Ini.</span><input type="number" step="1" data-ci-ini="'+esc(p.id)+'" placeholder="d20" title="Digite o resultado final do dado físico, ou use Rolar d20" aria-label="Iniciativa de '+esc(p.nome)+'"></label><button type="button" class="small d20-btn" aria-label="Rolar d20 de iniciativa de '+esc(p.nome)+'" data-ci-rolar="'+esc(p.id)+'" '+(rolagemAuto()?'':'disabled ')+'title="'+(rolagemAuto()?'Rola 1d20 mais o bônus de iniciativa e preenche o campo':'Rolagem automática desligada: digite a iniciativa no campo')+'">'+(window.ico?window.ico('d20'):'')+'Rolar d20</button><button type="button" class="small primary" data-ci="'+esc(p.id)+'" title="Adicionar à iniciativa" aria-label="Adicionar '+esc(p.nome)+' à iniciativa">Adicionar</button></div><p class="ci-ini-res" role="status">'+esc(resultadosCartao[p.id]||'')+'</p>')+'</article>').join(''):'<span class="muted">Esta campanha ainda não tem personagens. Importe ou crie as fichas dentro da campanha.</span>';
-    if(ultimaGrade!==html){$("#ci-lista").innerHTML=html;ultimaGrade=html;}
+    if(ultimaGrade!==html){const raiz=$("#ci-lista"), antes=window.PV_ANIMACAO?.capturar(raiz);raiz.innerHTML=html;window.PV_ANIMACAO?.restaurar(raiz,antes);ultimaGrade=html;}
     document.querySelectorAll?.('[data-ci-ini]').forEach(i=>{if(digitadas[i.dataset.ciIni]!==undefined&&i.value!==String(digitadas[i.dataset.ciIni]))i.value=digitadas[i.dataset.ciIni];});
   }
   function abrirResumo(p){
@@ -300,9 +300,28 @@
     if(realtimeCampanha===atual)return;
     pararRealtimePersonagens?.();
     realtimeCampanha=atual;
-    pararRealtimePersonagens=nuvem.observarPersonagens?.({campanhaId:atual,aoAlterar:()=>{
+    pararRealtimePersonagens=nuvem.observarPersonagens?.({campanhaId:atual,aoAlterar:(evento)=>{
+      const novo=evento?.new;
+      if(novo?.id && Number.isFinite(Number(novo.pv_atual)) && Number.isFinite(Number(novo.pv_max))) {
+        const p=pers.find(p=>p.id===novo.id);
+        if(p) {
+          p.pv_atual=novo.pv_atual;
+          p.pv_max=novo.pv_max;
+          p.pv_temp=novo.pv_temp??p.pv_temp;
+          p.ca=novo.ca??p.ca;
+          // Só atualizar o combatente se não há alteração local aguardando gravação.
+          const c=window.__ini.list().find(c=>c.pid===novo.id);
+          if(c && !ocupadas.has(novo.id) && (jogador || enviado[novo.id]===c.hp)) {
+            c.hp=novo.pv_atual;c.maxHp=Math.max(1,novo.pv_max);
+            c.temp=Math.max(0,Number(novo.pv_temp)||0);c.ac=novo.ca??c.ac;
+            enviado[novo.id]=c.hp;enviadoT[novo.id]=c.temp;
+            window.__ini.render();
+          }
+          desenhar();
+        }
+      }
       clearTimeout(atualizarCombateTimer);
-      atualizarCombateTimer=setTimeout(()=>{if(podeUsar())carregar();},150);
+      atualizarCombateTimer=setTimeout(()=>{if(podeUsar())carregar();},50);
     }});
   }
   window.addEventListener("campanha:alterada",()=>{realtimeCampanha=null;pararRealtimePersonagens?.();pararRealtimePersonagens=null;});

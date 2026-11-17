@@ -502,6 +502,7 @@
           return;
         }
 
+        const barrasAnteriores = window.PV_ANIMACAO?.capturar(list);
         list.innerHTML = exibicao.map((c, posicao) => {
           if (c.id === editId) return editTpl(c);
           const isActive = c.id === currentId;
@@ -549,6 +550,7 @@
               ${fxFor === c.id ? fxFormTpl(c) : ""}
             </article>`;
         }).join("");
+        window.PV_ANIMACAO?.restaurar(list, barrasAnteriores);
 
         save();notificar();
         seguirTurno();

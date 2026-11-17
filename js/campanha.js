@@ -266,7 +266,9 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     for(const pid of selecionados)if(!pers.some(p=>p.id===pid))selecionados.delete(pid);
     cabecalho();
     if (aba === "grupo" || aba === "membros") aba = "pers"; // compatibilidade com abas antigas
+    const barrasAnteriores = window.PV_ANIMACAO?.capturar($("#conteudo"));
     $("#conteudo").innerHTML = aba === "pers" ? abaGrupoUnificado() : aba === "diario" ? abaDiario() : abaDocs();
+    window.PV_ANIMACAO?.restaurar($("#conteudo"), barrasAnteriores);
     if (aba === "pers" && !mestre()) {
       grupoBasico = grupoBasico && Array.isArray(grupoBasico) ? grupoBasico : null;
       carregarGrupo();
@@ -545,7 +547,33 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
         }
       }
     }
-    const agendarGrupo = () => {
+    const agendarGrupo = (evento) => {
+      // O evento Postgres Changes já passou pela RLS do usuário.
+      // Atualiza o PV visual imediatamente, sem esperar a nova consulta REST.
+      const novo = evento?.new;
+      if (novo?.id && Number.isFinite(Number(novo.pv_atual)) && Number.isFinite(Number(novo.pv_max))) {
+        const p = pers.find(p => p.id === novo.id);
+        if (p) {
+          p.pv_atual = novo.pv_atual;
+          p.pv_max = novo.pv_max;
+          p.pv_temp = novo.pv_temp ?? p.pv_temp;
+          p.ca = novo.ca ?? p.ca;
+          if (aba === "pers" && !document.hidden && !document.querySelector("#forms form")) {
+            const card = document.querySelector('.personagem-card[data-id="' + CSS.escape(novo.id) + '"]');
+            if (card) {
+              const porcentagem = Math.max(0,Math.min(100,100*Number(p.pv_atual)/Math.max(1,Number(p.pv_max))));
+              const barra = card.querySelector(".hp-fill");
+              if (barra) {
+                barra.style.width = porcentagem + "%";
+                barra.classList.toggle("low",porcentagem<=25);
+                barra.classList.toggle("mid",porcentagem>25&&porcentagem<=50);
+              }
+              const pv = card.querySelector(".grupo-pv-resumo");
+              if (pv) pv.textContent = "PV " + p.pv_atual + "/" + p.pv_max;
+            }
+          }
+        }
+      }
       clearTimeout(atualizarGrupoTimer);
       atualizarGrupoTimer = setTimeout(sincronizarGrupo,20);
     };

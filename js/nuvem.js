@@ -294,6 +294,40 @@
   }
   const copiar = async (t) => { try { await navigator.clipboard.writeText(t); return true; } catch (_) { return false; } };
 
+  // Preserva a largura anterior de barras de PV ao redesenhar cartões.
+  // Evita saltos instantâneos quando o DOM é substituído por dados recebidos.
+  window.PV_ANIMACAO = {
+    capturar(raiz, seletor = ".hp-fill,.grupo-barra-cheia") {
+      const anterior = new Map();
+      if (!raiz) return anterior;
+      raiz.querySelectorAll(seletor).forEach((barra, indice) => {
+        const cartao = barra.closest("[data-id],[data-pid],[data-key]");
+        const chave = cartao?.dataset.id || cartao?.dataset.pid || cartao?.dataset.key || String(indice);
+        anterior.set(chave, barra.getBoundingClientRect().width / (barra.parentElement?.getBoundingClientRect().width || 1) * 100);
+      });
+      return anterior;
+    },
+    restaurar(raiz, anterior, seletor = ".hp-fill,.grupo-barra-cheia") {
+      if (!raiz || !anterior?.size) return;
+      raiz.querySelectorAll(seletor).forEach((barra, indice) => {
+        const cartao = barra.closest("[data-id],[data-pid],[data-key]");
+        const chave = cartao?.dataset.id || cartao?.dataset.pid || cartao?.dataset.key || String(indice);
+        const antes = anterior.get(chave);
+        if (!Number.isFinite(antes)) return;
+        const depois = barra.style.width;
+        const novo = parseFloat(depois);
+        if (!Number.isFinite(novo) || Math.abs(novo - antes) < .1) return;
+        barra.style.transition = "none";
+        barra.style.width = Math.max(0, Math.min(100, antes)) + "%";
+        void barra.offsetWidth;
+        barra.style.transition = "";
+        requestAnimationFrame(() => {
+          if (barra.isConnected) barra.style.width = depois;
+        });
+      });
+    }
+  };
+
   window.nuvem = {
     usuario: () => usuarioAtual,
     aoMudar: (f) => ouvintes.push(f),
