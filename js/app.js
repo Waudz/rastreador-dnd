@@ -318,11 +318,18 @@
       f.innerHTML = '<option value="">Todas as categorias</option><option value="monster">Monstros</option><option value="player">Personagens</option><option value="npc">NPCs</option><option value="custom">Minhas criações</option>' + docs.map((d) => `<option value="doc:${esc(d)}">Fonte: ${esc(d)}</option>`).join("");
       f.value = [...f.options].some((o) => o.value === cur) ? cur : "";
     }
-    const inF = (m, f) => !f || (f === "custom" && m.custom) || (["monster", "player", "npc"].includes(f) && catOf(m) === f) || (f.startsWith("doc:") && !m.custom && srcOf(m) === f.slice(4));
+    const inF = (m, f) => !f || (f === "custom" && (m.custom || (m.criacaoPublicada && window.CATALOGO?.admin()))) || (["monster", "player", "npc"].includes(f) && catOf(m) === f) || (f.startsWith("doc:") && !m.custom && srcOf(m) === f.slice(4));
+    function visibilidadeCriacao(m) {
+      if (!window.CATALOGO?.admin() || catOf(m)!=="monster") return "";
+      const k = esc(m.key), r = CATALOGO.registro('monstro', m.key);
+      if (m.custom && !m.global) return `<button type="button" class="small" data-global-publish="${k}">Mostrar para todos</button>`;
+      if (!m.criacaoPublicada) return "";
+      return r?.excluido ? `<button type="button" class="small" data-global-restore="${k}">Mostrar para todos</button>` : `<button type="button" class="small" data-global-del="${k}">Ocultar para todos</button>`;
+    }
     function rowFull(m) {
       const p = pt(m), k = esc(m.key);
-      return `<div class="res catalogo-cartao catalogo-monstro"><span class="lft">${av(m, 40)}<span><b>${esc(p || m.name)}</b>${p ? ` <span class="muted">(${esc(m.name)})</span>` : ""}${m.subtitle ? ` <span class="muted">— ${esc(m.subtitle)}</span>` : ""}<br><span class="muted">${CAT[catOf(m)]} · ${esc(tsz(m))} · ${lvl(m)} · CA ${m.armor_class} · PV ${m.hit_points} · ${esc(srcOf(m))}</span></span></span>
-        <span class="acts"><button type="button" class="small" data-view="${k}" title="Informações" aria-label="Informações de ${esc(p || m.name)}">${ico("info")}</button><button type="button" class="small primary" data-add="${k}">Adicionar</button><details class="catalogo-acoes-menu"><summary class="small" aria-label="Mais ações de ${esc(p || m.name)}" title="Mais ações">⋯</summary><div class="catalogo-acoes-opcoes"><button type="button" class="small" data-ph="${k}">${ico("camera")} Foto</button>${(m.custom || window.CATALOGO?.admin()) ? `<button type="button" class="small" data-edit="${k}">Editar</button>${m.custom ? `<button type="button" class="small danger" data-del="${k}">Excluir</button>` : `<button type="button" class="small danger" data-global-del="${k}">Excluir do catálogo</button>`}` : ""}</div></details></span></div>`;
+      return `<div class="res catalogo-cartao catalogo-monstro"><span class="lft">${av(m, 40)}<span><b>${esc(p || m.name)}</b>${p ? ` <span class="muted">(${esc(m.name)})</span>` : ""}${m.subtitle ? ` <span class="muted">— ${esc(m.subtitle)}</span>` : ""}<br><span class="muted">${CAT[catOf(m)]} · ${esc(tsz(m))} · ${lvl(m)} · CA ${m.armor_class} · PV ${m.hit_points} · ${esc(srcOf(m))}${m.criacaoPublicada&&window.CATALOGO?.admin()?` · ${CATALOGO.registro("monstro",m.key)?.excluido?"Oculto para os jogadores":"Visível para todos"}`:""}</span></span></span>
+        <span class="acts"><button type="button" class="small" data-view="${k}" title="Informações" aria-label="Informações de ${esc(p || m.name)}">${ico("info")}</button><button type="button" class="small primary" data-add="${k}">Adicionar</button><details class="catalogo-acoes-menu"><summary class="small" aria-label="Mais ações de ${esc(p || m.name)}" title="Mais ações">⋯</summary><div class="catalogo-acoes-opcoes"><button type="button" class="small" data-ph="${k}">${ico("camera")} Foto</button>${visibilidadeCriacao(m)}${(m.custom || window.CATALOGO?.admin()) ? `<button type="button" class="small" data-edit="${k}">Editar</button>${m.custom ? `<button type="button" class="small danger" data-del="${k}">Excluir</button>` : m.criacaoPublicada ? "" : `<button type="button" class="small danger" data-global-del="${k}">Excluir do catálogo</button>`}` : ""}</div></details></span></div>`;
     }
     function renderGlobalDeleted() {
       let box = document.getElementById('monstros-globais-excluidos');
@@ -332,7 +339,7 @@
         $('#blist').insertAdjacentElement('afterend', box);
       }
       if (!window.CATALOGO?.admin()) { box.hidden = true; box.innerHTML = ''; return; }
-      const lista = (window.CATALOGO.registros('monstro') || []).filter(r => r.excluido);
+      const lista = (window.CATALOGO.registros('monstro') || []).filter(r => r.excluido && !r.dados?.criacaoPublicada);
       box.hidden = !lista.length;
       box.innerHTML = lista.length ? `<details><summary>Monstros excluídos do catálogo global (${lista.length})</summary><div class="muted" style="margin:8px 0">Restaurar torna o monstro visível novamente para todos os usuários.</div>${lista.map(r => `<div class="res"><span>${esc(r.dados?.name || r.chave)}</span><button type="button" class="small" data-global-restore="${esc(r.chave)}">Restaurar</button></div>`).join('')}</details>` : '';
     }
@@ -434,7 +441,7 @@
         atributos:ABIL.map(([k,n])=>({sigla:n,valor:m.ability_scores?.[k]??'—',modificador:mod(m.modifiers?.[k]??0),rolagem:'<button type="button" class="rolar-atributo" data-sheet-atributo="'+esc(n)+'" data-bonus="'+esc(m.modifiers?.[k]??0)+'" aria-label="Rolar '+esc(n)+'">Rolar d20</button>'})),
         informacoes:ln('Salvaguardas',saves)+ln('Perícias',skills)+ln('Resistências',tr(r.damage_resistances_display))+ln('Imunidades',tr(r.damage_immunities_display))+ln('Vulnerabilidades',tr(r.damage_vulnerabilities_display))+ln('Imunidades a condições',tr(r.condition_immunities_display))+ln('Sentidos',senses)+ln('Idiomas',tr(m.languages?.as_string)),
         tracos:(m.traits||[]).map(t=>habD(nm(t.name),descInfo(t.name,t.desc,m),rmBtn(m,'t',0,t.cf))).join(''),acoes:acts,magias:spl,
-        gerenciar:((m.custom||window.CATALOGO?.admin())?'<button class="small primary" data-edit="'+esc(m.key)+'">Editar ficha</button> ':'')+'<button class="small" data-ph="'+esc(m.key)+'">'+(PH[m.key]?'Trocar foto':'Adicionar foto')+'</button>'+(PH[m.key]?'<button class="small subtle" data-phx="'+esc(m.key)+'">'+(m.custom?'Remover foto':'Voltar à foto padrão')+'</button>':'')
+        gerenciar:visibilidadeCriacao(m)+((m.custom||window.CATALOGO?.admin())?'<button class="small primary" data-edit="'+esc(m.key)+'">Editar ficha</button> ':'')+'<button class="small" data-ph="'+esc(m.key)+'">'+(PH[m.key]?'Trocar foto':'Adicionar foto')+'</button>'+(PH[m.key]?'<button class="small subtle" data-phx="'+esc(m.key)+'">'+(m.custom?'Remover foto':'Voltar à foto padrão')+'</button>':'')
       });
       document.dispatchEvent(new Event('ficha:fechar-personagem'));
       window.PAINEL.mostrar("sheet"); window.PAINEL_ESTADO?.salvar({ t: "monstro", key: k }); $("#sheet").scrollTop = 0; $("#sheet-body").scrollTop = 0; $("#sh-close").focus();
@@ -748,12 +755,23 @@
       if (d.edit) { if (innerWidth < 700) closeSheet(); return editCustom(d.edit); }
       if (d.add) { const m = ALL.find((x) => x.key === d.add); if (m) addMon(m, t.closest("[data-add]")); return; }
       if (d.tr) { const m = ALL.find((x) => x.key === d.tr), v = prompt("Nome em português para “" + m.name + "” (vazio remove):", pt(m) || m.name); if (v === null) return; v.trim() ? (TR[m.name.toLowerCase()] = v.trim()) : delete TR[m.name.toLowerCase()]; saveTR();if(!m.custom)try{await CATALOGO.atualizar({registros:ALL,magias:SP,nomes:{[m.name.toLowerCase()]:v.trim()}});}catch(e){status(esc(e.message));}return renderBestiary(); }
+      const publicar = t.closest('[data-global-publish]');
+      if (publicar) {
+        if (!window.CATALOGO?.admin()) return;
+        const m = BY[publicar.dataset.globalPublish]; if (!m?.custom || m.global) return;
+        if (!(await perguntar(`Mostrar “${m.name}” e sua foto no catálogo de todos os usuários? Você poderá ocultá-lo depois.`, { titulo:'Compartilhar criação', ok:'Mostrar para todos' }))) return;
+        publicar.disabled = true;
+        try { await CATALOGO.publicarMonstro(m, PH[m.key]); await reload(); if(curSheet===m.key)openSheet(m.key); }
+        catch(e){ window.FEEDBACK?.mostrar(e.message,{erro:true}); }
+        finally { publicar.disabled=false; }
+        return;
+      }
       const globalDel = t.closest('[data-global-del]');
       if (globalDel) {
         if (!window.CATALOGO?.admin()) return;
         const key = globalDel.dataset.globalDel, m = BY[key];
         if (!m || m.custom) return;
-        if (!(await perguntar(`Excluir “${m.name}” do catálogo global? Ele deixará de aparecer para todos os usuários. Fichas e inventários existentes não serão apagados. Você poderá restaurá-lo depois.`, { titulo: 'Excluir monstro global', ok: 'Excluir', perigo: true }))) return;
+        if (!(await perguntar(`Ocultar “${m.name}” do catálogo global? Ele deixará de aparecer para os jogadores. Fichas e combates existentes não serão apagados. Você poderá mostrá-lo novamente depois.`, { titulo: 'Ocultar monstro global', ok: 'Ocultar', perigo: true }))) return;
         globalDel.disabled = true;
         try { await CATALOGO.salvar('monstro', key, null, { excluido: true }); if (curSheet === key) closeSheet(); if (editKey === key) resetForm(); await reload(); }
         catch (e) { window.FEEDBACK?.mostrar(e.message, { erro: true }); }
@@ -804,7 +822,7 @@
     const toSquare = (file, size) => new Promise((ok, no) => { const url = URL.createObjectURL(file), im = new Image(); im.onload = () => { const c = document.createElement("canvas"); c.width = c.height = size; const q = Math.min(im.width, im.height); c.getContext("2d").drawImage(im, (im.width - q) / 2, (im.height - q) / 2, q, q, 0, 0, size, size); URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", 0.85)); }; im.onerror = () => no(new Error("imagem inválida")); im.src = url; });
 
     /* recorte da foto: zoom, arrastar e prévia do ícone redondo */
-    const cropPhoto = (file,global=false) => window.recortarFoto(file,global?1024:192);
+    const cropPhoto = (file) => window.recortarFoto(file,1024);
     const visitante = () => !(window.nuvem && nuvem.usuario && nuvem.usuario());
     const askPhoto = (k) => { if (visitante()) { alert("Entre na sua conta para adicionar ou trocar fotos."); return; } if(k!=='form'&&!BY[k]?.custom&&!window.CATALOGO?.admin()){alert('Somente administradores alteram as fotos globais.');return;} phKey = k; fileIn.value = ""; fileIn.click(); };
     const formPv = () => { const m = editKey && BY[editKey]; const src = formPhoto === undefined ? (m && (window.CATALOGO?.imagem('monstro', m.key) ?? PH[m.key])) : formPhoto; $("#cm-phv").innerHTML = src ? `<img class="av" style="width:48px;height:48px" src="${esc(src)}" alt="">` : '<span class="muted">sem foto</span>'; };

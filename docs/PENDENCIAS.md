@@ -1,5 +1,13 @@
 # Pendências e próxima tarefa
 
+## Fotos e visibilidade de criações — 18/11/2026
+
+- Base conferida: `main` em `5bb1d8f`. Novas fotos de criaturas próprias passam pelo recorte de até 1024 px; o visualizador único ajusta imagens pequenas à tela. Fotos antigas não ganham detalhes sem reenviar a original.
+- Administrador pode escolher Mostrar para todos / Ocultar para todos no menu da criação ou em Gerenciar ficha e retrato. Só monstros são elegíveis; personagens e NPCs privados não são publicados por esse controle. Nenhuma publicação automática.
+- Publicação reutiliza `CATALOGO`, RPC versionada e bucket `catalogos`; envia a foto ao Storage e mantém a criação privada original. A cópia global não é editável por jogadores. Quando oculta, continua na lista do administrador, inclusive no filtro Minhas criações, com Editar disponível; salvar edições preserva a visibilidade. Desocultar reutiliza o mesmo registro. Ajustes em combate não salvam no catálogo.
+- Nenhuma alteração SQL, migração ou escrita no Supabase nesta rodada; somente consulta confirmou autorização administrativa, versionamento e validação de imagem na RPC atual. A partilha vale para contas autenticadas, conforme o acesso existente ao catálogo; visitantes continuam com o catálogo básico e suas imagens públicas.
+- Testes automatizados cobrem autorização, publicação explícita, upload, ausência de duplicatas, ocultar/desocultar, edição preservando estado e isolamento de cópias de combate. Navegador local confirmou ajuste de imagem de 192 px para 768 px no desktop e 359 px a 375 px de largura. Resta validar o ciclo de partilha entre duas contas reais sem dados de teste em produção. 720 testes aprovados, 1 ignorado e nenhuma falha. Cache v283; envio à `main` autorizado pelo William em 18/11/2026.
+
 ## Correção do campo de iniciativa no celular — 17/11/2026
 
 - O wrapper do indicador d20 não recebia as três colunas reservadas ao campo numérico, ficando centralizado numa coluna estreita e ultrapassando a borda do cartão. A regra mobile agora posiciona o wrapper e limita o input à largura disponível. Cache v282.

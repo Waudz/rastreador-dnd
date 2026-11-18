@@ -35,6 +35,8 @@ Fonte única das decisões do William. Não repetir em outros arquivos: apontar 
 - **O sistema de magias só está concluído com: lista do Paladino, Arcanum Místico do Bruxo e revisão da conjuração multiclasse** (`docs/PENDENCIAS.md`).
 
 ## Imagens
+- Fotos novas de criaturas próprias: recorte de até 1024 px. Visualizador abre ajustado à tela, inclusive imagens de baixa resolução; isso não recupera detalhes perdidos.
+- Compartilhar criações de monstros é uma decisão explícita do administrador. Ocultar mantém a edição administrativa disponível; editar nunca altera a visibilidade por si só. Reutilizar o catálogo global e Storage existentes.
 - Qualquer imagem de conteúdo (retratos, monstros, itens, campanhas) deve poder ser ampliada pelo visualizador global único (`js/visualizador-imagem.js`); novas imagens usam `<img>` fora de controles, ou chamam `VISUALIZADOR.abrir`. Imagens de itens ficam na ficha (`ficha.imagensItens`), sem sistema novo de armazenamento.
 
 ## Inventário (fase 3; arquitetura já decidida)

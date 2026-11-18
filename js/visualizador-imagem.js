@@ -11,12 +11,12 @@
   const ico = (n) => (window.ico ? window.ico(n) : n === "x" ? "×" : n === "plus" ? "+" : "−");
 
   /* a imagem exibida em "ajustar": cabe na tela; o zoom multiplica esse tamanho */
-  function base() { const r0 = palco.getBoundingClientRect(), cs = getComputedStyle(palco), r = { width: r0.width - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0), height: r0.height - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) }, w = img.naturalWidth || r.width, h = img.naturalHeight || r.height, k = Math.min(r.width / w, r.height / h, 1); return { pw: r.width, ph: r.height, w: w * k, h: h * k }; }
+  function base() { const r0 = palco.getBoundingClientRect(), cs = getComputedStyle(palco), r = { width: r0.width - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0), height: r0.height - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) }, w = img.naturalWidth || r.width, h = img.naturalHeight || r.height, k = Math.min(r.width / w, r.height / h); return { pw: r.width, ph: r.height, w: w * k, h: h * k }; }
   function limitar() {
     const b = base(), mx = Math.max(0, (b.w * s - b.pw) / 2), my = Math.max(0, (b.h * s - b.ph) / 2);
     tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty));
   }
-  /* Respeita a resolução nativa: não amplia imagens pequenas automaticamente. */
+  /* Ajusta também fotos pequenas à área disponível; o zoom parte desse enquadramento. */
   function dimensionar() { if (!img || !palco) return; const b = base(); if (b.w > 0 && b.h > 0) { img.style.width = b.w + "px"; img.style.height = b.h + "px"; } aplicar(); }
   function aplicar() { limitar(); img.style.transform = `translate(${tx}px,${ty}px) scale(${s})`; ov.classList.toggle("vi-zoom", s > 1.01); const z = ov.querySelector("[data-vi=zoom]"); if (z) z.textContent = Math.round(s * 100) + "%"; }
   function zoomEm(novo, cx, cy) {

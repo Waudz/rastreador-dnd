@@ -70,16 +70,24 @@ window.CATALOGO=(()=>{
   const path=alterar&&opcoes.imagem?await enviarImagem(tipo,opcoes.imagem):null;
   if(nuvem.usuario()?.id!==uid)throw Error('A conta mudou. Reabra o catálogo.');
   const d=valor?clonar(valor):null;if(d){delete d.imagem;delete d.photo;delete d.global;}
-  const r=await nuvem.rpc('salvar_catalogo_global',{p_tipo:tipo,p_chave:chave,p_dados:d,p_alterar_imagem:alterar,p_imagem:path,p_excluido:!!opcoes.excluido,p_versao:versao});
+  const r=await nuvem.rpc('salvar_catalogo_global',{p_tipo:tipo,p_chave:chave,p_dados:d,p_alterar_imagem:alterar,p_imagem:path,p_excluido:opcoes.excluido??anterior?.excluido??false,p_versao:versao});
   const reg=Array.isArray(r)?r[0]:r;if(!reg||reg.chave!==chave||reg.versao!==versao+1)throw Error('O servidor não confirmou a alteração do catálogo.');
   dados.globais={...(dados.globais||{}),[tipo+':'+chave]:reg};marca='';avisar();window.FEEDBACK?.mostrar('Catálogo atualizado para todos os usuários.');return reg;
  }
- function monstros(base){const mapa=new Map(base.map(m=>[m.key,m]));for(const r of registros('monstro')){if(r.excluido){mapa.delete(r.chave);continue;}if(r.dados)mapa.set(r.chave,{...clonar(r.dados),global:true});}return [...mapa.values()];}
+ /* Criações compartilhadas ocultas continuam gerenciáveis pelo administrador, sem duplicar o original. */
+ function monstros(base){const mapa=new Map(base.map(m=>[m.key,m]));for(const r of registros('monstro')){if(r.excluido&&!(r.dados?.criacaoPublicada&&admin())){mapa.delete(r.chave);continue;}if(r.dados)mapa.set(r.chave,{...clonar(r.dados),global:true});}return [...mapa.values()];}
+ async function publicarMonstro(m,foto){
+  await exigirAdmin();
+  if(!m?.custom||m.global||!m.key||!m.name||(m.cat&&m.cat!=='monster'))throw Error('Escolha uma criação própria para compartilhar.');
+  const copia={...clonar(m),custom:false,criacaoPublicada:true,document:{key:'custom',display_name:'Criação compartilhada'}};
+  const opcoes={excluido:false};if(foto)opcoes.imagem=foto;
+  return salvar('monstro',m.key,copia,opcoes);
+ }
  async function atualizar({registros:mon=[],fotos=[],nomes={}}={}){
   await exigirAdmin();await carregar(true);
   const porChave=new Map(mon.map(m=>[m.key,m]));
   for(const img of fotos){const m=porChave.get(img.key);if(m&&!m.custom)await salvar('monstro',m.key,null,{imagem:img.data||null});}
   for(const [nome,traducao] of Object.entries(nomes)){const m=mon.find(x=>!x.custom&&x.name.toLowerCase()===nome);if(!m)continue;await salvar('monstro',m.key,{...m,nomeCatalogo:traducao||''});}
  }
- return{admin,carregar,iniciar,registros,registro,imagem,url,salvar,atualizar,monstros,legado:()=>dados};
+ return{admin,carregar,iniciar,registros,registro,imagem,url,salvar,publicarMonstro,atualizar,monstros,legado:()=>dados};
 })();
