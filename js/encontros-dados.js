@@ -9,6 +9,7 @@
   const uuid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === "x" ? r : (r & 3 | 8)).toString(16); }));
   const TIPOS = { pasta: "Pasta", encontro: "Encontro", sala: "Sala" };
   const ESTADOS = { rascunho: "Rascunho", preparado: "Preparado" };
+  const MODOS = { aleatorio: "Encontro aleatório", salas: "Encontro com salas" };
 
   /* ---------- consultas na lista plana de nós ---------- */
   const vivo = (n) => !n.excluido_em;
@@ -35,18 +36,21 @@
     return !pai || pai.tipo === "pasta";
   }
   const proximaOrdem = (nos, paiId) => { const f = filhos(nos, paiId, true); return f.length ? Math.max(...f.map((n) => n.ordem)) + 1 : 0; };
-  function dadosPadrao(tipo) {
-    if (tipo === "encontro") return { descricao: "", estado: "rascunho", concluido: false, historico: [] };
+  /* tipo do encontro: "aleatorio" (sem salas) ou "salas". Encontros antigos não têm o campo e continuam como "salas" (nada some). */
+  const modoDe = (no) => (no && no.dados && no.dados.modo === "aleatorio" ? "aleatorio" : "salas");
+  function dadosPadrao(tipo, modo) {
+    if (tipo === "encontro") return { descricao: "", modo: modo === "aleatorio" ? "aleatorio" : "salas", estado: "rascunho", concluido: false, historico: [] };
     if (tipo === "sala") return { descricao: "", explorada: false };
     return { descricao: "" };
   }
-  function novoNo(nos, { tipo, nome, paiId = null, campanhaId }) {
+  function novoNo(nos, { tipo, nome, paiId = null, campanhaId, modo }) {
     const n = nomeValido(nome); if (!n) return { erro: "Informe um nome (até 120 caracteres)." };
     if (!TIPOS[tipo]) return { erro: "Tipo inválido." };
     const pai = paiId ? porId(nos, paiId) : null;
     if (paiId && (!pai || !vivo(pai))) return { erro: "O destino não existe mais." };
     if (!paiPermitido(tipo, pai)) return { erro: tipo === "sala" ? "Uma sala precisa estar dentro de um encontro." : "Pastas e encontros só entram em pastas ou na raiz." };
-    const dados = dadosPadrao(tipo); if (tipo === "encontro") dados.historico.push({ quando: agora(), texto: "Encontro criado." });
+    if (tipo === "sala" && modoDe(pai) === "aleatorio") return { erro: "Encontros aleatórios não têm salas. Mude o tipo do encontro para usar salas." };
+    const dados = dadosPadrao(tipo, modo); if (tipo === "encontro") dados.historico.push({ quando: agora(), texto: "Encontro criado." });
     return { no: { id: uuid(), campanha_id: campanhaId, pai_id: paiId || null, tipo, nome: n, ordem: proximaOrdem(nos, paiId), dados, excluido_em: null, criado_em: agora(), atualizado_em: agora(), versao: 1 } };
   }
   /* "Mover para": vale para pastas e encontros; nunca para dentro de si mesmo ou de um descendente; salas não se movem */
@@ -102,6 +106,21 @@
     const campos = {}; if (!paiVivo) { if (n.tipo === "sala") return { erro: "Restaure primeiro o encontro desta sala." }; campos.pai_id = null; campos.ordem = proximaOrdem(nos, null); }
     return { ids: idsDoGrupo(nos, id).filter((x) => { const m = porId(nos, x); return m && m.excluido_em === n.excluido_em; }), campos };
   }
+  /* Converter "com salas" em "aleatório" sem perder nada: o conteúdo das salas (descrição e monstros; elementos e loot entram aqui nas próximas etapas)
+     passa para o encontro e as salas vão para a lixeira (restauráveis). Devolve o plano; quem chama grava e pede a confirmação. */
+  function planoParaAleatorio(nos, id) {
+    const enc = porId(nos, id); if (!enc || enc.tipo !== "encontro") return { erro: "Encontro não encontrado." };
+    const salas = filhos(nos, id), dados = JSON.parse(JSON.stringify(enc.dados)); dados.modo = "aleatorio";
+    const monstros = Array.isArray(dados.monstros) ? dados.monstros : []; let movidos = 0, textos = [];
+    for (const s of salas) {
+      const ms = Array.isArray(s.dados.monstros) ? s.dados.monstros : []; monstros.push(...JSON.parse(JSON.stringify(ms))); movidos += ms.length;
+      if (s.dados.descricao && String(s.dados.descricao).trim()) textos.push("**" + s.nome + "**\n" + String(s.dados.descricao).trim());
+    }
+    if (monstros.length) dados.monstros = monstros;
+    if (textos.length) dados.descricao = (String(dados.descricao || "").trim() ? dados.descricao.trim() + "\n\n" : "") + textos.join("\n\n");
+    dados.historico = (Array.isArray(dados.historico) ? dados.historico : []).concat([{ quando: agora(), texto: salas.length ? "Convertido para encontro aleatório: " + salas.length + " sala(s) (" + salas.map((s) => s.nome).join(", ") + ") foram para a lixeira e o conteúdo veio para o encontro." : "Convertido para encontro aleatório." }]);
+    return { dados, salas: salas.map((s) => s.id), resumo: { salas: salas.length, monstros: movidos, descricoes: textos.length } };
+  }
   /* busca por nome (pastas, encontros e salas; os monstros e elementos entram nas próximas etapas) */
   function buscar(nos, termo) {
     const t = sem(termo).trim(); if (!t) return [];
@@ -131,8 +150,19 @@
     }
     return {
       get modo() { return modo; },
+      /* itens guardados só neste aparelho (antes da tabela existir): contar e enviar para a conta, pais antes dos filhos; só limpa o local se tudo foi aceito */
+      locais: () => (st ? lerLocal() : []),
+      async enviarLocais() {
+        if (modo !== "nuvem") throw new Error("A conta ainda não tem a tabela de encontros.");
+        const l = lerLocal(), ids = new Set(l.map((n) => n.id)), prof = (n) => { let d = 0, x = n; while (x && x.pai_id && d < 1000) { x = l.find((y) => y.id === x.pai_id); d++; } return d; };
+        const jaNaConta = new Set(((await nuvem.get(`encontros_nos?campanha_id=eq.${q}&select=id`)) || []).map((n) => n.id));
+        const ordem = l.filter((n) => !jaNaConta.has(n.id)).sort((a, b) => prof(a) - prof(b));
+        for (const n of ordem) { const { atualizado_em, versao, ...campos } = n; if (campos.pai_id && !ids.has(campos.pai_id) && !jaNaConta.has(campos.pai_id)) campos.pai_id = null; await nuvem.post("encontros_nos", campos); }
+        try { st.removeItem(chaveLocal(campanhaId)); } catch (_) { /* mantém a cópia local */ }
+        return ordem.length;
+      },
       listar: () => tentar(async () => (await nuvem.get(`encontros_nos?campanha_id=eq.${q}&select=*&order=ordem`)) || [], () => lerLocal()),
-      inserir: (nos) => tentar(async () => { for (let i = 0; i < nos.length; i += 50) await nuvem.post("encontros_nos", nos.slice(i, i + 50)); return nos; }, () => { gravarLocal(lerLocal().concat(nos)); return nos; }),
+      inserir: (nos) => tentar(async () => { for (const n of nos) await nuvem.post("encontros_nos", n); return nos; }, () => { gravarLocal(lerLocal().concat(nos)); return nos; }),
       atualizar: (id, campos) => tentar(async () => { const r = await nuvem.patch(`encontros_nos?id=eq.${encodeURIComponent(id)}&campanha_id=eq.${q}`, campos); if (!r || !r[0]) throw new Error("A alteração não foi aceita pelo banco."); return r[0]; },
         () => { const l = lerLocal(), i = l.findIndex((n) => n.id === id); if (i < 0) throw new Error("Item não encontrado."); l[i] = { ...l[i], ...campos, atualizado_em: agora(), versao: (l[i].versao || 1) + 1 }; gravarLocal(l); return l[i]; }),
       apagar: (ids) => tentar(async () => { for (const id of ids) await nuvem.apagar(`encontros_nos?id=eq.${encodeURIComponent(id)}&campanha_id=eq.${q}`); return true; },
@@ -140,5 +170,5 @@
     };
   }
 
-  window.ENCONTROS_DADOS = { TIPOS, ESTADOS, CORES, sem, vivo, porId, filhos, descendentes, caminho, arvore, contar, nomeValido, paiPermitido, proximaOrdem, dadosPadrao, novoNo, podeMover, destinos, mover, reordenar, nomesEmLote, duplicar, idsDoGrupo, restaurar, buscar, formatar, criarRepositorio, ausente, agora };
+  window.ENCONTROS_DADOS = { MODOS, modoDe, planoParaAleatorio, TIPOS, ESTADOS, CORES, sem, vivo, porId, filhos, descendentes, caminho, arvore, contar, nomeValido, paiPermitido, proximaOrdem, dadosPadrao, novoNo, podeMover, destinos, mover, reordenar, nomesEmLote, duplicar, idsDoGrupo, restaurar, buscar, formatar, criarRepositorio, ausente, agora };
 })();

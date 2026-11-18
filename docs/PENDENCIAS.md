@@ -1,5 +1,13 @@
 # Pendências e próxima tarefa
 
+## Encontros — monstros e tipos de encontro (Etapa 2, parte 1) — 18/11/2026, local, cache v286
+
+Feito: seção **Monstros** funcional em encontros e salas (js/encontros-monstros.js). Busca no bestiário (SRD 2014 + criações da conta, por nome em inglês/português), quantidade, instâncias independentes (uid, PV, PV máx., CA, nome, condições, notas) guardadas em `dados.monstros` do nó, numeração automática (Goblin 1, 2, 3; renomeados à mão são preservados), edição rápida, remover com confirmação, mover um ou vários entre encontro e salas preservando o estado, ficha do bestiário no painel lateral. O bestiário só é lido (IndexedDB/JSON), nunca escrito. **Tipo de encontro**: Aleatório (sem Salas) ou Com salas, escolhido ao criar e alterável; encontros antigos sem o campo continuam como "com salas". Converter para aleatório exige confirmação: monstros e descrições das salas vêm para o encontro e as salas vão para a lixeira (restauráveis). Botão "Enviar para a conta" leva ao banco os itens que ficaram só no aparelho.
+
+**Migração AINDA NÃO APLICADA (confirmado por consulta somente leitura: PGRST205, tabela inexistente):** `supabase/migrations/20261118120000_encontros.sql`. Até o William aplicá-la, tudo fica só no aparelho; depois, o aviso "Enviar para a conta" aparece. Persistência na conta só foi exercitada contra uma tabela simulada (não contra o Supabase real, nem com RLS).
+
+Próximo: elementos, loot, imagem/mapa; depois Iniciativa e recompensas.
+
 ## Aba Encontros (mestre) — Etapa 1, 18/11/2026, local, cache v285
 
 Novo: aba **Encontros** na campanha, visível só ao mestre. Pastas > subpastas > encontros > salas (salas opcionais, sem limite de profundidade; encontro na raiz ou em qualquer pasta). Árvore expansível (estado guardado por campanha) + detalhes; em tela estreita a árvore vira bloco recolhível e não há rolagem horizontal. Feito: Novo (com destino), criar subpasta/encontro na pasta, adicionar sala ou várias salas por nomes, renomear, Mover para (bloqueia pasta dentro de si/descendente), subir/descer (sem arrastar), duplicar encontro (cópia independente, rascunho), lixeira com restaurar e excluir de vez (confirmado), descrição com **negrito** e cores, Rascunho/Preparado, concluído, sala Explorada/Não explorada, histórico simples, busca por nome, salvar explícito na edição e salvamento automático nas trocas rápidas, com erro visível.
