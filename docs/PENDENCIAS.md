@@ -1,5 +1,12 @@
 # Pendências e próxima tarefa
 
+## Retratos maiores — 17/11/2026
+
+- Base: `main` publicada em `4c32c71`. Iniciativa: retrato de 64 px no desktop e 48 px no celular, mantendo o campo numérico e os controles. Listas de monstros e magias: 64/56 px; personagens: 96/80 px; itens e inventário: 96/80 px. Modo grade preservado.
+- Identidade compartilhada das fichas de monstros, personagens e magias: 112 px, reduzida a 88 px em containers estreitos. Detalhes de itens: 144/112 px; seleção de itens do inventário: 64/56 px. Alterações somente de apresentação, sem modificar imagens armazenadas, dados ou Supabase.
+- Validação: 715 testes aprovados, 1 ignorado, nenhuma falha. Iniciativa medida a 320, 375, 430, 700, 900, 1280 e 1440 px sem rolagem horizontal; fichas de monstro, magia e item e alternância lista/grade conferidas como visitante. Campanhas com personagens autenticados e Android físico ainda precisam de conferência visual.
+- Cache v281. Envio à `main` autorizado pelo William em 17/11/2026.
+
 ## Descrições do bestiário — pedido de 17/11/2026, implementado localmente
 
 - Base conferida no GitHub: `bba0a5f` (`main`, cache v279). Texto original em português para todas as 325 criaturas do pacote 2014, em `dados/descricoes-monstros-2014.json`; licença e natureza do conteúdo declaradas.

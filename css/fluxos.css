@@ -417,8 +417,9 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
   .combatant:not(.editing) > .conc-linha, .combatant:not(.editing) > .morte-linha, .combatant:not(.editing) > .mais-opcoes, .combatant:not(.editing) > .fx-form { grid-column:1 / -1; }
   .combatant:not(.editing) .id-texto .name { font-size:15px; line-height:1.15; }
   .combatant:not(.editing) .id-texto .kind { font-size:10px; line-height:1.2; letter-spacing:.03em; }
-  .combatant:not(.editing) .id-bloco .avfx { flex:0 0 36px; }
-  .combatant:not(.editing) .id-bloco .avfx .av { width:36px; height:36px; }
+  .combatant:not(.editing) { --retrato-combate:48px; }
+  .combatant:not(.editing) .id-bloco .avfx { flex:0 0 var(--retrato-combate); }
+  .combatant:not(.editing) .id-bloco .avfx .av { width:var(--retrato-combate); height:var(--retrato-combate); }
 }
 /* telas muito estreitas: os controles de ações descem para uma segunda linha */
 @media (max-width:350px) {
@@ -674,9 +675,9 @@ body.ficha-embutida .tracker { padding:14px; }                                  
   }
   .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-identidade>.retrato-cartao,
   .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-identidade>.av{
-    box-sizing:border-box;flex:0 0 64px!important;width:64px!important;
-    height:64px!important;min-width:64px!important;min-height:64px!important;
-    max-width:64px!important;max-height:64px!important;aspect-ratio:1/1;
+    box-sizing:border-box;flex:0 0 80px!important;width:80px!important;
+    height:80px!important;min-width:80px!important;min-height:80px!important;
+    max-width:80px!important;max-height:80px!important;aspect-ratio:1/1;
   }
   .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-identidade-texto{
     display:block;flex:1 1 auto;min-width:0;width:auto;
@@ -1176,3 +1177,8 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 #vez-res .res-ataque{box-sizing:border-box;width:100%;min-width:0;background:var(--panel);overflow:hidden}
 #vez-res .res-ataque-corpo{box-sizing:border-box;min-width:0;overflow-wrap:anywhere;word-break:normal;padding:9px 10px 11px}
 #vez-res .res-ataque-corpo p,#vez-res .res-ataque-corpo .row{max-width:100%;min-width:0;overflow-wrap:anywhere}
+
+/* Retratos maiores na lista de personagens; a grade conserva suas imagens integrais. */
+@media(min-width:760px){
+  .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-identidade>:is(.retrato-cartao,.av){width:96px!important;height:96px!important;min-width:96px;max-width:96px;flex:0 0 96px;object-fit:cover}
+}

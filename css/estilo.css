@@ -639,6 +639,9 @@ body.pagina-personagem:has(.comp-janela-ov) .comp-janela-ov{visibility:visible}
 #blist .catalogo-cartao .lft>span:last-child,#spells .catalogo-cartao .lft>span:last-child{min-width:0;overflow-wrap:anywhere;line-height:1.4}
 #blist .catalogo-cartao .acts,#spells .catalogo-cartao .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 #blist .catalogo-cartao .av,#spells .catalogo-cartao .av{flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+/* Listas: retratos legíveis; o modo grade mantém a imagem quadrada integral. */
+#blist:not(.catalogo-grade) .catalogo-cartao .av,#spells:not(.catalogo-grade) .catalogo-cartao .av{width:64px!important;height:64px!important;object-fit:cover}
+@media(max-width:700px){#blist:not(.catalogo-grade) .catalogo-cartao .av,#spells:not(.catalogo-grade) .catalogo-cartao .av{width:56px!important;height:56px!important}}
 .catalogo-vazio{grid-column:1/-1;width:100%;padding:26px 16px;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted);background:var(--panel)}
 .catalogo-vazio strong{display:block;color:var(--text);margin-bottom:5px}
 .catalogo-vazio p{margin:0;font-size:13px}
