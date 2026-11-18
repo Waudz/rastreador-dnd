@@ -61,11 +61,11 @@
   function lootSelo(m) {
     const l = M.lootDe(m); if (!M.temLoot(l)) return "";
     const rest = l.itens.reduce((a, i) => a + M.restante(i), 0), moedas = M.MOEDAS.some((k) => l.moedas[k] - l.moedasDistribuidas[k] > 0), pendente = rest > 0 || moedas, tit = l.itens.map((i) => i.qtd + "× " + i.nome + (i.distribuido ? " (" + i.distribuido + " distribuído)" : "")).concat(M.MOEDAS.filter((k) => l.moedas[k]).map((k) => l.moedas[k] + " " + M.NOMES_MOEDA[k])).join(", ");
-    return `<span class="enc-selo${pendente ? "" : " ok"}" title="${esc(tit)}">${pendente ? "Loot" : "Loot distribuído"}</span>`;
+    return `<span class="enc-selo${pendente ? " prep" : " ok"}" title="${esc(tit)}">${pendente ? "Loot" : "Loot distribuído"}</span>`;
   }
   function cartaoMonstro(s, n, m) {
     const r = s.bestiario && s.bestiario.porChave.get(m.origem), sel = s.selMon.has(m.uid), pct = m.pvMax ? Math.max(0, Math.min(100, 100 * m.pv / m.pvMax)) : 0, hpClass = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
-    const naIni = iniDe(s, m.uid), cands = INI && !naIni ? INI.candidatos(s.iniEstado || { combatants: [] }).length : 0;
+    const selo = lootSelo(m), naIni = iniDe(s, m.uid), cands = INI && !naIni ? INI.candidatos(s.iniEstado || { combatants: [] }).length : 0;
     const rotuloSit = { derrotado: "Derrotado", inconsciente: "Inconsciente", fugiu: "Fugiu", capturado: "Capturado" }[m.situacao] || "";
     const b = (a, txt, cls) => `<button type="button" data-enc-acao="${a}" data-uid="${esc(m.uid)}"${cls ? ` class="${cls}"` : ""}>${txt}</button>`;
     const menu = `<details class="inv-mais enc-mais"><summary aria-label="Ações de ${esc(m.nome)}" title="Ações">${ico("more")}</summary><div class="inv-mais-menu">${b("mon-editar", "Editar…")}${naIni ? b("mon-desvincular", "Soltar da iniciativa") : cands ? b("mon-vincular", "Vincular à iniciativa…") : ""}${b("mon-remover", "Remover…", "danger")}</div></details>`;
@@ -77,7 +77,7 @@
         <span class="muted enc-mon-sub">${esc(r && r.nomePt && r.nomePt !== m.nome ? r.nomePt : m.base)}${r && r.nd ? " · ND " + esc(r.nd) : ""} · CA <b>${m.ca}</b></span>
         <div class="enc-pv-linha"><div class="hp-track" aria-hidden="true"><div class="hp-fill ${hpClass}" style="width:${pct}%"></div></div>
           <span class="enc-pv-ctl" role="group" aria-label="PV de ${esc(m.nome)}"><button type="button" class="small" data-enc-acao="mon-pv" data-uid="${esc(m.uid)}" data-d="-1" aria-label="Tirar 1 PV">−</button><input type="number" class="enc-pv-in" data-enc-pv="${esc(m.uid)}" min="0" max="${m.pvMax}" value="${m.pv}" aria-label="PV atuais de ${esc(m.nome)}"><span class="muted">/${m.pvMax}</span><button type="button" class="small" data-enc-acao="mon-pv" data-uid="${esc(m.uid)}" data-d="1" aria-label="Somar 1 PV">+</button></span></div>
-        ${naIni || rotuloSit || (m.condicoes || []).length ? `<span class="enc-conds-vis">${naIni ? '<span class="enc-selo ok" title="Esta criatura está na Iniciativa">Iniciativa</span>' : ""}${rotuloSit ? `<span class="enc-selo">${rotuloSit}</span>` : ""}${lootSelo(m)}${(m.condicoes || []).map((c) => `<span class="enc-selo">${esc(c)}</span>`).join("")}</span>` : ""}
+        ${naIni || rotuloSit || selo || (m.condicoes || []).length ? `<span class="enc-conds-vis">${naIni ? '<span class="enc-selo ok" title="Esta criatura está na Iniciativa">Iniciativa</span>' : ""}${rotuloSit ? `<span class="enc-selo">${rotuloSit}</span>` : ""}${selo}${(m.condicoes || []).map((c) => `<span class="enc-selo">${esc(c)}</span>`).join("")}</span>` : ""}
       </div></li>`;
   }
   /* ---------- loot: editor usado na janela do monstro e no "loot inicial" de vários ---------- */

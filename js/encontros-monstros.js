@@ -43,7 +43,7 @@
     if ("pv" in campos) n.pv = inteiro(campos.pv, 0, 99999, m.pv);
     if ("ca" in campos) n.ca = inteiro(campos.ca, 0, 99, m.ca);
     if ("condicoes" in campos) n.condicoes = [...new Set((campos.condicoes || []).filter((c) => CONDICOES.includes(c)))];
-    if ("loot" in campos) n.loot = normalizarLoot(campos.loot);
+    if ("loot" in campos) { const l = normalizarLoot(campos.loot); if (temLoot(l)) n.loot = l; else delete n.loot; }
     if ("situacao" in campos) n.situacao = SITUACOES.includes(campos.situacao) ? campos.situacao : "";
     if ("notas" in campos) n.notas = String(campos.notas || "").slice(0, 2000);
     if (n.pv > n.pvMax) n.pv = n.pvMax;

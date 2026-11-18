@@ -162,3 +162,8 @@ test("interface de loot e ajustes visuais (árvore 240 px, breadcrumb em flex)",
   assert.match(css, /grid-template-columns:240px minmax\(0,1fr\)/); assert.match(css, /\.enc-migalhas ol\{[^}]*display:flex[^}]*align-items:center/);
   assert.match(ui, /class="enc-mig-atual" aria-current="page"/);
 });
+
+test("regressão: o selo de loot aparece mesmo sem condições, situação ou iniciativa", () => {
+  const ui = ler("js/encontros-ui.js");
+  for (const trecho of ["const selo = lootSelo(m)", "naIni || rotuloSit || selo ||", "${selo}", 'pendente ? " prep" : " ok"']) assert.ok(ui.includes(trecho), trecho);
+});

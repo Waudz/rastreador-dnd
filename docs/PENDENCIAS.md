@@ -1,5 +1,9 @@
 # Pendências e próxima tarefa
 
+## Correção: selo de loot no cartão — 18/11/2026, local, cache v289
+
+Causa: o selo "Loot" ficava dentro do bloco que só era desenhado quando havia condição, situação ou iniciativa; sem isso o loot salvo não aparecia. Agora o bloco também abre quando há selo de loot (disponível em dourado, "Loot distribuído" em verde). O loot em si já era salvo na instância certa; agora monstros sem loot não gravam mais um objeto vazio. Verificado no navegador com tabela simulada (não no Supabase real): 4 goblins, loot só no 3º, selo imediato após salvar, preservado ao mudar PV, ao editar outro goblin e após recarregar, muda para distribuído; desktop e 375 px.
+
 ## Encontros: loot por monstro, árvore 240 px e breadcrumb — 18/11/2026, local, cache v288
 
 Feito: **loot individual** em cada instância (`m.loot`: moedas PC/PP/PO, itens do catálogo por `catId` — os mesmos ids do inventário — e itens personalizados; por item: descoberto, coletado e distribuído parciais com o restante preservado; moedas coletadas/distribuídas). Editado na janela do monstro (seção "Loot desta criatura") e "Loot inicial…" para vários selecionados (cópias independentes, somar ou substituir com confirmação). Editar PV/condições, mover entre salas, enviar à Iniciativa e aplicar recibos preservam o loot (testado). Selo "Loot"/"Loot distribuído" no cartão. Árvore com 240 px (estado vira ponto colorido, nome com reticências e title) e breadcrumb em flex alinhado, nível atual em destaque.
