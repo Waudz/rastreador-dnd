@@ -19,6 +19,7 @@
       function save() {
         try {
           localStorage.setItem(chaveAtual(), JSON.stringify({ combatants, currentId, round, nextOrder, stats, report:relatorioLegado }));
+          if (contexto && window.ENCONTROS_INI) window.ENCONTROS_INI.registrar(localStorage, contexto, combatants);   // estado final dos monstros vindos de Encontros
         } catch (_) {
           // O preview incorporado pode bloquear armazenamento local; o rastreador continua funcionando nesta sessão.
         }

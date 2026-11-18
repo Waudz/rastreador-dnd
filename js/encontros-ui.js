@@ -50,7 +50,8 @@
   const secao = (titulo, corpo, aberta = true, extra = "") => `<details class="enc-secao"${aberta ? " open" : ""}><summary>${esc(titulo)}${extra}</summary><div class="enc-secao-corpo">${corpo}</div></details>`;
   const proxEtapa = (t) => secao(t, '<p class="muted">Disponível na próxima etapa.</p>', false);
   /* ---------- monstros (instâncias independentes; o bestiário só é lido) ---------- */
-  const M = window.ENCONTROS_MONSTROS;
+  const M = window.ENCONTROS_MONSTROS, INI = window.ENCONTROS_INI;
+  const iniDe = (s, uid) => (INI && s.iniEstado ? INI.combatenteDe(s.iniEstado, uid) : null);
   const encontroDe = (s, n) => (n.tipo === "encontro" ? n : D.porId(s.nos, n.pai_id));
   const todosMonstros = (s, n) => { const enc = encontroDe(s, n); return enc ? [enc, ...D.filhos(s.nos, enc.id)].flatMap((x) => M.lista(x)) : []; };
   function fotoMon(s, key, nome) {
@@ -58,26 +59,45 @@
     return src ? `<img class="av enc-mon-foto" src="${esc(src)}" alt="" loading="lazy" data-sem-ampliar>` : `<span class="enc-mon-foto vazio" aria-hidden="true">${ico("paw")}</span>`;
   }
   function cartaoMonstro(s, n, m) {
-    const r = s.bestiario && s.bestiario.porChave.get(m.origem), sel = s.selMon.has(m.uid), pct = m.pvMax ? Math.round(100 * m.pv / m.pvMax) : 0;
-    if (s.editMon === m.uid) {
-      return `<li class="enc-mon editando"><form class="enc-form enc-mon-form" data-enc-form="monstro" data-id="${esc(n.id)}" data-uid="${esc(m.uid)}"><label>Nome<input name="nome" maxlength="80" required value="${esc(m.nome)}"></label>
-        <div class="enc-mon-nums"><label>PV<input type="number" name="pv" min="0" max="99999" value="${m.pv}"></label><label>PV máx.<input type="number" name="pvMax" min="1" max="99999" value="${m.pvMax}"></label><label>CA<input type="number" name="ca" min="0" max="99" value="${m.ca}"></label></div>
-        <fieldset class="enc-tipo"><legend class="muted">Condições</legend><div class="enc-conds">${M.CONDICOES.map((c) => `<label class="inline"><input type="checkbox" name="cond" value="${esc(c)}"${(m.condicoes || []).includes(c) ? " checked" : ""}> ${esc(c)}</label>`).join("")}</div></fieldset>
-        <label>Notas<textarea name="notas" rows="2" maxlength="2000">${esc(m.notas || "")}</textarea></label>
-        <div class="row"><button type="submit" class="small primary">Salvar</button><button type="button" class="small subtle" data-enc-acao="mon-cancelar">Cancelar</button></div></form></li>`;
-    }
-    return `<li class="enc-mon${sel ? " sel" : ""}"><input type="checkbox" class="enc-mon-sel" data-enc-mon-sel="${esc(m.uid)}"${sel ? " checked" : ""} aria-label="Selecionar ${esc(m.nome)}">
+    const r = s.bestiario && s.bestiario.porChave.get(m.origem), sel = s.selMon.has(m.uid), pct = m.pvMax ? Math.max(0, Math.min(100, 100 * m.pv / m.pvMax)) : 0, hpClass = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
+    const naIni = iniDe(s, m.uid), cands = INI && !naIni ? INI.candidatos(s.iniEstado || { combatants: [] }).length : 0;
+    const rotuloSit = { derrotado: "Derrotado", inconsciente: "Inconsciente", fugiu: "Fugiu", capturado: "Capturado" }[m.situacao] || "";
+    const b = (a, txt, cls) => `<button type="button" data-enc-acao="${a}" data-uid="${esc(m.uid)}"${cls ? ` class="${cls}"` : ""}>${txt}</button>`;
+    const menu = `<details class="inv-mais enc-mais"><summary aria-label="Ações de ${esc(m.nome)}" title="Ações">${ico("more")}</summary><div class="inv-mais-menu">${b("mon-editar", "Editar…")}${naIni ? b("mon-desvincular", "Soltar da iniciativa") : cands ? b("mon-vincular", "Vincular à iniciativa…") : ""}${b("mon-remover", "Remover…", "danger")}</div></details>`;
+    return `<li class="enc-mon combatant${sel ? " sel" : ""}${m.pv <= 0 ? " defeated" : ""}" data-uid="${esc(m.uid)}">
+      <input type="checkbox" class="enc-mon-sel" data-enc-mon-sel="${esc(m.uid)}"${sel ? " checked" : ""} aria-label="Selecionar ${esc(m.nome)}">
       <button type="button" class="enc-mon-foto-btn" data-enc-acao="mon-ficha" data-key="${esc(m.origem)}" aria-label="Abrir a ficha de ${esc(m.nome)}" title="Abrir a ficha do bestiário">${fotoMon(s, m.origem, m.nome)}</button>
-      <div class="enc-mon-info"><button type="button" class="enc-mon-nome" data-enc-acao="mon-ficha" data-key="${esc(m.origem)}">${esc(m.nome)}</button>
-        <span class="muted enc-mon-sub">${esc(r && r.nomePt && r.nomePt !== m.nome ? r.nomePt : m.base)}${r && r.nd ? " · ND " + esc(r.nd) : ""}${r && r.tipo ? " · " + esc(r.tipo) : ""}</span>
-        <span class="enc-mon-stats"><span>CA <b>${m.ca}</b></span><span>PV <b>${m.pv}/${m.pvMax}</b></span><span class="enc-pv" aria-hidden="true"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></span></span>
-        ${(m.condicoes || []).length ? `<span class="enc-conds-vis">${m.condicoes.map((c) => `<span class="enc-selo">${esc(c)}</span>`).join("")}</span>` : ""}${m.notas ? `<span class="muted enc-mon-notas">${esc(m.notas)}</span>` : ""}</div>
-      <span class="enc-mon-acoes"><button type="button" class="small" data-enc-acao="mon-editar" data-uid="${esc(m.uid)}" aria-label="Editar ${esc(m.nome)}">Editar</button><button type="button" class="small subtle" data-enc-acao="mon-remover" data-uid="${esc(m.uid)}" aria-label="Remover ${esc(m.nome)}">Remover</button></span></li>`;
+      <div class="enc-mon-info">
+        <div class="enc-mon-linha1"><button type="button" class="enc-mon-nome" data-enc-acao="mon-ficha" data-key="${esc(m.origem)}" title="${esc(m.nome)}">${esc(m.nome)}</button>${menu}</div>
+        <span class="muted enc-mon-sub">${esc(r && r.nomePt && r.nomePt !== m.nome ? r.nomePt : m.base)}${r && r.nd ? " · ND " + esc(r.nd) : ""} · CA <b>${m.ca}</b></span>
+        <div class="enc-pv-linha"><div class="hp-track" aria-hidden="true"><div class="hp-fill ${hpClass}" style="width:${pct}%"></div></div>
+          <span class="enc-pv-ctl" role="group" aria-label="PV de ${esc(m.nome)}"><button type="button" class="small" data-enc-acao="mon-pv" data-uid="${esc(m.uid)}" data-d="-1" aria-label="Tirar 1 PV">−</button><input type="number" class="enc-pv-in" data-enc-pv="${esc(m.uid)}" min="0" max="${m.pvMax}" value="${m.pv}" aria-label="PV atuais de ${esc(m.nome)}"><span class="muted">/${m.pvMax}</span><button type="button" class="small" data-enc-acao="mon-pv" data-uid="${esc(m.uid)}" data-d="1" aria-label="Somar 1 PV">+</button></span></div>
+        ${naIni || rotuloSit || (m.condicoes || []).length ? `<span class="enc-conds-vis">${naIni ? '<span class="enc-selo ok" title="Esta criatura está na Iniciativa">Iniciativa</span>' : ""}${rotuloSit ? `<span class="enc-selo">${rotuloSit}</span>` : ""}${(m.condicoes || []).map((c) => `<span class="enc-selo">${esc(c)}</span>`).join("")}</span>` : ""}
+      </div></li>`;
+  }
+  /* edição completa em janela padrão (não expande a lista): nome, PV, PV máx., CA, condições, situação e notas */
+  function janelaEditarMonstro(s, n, uid) {
+    const m = M.lista(n).find((x) => x.uid === uid); if (!m) return;
+    const j = formularioJanela("Editar " + m.nome, `<label>Nome<input name="nome" maxlength="80" required value="${esc(m.nome)}"></label>
+      <div class="enc-mon-nums"><label>PV<input type="number" name="pv" min="0" max="99999" value="${m.pv}"></label><label>PV máx.<input type="number" name="pvMax" min="1" max="99999" value="${m.pvMax}"></label><label>CA<input type="number" name="ca" min="0" max="99" value="${m.ca}"></label></div>
+      <fieldset class="enc-tipo"><legend class="muted">Condições</legend><div class="enc-conds">${M.CONDICOES.map((c) => `<label class="inline"><input type="checkbox" name="cond" value="${esc(c)}"${(m.condicoes || []).includes(c) ? " checked" : ""}> ${esc(c)}</label>`).join("")}</div></fieldset>
+      <label>Situação<select name="situacao"><option value="">Ativo</option><option value="fugiu"${m.situacao === "fugiu" ? " selected" : ""}>Fugiu</option><option value="capturado"${m.situacao === "capturado" ? " selected" : ""}>Capturado</option></select></label>
+      <label>Notas<textarea name="notas" rows="2" maxlength="2000">${esc(m.notas || "")}</textarea></label>`, async (v, f) => {
+      const r = M.editar(m, { nome: v.nome, pv: v.pv, pvMax: v.pvMax, ca: v.ca, condicoes: new FormData(f).getAll("cond"), notas: v.notas, situacao: v.situacao }); if (r.erro) return { erro: r.erro };
+      await atualizarMonstro(s, n, uid, r.monstro, "Monstro “" + r.monstro.nome + "” atualizado."); return s.erro ? { erro: s.erro } : {};
+    }, "media");
+    return j;
+  }
+  /* grava uma instância alterada (só ela), preservando a rolagem da página e a seleção; sincroniza com a Iniciativa se estiver ligada */
+  async function atualizarMonstro(s, n, uid, novo, hist) {
+    const y = window.scrollY; novo.sincEm = Date.now();
+    await guardar(s, async () => { await gravarMonstros(s, n, (l) => l.map((x) => (x.uid === uid ? novo : x)), hist); empurrarParaIniciativa(s, novo); }, "Salvo.");
+    try { window.scrollTo(0, y); } catch (_) { /* sem rolagem */ }
   }
   function secaoMonstros(s, n) {
     const lista = M.lista(n), enc = encontroDe(s, n), destinos = enc ? [enc, ...D.filhos(s.nos, enc.id)].filter((x) => x.id !== n.id) : [];
     const nSel = lista.filter((m) => s.selMon.has(m.uid)).length;
-    const barra = lista.length ? `<div class="enc-mon-barra"><button type="button" class="small subtle" data-enc-acao="mon-todos">${nSel === lista.length ? "Limpar seleção" : "Selecionar todos"}</button>${nSel ? `<span class="muted">${nSel} selecionado(s)</span>${destinos.length ? `<select class="enc-mon-destino" aria-label="Mover os selecionados para">${destinos.map((x) => `<option value="${esc(x.id)}">${x.tipo === "encontro" ? "Encontro (geral): " : "Sala: "}${esc(x.nome)}</option>`).join("")}</select><button type="button" class="small" data-enc-acao="mon-mover-sel">Mover</button>` : ""}<button type="button" class="small danger" data-enc-acao="mon-remover-sel">Remover</button>` : ""}</div>` : "";
+    const barra = lista.length ? `<div class="enc-mon-barra"><button type="button" class="small subtle" data-enc-acao="mon-todos">${nSel === lista.length ? "Limpar seleção" : "Selecionar todos"}</button>${nSel ? `<span class="muted">${nSel} selecionado(s)</span>${destinos.length ? `<select class="enc-mon-destino" aria-label="Mover os selecionados para">${destinos.map((x) => `<option value="${esc(x.id)}">${x.tipo === "encontro" ? "Encontro (geral): " : "Sala: "}${esc(x.nome)}</option>`).join("")}</select><button type="button" class="small" data-enc-acao="mon-mover-sel">Mover</button>` : ""}<button type="button" class="small danger" data-enc-acao="mon-remover-sel">Remover</button><button type="button" class="small primary" data-enc-acao="mon-enviar">Enviar para a Iniciativa</button>` : ""}</div>` : "";
     const corpo = `<div class="row"><button type="button" class="small primary" data-enc-acao="mon-add" data-id="${esc(n.id)}">+ Adicionar monstros</button></div>${barra}${lista.length ? `<ul class="enc-mons">${lista.map((m) => cartaoMonstro(s, n, m)).join("")}</ul>` : '<p class="muted">Nenhum monstro ainda. Adicione do bestiário; cada exemplar é independente.</p>'}`;
     return secao("Monstros", corpo, true, lista.length ? ` <span class="muted">(${lista.length})</span>` : "");
   }
@@ -118,6 +138,7 @@
   }
   function desenhar(s) {
     const raiz = s.raiz; if (!raiz) return;
+    if (INI) s.iniEstado = INI.lerEstado(localStorage, s.campanhaId);
     const nLix = s.nos.filter((n) => n.excluido_em).length, desk = larga();
     const aviso = s.repo.modo === "local" ? `<div class="enc-aviso" role="status"><b>Salvo só neste aparelho.</b> A tabela de encontros ainda não existe no banco da conta. Aplique a migração <code>supabase/migrations/20261118120000_encontros.sql</code> para guardar na conta (os encontros criados aqui poderão ser levados depois).</div>` : "";
     const envio = s.locais ? `<div class="enc-aviso" role="status"><b>Há ${s.locais} item(ns) guardado(s) só neste aparelho.</b> <button type="button" class="small primary" data-enc-acao="enviar-locais">Enviar para a conta</button></div>` : "";
@@ -146,7 +167,7 @@
     const j = window.COMP_JANELA.abrir({ titulo, conteudo: `<form class="enc-form">${html}<p class="err enc-form-erro" role="alert"></p><div class="row"><button type="submit" class="small primary">Salvar</button><button type="button" class="small subtle" data-fechar>Cancelar</button></div></form>`, largura });
     const f = j.corpo.querySelector("form"), er = j.corpo.querySelector(".enc-form-erro");
     j.corpo.querySelector("[data-fechar]").addEventListener("click", j.fechar);
-    f.addEventListener("submit", async (e) => { e.preventDefault(); const r = await aoEnviar(Object.fromEntries(new FormData(f).entries())); if (r && r.erro) { er.textContent = r.erro; return; } j.fechar(); });
+    f.addEventListener("submit", async (e) => { e.preventDefault(); const r = await aoEnviar(Object.fromEntries(new FormData(f).entries()), f); if (r && r.erro) { er.textContent = r.erro; return; } j.fechar(); });
     return j;
   }
   const opcoesPasta = (s, selecionada) => [{ id: null, rotulo: "Raiz (sem pasta)" }].concat((function lista(pai, pref) { return D.filhos(s.nos, pai).filter((f) => f.tipo === "pasta").flatMap((f) => [{ id: f.id, rotulo: pref + f.nome }, ...lista(f.id, pref + f.nome + " › ")]); })(null, "")).map((o) => `<option value="${esc(o.id || "")}"${(o.id || "") === (selecionada || "") ? " selected" : ""}>${esc(o.rotulo)}</option>`).join("");
@@ -238,27 +259,77 @@
   }
   async function salvarMonstro(s, f) {
     const n = D.porId(s.nos, f.dataset.id), m = n && M.lista(n).find((x) => x.uid === f.dataset.uid); if (!m) return;
-    const fd = new FormData(f), r = M.editar(m, { nome: fd.get("nome"), pv: fd.get("pv"), pvMax: fd.get("pvMax"), ca: fd.get("ca"), condicoes: fd.getAll("cond"), notas: fd.get("notas") });
+    const fd = new FormData(f), r = M.editar(m, { nome: fd.get("nome"), pv: fd.get("pv"), pvMax: fd.get("pvMax"), ca: fd.get("ca"), condicoes: fd.getAll("cond"), notas: fd.get("notas"), situacao: fd.get("situacao") });
     if (r.erro) { s.erro = r.erro; return desenhar(s); }
-    const uid = m.uid; await guardar(s, async () => { await gravarMonstros(s, n, (l) => l.map((x) => (x.uid === uid ? r.monstro : x)), "Monstro “" + r.monstro.nome + "” atualizado."); s.editMon = null; }, "Salvo.");
+    const uid = m.uid; r.monstro.sincEm = Date.now(); await guardar(s, async () => { await gravarMonstros(s, n, (l) => l.map((x) => (x.uid === uid ? r.monstro : x)), "Monstro “" + r.monstro.nome + "” atualizado."); s.editMon = null; empurrarParaIniciativa(s, r.monstro); }, "Salvo.");
   }
   async function acaoMonstro(s, a, id, extra) {
     const n = s.sel ? D.porId(s.nos, s.sel) : null; if (!n || (n.tipo !== "encontro" && n.tipo !== "sala")) return;
     const lista = M.lista(n), selecionados = lista.filter((m) => s.selMon.has(m.uid)).map((m) => m.uid);
     if (a === "mon-add") return janelaAddMonstros(s, n);
+    if (a === "mon-enviar") return janelaEnviarIniciativa(s, n, selecionados);
+    if (a === "mon-desvincular") return guardar(s, async () => { const e = INI.lerEstado(localStorage, s.campanhaId); INI.desassociar(e, extra.uid); INI.gravarEstado(localStorage, s.campanhaId, e); INI.limparRecibos(localStorage, s.campanhaId, [extra.uid]); }, "A criatura continua no combate, sem ligação com o encontro.");
+    if (a === "mon-vincular") return janelaVincular(s, n, extra.uid);
     if (a === "mon-ficha") { if (window.LEITOR_FICHAS && window.LEITOR_FICHAS.monstro(extra.key)) return; return window.FEEDBACK && window.FEEDBACK.mostrar("A ficha deste monstro não pôde ser aberta aqui. Use o bestiário em Combate e consultas.", { erro: true }); }
-    if (a === "mon-editar") { s.editMon = extra.uid; return desenhar(s); }
-    if (a === "mon-cancelar") { s.editMon = null; return desenhar(s); }
+    if (a === "mon-editar") return janelaEditarMonstro(s, n, extra.uid);
+    if (a === "mon-pv") { const m = lista.find((x) => x.uid === extra.uid); if (!m) return; const r = M.editar(m, { pv: m.pv + Number(extra.d) }); return atualizarMonstro(s, n, m.uid, r.monstro, null); }
     if (a === "mon-todos") { selecionados.length === lista.length ? s.selMon.clear() : lista.forEach((m) => s.selMon.add(m.uid)); return desenhar(s); }
     if (a === "mon-remover" || a === "mon-remover-sel") {
       const uids = a === "mon-remover" ? [extra.uid] : selecionados, nomes = lista.filter((m) => uids.includes(m.uid)).map((m) => m.nome); if (!uids.length) return;
       if (!(await perguntar(uids.length === 1 ? `Remover “${nomes[0]}” deste ${n.tipo === "sala" ? "local" : "encontro"}? O monstro do bestiário não é afetado.` : `Remover ${uids.length} monstros (${nomes.slice(0, 6).join(", ")}${nomes.length > 6 ? "…" : ""})? Os monstros do bestiário não são afetados.`, { titulo: "Remover monstros", ok: "Remover", perigo: true }))) return;
-      return guardar(s, async () => { await gravarMonstros(s, n, (l) => l.filter((m) => !uids.includes(m.uid)), nomes.length === 1 ? "Monstro “" + nomes[0] + "” removido." : nomes.length + " monstros removidos de “" + n.nome + "”."); uids.forEach((u) => s.selMon.delete(u)); }, "Removido.");
+      return guardar(s, async () => { await gravarMonstros(s, n, (l) => l.filter((m) => !uids.includes(m.uid)), nomes.length === 1 ? "Monstro “" + nomes[0] + "” removido." : nomes.length + " monstros removidos de “" + n.nome + "”."); uids.forEach((u) => s.selMon.delete(u)); desvincularTodos(s, uids); }, "Removido.");
     }
     if (a === "mon-mover-sel") {
       const dest = D.porId(s.nos, (s.raiz.querySelector(".enc-mon-destino") || {}).value); if (!dest || !selecionados.length) return;
-      return guardar(s, async () => { await moverMonstros(s, n, dest, selecionados); selecionados.forEach((u) => s.selMon.delete(u)); }, selecionados.length + " monstro(s) movido(s) para “" + dest.nome + "”.");
+      return guardar(s, async () => { await moverMonstros(s, n, dest, selecionados); religarNo(s, selecionados, dest.id); selecionados.forEach((u) => s.selMon.delete(u)); }, selecionados.length + " monstro(s) movido(s) para “" + dest.nome + "”.");
     }
+  }
+  /* ---------- Iniciativa ---------- */
+  function empurrarParaIniciativa(s, m) {            // edição no encontro -> combatente já ligado (o encontro manda; a Iniciativa lê ao abrir)
+    if (!INI) return; const e = INI.lerEstado(localStorage, s.campanhaId), c = INI.combatenteDe(e, m.uid); if (!c) return;
+    INI.escreverNoCombatente(c, m); INI.gravarEstado(localStorage, s.campanhaId, e);
+  }
+  function desvincularTodos(s, uids) { if (!INI) return; const e = INI.lerEstado(localStorage, s.campanhaId); let mudou = false; for (const u of uids) mudou = INI.desassociar(e, u) || mudou; if (mudou) INI.gravarEstado(localStorage, s.campanhaId, e); }
+  function religarNo(s, uids, noId) { if (!INI) return; const e = INI.lerEstado(localStorage, s.campanhaId); let mudou = false; for (const u of uids) { const c = INI.combatenteDe(e, u); if (c) { c.enc.no = noId; mudou = true; } } if (mudou) INI.gravarEstado(localStorage, s.campanhaId, e); }
+  /* aplica nas instâncias o que a Iniciativa registrou (PV, condições, situação), inclusive de combates já encerrados */
+  async function puxarDaIniciativa(s) {
+    if (!INI || !s.carregado) return; const rec = INI.lerRecibos(localStorage, s.campanhaId); if (!Object.keys(rec).length) return;
+    const { alteracoes, aplicados } = INI.pendentes(s.nos, rec), porNo = {};
+    for (const a of alteracoes) (porNo[a.no] = porNo[a.no] || []).push(a);
+    try {
+      for (const [noId, lista] of Object.entries(porNo)) { const no = D.porId(s.nos, noId); await salvarDados(s, no, (d) => { d.monstros = (d.monstros || []).map((m) => { const a = lista.find((x) => x.uid === m.uid); return a ? { ...a.m, sincEm: Date.now() } : m; }); }); }
+      INI.limparRecibos(localStorage, s.campanhaId, aplicados);
+      if (alteracoes.length) { s.msg = "Estado do combate aplicado: " + alteracoes.length + " criatura(s)."; }
+    } catch (e) { s.erro = "Não foi possível guardar o estado do combate: " + (e && e.message ? e.message : "erro"); }
+    desenhar(s);
+  }
+  function janelaEnviarIniciativa(s, n, uids) {
+    const itens = M.lista(n).filter((m) => uids.includes(m.uid)).map((m) => ({ no: n.id, enc: encontroDe(s, n).id, m })); if (!itens.length) return;
+    const grupos = [...new Set(itens.map((i) => i.m.origem))], rep = grupos.length < itens.length;
+    const j = formularioJanela("Enviar para a Iniciativa", `<p class="muted">${itens.length} criatura(s) de “${esc(n.nome)}”. Quem já está no combate não é enviado de novo; o combate em andamento não é reiniciado.</p>
+      <fieldset class="enc-tipo"><legend class="muted">Iniciativa</legend><label class="inline"><input type="radio" name="modo" value="auto" checked> Rolar automaticamente (d20 + modificador)</label><br><label class="inline"><input type="radio" name="modo" value="manual"> Informar o valor</label><br><label class="inline"><input type="radio" name="modo" value="branco"> Deixar em branco (preencher depois)</label></fieldset>
+      ${rep ? '<label class="inline"><input type="checkbox" name="compartilhada" value="1"> Mesma iniciativa para criaturas iguais</label>' : ""}
+      <div class="enc-ini-valores" hidden></div>`, async (v) => enviarParaIniciativa(s, n, itens, v, j));
+    const caixa = j.corpo.querySelector(".enc-ini-valores"), form = j.corpo.querySelector("form");
+    const pintar = () => { const manual = form.querySelector("[name=modo]:checked").value === "manual", comp = !!(form.querySelector("[name=compartilhada]") || {}).checked; caixa.hidden = !manual;
+      caixa.innerHTML = manual ? (comp ? grupos.map((g) => `<label>${esc(itens.find((i) => i.m.origem === g).m.base)} (todos)<input type="number" name="v:${esc(g)}" step="1" required></label>`).join("") : itens.map((i) => `<label>${esc(i.m.nome)}<input type="number" name="v:${esc(i.m.uid)}" step="1" required></label>`).join("")) : ""; };
+    form.addEventListener("change", pintar); pintar();
+  }
+  async function enviarParaIniciativa(s, n, itens, v, j) {
+    const valores = {}; for (const [k, x] of Object.entries(v)) if (k.startsWith("v:")) valores[k.slice(2)] = x;
+    const e = INI.lerEstado(localStorage, s.campanhaId), r = INI.enviar(e, itens, { modo: v.modo, compartilhada: !!v.compartilhada, valores });
+    if (r.enviados.length) { try { INI.gravarEstado(localStorage, s.campanhaId, e); } catch (_) { return { erro: "Não foi possível gravar na Iniciativa (armazenamento cheio ou bloqueado)." }; } }
+    s.selMon.clear(); s.iniEstado = INI.lerEstado(localStorage, s.campanhaId);
+    s.msg = r.enviados.length + " enviada(s) para a Iniciativa" + (r.duplicados.length ? "; " + r.duplicados.length + " já estava(m) no combate" : "") + (r.ignorados.length ? "; " + r.ignorados.length + " fora de combate (fugiu, capturado ou derrotado)" : "") + ".";
+    desenhar(s); return {};
+  }
+  function janelaVincular(s, n, uid) {
+    const m = M.lista(n).find((x) => x.uid === uid), cands = INI.candidatos(s.iniEstado); if (!m || !cands.length) return;
+    formularioJanela("Vincular a um combatente", `<p class="muted">Liga “${esc(m.nome)}” a uma criatura que já está no combate. Os dados atuais do combate passam para o encontro.</p><label>Combatente<select name="cid">${cands.map((c) => `<option value="${esc(c.id)}">${esc(c.name)} (PV ${c.hp}/${c.maxHp})</option>`).join("")}</select></label>`, async (v) => {
+      const e = INI.lerEstado(localStorage, s.campanhaId), r = INI.associar(e, v.cid, n.id, encontroDe(s, n).id, uid); if (r.erro) return { erro: r.erro };
+      INI.gravarEstado(localStorage, s.campanhaId, e); const c = INI.combatenteDe(e, uid), novo = { ...INI.lerDoCombatente(c, m), sincEm: Date.now() };
+      await guardar(s, () => gravarMonstros(s, n, (l) => l.map((x) => (x.uid === uid ? novo : x)), "Vinculado a “" + c.name + "” na Iniciativa."), "Vinculado."); return s.erro ? { erro: s.erro } : {};
+    });
   }
   async function janelaAddMonstros(s, n) {
     const j = window.COMP_JANELA.abrir({ titulo: "Adicionar monstros", largura: "media", conteudo: `<div class="enc-form"><label>Buscar no bestiário<input type="search" class="enc-add-busca" placeholder="Nome do monstro (ex.: goblin)" autocomplete="off"></label><p class="muted enc-add-status" role="status">Carregando o bestiário…</p><div class="enc-add-res"></div><p class="err enc-form-erro" role="alert"></p></div>` });
@@ -288,6 +359,7 @@
       raiz.addEventListener("click", (e) => { const b = e.target.closest("[data-enc-acao]"); if (!b) return; const det = b.closest("details.enc-mais"); if (det) det.removeAttribute("open"); const st = estados[campanhaId]; if (st) acao(st, b.dataset.encAcao, b.dataset.id || null, b.dataset); });
       raiz.addEventListener("input", (e) => { if (!e.target.classList.contains("enc-busca")) return; const st = estados[campanhaId]; st.busca = e.target.value; const pos = e.target.selectionStart; desenhar(st); const nova = st.raiz.querySelector(".enc-busca"); if (nova) { nova.focus(); try { nova.setSelectionRange(pos, pos); } catch (_) { /* sem seleção */ } } });
       raiz.addEventListener("change", (e) => { const sm = e.target.dataset && e.target.dataset.encMonSel; if (sm) { const st = estados[campanhaId]; e.target.checked ? st.selMon.add(sm) : st.selMon.delete(sm); return desenhar(st); }
+        if (e.target.dataset && e.target.dataset.encPv) { const st = estados[campanhaId], n = D.porId(st.nos, st.sel), m = n && M.lista(n).find((x) => x.uid === e.target.dataset.encPv); if (!m) return; const r2 = M.editar(m, { pv: e.target.value }); return atualizarMonstro(st, n, m.uid, r2.monstro, null); }
         const r = e.target.dataset && e.target.dataset.encRapido; if (!r) return; const st = estados[campanhaId], n = D.porId(st.nos, e.target.dataset.id); if (!n) return;
         if (r === "modo") return mudarModo(st, n, e.target.value);
         if (r === "estado") guardar(st, () => salvarDados(st, n, (d) => { d.estado = e.target.value; }, "Preparação: " + D.ESTADOS[e.target.value] + "."), "Salvo.");
@@ -296,6 +368,8 @@
       raiz.addEventListener("submit", (e) => { const fm = e.target.closest("form[data-enc-form=monstro]"); if (fm) { e.preventDefault(); return salvarMonstro(estados[campanhaId], fm); }
       const f = e.target.closest("form[data-enc-form]"); if (!f) return; e.preventDefault(); const st = estados[campanhaId], n = D.porId(st.nos, f.dataset.id), fd = new FormData(f), nome = D.nomeValido(fd.get("nome")); if (!n) return; if (!nome) { st.erro = "Informe um nome."; return desenhar(st); }
         guardar(st, async () => { const antigo = n.nome, descricao = String(fd.get("descricao") || "").slice(0, 20000); const dados = JSON.parse(JSON.stringify(n.dados)); dados.descricao = descricao; if (n.tipo === "encontro" && antigo !== nome) marcarHist({ dados }, "Renomeado de “" + antigo + "”."); await st.repo.atualizar(n.id, { nome, dados }); n.nome = nome; n.dados = dados; st.editando = false; }, "Salvo."); });
+      const voltou = () => { const st = estados[campanhaId]; if (st && st.raiz && st.raiz.isConnected && !document.hidden) puxarDaIniciativa(st); };
+      document.addEventListener("visibilitychange", voltou); window.addEventListener("focus", voltou); window.addEventListener("storage", (e) => { if (e.key && e.key.startsWith("compendio:encontros-sync:")) voltou(); });
       document.addEventListener("click", (e) => { document.querySelectorAll("details.enc-mais[open]").forEach((d) => { if (!d.contains(e.target)) d.removeAttribute("open"); }); });
     }
     if (!s.carregado) {
@@ -303,6 +377,7 @@
       catch (e) { s.erro = "Não foi possível carregar os encontros: " + (e && e.message ? e.message : "erro desconhecido"); }
       if (s.repo.modo === "nuvem") { try { s.locais = s.repo.locais().length; } catch (_) { s.locais = 0; } }
       if (s.raiz) desenhar(s);
+      puxarDaIniciativa(s);
     }
     if (!s.bestiario && M) M.carregarBestiario().then((b) => { s.bestiario = b; if (s.raiz) desenhar(s); }).catch(() => { /* a busca avisa se o bestiário não abrir */ });
   }

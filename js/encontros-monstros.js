@@ -5,7 +5,8 @@
   "use strict";
   const sem = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
-  const CONDICOES = ["Amedrontado", "Atordoado", "Caído", "Cego", "Contido", "Enfeitiçado", "Envenenado", "Imobilizado", "Incapacitado", "Inconsciente", "Invisível", "Surdo"];
+  const CONDICOES = ["Agarrado", "Amedrontado", "Atordoado", "Caído", "Cego", "Contido", "Enfeitiçado", "Envenenado", "Incapacitado", "Inconsciente", "Invisível", "Paralisado", "Surdo"];
+  const SITUACOES = ["", "fugiu", "capturado"];
   const MAX_POR_ADICAO = 50, MAX_POR_NO = 200;
   const lista = (no) => (no && no.dados && Array.isArray(no.dados.monstros) ? no.dados.monstros : []);
   const inteiro = (v, min, max, padrao) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : padrao; };
@@ -14,7 +15,7 @@
   function resumo(m, nomePt) {
     if (!m || !m.key) return null;
     const nd = m.challenge_rating, tipo = m.type && (m.type.name || m.type.key) || "";
-    return { key: String(m.key), nome: String(m.name || m.key), nomePt: nomePt || "", ca: inteiro(m.armor_class, 0, 99, 10), pv: inteiro(m.hit_points, 0, 99999, 1), nd: nd === 0.125 ? "1/8" : nd === 0.25 ? "1/4" : nd === 0.5 ? "1/2" : nd == null ? "" : String(nd), tipo, tamanho: m.size && (m.size.name || "") || "", custom: !!m.custom };
+    return { key: String(m.key), nome: String(m.name || m.key), nomePt: nomePt || "", ca: inteiro(m.armor_class, 0, 99, 10), pv: inteiro(m.hit_points, 0, 99999, 1), nd: nd === 0.125 ? "1/8" : nd === 0.25 ? "1/4" : nd === 0.5 ? "1/2" : nd == null ? "" : String(nd), tipo, tamanho: m.size && (m.size.name || "") || "", custom: !!m.custom, ini: inteiro(m.initiative_bonus != null ? m.initiative_bonus : Math.floor(((m.ability_scores && m.ability_scores.dexterity != null ? m.ability_scores.dexterity : 10) - 10) / 2), -10, 20, 0) };
   }
   const buscar = (catalogo, termo, limite = 30) => { const t = sem(termo).trim(); if (!t) return []; return catalogo.filter((r) => sem(r.nome).includes(t) || sem(r.nomePt).includes(t)).sort((a, b) => (sem(a.nomePt || a.nome).startsWith(t) ? 0 : 1) - (sem(b.nomePt || b.nome).startsWith(t) ? 0 : 1) || sem(a.nomePt || a.nome).localeCompare(sem(b.nomePt || b.nome))).slice(0, limite); };
 
@@ -32,7 +33,7 @@
     return { novos, renomeados };
   }
   function proximoNome(base, usados) { let i = 1; while (usados.has(sem(base + " " + i))) i++; return base + " " + i; }
-  function criar(r, nome) { return { uid: uid(), origem: r.key, base: r.nome, nome, pv: r.pv, pvMax: r.pv, ca: r.ca, condicoes: [], notas: "" }; }
+  function criar(r, nome) { return { uid: uid(), origem: r.key, base: r.nome, nome, pv: r.pv, pvMax: r.pv, ca: r.ca, condicoes: [], notas: "", situacao: "", bonusIni: r.ini || 0 }; }
 
   /* edição rápida: valida e devolve a cópia alterada, sem mexer no original */
   function editar(m, campos) {
@@ -42,6 +43,7 @@
     if ("pv" in campos) n.pv = inteiro(campos.pv, 0, 99999, m.pv);
     if ("ca" in campos) n.ca = inteiro(campos.ca, 0, 99, m.ca);
     if ("condicoes" in campos) n.condicoes = [...new Set((campos.condicoes || []).filter((c) => CONDICOES.includes(c)))];
+    if ("situacao" in campos) n.situacao = SITUACOES.includes(campos.situacao) ? campos.situacao : "";
     if ("notas" in campos) n.notas = String(campos.notas || "").slice(0, 2000);
     if (n.pv > n.pvMax) n.pv = n.pvMax;
     return { ok: true, monstro: n };
@@ -76,11 +78,13 @@
   async function carregarBestiario() {
     if (carregando) return carregando;
     carregando = (async () => {
-      const [local, pt, srd] = await Promise.all([lerIndexedDB(), fetch("dados/srd-pt.json").then((r) => r.ok ? r.json() : { M: {} }).catch(() => ({ M: {} })), fetch("dados/bestiario/srd-2014.json").then((r) => r.ok ? r.json() : { monsters: [] }).catch(() => ({ monsters: [] }))]);
+      const [local, pt, srd, pub] = await Promise.all([lerIndexedDB(), fetch("dados/srd-pt.json").then((r) => r.ok ? r.json() : { M: {} }).catch(() => ({ M: {} })), fetch("dados/bestiario/srd-2014.json").then((r) => r.ok ? r.json() : { monsters: [] }).catch(() => ({ monsters: [] })), fetch("fotos/index.json").then((r) => r.ok ? r.json() : []).catch(() => [])]);
+      const PUB = new Set(Array.isArray(pub) ? pub : []);
       const porChave = new Map(); for (const m of srd.monsters || []) porChave.set(m.key, m); for (const m of local.mon) if (m && m.key) porChave.set(m.key, m);
       const nomePt = (m) => { const k = String(m.name || "").toLowerCase(), g = window.CATALOGO && CATALOGO.registro && CATALOGO.registro("monstro", m.key); return (g && g.dados && g.dados.nomeCatalogo) || (pt.M && pt.M[k]) || ""; };
       const catalogo = [...porChave.values()].map((m) => resumo(m, nomePt(m))).filter(Boolean);
-      const foto = (key) => { const m = porChave.get(key), g = window.CATALOGO && CATALOGO.imagem && CATALOGO.imagem("monstro", key); if (g) return g; if (local.img[key]) return local.img[key]; const il = m && (typeof m.illustration === "string" ? m.illustration : (m.illustration && (m.illustration.url || m.illustration.image))); return il || ""; };
+      /* mesma ordem de escolha do bestiário (js/app.js, av): catálogo da conta, foto própria, foto pública do site, ilustração */
+      const foto = (key) => { const m = porChave.get(key), g = window.CATALOGO && CATALOGO.imagem && CATALOGO.imagem("monstro", key); if (g !== undefined) return g || ""; if (local.img[key]) return local.img[key]; if (m && !m.custom && PUB.has(key)) return "fotos/" + String(key).replace(/[^\w.-]/g, "_") + ".jpg"; const il = m && (typeof m.illustration === "string" ? m.illustration : (m.illustration && (m.illustration.url || m.illustration.image))); return il || ""; };
       return { catalogo, porChave: new Map(catalogo.map((r) => [r.key, r])), foto };
     })();
     try { return await carregando; } catch (e) { carregando = null; throw e; }
