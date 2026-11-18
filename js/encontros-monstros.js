@@ -43,6 +43,7 @@
     if ("pv" in campos) n.pv = inteiro(campos.pv, 0, 99999, m.pv);
     if ("ca" in campos) n.ca = inteiro(campos.ca, 0, 99, m.ca);
     if ("condicoes" in campos) n.condicoes = [...new Set((campos.condicoes || []).filter((c) => CONDICOES.includes(c)))];
+    if ("loot" in campos) n.loot = normalizarLoot(campos.loot);
     if ("situacao" in campos) n.situacao = SITUACOES.includes(campos.situacao) ? campos.situacao : "";
     if ("notas" in campos) n.notas = String(campos.notas || "").slice(0, 2000);
     if (n.pv > n.pvMax) n.pv = n.pvMax;
@@ -89,5 +90,76 @@
     })();
     try { return await carregando; } catch (e) { carregando = null; throw e; }
   }
-  window.ENCONTROS_MONSTROS = { CONDICOES, MAX_POR_ADICAO, MAX_POR_NO, lista, resumo, buscar, adicionar, editar, mover, carregarBestiario, nomeBase };
+  /* ---------- loot individual (dentro de cada instância: m.loot) ----------
+     loot = { moedas: { pc, pp, po }, moedasColetadas: {…}, moedasDistribuidas: {…}, itens: [{ lid, catId|null, nome, qtd, custom, descoberto, coletado, distribuido }] }
+     Itens usam o mesmo catId do catálogo (dados/itens-srd2014.json) que o inventário usa, para a futura entrega pelo fluxo de "Distribuir recompensas" (nenhum sistema paralelo).
+     Quantidades: distribuido <= coletado <= qtd; "restante" = qtd - distribuido. Editar PV/condições nunca toca em m.loot (editar() copia o resto da instância). */
+  const MOEDAS = ["pc", "pp", "po"], NOMES_MOEDA = { pc: "PC", pp: "PP", po: "PO" };
+  const zeroMoedas = () => ({ pc: 0, pp: 0, po: 0 });
+  const moedasValidas = (o) => { const r = zeroMoedas(); for (const k of MOEDAS) r[k] = inteiro(o && o[k], 0, 99999999, 0); return r; };
+  const lid = () => "l" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  function lootVazio() { return { moedas: zeroMoedas(), moedasColetadas: zeroMoedas(), moedasDistribuidas: zeroMoedas(), itens: [] }; }
+  function normalizarLoot(l) {
+    const o = lootVazio(); if (!l || typeof l !== "object") return o;
+    o.moedas = moedasValidas(l.moedas);
+    for (const k of MOEDAS) { const col = Math.min(o.moedas[k], inteiro(l.moedasColetadas && l.moedasColetadas[k], 0, 99999999, 0)); o.moedasColetadas[k] = col; o.moedasDistribuidas[k] = Math.min(col, inteiro(l.moedasDistribuidas && l.moedasDistribuidas[k], 0, 99999999, 0)); }
+    o.itens = (Array.isArray(l.itens) ? l.itens : []).slice(0, 100).map((i) => {
+      const nome = String(i && i.nome || "").replace(/\s+/g, " ").trim().slice(0, 120); if (!nome) return null;
+      const qtd = inteiro(i.qtd, 1, 9999, 1), coletado = Math.min(qtd, inteiro(i.coletado, 0, 9999, 0));
+      return { lid: String(i.lid || lid()), catId: i.catId ? String(i.catId).slice(0, 160) : null, nome, qtd, custom: !!i.custom || !i.catId, descoberto: !!i.descoberto || coletado > 0, coletado, distribuido: Math.min(coletado, inteiro(i.distribuido, 0, 9999, 0)) };
+    }).filter(Boolean);
+    return o;
+  }
+  const lootDe = (m) => normalizarLoot(m && m.loot);
+  const restante = (i) => i.qtd - i.distribuido;
+  const temLoot = (l) => !!l && (l.itens.length > 0 || MOEDAS.some((k) => l.moedas[k] > 0));
+  /* adiciona item do catálogo (mesmo catId soma a quantidade) ou personalizado (nome livre) */
+  function adicionarItemLoot(loot, { catId, nome, qtd = 1 }) {
+    const l = normalizarLoot(loot), q = inteiro(qtd, 1, 9999, 1), n = String(nome || "").replace(/\s+/g, " ").trim().slice(0, 120); if (!n) return { erro: "Informe o nome do item." };
+    const ex = catId ? l.itens.find((i) => i.catId === catId) : null;
+    if (ex) ex.qtd = Math.min(9999, ex.qtd + q);
+    else { if (l.itens.length >= 100) return { erro: "Limite de 100 itens por criatura." }; l.itens.push({ lid: lid(), catId: catId || null, nome: n, qtd: q, custom: !catId, descoberto: false, coletado: 0, distribuido: 0 }); }
+    return { ok: true, loot: l };
+  }
+  const removerItemLoot = (loot, id) => { const l = normalizarLoot(loot); l.itens = l.itens.filter((i) => i.lid !== id); return l; };
+  /* registro de acompanhamento de um item: descoberto / coletado / distribuído, inclusive parcial; a quantidade restante é preservada */
+  function registrarItem(loot, id, campos) {
+    const l = normalizarLoot(loot), i = l.itens.find((x) => x.lid === id); if (!i) return l;
+    if ("qtd" in campos) { i.qtd = inteiro(campos.qtd, 1, 9999, i.qtd); i.coletado = Math.min(i.coletado, i.qtd); i.distribuido = Math.min(i.distribuido, i.coletado); }
+    if ("descoberto" in campos) i.descoberto = !!campos.descoberto;
+    if ("coletado" in campos) { i.coletado = inteiro(campos.coletado, 0, i.qtd, i.coletado); i.distribuido = Math.min(i.distribuido, i.coletado); if (i.coletado > 0) i.descoberto = true; }
+    if ("distribuido" in campos) i.distribuido = inteiro(campos.distribuido, 0, i.coletado, i.distribuido);
+    return l;
+  }
+  function registrarMoedas(loot, campos) {
+    const l = normalizarLoot(loot);
+    if (campos.moedas) l.moedas = moedasValidas({ ...l.moedas, ...campos.moedas });
+    for (const k of MOEDAS) { l.moedasColetadas[k] = Math.min(l.moedas[k], campos.moedasColetadas && k in campos.moedasColetadas ? inteiro(campos.moedasColetadas[k], 0, l.moedas[k], 0) : l.moedasColetadas[k]); l.moedasDistribuidas[k] = Math.min(l.moedasColetadas[k], campos.moedasDistribuidas && k in campos.moedasDistribuidas ? inteiro(campos.moedasDistribuidas[k], 0, l.moedasColetadas[k], 0) : l.moedasDistribuidas[k]); }
+    return l;
+  }
+  /* o mesmo loot inicial para várias criaturas: cópia profunda com ids novos e SEM acompanhamento; depois cada uma segue independente (nada fica ligado).
+     modo "somar" junta ao que já existe; "substituir" troca o loot atual (quem já tem coleta registrada é preservado se preservarRegistros). */
+  function copiarLootInicial(loot) {
+    const l = normalizarLoot(loot), o = lootVazio(); o.moedas = { ...l.moedas };
+    o.itens = l.itens.map((i) => ({ lid: lid(), catId: i.catId, nome: i.nome, qtd: i.qtd, custom: i.custom, descoberto: false, coletado: 0, distribuido: 0 })); return o;
+  }
+  function aplicarLootEmVarios(lista, uids, loot, modo = "somar") {
+    const s = new Set(uids);
+    return lista.map((m) => {
+      if (!s.has(m.uid)) return m;
+      const novo = copiarLootInicial(loot);
+      if (modo === "somar") { const atual = lootDe(m); for (const k of MOEDAS) atual.moedas[k] = Math.min(99999999, atual.moedas[k] + novo.moedas[k]); for (const i of novo.itens) { const r = adicionarItemLoot(atual, i); if (r.ok) Object.assign(atual, r.loot); } return { ...m, loot: atual }; }
+      return { ...m, loot: novo };
+    });
+  }
+  /* catálogo de itens para a busca (só leitura dos dados do site; os mesmos ids do inventário) */
+  let itensCatalogo = null;
+  async function carregarItens() {
+    if (itensCatalogo) return itensCatalogo;
+    const d = await fetch("dados/itens-srd2014.json").then((r) => (r.ok ? r.json() : { itens: [] })).catch(() => ({ itens: [] }));
+    itensCatalogo = (Array.isArray(d.itens) ? d.itens : []).filter((i) => i && i.id && i.nome).map((i) => ({ id: i.id, nome: i.nome, en: i.en || "", categoria: i.categoria || "" }));
+    return itensCatalogo;
+  }
+  const buscarItens = (catalogo, termo, limite = 12) => { const t = sem(termo).trim(); return t ? catalogo.filter((i) => sem(i.nome).includes(t) || sem(i.en).includes(t)).slice(0, limite) : []; };
+  window.ENCONTROS_MONSTROS = { MOEDAS, NOMES_MOEDA, lootVazio, normalizarLoot, lootDe, restante, temLoot, adicionarItemLoot, removerItemLoot, registrarItem, registrarMoedas, copiarLootInicial, aplicarLootEmVarios, carregarItens, buscarItens, CONDICOES, MAX_POR_ADICAO, MAX_POR_NO, lista, resumo, buscar, adicionar, editar, mover, carregarBestiario, nomeBase };
 })();

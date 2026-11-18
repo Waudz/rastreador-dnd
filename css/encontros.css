@@ -5,7 +5,7 @@
 .enc-erro{margin:0 0 .5rem}.enc-erro:empty{display:none}
 .enc-barra{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.7rem}
 .enc-busca{flex:1 1 180px;min-width:0}
-.enc-corpo{display:grid;grid-template-columns:minmax(240px,32%) minmax(0,1fr);gap:.8rem;align-items:start}
+.enc-corpo{display:grid;grid-template-columns:240px minmax(0,1fr);gap:.8rem;align-items:start}
 .enc-arvore,.enc-detalhe{min-width:0;padding:.7rem}
 .enc-arvore>summary{cursor:pointer;font-weight:600;list-style:none}
 .enc-arvore>summary::-webkit-details-marker{display:none}
@@ -33,8 +33,6 @@
 .enc-mais .inv-mais-menu .danger{color:#e07070}
 .enc-resultado{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;width:100%;text-align:left;border:0;background:none;color:inherit;padding:.4rem .2rem;font:inherit;cursor:pointer}
 .enc-caminho{font-size:.8rem}
-.enc-migalhas{display:flex;flex-wrap:wrap;gap:.3rem;font-size:.8rem;margin-bottom:.3rem;opacity:.85}
-.enc-mig{border:0;background:none;color:inherit;padding:0;text-decoration:underline;cursor:pointer;font:inherit}
 .enc-titulo{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.6rem}
 .enc-titulo h2{margin:0;font-size:1.2rem;display:flex;align-items:center;gap:.4rem;min-width:0;overflow-wrap:anywhere}
 .enc-estados{display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;margin:.4rem 0 .8rem}
@@ -111,3 +109,38 @@ li.enc-cartao{cursor:default}
 .comp-janela .enc-form input[type=checkbox],.comp-janela .enc-form input[type=radio]{width:auto;min-width:0;height:auto;flex:none;margin:0}
 .comp-janela .enc-form label.inline{flex-direction:row;align-items:center;gap:.4rem}
 .enc-form-erro:empty{display:none}
+/* caminho de navegação: lista em flex, itens alinhados ao centro; os botões ignoram o estilo global de botão */
+.enc-migalhas{margin:0 0 .4rem;font-size:.8rem;line-height:1.3;min-width:0}
+.enc-migalhas ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:.2rem .35rem}
+.enc-migalhas li{display:inline-flex;align-items:center;gap:.35rem;min-width:0;max-width:100%}
+.enc-migalhas .enc-mig{display:inline;min-height:0;height:auto;width:auto;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;opacity:.8;max-width:16rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.enc-migalhas .enc-mig:hover{opacity:1}
+.enc-mig-sep{opacity:.5}
+.enc-mig-atual{font-weight:600;overflow-wrap:anywhere}
+@media (max-width:520px){.enc-migalhas .enc-mig{max-width:9rem}}
+/* árvore estreita (240 px): nome com reticências, selos curtos, menu sempre visível */
+.enc-arvore{padding:.5rem}
+.enc-linha .enc-nome{flex:1 1 0;min-width:0}
+.enc-linha .enc-selo,.enc-linha .enc-qtd{max-width:5.2rem;overflow:hidden;text-overflow:ellipsis;font-size:.66rem;padding:0 .35rem}
+.enc-linha .enc-mais{flex:none}
+/* loot dos monstros */
+.enc-loot{display:flex;flex-direction:column;gap:.6rem}
+.enc-loot label{display:flex;flex-direction:column;gap:.15rem;font-size:.8rem}
+.enc-loot-moedas{display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap}
+.enc-loot-moedas>b,.enc-loot-moedas>span{min-width:5.5rem;font-size:.8rem}
+.enc-loot-moedas input{width:5.2rem}
+.enc-loot-itens{display:grid;gap:.4rem}
+.enc-loot-item{display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap;border:1px solid rgba(128,128,128,.3);border-radius:8px;padding:.4rem .5rem}
+.enc-loot-nome{flex:1 1 150px;min-width:0;font-weight:600;overflow-wrap:anywhere;align-self:center}
+.enc-loot-item input[type=number]{width:4.4rem}
+.enc-loot-rest{align-self:center;font-size:.75rem}
+.enc-loot-res{display:flex;gap:.3rem;flex-wrap:wrap}
+.enc-loot-custom{display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap}
+.enc-loot-custom label:first-child{flex:1 1 150px}
+.comp-janela .enc-loot label.inline{flex-direction:row;align-items:center}
+/* na árvore o estado vira um ponto colorido (nome completo em title/aria-label), sobrando espaço para o nome */
+.enc-linha .enc-selo{font-size:0;width:.6rem;height:.6rem;min-width:.6rem;padding:0;border:0;border-radius:50%;background:currentColor;opacity:.55;max-width:none}
+.enc-linha .enc-selo.ok,.enc-linha .enc-selo.prep{opacity:1}
+.enc-loot-moedas label{flex:1 1 0;min-width:0}
+.enc-loot-moedas input{width:100%;box-sizing:border-box}
+@media (max-width:520px){.enc-loot-moedas>b,.enc-loot-moedas>span{flex:0 0 100%}}

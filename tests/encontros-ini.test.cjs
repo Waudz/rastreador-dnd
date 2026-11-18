@@ -108,3 +108,57 @@ test("cartões compactos: grade, barra de vida do app, menu, PV rápido e ediç�
   assert.match(css, /\.enc-mons\{grid-template-columns:repeat\(auto-fill/);
   assert.match(ui, /window\.scrollTo\(0, y\)/, "preserva a rolagem");
 });
+
+/* ---------- loot individual ---------- */
+function lootCtx() { const W = carregar(); return { M: W.ENCONTROS_MONSTROS, I: W.ENCONTROS_INI }; }
+test("loot: cada instância tem o seu; itens do catálogo somam quantidade, personalizados e moedas", () => {
+  const { M } = lootCtx(), ms = M.adicionar([], M.resumo(goblin), 2).novos;
+  let r = M.adicionarItemLoot(M.lootVazio(), { catId: "srd51:item/club", nome: "Clava", qtd: 2 }); r = M.adicionarItemLoot(r.loot, { catId: "srd51:item/club", nome: "Clava", qtd: 1 });
+  assert.equal(r.loot.itens.length, 1); assert.equal(r.loot.itens[0].qtd, 3); assert.equal(r.loot.itens[0].custom, false);
+  const c = M.adicionarItemLoot(r.loot, { nome: "Dente de goblin", qtd: 4 }); assert.equal(c.loot.itens[1].custom, true); assert.equal(c.loot.itens[1].catId, null);
+  assert.ok(M.adicionarItemLoot(M.lootVazio(), { nome: " " }).erro);
+  const a = M.editar(ms[0], { loot: { ...c.loot, moedas: { pc: 5, pp: 0, po: 12 } } }).monstro;
+  assert.equal(M.lootDe(ms[1]).itens.length, 0, "o outro exemplar não muda"); assert.equal(M.lootDe(a).moedas.po, 12); assert.equal(M.lootDe(a).moedas.pp, 0);
+});
+test("loot: descoberto, coletado e distribuído parciais preservam o restante", () => {
+  const { M } = lootCtx(); let l = M.adicionarItemLoot(M.lootVazio(), { catId: "x", nome: "Poção", qtd: 5 }).loot; const id = l.itens[0].lid;
+  l = M.registrarItem(l, id, { coletado: 4 }); assert.equal(l.itens[0].descoberto, true);
+  l = M.registrarItem(l, id, { distribuido: 3 }); assert.equal(M.restante(l.itens[0]), 2);
+  l = M.registrarItem(l, id, { distribuido: 99 }); assert.equal(l.itens[0].distribuido, 4, "não passa do coletado");
+  l = M.registrarItem(l, id, { coletado: 1 }); assert.equal(l.itens[0].distribuido, 1, "reduzir a coleta limita a distribuição");
+  l = M.registrarItem(l, id, { qtd: 2 }); assert.ok(l.itens[0].coletado <= 2);
+  let m = M.registrarMoedas(M.lootVazio(), { moedas: { po: 10 } }); m = M.registrarMoedas(m, { moedasColetadas: { po: 8 } }); m = M.registrarMoedas(m, { moedasDistribuidas: { po: 20 } });
+  assert.equal(m.moedasDistribuidas.po, 8); assert.equal(m.moedas.po - m.moedasDistribuidas.po, 2);
+});
+test("loot inicial para vários: cópias independentes, sem vínculo", () => {
+  const { M } = lootCtx(), ms = M.adicionar([], M.resumo(goblin), 3).novos, base = M.adicionarItemLoot(M.registrarMoedas(M.lootVazio(), { moedas: { pc: 7 } }), { catId: "c", nome: "Adaga", qtd: 1 }).loot;
+  let l = M.aplicarLootEmVarios(ms, [ms[0].uid, ms[1].uid], base);
+  assert.equal(M.lootDe(l[0]).itens[0].nome, "Adaga"); assert.equal(M.lootDe(l[2]).itens.length, 0);
+  assert.notEqual(M.lootDe(l[0]).itens[0].lid, M.lootDe(l[1]).itens[0].lid);
+  const col = M.registrarItem(M.lootDe(l[0]), M.lootDe(l[0]).itens[0].lid, { coletado: 1 }); l = l.map((m, i) => (i === 0 ? { ...m, loot: col } : m));
+  assert.equal(M.lootDe(l[1]).itens[0].coletado, 0, "coletar em um não afeta o outro");
+  const s = M.aplicarLootEmVarios(l, [ms[0].uid], base, "somar"); assert.equal(M.lootDe(s[0]).itens[0].qtd, 2); assert.equal(M.lootDe(s[0]).moedas.pc, 14);
+  const sub = M.aplicarLootEmVarios(l, [ms[0].uid], base, "substituir"); assert.equal(M.lootDe(sub[0]).itens[0].coletado, 0);
+});
+test("loot é preservado ao editar PV/condições, mover entre salas, enviar à Iniciativa e aplicar recibos", () => {
+  const { M, I } = lootCtx(), ms = M.adicionar([], M.resumo(goblin), 2).novos;
+  const loot = M.adicionarItemLoot(M.lootVazio(), { nome: "Anel", qtd: 1 }).loot; ms[0].loot = loot;
+  const ed = M.editar(ms[0], { pv: 1, condicoes: ["Caído"], nome: "Grix" }).monstro; assert.equal(M.lootDe(ed).itens[0].nome, "Anel");
+  const mv = M.mover([ed, ms[1]], [], [ed.uid]); assert.equal(M.lootDe(mv.destino[0]).itens[0].nome, "Anel");
+  const e = I.lerEstado(armazenamento(), "c1"); I.enviar(e, [{ no: "n", enc: "e", m: ed }], { modo: "branco" });
+  const c = I.combatenteDe(e, ed.uid); c.hp = 0; assert.ok(!("loot" in c), "a Iniciativa não recebe o loot");
+  const volta = I.lerDoCombatente(c, ed); assert.equal(M.lootDe(volta).itens[0].nome, "Anel"); assert.equal(volta.pv, 0);
+  assert.equal(M.lootDe(I.aplicarRecibo(ed, { pv: 0, pvMax: 7, ca: 15, efeitos: [], morto: true })).itens.length, 1);
+  assert.equal(M.lootDe({}).itens.length, 0, "instâncias antigas sem loot funcionam");
+});
+test("loot: normalização rejeita dados inválidos e limita tamanhos", () => {
+  const { M } = lootCtx(), l = M.normalizarLoot({ moedas: { pc: -5, po: "x", pp: 3.7 }, itens: [{ nome: "" }, { nome: "Item", qtd: 99999, coletado: 5000, distribuido: 9000 }] });
+  assert.equal(l.moedas.pc, 0); assert.equal(l.moedas.po, 0); assert.equal(l.moedas.pp, 4); assert.equal(l.itens.length, 1);
+  assert.ok(l.itens[0].qtd <= 9999 && l.itens[0].coletado <= l.itens[0].qtd && l.itens[0].distribuido <= l.itens[0].coletado);
+});
+test("interface de loot e ajustes visuais (árvore 240 px, breadcrumb em flex)", () => {
+  const ui = ler("js/encontros-ui.js"), css = ler("css/encontros.css");
+  assert.match(ui, /editorLoot/); assert.match(ui, /janelaLootInicial/); assert.match(ui, /Loot desta criatura/);
+  assert.match(css, /grid-template-columns:240px minmax\(0,1fr\)/); assert.match(css, /\.enc-migalhas ol\{[^}]*display:flex[^}]*align-items:center/);
+  assert.match(ui, /class="enc-mig-atual" aria-current="page"/);
+});
