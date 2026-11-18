@@ -58,6 +58,8 @@
     $("#papel").textContent = mestre() ? "Mestre" : "Jogador";
     $("#lnk-combate").href = "iniciativa.html?campanha="+encodeURIComponent(id); $("#lnk-combate").hidden = false; $("#lnk-combate").textContent=mestre()?"Combate e consultas":"Consultar monstros e habilidades";
     const abas = [["pers", "Grupo"], ["diario", "Diário"], ["docs", "Documentos"]];
+    if (mestre() && window.ENCONTROS_UI) abas.splice(1, 0, ["enc", "Encontros"]);
+    if (aba === "enc" && !abas.some(([k]) => k === "enc")) aba = "pers";
     $("#abas").hidden = false; $("#abas").className = "tabs"; $("#abas").removeAttribute("aria-hidden");
     $("#abas").innerHTML = abas.map(([k, t]) => `<button type="button" data-aba="${k}" class="${aba === k ? "on" : ""}">${t}</button>`).join("");
   }
@@ -267,7 +269,8 @@ ${p.pv_temp?`<span class="grupo-pv-temp">${p.pv_temp} PV temporários</span>`:''
     cabecalho();
     if (aba === "grupo" || aba === "membros") aba = "pers"; // compatibilidade com abas antigas
     const barrasAnteriores = window.PV_ANIMACAO?.capturar($("#conteudo"));
-    $("#conteudo").innerHTML = aba === "pers" ? abaGrupoUnificado() : aba === "diario" ? abaDiario() : abaDocs();
+    $("#conteudo").innerHTML = aba === "pers" ? abaGrupoUnificado() : aba === "enc" ? '<section class="enc" id="enc-raiz"></section>' : aba === "diario" ? abaDiario() : abaDocs();
+    if (aba === "enc") window.ENCONTROS_UI.montar($("#enc-raiz"), { campanhaId: id, nuvem });
     window.PV_ANIMACAO?.restaurar($("#conteudo"), barrasAnteriores);
     if (aba === "pers" && !mestre()) {
       carregarGrupo();

@@ -51,3 +51,6 @@ Fonte única das decisões do William. Não repetir em outros arquivos: apontar 
 
 ## Fases (ordem do William)
 1. Organização da ficha. 2. Magias. 3. Inventário. 4. Recursos de classe, descansos, condições, concentração e efeitos. 5. Auditoria e testes de integração. Testes em todas as fases; suíte completa ao fim de cada fase.
+
+## Encontros (mestre)
+- Uma única tabela de nós (`encontros_nos`: pasta, encontro, sala) com conteúdo em `dados` jsonb; RLS só do mestre; jogadores não leem. Lixeira via `excluido_em`. Sem arrastar e soltar (mover por "Mover para" e subir/descer). Enquanto a migração não for aplicada, a aba guarda localmente e avisa.

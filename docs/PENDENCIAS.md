@@ -1,5 +1,15 @@
 # Pendências e próxima tarefa
 
+## Aba Encontros (mestre) — Etapa 1, 18/11/2026, local, cache v285
+
+Novo: aba **Encontros** na campanha, visível só ao mestre. Pastas > subpastas > encontros > salas (salas opcionais, sem limite de profundidade; encontro na raiz ou em qualquer pasta). Árvore expansível (estado guardado por campanha) + detalhes; em tela estreita a árvore vira bloco recolhível e não há rolagem horizontal. Feito: Novo (com destino), criar subpasta/encontro na pasta, adicionar sala ou várias salas por nomes, renomear, Mover para (bloqueia pasta dentro de si/descendente), subir/descer (sem arrastar), duplicar encontro (cópia independente, rascunho), lixeira com restaurar e excluir de vez (confirmado), descrição com **negrito** e cores, Rascunho/Preparado, concluído, sala Explorada/Não explorada, histórico simples, busca por nome, salvar explícito na edição e salvamento automático nas trocas rápidas, com erro visível.
+
+**MIGRAÇÃO PENDENTE (só o William aplica): `supabase/migrations/20261118120000_encontros.sql`** (tabela `encontros_nos`, RLS só `eh_mestre`, sem leitura para jogadores, aditiva e reversível). Enquanto a tabela não existir, a aba funciona **salvando só neste aparelho** (localStorage `compendio:encontros:<campanha>`) e mostra um aviso; ao aplicar a migração, passa a usar o banco automaticamente (itens locais não são migrados sozinhos).
+
+Arquivos: js/encontros-dados.js (regras + repositório), js/encontros-ui.js, css/encontros.css, ganchos em js/campanha.js e campanha.html, ícones folder/door, sw.js, tests/encontros.test.cjs (13 testes). Verificado no navegador com sessão de mestre simulada (desktop e 375 px). Não verificado contra o Supabase real nem com RLS aplicada.
+
+**Próximas etapas:** 2) monstros do bestiário como instâncias independentes, elementos, loot, imagem/mapa; 3) integração com a Iniciativa; 4) recompensas, histórico completo, busca por monstros/elementos. Nada publicado: aguardar "Publicar".
+
 ## Notificações do inventário — 18/11/2026, local, cache v284
 
 Escopo final confirmado pelo William: somente inventário, sem apresentação de imagens ou iniciativa. O sino permanece visível na ficha do dono mesmo sem novidades; contador/destaque apenas quando há recebimentos não vistos. Abre a janela compartilhada de notificações, mantendo as últimas 30 entradas, inclusive as lidas. Equipamento da criação não gera contador nem histórico. A aba Inventário fica dourada e mostra o número de entradas novas; recebimentos empilhados informam a quantidade recebida. Cada linha nova pode ser marcada como vista; abrir a aba ou o sino não apaga os avisos. Há Ver no inventário e Marcar todos como vistos.
