@@ -35,3 +35,8 @@ test('ficha do jogador no painel lateral com as mesmas medidas da ficha do monst
   for(const rx of [/\.ficha-embutida \.ficha-estatistica \{ min-height:70px; \}/,/\.ficha-embutida \.attr \{ min-height:94px; \}/,/\.ficha-embutida \.ficha-abas button \{ padding:6px 12px; \}/,/\.ficha-embutida \.vida-ficha \{ padding:15px; \}/,/body\.ficha-embutida \.tracker \{ padding:14px; \}/,/\.attr \.atr-valor \{ order:2;/,/\.ficha-embutida \.ficha-abas \{ flex-wrap:wrap;/])assert.match(css,rx);
   assert.match(html,/<span class="muted">Ficha do monstro<\/span><button type="button" class="small" id="sh-close">Fechar \(Esc\)<\/button>/);assert.match(html,/<strong>Ficha do personagem<\/strong><button type="button" id="ci-resumo-fechar">Fechar \(Esc\)<\/button>/);
 });
+
+ test('campo de iniciativa ocupa três colunas pelo wrapper, sem escapar da célula no celular',()=>{
+  assert.match(css,/\.combatant:not\(\.editing\) > \.iniciativa-campo \{ grid-column:1 \/ span 3; grid-row:1;[^}]*min-width:0;[^}]*justify-self:start/);
+  assert.match(css,/\.iniciativa-campo > input\.initiative\.iniciativa-valor \{ width:100%; min-width:0; height:100%/);
+ });

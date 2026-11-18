@@ -1,5 +1,5 @@
 /* Sistema compartilhado das fichas; o container determina a densidade. */
-:root { --line: #344453; --yellow: #C69243; --ficha-painel: 440px; }
+:root { --line: #344453; --yellow: #C69243; --ficha-painel: 440px; --moldura-mundana:#66717D; }
 body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
 .pagina-personagem .tracker { width: min(960px,100%); }
 #ficha, .ficha-criatura { container-type: inline-size; min-width: 0; }
@@ -426,8 +426,8 @@ body, button, input, select, textarea { font-family: ui-sans-serif, system-ui, -
 .rar-mundano{--rar:#78828E}.rar-comum{--rar:#A3ACB5}.rar-incomum{--rar:#5CB584}.rar-rara{--rar:#6FA3E8}.rar-muito-rara{--rar:#A98AE6}.rar-lendaria{--rar:#D4AE72}.rar-artefato{--rar:#E5806A}
 
 /* Moldura fina da miniatura acompanha a raridade, sem alterar tamanho, brilho ou layout. */
-.inv-card .inv-thumb{border-color:#66717D}
-.inv-card.raridade-mundano .inv-thumb{border-color:#66717D}
+.inv-card .inv-thumb{border-color:var(--moldura-mundana)}
+.inv-card.raridade-mundano .inv-thumb{border-color:var(--moldura-mundana)}
 .inv-card.raridade-comum .inv-thumb{border-color:#D5DCE3}
 .inv-card.raridade-incomum .inv-thumb{border-color:#5CB584}
 .inv-card.raridade-rara .inv-thumb{border-color:#6FA3E8}

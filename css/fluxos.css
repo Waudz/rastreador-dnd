@@ -389,7 +389,8 @@ button[data-atacar][disabled] { opacity:.45; cursor:not-allowed; }
   .combatant:not(.editing) { display:grid; grid-template-columns:repeat(20,minmax(0,1fr)); gap:6px 0; padding:8px; align-items:center; margin:0 0 8px; border-radius:12px; }
   .combatant:not(.editing) > .hp-block, .combatant:not(.editing) .hp-controls, .combatant:not(.editing) > .row-actions { display:contents; }
   /* linha 1: iniciativa, retrato e nome, CA, mais opções */
-  .combatant:not(.editing) > input.initiative { grid-column:1 / span 3; grid-row:1; width:calc(100% - 4px); min-width:0; height:40px; font-size:18px; padding:0; margin:0 2px 0 0; text-align:center; }
+  .combatant:not(.editing) > .iniciativa-campo { grid-column:1 / span 3; grid-row:1; width:min(44px,calc(100% - 4px)); min-width:0; max-width:100%; height:44px; justify-self:start; }
+  .combatant:not(.editing) > .iniciativa-campo > input.initiative.iniciativa-valor { width:100%; min-width:0; height:100%; font-size:18px; padding:0; margin:0; text-align:center; }
   .combatant:not(.editing) > .id-bloco { grid-column:4 / span 11; grid-row:1; min-width:0; padding:0 4px; }
   .combatant:not(.editing) > .stats-linha { grid-column:15 / span 3; grid-row:1; display:block; justify-self:stretch; text-align:center; }
   .combatant:not(.editing) > .stats-linha .stat { padding:0; margin:0; font-size:10px; line-height:1.1; }
@@ -1182,3 +1183,12 @@ body.ficha-embutida .tracker { padding:14px; }                                  
 @media(min-width:760px){
   .grupo-unificado .grupo-personagens-lista .personagem-card .grupo-identidade>:is(.retrato-cartao,.av){width:96px!important;height:96px!important;min-width:96px;max-width:96px;flex:0 0 96px;object-fit:cover}
 }
+
+/* Molduras neutras, como nos itens mundanos, em todos os tamanhos de tela. */
+.combatant .av,
+.combatant input.iniciativa-valor,
+.combatant input.iniciativa-valor:placeholder-shown,
+#add-form .av,
+#add-form .sug{border-color:var(--moldura-mundana)}
+/* Miniaturas de 22 px precisam de cantos menores para não parecerem circulares. */
+#add-form .sug .av{border-radius:4px;object-fit:cover}

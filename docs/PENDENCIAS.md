@@ -1,5 +1,11 @@
 # Pendências e próxima tarefa
 
+## Correção do campo de iniciativa no celular — 17/11/2026
+
+- O wrapper do indicador d20 não recebia as três colunas reservadas ao campo numérico, ficando centralizado numa coluna estreita e ultrapassando a borda do cartão. A regra mobile agora posiciona o wrapper e limita o input à largura disponível. Cache v282.
+- Molduras dos retratos, campo numérico (preenchido ou pendente), prévia e sugestões de Adicionar combatente usam a mesma variável de cor dos itens mundanos. Fotos nas sugestões têm cantos de 4 px, evitando aparência circular.
+- Conferidos número preenchido e dado pendente; campo dentro do cartão e sem rolagem horizontal a 320, 375, 390, 430, 600, 700 e 1280 px. Teste de regressão para o wrapper adicionado.
+
 ## Retratos maiores — 17/11/2026
 
 - Base: `main` publicada em `4c32c71`. Iniciativa: retrato de 64 px no desktop e 48 px no celular, mantendo o campo numérico e os controles. Listas de monstros e magias: 64/56 px; personagens: 96/80 px; itens e inventário: 96/80 px. Modo grade preservado.
