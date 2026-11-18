@@ -89,6 +89,7 @@
       if (!r?.[0]) throw new Error("Outra sessão atualizou a ficha durante o salvamento. Aguarde a sincronização e tente novamente.");
       P.versao = r[0].versao;
       ultimaVersaoSalva = JSON.parse(JSON.stringify(r[0]));
+      atualizarAvisosInventario(r[0]);
       $("#estado").textContent = "Salvo";
       if(!pend) notificar('ficha-salva');
       if (Object.prototype.hasOwnProperty.call(corpo, 'ficha')) {
@@ -427,7 +428,7 @@
     const qtdCtl = `<span class="inv-qtd-ctl" role="group" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-menos="${i}" aria-label="Diminuir a quantidade de ${nomeIt}"${qn <= 0 ? " disabled" : ""}>−</button><input class="num" type="number" min="0" step="1" inputmode="numeric" data-inv="qtd" value="${qn}" aria-label="Quantidade de ${nomeIt}"><button type="button" class="small" data-inv-qtd-mais="${i}" aria-label="Aumentar a quantidade de ${nomeIt}">+</button></span>`;
     const qtdUI = it.conjunto ? `<span class="inv-conj-tag">Conjunto · ${it.conjunto.reduce((n, c) => n + Math.max(0, num(c.qtd, 0)), 0)} unidades</span>` : qtdCtl;
     const mais = `<details class="inv-mais"><summary class="small" aria-label="Mais ações de ${nomeIt}" title="Mais ações">${window.ico ? window.ico("more") : "…"}</summary><div class="inv-mais-menu"><button type="button" data-inv-editar-abrir="${i}">Editar…</button><button type="button" data-inv-descartar="${i}">Descartar…</button><button type="button" class="danger" data-inv-excluir="${i}">Excluir item…</button></div></details>`;
-    return `<div class="item-inv inv-card${mg.magico ? " item-magico" : ""}${qn <= 0 ? " zerado" : ""} raridade-${mg.raridade?.chave || "mundano"}" data-i="${i}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-inv-detalhes="${i}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></button>${mec ? `<span class="inv-mec">${esc(mec)}</span>` : ""}</div>
+    return `<div class="item-inv inv-card${mg.magico ? " item-magico" : ""}${qn <= 0 ? " zerado" : ""} raridade-${mg.raridade?.chave || "mundano"}" data-i="${i}" data-item-uid="${esc(it.uid)}">${thumb}<div class="inv-corpo"><div class="inv-titulo"><button type="button" class="inv-nome-btn" data-inv-detalhes="${i}" title="Ver detalhes"><b class="inv-nome-txt">${esc(it.nome || "Item sem nome")}</b></button>${mec ? `<span class="inv-mec">${esc(mec)}</span>` : ""}</div>
       <div class="inv-meta muted"><span class="inv-base"><span class="inv-tipo-txt">${esc(IV.TIPOS[t] || t)}</span> · <span class="inv-peso-txt">${kg(num(it.peso, 0))} kg cada</span></span>${selos}${resumo ? `<span class="inv-resumo">${esc(resumo)}</span>` : ""}${orig ? `<span class="inv-origem muted">Origem: ${esc(orig)}</span>` : ""}</div>
       <div class="inv-acoes"><span class="inv-ctl">${qtdUI}${usar}</span>${acoes.join(" ")}<span class="inv-fim"><button type="button" class="small subtle inv-info" data-inv-detalhes="${i}" aria-label="Detalhes de ${nomeIt}" title="Detalhes">${window.ico ? window.ico("info") : "i"}</button>${mais}</span></div></div>
       <div class="inv-edit" data-inv-uid="${esc(it.uid)}" hidden><div class="inv-edit-campos">
@@ -727,10 +728,13 @@
     const l = (F().movimentos || []).slice(-20).reverse();
     return l.length ? `<ul class="hist-inv">${l.map((m) => `<li><b>${esc(IV.ROTULO_MOV[m.tipo] || (m.tipo === "uso-efeito" ? "Uso" : m.tipo))}</b> · ${esc(m.nome || "")}${m.qtd ? " ×" + m.qtd : ""}${m.alvo && m.tipo === "uso-efeito" ? " em " + esc(m.alvo) : ""}${m.resultado && m.resultado.length ? " — " + esc(m.resultado.join("; ")) : ""}${m.nota ? " (" + esc(m.nota) + ")" : ""} <span class="muted">${esc(String(m.quando || "").slice(0, 16).replace("T", " "))}</span></li>`).join("")}</ul>` : '<span class="muted">Nenhuma movimentação registrada.</span>';
   }
+  function atualizarAvisosInventario(registro = P) {
+    if (registro && Array.isArray(registro.inventario)) window.AVISOS_INVENTARIO?.renderizar(registro, { somenteLeitura: soLeitura, grupos: gruposInv() });
+  }
   function redesenharInv() {
     const l = $("#inv"); if (l) l.innerHTML = listaInvHTML();
     const h = $("#inv-hist"); if (h) h.innerHTML = histInv();
-    atualizarCarga(); const e = $("#bloco-efeitos"); if (e) e.innerHTML = blocoEfeitos();
+    atualizarCarga(); atualizarAvisosInventario(); const e = $("#bloco-efeitos"); if (e) e.innerHTML = blocoEfeitos();
   }
   /* Item digitado à mão (ou de lista rápida) sem vínculo: se o nome corresponde a UM único item do catálogo, recebe catId/ref (imagem, dados e equipar passam a funcionar).
      Nada mais muda (nome, quantidade, peso). Nome ambíguo (ex.: "Bastão") ou desconhecido fica como está. */
@@ -1049,6 +1053,7 @@
       </section><section id="secao-notas" role="tabpanel" aria-labelledby="aba-notas" data-ficha-secao="notas" class="ficha-conteudo" tabindex="0"><div class="panel"><h2 class="panel-title">Diário de aventuras</h2><p class="muted">História, objetivos, personalidade, aparência e aliados. Suas anotações permanecem reunidas neste diário.</p><textarea data-f="notas" rows="12" style="width:100%" placeholder="Anotações do personagem">${esc(f.notas || "")}</textarea></div></section>`;
     window.atualizarAbasFicha?.();
     document.querySelector("#ficha").classList?.toggle("editando-ficha",editandoFicha);
+    atualizarAvisosInventario();
     /* ações do topo (Ficha completa / Editar): ficam fora do #ficha, então são atualizadas aqui */
     const topo = document.querySelector(".ficha-topo-acoes"), be = $("#editar-ficha"), fc = $("#ficha-completa");
     if (topo) { topo.hidden = false; document.querySelector(".esq-topo")?.remove?.(); }

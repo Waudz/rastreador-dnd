@@ -1,5 +1,5 @@
 const {test}=require("node:test"),assert=require("node:assert/strict");
-const {vm,executar,documentoFalso,tick}=require("./helpers.cjs");
+const {vm,executar,documentoFalso,tick,armazenamento}=require("./helpers.cjs");
 async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={},registro={},grupoRpc=null,semAcesso=false}={}){
   const document=documentoFalso(),eventos={},timers=new Map();let proximo=0;
   document.addEventListener=(n,fn)=>(eventos[n]??=[]).push(fn);
@@ -7,7 +7,7 @@ async function ficha(patch,{search='?id=p',mestre=true,fichaInicial={},registro=
   Object.assign(p.ficha,fichaInicial);Object.assign(p,registro);
   const nuvem={usuario:()=>({id:"u"}),esc:s=>String(s??""),retornoDoLink:async()=>{},observar(){},rpc:async n=>{if(n==='grupo_fichas'){if(!grupoRpc)throw new Error('função inexistente');return grupoRpc;}return mestre;},patch,get:async q=>q.startsWith("personagens")?(semAcesso?[]:[p]):q.startsWith("campanhas")?[{id:"c",nome:"Campanha"}]:q.startsWith("membros")?[{papel:mestre?"mestre":"jogador"}]:[{id:"u",nome:"Pessoa"}]};
   const c=vm.createContext({window:{addEventListener(){},parent:{postMessage(){}}},TEXTO_REGRAS:{html:t=>String(t??"")},document,nuvem,location:{search},URLSearchParams,confirm:()=>true,setTimeout:fn=>{timers.set(++proximo,fn);return proximo;},clearTimeout:id=>timers.delete(id),fetch:async url=>({ok:true,json:async()=>url.includes("habilidades-pt")?{}:[]})});
-  executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/magias-jogo.js",c);executar("js/inventario.js",c);executar("js/itens-efeitos.js",c);executar("js/catalogo-itens.js",c);executar("js/recursos.js",c);executar("js/jogo.js",c);executar("js/jogo-ui.js",c);executar("js/personagens-dados.js",c);executar("js/personagem.js",c);await tick();
+  executar("js/ficha-componentes.js",c);executar("js/magias-ui.js",c);executar("js/regras.js",c);executar("js/magias-jogo.js",c);executar("js/inventario.js",c);executar("js/itens-efeitos.js",c);executar("js/catalogo-itens.js",c);executar("js/recursos.js",c);executar("js/jogo.js",c);executar("js/jogo-ui.js",c);executar("js/personagens-dados.js",c);c.window.nuvem=nuvem;c.window.localStorage=armazenamento();executar("js/inventario-avisos.js",c);executar("js/personagem.js",c);await tick();
   const nome=v=>eventos.input.forEach(fn=>fn({target:{dataset:{col:"nome"},value:v}}));
   const salvar=async()=>{const a=[...timers.values()];timers.clear();for(const fn of a)await fn();};
   return {document,nome,salvar,timers,p,eventos,rpc:fn=>nuvem.rpc=fn};
@@ -178,4 +178,9 @@ test('visão do grupo: ficha em leitura com atributos e perícias, sem inventár
 test('visão do grupo sem a função completa no banco cai para os dados básicos',async()=>{
  const f=await ficha(async()=>[{versao:1}],{search:'?id=p&grupo=c',semAcesso:true,grupoRpc:null});
  assert.match(f.document.el('ficha').innerHTML+f.document.el('erro').innerHTML,/Personagem não encontrado neste grupo|Alheio|grupo/);
+});
+
+test('equipamento da criação deixa o sino sem novidades e sem contador na primeira abertura da ficha real',async()=>{
+ const f=await ficha(async()=>[{versao:2}],{registro:{inventario:[{uid:'inicial',nome:'Espada',qtd:1,tipo:'equipamento',origem:{tipo:'criacao'},propriedades:{}}]}});
+ assert.equal(f.document.el('avisos-inventario').hidden,false);assert.ok(!f.document.el('avisos-inventario').innerHTML.includes('inv-novidades-contador'));assert.equal(f.document.el('[data-ficha-aba="inventario"]').innerHTML,'Inventário');assert.match(f.document.el('ficha').innerHTML,/data-item-uid="inicial"/);
 });

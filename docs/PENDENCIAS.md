@@ -1,5 +1,16 @@
 # Pendências e próxima tarefa
 
+## Notificações do inventário — 18/11/2026, local, cache v284
+
+Escopo final confirmado pelo William: somente inventário, sem apresentação de imagens ou iniciativa. O sino permanece visível na ficha do dono mesmo sem novidades; contador/destaque apenas quando há recebimentos não vistos. Abre a janela compartilhada de notificações, mantendo as últimas 30 entradas, inclusive as lidas. Equipamento da criação não gera contador nem histórico. A aba Inventário fica dourada e mostra o número de entradas novas; recebimentos empilhados informam a quantidade recebida. Cada linha nova pode ser marcada como vista; abrir a aba ou o sino não apaga os avisos. Há Ver no inventário e Marcar todos como vistos.
+
+Implementação: js/inventario-avisos.js, integrado à ficha completa/embutida, aos retornos de gravação confirmada e à atualização remota existente. UID, quantidades e versão da ficha evitam repetições; uma guia antiga não pode apagar recebimentos de uma versão nova. Agrupamento visual preservado. Não altera itens, JSON da ficha, permissões, RPCs ou banco. Histórico e estado de leitura ficam no localStorage por conta/campanha/personagem; não sincronizam entre dispositivos. Primeira abertura nesse navegador usa todo o estoque atual como base sem avisos (inclusive itens recebidos antes da ativação do recurso). Sem armazenamento disponível, funciona em memória; limpar os dados locais remove esse histórico. Prévia usa somente memória e backend sintético, sem nuvem.
+
+Testes: 734 no total, 733 aprovados, 0 falhas, 1 opcional pulado por arquivo privado ausente; mais 15 verificações de regras. Cobertura nova: equipamento inicial, estoque legado, entradas/pilhas, consumo/remoção, leitura individual/total, histórico/reabertura, isolamento, guia obsoleta, armazenamento bloqueado e integração da ficha. Navegador com dados sintéticos confirmou recebimento, destaque/contador, sino permanente, histórico lido e limpeza dos indicadores, sem erros no console ou transbordamento em 320/375/430/1280. Captura fora do repositório. Não foi validada uma entrega entre duas contas reais nesta rodada; não houve acesso ao Supabase real nem push/deploy. O CSV lista-monstros.csv do usuário permaneceu intocado e fora do commit. Aguardar autorização para publicar v284.
+
+Esta seção substitui o comportamento anterior proposto de esconder o sino e mantém o compartilhamento de imagens apenas como planejamento, não implementado.
+
+
 ## Fotos e visibilidade de criações — 18/11/2026
 
 - Base conferida: `main` em `5bb1d8f`. Novas fotos de criaturas próprias passam pelo recorte de até 1024 px; o visualizador único ajusta imagens pequenas à tela. Fotos antigas não ganham detalhes sem reenviar a original.
@@ -290,3 +301,11 @@ Guerreiro 4: UI diferencia dois pontos (+2 no mesmo atributo ou +1 em dois) de t
 Redistribuir atributos preservados agora exige a mesma compra de 27 pontos da criação, bases inteiras 8–15, sem incluir bônus raciais/ASI no custo. Contador explícito e bloqueio de aumentos sem saldo; validação do motor impede concluir seis valores 15 (custo 54). Dados legados não redistribuídos continuam preservados; nenhuma ficha real foi reescrita. Duas regressões adicionadas. Substitui a política de edição manual livre introduzida na v105. Aguardar autorização de publicação.
 
 Complemento v106: cada atributo mostra Base + Raça + Nível e a soma dos valores finais inclui esses bônus. O orçamento ponderado de 27 pontos é separado dessa soma simples. Regressão confirma base 15 em Força +1 humano +2 de Guerreiro 4 = 18, sem gastar pontos extras; reduzir a classe ao nível 3 remove a melhoria. Duas regressões adicionais; suíte final 402 testes aprovados.
+
+## Planejamento — avisos na ficha e novidades do inventário (18/11/2026)
+
+Solicitação: jogadores presenciais normalmente ficam com a ficha aberta no celular. O acesso a imagens apresentadas pelo mestre deve funcionar sem sair da ficha; alternativas estudadas: sino com indicador persistente e aviso breve com ação Ver, sem abrir imagem automaticamente. Essa apresentação não concede acesso à iniciativa ou ficha do monstro. Ainda não implementado.
+
+Complemento solicitado: aba Inventário recebe destaque dourado e contador textual de novidades (ex.: Inventário 3), sem depender apenas de cor e sem confundir o destaque com a aba selecionada. Na implementação, identificar entradas recebidas pelo UID existente; contar entradas novas não vistas, sem somar todo o estoque ou repetir contagem em recarregamentos. Itens já existentes não devem aparecer como novos na ativação do recurso. Agrupamentos de quantidade e transferências precisam de testes para não perder ou duplicar avisos.
+
+Proposta de leitura: marcar cada entrada nova na lista; o contador diminui ao marcar/ver a novidade, sem apagar todos os indicadores apenas por tocar na aba (itens abaixo da dobra podem não ter sido vistos). Possibilitar Marcar novidades como vistas. Sino e inventário devem apontar para o mesmo evento de recebimento, sem contagem duplicada. Preservar rolagem, formulário e salvamentos pendentes. Estado separado por conta/personagem/campanha; definir persistência de leitura entre dispositivos antes de implementar. Reutilizar componentes e funções existentes; qualquer necessidade de alteração no Supabase terá plano e autorização próprios. Nenhum código funcional, banco, push ou deploy alterado nesta etapa de planejamento.

@@ -1,3 +1,4 @@
+window.PREVIA_FICHA = true;
 /* Ambiente demonstrativo isolado: nenhuma sessão, persistência ou requisição à nuvem. */
 if (!new URLSearchParams(location.search).has('id')) {
   { const q = new URLSearchParams(location.search); q.set('id', 'demonstracao'); history.replaceState(null, '', location.pathname + '?' + q.toString()); }   // mantém ?mestre=1
@@ -48,7 +49,7 @@ window.nuvem = (() => {
     esc: s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
     usuario:()=>({id:'demo'}), retornoDoLink:async()=>{}, observar(){},
     get: async q => structuredClone(q.startsWith('personagens') ? [personagem] : q.startsWith('campanhas') ? [{id:'demo',nome:'Ecos da Costa da Espada'}] : q.startsWith('membros') ? [{papel: new URLSearchParams(location.search).has('mestre') ? 'mestre' : 'jogador'}] : [{id:'demo',nome:'Demonstração'}]),
-    patch: async (_q, dados) => { Object.assign(personagem, structuredClone(dados)); return [{versao:++personagem.versao}]; },
+    patch: async (_q, dados) => { Object.assign(personagem, structuredClone(dados)); personagem.versao++; return [structuredClone(personagem)]; },
     apagar: async () => { throw Error('A exclusão está desativada na prévia.'); }
   };
 })();

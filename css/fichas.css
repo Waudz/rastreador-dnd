@@ -495,3 +495,19 @@ html.monstro-embutido body{overflow:hidden;padding:0!important}
 @media(min-width:1200px){
   body.com-ficha-lateral .inv-ov,body.com-ficha-lateral .crop-ov,body.com-ficha-lateral .comp-janela-ov{top:var(--cab-h,0px);right:var(--painel-reserva-direita,0px)}
 }
+
+/* Recebimentos ainda não vistos: independentes da aba ativa e dos dados de jogo. */
+.ficha-abas button.tem-novidades{color:var(--gold);border-color:var(--gold);box-shadow:inset 0 -3px 0 var(--gold)}
+.ficha-abas button.tem-novidades[aria-selected="true"]{color:var(--bg);box-shadow:inset 0 -3px 0 var(--gold-dark)}
+.inv-novidades-contador{display:inline-flex;align-items:center;justify-content:center;min-width:19px;padding:1px 5px;border-radius:99px;background:var(--gold);color:var(--bg);font-size:11px;font-weight:800;line-height:1.4}
+.inv-sino{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:44px;min-height:44px;color:var(--muted)}
+.inv-sino svg{width:20px;height:20px;flex-shrink:0}
+.item-inv.inv-tem-novidade{outline:1px solid var(--gold);outline-offset:-1px}
+.inv-novo-aviso{color:var(--gold);border-color:var(--gold);min-height:36px;font-size:11px;white-space:normal}
+.inv-avisos-lista{list-style:none;margin:0 0 12px;padding:0;max-height:55vh;overflow-y:auto}
+.inv-avisos-lista li{display:flex;flex-wrap:wrap;gap:6px 10px;padding:12px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.inv-avisos-lista li strong{flex:1;min-width:0}.inv-avisos-lista li>div{display:flex;flex-wrap:wrap;gap:6px;flex-basis:100%}
+
+.inv-sino.tem-novidades{color:var(--gold)}
+.inv-avisos-lista time{flex-basis:100%;font-size:11px;color:var(--muted)}
+.inv-aviso-visto{opacity:.8}
