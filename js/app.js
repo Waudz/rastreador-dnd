@@ -1,4 +1,5 @@
   (async () => {
+    await window.DESCRICOES_MONSTROS?.pronto;
     const perguntar = (m, o) => (typeof CONFIRMAR === "function" ? CONFIRMAR(m, o) : Promise.resolve(confirm(m)));
     const contaInicial=window.nuvem&&nuvem.usuario()?.id;
     if(window.nuvem)nuvem.aoMudar(u=>{if(u?.id!==contaInicial)location.reload();});
@@ -742,7 +743,8 @@
       if (ld) { const [campo, n] = ld.dataset.ldel.split(":"), ta = $(campo === "t" ? "#cm-traits" : "#cm-acts"); let k = -1; const ls = ta.value.split("\n"), pos = ls.findIndex((l) => l.trim() && ++k === +n); if (pos >= 0) ls.splice(pos, 1); ta.value = ls.join("\n"); return refreshLineChips(); }
       const chp = t.closest("[data-chip]"); if (chp) { cmSpells.splice(+chp.dataset.chip, 1); return chips(); }
       if (d.more) { shown += 40; return renderBestiary(); }
-      if (d.view && t.closest("#blist,#spd-body")) return openSheet(d.view);
+      const ver=t.closest('button[data-view]');
+      if (ver && ver.closest("#blist,#spd-body")) return openSheet(ver.dataset.view);
       if (d.edit) { if (innerWidth < 700) closeSheet(); return editCustom(d.edit); }
       if (d.add) { const m = ALL.find((x) => x.key === d.add); if (m) addMon(m, t.closest("[data-add]")); return; }
       if (d.tr) { const m = ALL.find((x) => x.key === d.tr), v = prompt("Nome em português para “" + m.name + "” (vazio remove):", pt(m) || m.name); if (v === null) return; v.trim() ? (TR[m.name.toLowerCase()] = v.trim()) : delete TR[m.name.toLowerCase()]; saveTR();if(!m.custom)try{await CATALOGO.atualizar({registros:ALL,magias:SP,nomes:{[m.name.toLowerCase()]:v.trim()}});}catch(e){status(esc(e.message));}return renderBestiary(); }

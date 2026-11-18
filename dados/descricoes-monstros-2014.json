@@ -1,0 +1,1308 @@
+{
+  "versao": 1,
+  "idioma": "pt-BR",
+  "natureza": "Textos originais de ambientação do Compêndio 5e; não são transcrições ou regras oficiais.",
+  "licenca": "CC-BY-4.0",
+  "monstros": {
+    "srd_aboleth": {
+      "nome": "Aboleth",
+      "texto": "Um corpo aquático alongado, tentáculos e olhos alinhados tornam esta criatura inconfundível. Oculta nas profundezas, exerce sua influência sobre outras criaturas e transforma encontros junto à água em disputas de vontade, memória e liberdade."
+    },
+    "srd_acolyte": {
+      "nome": "Acolyte",
+      "texto": "Um iniciado religioso que carrega símbolos de sua fé e conhece os ritos de sua comunidade. Pode servir em um templo, acompanhar peregrinos ou auxiliar um sacerdote; suas convicções e obrigações ajudam a definir como recebe visitantes."
+    },
+    "srd_adult-black-dragon": {
+      "nome": "Adult Black Dragon",
+      "texto": "Escamas negras e uma silhueta de réptil alado distinguem este dragão. Pântanos e águas escuras combinam com sua presença, onde a cobertura e a ameaça de ácido podem transformar a aproximação ao covil em um percurso ameaçador. Na idade adulta, possui porte e autonomia para disputar território e proteger os interesses de seu próprio covil."
+    },
+    "srd_adult-blue-dragon": {
+      "nome": "Adult Blue Dragon",
+      "texto": "Este dragão de escamas azuis se destaca pelo chifre na cabeça e pela associação à eletricidade. Regiões áridas e horizontes abertos oferecem espaço para seu domínio, onde abrigo e distância nem sempre protegem de uma ameaça que também vem do céu. Na idade adulta, possui porte e autonomia para disputar território e proteger os interesses de seu próprio covil."
+    },
+    "srd_adult-brass-dragon": {
+      "nome": "Adult Brass Dragon",
+      "texto": "Escamas de brilho semelhante ao latão e uma silhueta alada marcam a aparência deste dragão. Terras áridas combinam com encontros em que conversa e curiosidade podem acompanhar o perigo evidente de um corpo poderoso e de um sopro de fogo. Na idade adulta, possui porte e autonomia para disputar território e proteger os interesses de seu próprio covil."
+    },
+    "srd_adult-bronze-dragon": {
+      "nome": "Adult Bronze Dragon",
+      "texto": "Escamas de aparência bronzeada cobrem este dragão alado. Costas e paisagens junto ao mar oferecem um cenário para sua presença, onde observação, interesses próprios e o poder da eletricidade podem dar forma a relações com viajantes e comunidades. Na idade adulta, possui porte e autonomia para disputar território e proteger os interesses de seu próprio covil."
+    },
+    "srd_adult-copper-dragon": {
+      "nome": "Adult Copper Dragon",
+      "texto": "Um dragão de escamas acobreadas, cuja anatomia permite ocupar alturas e recantos rochosos. Curiosidade e um gosto por situações inesperadas podem compor sua personalidade, sem diminuir a ameaça de suas garras e de seu sopro ácido. Na idade adulta, possui porte e autonomia para disputar território e proteger os interesses de seu próprio covil."
+    },
+    "srd_adult-gold-dragon": {
+      "nome": "Adult Gold Dragon",
+      "texto": "Um dragão de escamas douradas e feições marcantes, cuja presença transmite uma majestade difícil de ignorar. Encontros podem envolver vigilância e avaliação das intenções de visitantes, diante de uma criatura que reúne força dracônica e fogo. Na idade adulta, possui porte e autonomia para disputar território e proteger os interesses de seu próprio covil."
+    },
+    "srd_adult-green-dragon": {
+      "nome": "Adult Green Dragon",
+      "texto": "Um dragão de escamas verdes, capaz de se confundir com a vegetação de um território arborizado. A floresta oferece esconderijos e caminhos indiretos, adequados a encontros em que observação, palavras calculadas e a ameaça de veneno se misturam. Na idade adulta, possui porte e autonomia para disputar território e proteger os interesses de seu próprio covil."
+    },
+    "srd_adult-red-dragon": {
+      "nome": "Adult Red Dragon",
+      "texto": "Um dragão de escamas vermelhas, corpo poderoso e silhueta feita para dominar o céu. Rochedos e regiões de calor combinam com sua presença, onde sinais de fogo e espaços de grande escala podem anunciar a proximidade do covil. Na idade adulta, possui porte e autonomia para disputar território e proteger os interesses de seu próprio covil."
+    },
+    "srd_adult-silver-dragon": {
+      "nome": "Adult Silver Dragon",
+      "texto": "Um dragão de escamas prateadas e presença imponente, associado ao frio e a lugares elevados. Seu interesse por outras criaturas pode permitir aproximações cautelosas, mas asas, garras e sopro lembram que cordialidade não equivale à ausência de poder. Na idade adulta, possui porte e autonomia para disputar território e proteger os interesses de seu próprio covil."
+    },
+    "srd_adult-white-dragon": {
+      "nome": "Adult White Dragon",
+      "texto": "Escamas claras ajudam este dragão a se confundir com neve e gelo. Paisagens congeladas combinam com sua caça, onde o relevo e a exposição ao frio podem favorecer a criatura antes mesmo de ela se revelar. Na idade adulta, possui porte e autonomia para disputar território e proteger os interesses de seu próprio covil."
+    },
+    "srd_air-elemental": {
+      "nome": "Air Elemental",
+      "texto": "Uma corrente de ar que ganhou movimento e vontade próprios, por vezes revelada pela poeira e pelos objetos que arrasta. Seu contorno muda constantemente, transformando um espaço aberto em um encontro com a força do vento."
+    },
+    "srd_ancient-black-dragon": {
+      "nome": "Ancient Black Dragon",
+      "texto": "Escamas negras e uma silhueta de réptil alado distinguem este dragão. Pântanos e águas escuras combinam com sua presença, onde a cobertura e a ameaça de ácido podem transformar a aproximação ao covil em um percurso ameaçador. Nesta fase ancestral, o enorme porte e a longa experiência tornam o covil e seu ocupante marcos da região."
+    },
+    "srd_ancient-blue-dragon": {
+      "nome": "Ancient Blue Dragon",
+      "texto": "Este dragão de escamas azuis se destaca pelo chifre na cabeça e pela associação à eletricidade. Regiões áridas e horizontes abertos oferecem espaço para seu domínio, onde abrigo e distância nem sempre protegem de uma ameaça que também vem do céu. Nesta fase ancestral, o enorme porte e a longa experiência tornam o covil e seu ocupante marcos da região."
+    },
+    "srd_ancient-brass-dragon": {
+      "nome": "Ancient Brass Dragon",
+      "texto": "Escamas de brilho semelhante ao latão e uma silhueta alada marcam a aparência deste dragão. Terras áridas combinam com encontros em que conversa e curiosidade podem acompanhar o perigo evidente de um corpo poderoso e de um sopro de fogo. Nesta fase ancestral, o enorme porte e a longa experiência tornam o covil e seu ocupante marcos da região."
+    },
+    "srd_ancient-bronze-dragon": {
+      "nome": "Ancient Bronze Dragon",
+      "texto": "Escamas de aparência bronzeada cobrem este dragão alado. Costas e paisagens junto ao mar oferecem um cenário para sua presença, onde observação, interesses próprios e o poder da eletricidade podem dar forma a relações com viajantes e comunidades. Nesta fase ancestral, o enorme porte e a longa experiência tornam o covil e seu ocupante marcos da região."
+    },
+    "srd_ancient-copper-dragon": {
+      "nome": "Ancient Copper Dragon",
+      "texto": "Um dragão de escamas acobreadas, cuja anatomia permite ocupar alturas e recantos rochosos. Curiosidade e um gosto por situações inesperadas podem compor sua personalidade, sem diminuir a ameaça de suas garras e de seu sopro ácido. Nesta fase ancestral, o enorme porte e a longa experiência tornam o covil e seu ocupante marcos da região."
+    },
+    "srd_ancient-gold-dragon": {
+      "nome": "Ancient Gold Dragon",
+      "texto": "Um dragão de escamas douradas e feições marcantes, cuja presença transmite uma majestade difícil de ignorar. Encontros podem envolver vigilância e avaliação das intenções de visitantes, diante de uma criatura que reúne força dracônica e fogo. Nesta fase ancestral, o enorme porte e a longa experiência tornam o covil e seu ocupante marcos da região."
+    },
+    "srd_ancient-green-dragon": {
+      "nome": "Ancient Green Dragon",
+      "texto": "Um dragão de escamas verdes, capaz de se confundir com a vegetação de um território arborizado. A floresta oferece esconderijos e caminhos indiretos, adequados a encontros em que observação, palavras calculadas e a ameaça de veneno se misturam. Nesta fase ancestral, o enorme porte e a longa experiência tornam o covil e seu ocupante marcos da região."
+    },
+    "srd_ancient-red-dragon": {
+      "nome": "Ancient Red Dragon",
+      "texto": "Um dragão de escamas vermelhas, corpo poderoso e silhueta feita para dominar o céu. Rochedos e regiões de calor combinam com sua presença, onde sinais de fogo e espaços de grande escala podem anunciar a proximidade do covil. Nesta fase ancestral, o enorme porte e a longa experiência tornam o covil e seu ocupante marcos da região."
+    },
+    "srd_ancient-silver-dragon": {
+      "nome": "Ancient Silver Dragon",
+      "texto": "Um dragão de escamas prateadas e presença imponente, associado ao frio e a lugares elevados. Seu interesse por outras criaturas pode permitir aproximações cautelosas, mas asas, garras e sopro lembram que cordialidade não equivale à ausência de poder. Nesta fase ancestral, o enorme porte e a longa experiência tornam o covil e seu ocupante marcos da região."
+    },
+    "srd_ancient-white-dragon": {
+      "nome": "Ancient White Dragon",
+      "texto": "Escamas claras ajudam este dragão a se confundir com neve e gelo. Paisagens congeladas combinam com sua caça, onde o relevo e a exposição ao frio podem favorecer a criatura antes mesmo de ela se revelar. Nesta fase ancestral, o enorme porte e a longa experiência tornam o covil e seu ocupante marcos da região."
+    },
+    "srd_androsphinx": {
+      "nome": "Androsphinx",
+      "texto": "Uma esfinge de corpo leonino, asas poderosas e semblante humano. Sua presença combina força e autoridade enigmática, adequada a santuários e lugares de passagem onde o valor dos visitantes pode importar tanto quanto suas respostas."
+    },
+    "srd_animated-armor": {
+      "nome": "Animated Armor",
+      "texto": "Uma armadura vazia que se move sem um corpo em seu interior. Seus passos metálicos ecoam por salões e corredores, enquanto ela executa a tarefa para a qual foi animada, sem precisar descansar ou se distrair."
+    },
+    "srd_ankheg": {
+      "nome": "Ankheg",
+      "texto": "Um predador escavador de carapaça rígida e mandíbulas enormes. Aproxima-se por baixo da terra e surpreende presas na superfície; túneis recentes, solo cedendo e restos de animais podem anunciar sua presença antes de um ataque."
+    },
+    "srd_ape": {
+      "nome": "Ape",
+      "texto": "Um primata de braços fortes e mãos capazes de agarrar e manipular objetos. Grupos e territórios arborizados favorecem encontros em que curiosidade, defesa do espaço e proteção dos filhotes são mais relevantes que uma hostilidade sem motivo."
+    },
+    "srd_archmage": {
+      "nome": "Archmage",
+      "texto": "Um conjurador de experiência excepcional, acostumado a lidar com problemas que ultrapassam a vida cotidiana. Torres, bibliotecas e residências protegidas combinam com seus estudos, mas conhecimento e poder não revelam, por si só, suas intenções."
+    },
+    "srd_assassin": {
+      "nome": "Assassin",
+      "texto": "Um especialista em preparar e executar ataques contra alvos escolhidos. Disfarces, observação e rotas de fuga podem ser mais importantes para seu trabalho que uma luta aberta; o perigo costuma começar antes de sua identidade ser percebida."
+    },
+    "srd_awakened-shrub": {
+      "nome": "Awakened Shrub",
+      "texto": "Um arbusto que recebeu movimento e consciência por meio da magia. Ramos, folhas e raízes continuam revelando sua natureza vegetal, mas sua capacidade de observar e reagir transforma jardins e trilhas familiares em encontros inesperados."
+    },
+    "srd_awakened-tree": {
+      "nome": "Awakened Tree",
+      "texto": "Uma árvore consciente que consegue mover raízes e galhos deliberadamente. Pode parecer parte da paisagem até decidir agir; sua presença oferece uma voz à floresta, embora suas preocupações nem sempre coincidam com as de visitantes apressados."
+    },
+    "srd_axe-beak": {
+      "nome": "Axe Beak",
+      "texto": "Uma grande ave terrestre de pernas fortes e bico pesado, capaz de perseguir presas pelo chão. Sua silhueta destaca-se em áreas abertas, onde velocidade e golpes do bico substituem a capacidade de voar."
+    },
+    "srd_azer": {
+      "nome": "Azer",
+      "texto": "Um ser de aspecto anão, corpo metálico e cabelos semelhantes a chamas. Sua presença combina com forjas e regiões de calor intenso; ferramentas, metal trabalhado e o brilho do fogo ajudam a compor seu ambiente."
+    },
+    "srd_baboon": {
+      "nome": "Baboon",
+      "texto": "Um primata de focinho marcado e dentes evidentes, atento ao comportamento de seu grupo. Áreas rochosas e bordas de vegetação podem abrigá-lo, onde alimento e disputas por espaço aproximam animais e viajantes."
+    },
+    "srd_badger": {
+      "nome": "Badger",
+      "texto": "Um mamífero de corpo baixo, patas fortes e focinho atento ao solo. Tocas e terreno escavado indicam sua atividade; embora pequeno, pode reagir de modo vigoroso quando uma aproximação ameaça seu abrigo."
+    },
+    "srd_balor": {
+      "nome": "Balor",
+      "texto": "Um demônio colossal de asas abertas, chifres e armas envolvidas em energia destrutiva. Sua chegada domina o cenário com calor e violência, fazendo dele uma ameaça que pode transformar uma batalha inteira em catástrofe."
+    },
+    "srd_bandit": {
+      "nome": "Bandit",
+      "texto": "Alguém que vive de assaltos, extorsão ou outras formas de saque. Pode agir sozinho ou em grupo, escolhendo estradas, passagens estreitas e vítimas vulneráveis; necessidade, lealdade e ambição variam de um indivíduo para outro."
+    },
+    "srd_bandit-captain": {
+      "nome": "Bandit Captain",
+      "texto": "Um líder capaz de reunir e dirigir um bando de saqueadores. Além de lutar, precisa administrar desconfianças, repartir ganhos e manter seguidores; uma negociação pode depender tanto de sua reputação quanto da força que demonstra."
+    },
+    "srd_barbed-devil": {
+      "nome": "Barbed Devil",
+      "texto": "Um diabo de corpo coberto de espinhos, feito para tornar perigosa qualquer aproximação. Sua aparência ameaçadora combina com postos de guarda e tarefas de intimidação, sobretudo em locais onde fugir de seu alcance é difícil."
+    },
+    "srd_basilisk": {
+      "nome": "Basilisk",
+      "texto": "Um réptil robusto de várias patas, cuja ameaça mais temida está no olhar. Áreas com figuras petrificadas e animais imóveis podem sugerir sua presença, transformando o ato de observar o ambiente em parte do perigo."
+    },
+    "srd_bat": {
+      "nome": "Bat",
+      "texto": "Um pequeno mamífero alado que se orienta na escuridão e procura abrigo em locais protegidos. Cavernas, telhados e fendas podem abrigar colônias, cujos deslocamentos repentinos alteram o som e a visibilidade de uma passagem."
+    },
+    "srd_bearded-devil": {
+      "nome": "Bearded Devil",
+      "texto": "Um combatente infernal de aparência brutal, armado e protegido por uma barba que também é uma ameaça. Costuma funcionar bem como soldado ou executor, mantendo pressão sobre adversários que tentam romper sua linha de combate."
+    },
+    "srd_behir": {
+      "nome": "Behir",
+      "texto": "Um predador enorme, alongado e dotado de numerosas patas, capaz de se mover por terrenos rochosos. Seu corpo serpentino e a ameaça de eletricidade tornam passagens montanhosas e cavernas especialmente inquietantes quando ele está por perto."
+    },
+    "srd_berserker": {
+      "nome": "Berserker",
+      "texto": "Um combatente que se lança à luta com ferocidade e pouca preocupação em recuar. Gritos, postura e equipamento marcado por confrontos podem anunciar sua disposição, mas a origem dessa intensidade e seus vínculos pertencem à história de cada pessoa."
+    },
+    "srd_black-bear": {
+      "nome": "Black Bear",
+      "texto": "Um urso de porte forte e grande capacidade de explorar fontes de alimento. Florestas e áreas próximas a elas oferecem abrigo, enquanto provisões deixadas ao alcance e a presença de filhotes podem explicar encontros com viajantes."
+    },
+    "srd_black-dragon-wyrmling": {
+      "nome": "Black Dragon Wyrmling",
+      "texto": "Escamas negras e uma silhueta de réptil alado distinguem este dragão. Pântanos e águas escuras combinam com sua presença, onde a cobertura e a ameaça de ácido podem transformar a aproximação ao covil em um percurso ameaçador. Este filhote conserva as características de sua linhagem em um corpo menor, combinando vulnerabilidade relativa com perigos que já são dracônicos."
+    },
+    "srd_black-pudding": {
+      "nome": "Black Pudding",
+      "texto": "Uma massa escura e corrosiva que se desloca sem uma forma estável. Em corredores úmidos ou espaços abandonados, pode se confundir com sujeira acumulada até começar a envolver aquilo que encontra pelo caminho."
+    },
+    "srd_blink-dog": {
+      "nome": "Blink Dog",
+      "texto": "Um cão de natureza feérica cujos deslocamentos podem parecer saltos entre pontos do espaço. Expressivo e atento, serve a encontros em que rastrear pegadas ou fechar uma rota de fuga se torna menos simples do que parece."
+    },
+    "srd_blood-hawk": {
+      "nome": "Blood Hawk",
+      "texto": "Uma ave de rapina pequena e agressiva, perigosa sobretudo quando várias se concentram sobre uma presa. Seus círculos no céu e chamados insistentes podem anunciar uma perseguição antes que as primeiras garras alcancem o alvo."
+    },
+    "srd_blue-dragon-wyrmling": {
+      "nome": "Blue Dragon Wyrmling",
+      "texto": "Este dragão de escamas azuis se destaca pelo chifre na cabeça e pela associação à eletricidade. Regiões áridas e horizontes abertos oferecem espaço para seu domínio, onde abrigo e distância nem sempre protegem de uma ameaça que também vem do céu. Este filhote conserva as características de sua linhagem em um corpo menor, combinando vulnerabilidade relativa com perigos que já são dracônicos."
+    },
+    "srd_boar": {
+      "nome": "Boar",
+      "texto": "Um animal de corpo compacto, pescoço forte e presas que podem causar ferimentos graves. Busca alimento junto ao solo e em vegetação fechada, onde surpreendê-lo ou bloquear sua retirada pode provocar uma investida."
+    },
+    "srd_bone-devil": {
+      "nome": "Bone Devil",
+      "texto": "Um diabo alto e esquelético, com asas e uma cauda ameaçadora. Seu aspecto lembra um carrasco saído de um pesadelo, adequado a ambientes de vigilância e punição onde a simples expectativa de sua chegada já impõe medo."
+    },
+    "srd_brass-dragon-wyrmling": {
+      "nome": "Brass Dragon Wyrmling",
+      "texto": "Escamas de brilho semelhante ao latão e uma silhueta alada marcam a aparência deste dragão. Terras áridas combinam com encontros em que conversa e curiosidade podem acompanhar o perigo evidente de um corpo poderoso e de um sopro de fogo. Este filhote conserva as características de sua linhagem em um corpo menor, combinando vulnerabilidade relativa com perigos que já são dracônicos."
+    },
+    "srd_bronze-dragon-wyrmling": {
+      "nome": "Bronze Dragon Wyrmling",
+      "texto": "Escamas de aparência bronzeada cobrem este dragão alado. Costas e paisagens junto ao mar oferecem um cenário para sua presença, onde observação, interesses próprios e o poder da eletricidade podem dar forma a relações com viajantes e comunidades. Este filhote conserva as características de sua linhagem em um corpo menor, combinando vulnerabilidade relativa com perigos que já são dracônicos."
+    },
+    "srd_brown-bear": {
+      "nome": "Brown Bear",
+      "texto": "Um urso grande e musculoso, equipado com garras e mandíbulas poderosas. Pode percorrer áreas extensas em busca de alimento; distância, surpresa e a presença de filhotes ajudam a definir a intensidade de uma reação."
+    },
+    "srd_bugbear": {
+      "nome": "Bugbear",
+      "texto": "Um humanoide grande, peludo e de membros compridos, capaz de surpreender quem espera movimentos desajeitados. Cobertura, silêncio e ataques oportunos combinam com sua constituição; cada indivíduo pode ter vínculos e objetivos próprios."
+    },
+    "srd_bulette": {
+      "nome": "Bulette",
+      "texto": "Um predador de corpo pesado e couraça resistente que avança por baixo da terra. O chão pode tremer antes de sua aparição, e uma área aparentemente aberta deixa de oferecer segurança quando o ataque vem de baixo."
+    },
+    "srd_camel": {
+      "nome": "Camel",
+      "texto": "Um animal de pernas longas e corpo adaptado a percorrer regiões áridas. Como montaria ou animal de carga, pode integrar caravanas e expedições, tornando água, descanso e tratamento adequado partes importantes de uma viagem."
+    },
+    "srd_cat": {
+      "nome": "Cat",
+      "texto": "Um pequeno felino de movimentos silenciosos, garras retráteis e atenção constante ao ambiente. Pode circular entre casas, armazéns e jardins, observando passagens que criaturas maiores não conseguem usar com a mesma facilidade."
+    },
+    "srd_centaur": {
+      "nome": "Centaur",
+      "texto": "Um ser de torso humano e corpo equino, cuja anatomia favorece deslocamentos por espaços abertos. Caminhos de pastoreio, trilhas e fronteiras de território podem levar a encontros com centauros, sem definir se serão aliados ou adversários."
+    },
+    "srd_chain-devil": {
+      "nome": "Chain Devil",
+      "texto": "Um diabo que faz das correntes uma extensão de sua ameaça. O som do metal pode anunciar sua presença em prisões e salas de tormento, onde os próprios objetos do ambiente parecem participar da perseguição."
+    },
+    "srd_chimera": {
+      "nome": "Chimera",
+      "texto": "Uma criatura de anatomia composta, com traços de leão, cabra e dragão. A combinação de cabeças, asas e instintos predatórios produz uma presença instável e intimidante, especialmente quando surge acima de um terreno escarpado."
+    },
+    "srd_chuul": {
+      "nome": "Chuul",
+      "texto": "Um predador aquático de carapaça dura, pinças grandes e apêndices ao redor da boca. Pode permanecer próximo à água, esperando uma vítima se aproximar; suas pinças transformam a margem de um lago em uma armadilha."
+    },
+    "srd_clay-golem": {
+      "nome": "Clay Golem",
+      "texto": "Uma figura humanoide moldada em argila e animada para cumprir uma finalidade. Sua aparência artificial e seus movimentos pesados revelam um guardião que não segue as necessidades de um ser vivo, exigindo cautela diante de ordens antigas."
+    },
+    "srd_cloaker": {
+      "nome": "Cloaker",
+      "texto": "Uma criatura achatada e alada que pode lembrar uma manta pendurada na escuridão. Quando se move, a semelhança com um objeto inofensivo cede lugar a um predador feito para surpreender exploradores em locais pouco iluminados."
+    },
+    "srd_cloud-giant": {
+      "nome": "Cloud Giant",
+      "texto": "Um gigante de porte majestoso, associado às alturas e às nuvens. Sua escala transforma a arquitetura e os objetos ao redor em sinais de poder; encontros podem envolver hospitalidade, ostentação ou disputas entre vontades muito diferentes."
+    },
+    "srd_cockatrice": {
+      "nome": "Cockatrice",
+      "texto": "Uma criatura de aparência semelhante à de uma ave reptiliana, com cauda e asas inquietantes. Pequena perto de muitos monstros, ainda inspira cuidado pelo risco de petrificação, tornando encontros em quintais e ruínas menos banais."
+    },
+    "srd_commoner": {
+      "nome": "Commoner",
+      "texto": "Uma pessoa de vida cotidiana, como alguém que trabalha no campo, em uma oficina ou em um mercado. Sua importância vem de relações, conhecimentos e necessidades locais; esta ficha não determina profissão, personalidade ou alinhamento individual."
+    },
+    "srd_constrictor-snake": {
+      "nome": "Constrictor Snake",
+      "texto": "Uma serpente de corpo musculoso que captura presas por constrição. Vegetação, galhos e margens de água podem ocultar sua aproximação, fazendo da distância até o animal algo difícil de julgar à primeira vista."
+    },
+    "srd_copper-dragon-wyrmling": {
+      "nome": "Copper Dragon Wyrmling",
+      "texto": "Um dragão de escamas acobreadas, cuja anatomia permite ocupar alturas e recantos rochosos. Curiosidade e um gosto por situações inesperadas podem compor sua personalidade, sem diminuir a ameaça de suas garras e de seu sopro ácido. Este filhote conserva as características de sua linhagem em um corpo menor, combinando vulnerabilidade relativa com perigos que já são dracônicos."
+    },
+    "srd_couatl": {
+      "nome": "Couatl",
+      "texto": "Uma serpente alada de plumagem colorida e presença sobrenatural. Sua figura combina com locais sagrados e missões de proteção; um encontro pode exigir interpretar sinais e intenções, em vez de apenas reconhecer uma ameaça."
+    },
+    "srd_crab": {
+      "nome": "Crab",
+      "texto": "Um crustáceo de carapaça dura e pinças, habituado a fundos aquáticos e margens úmidas. Rochas, areia e pequenas frestas oferecem abrigo, onde seus movimentos laterais ajudam a distingui-lo de outros animais costeiros."
+    },
+    "srd_crocodile": {
+      "nome": "Crocodile",
+      "texto": "Um réptil aquático de corpo protegido por escamas e mandíbulas poderosas. Permanece próximo à superfície ou às margens, onde poucos sinais visíveis podem esconder boa parte do animal à espera de uma presa."
+    },
+    "srd_cult-fanatic": {
+      "nome": "Cult Fanatic",
+      "texto": "Um devoto disposto a empregar magia e violência em favor de sua causa. Atua como articulador, oficiante ou guardião de segredos, e sua influência sobre outros seguidores pode ser tão perigosa quanto aquilo que conjura."
+    },
+    "srd_cultist": {
+      "nome": "Cultist",
+      "texto": "Um integrante de um grupo dedicado a uma crença ou entidade secreta. Roupas, sinais e rituais podem revelar sua filiação, mas descobrir por que permanece no culto costuma exigir mais que identificar o símbolo que carrega."
+    },
+    "srd_darkmantle": {
+      "nome": "Darkmantle",
+      "texto": "Uma criatura de corpo semelhante a um manto, que se prende ao teto e se confunde com a rocha. Em cavernas e ruínas escuras, sua descida repentina pode transformar um corredor silencioso em uma luta desorientadora."
+    },
+    "srd_death-dog": {
+      "nome": "Death Dog",
+      "texto": "Um cão monstruoso de duas cabeças, movido por um apetite ameaçador. Sua aparência e suas mordidas tornam a aproximação arriscada; pode rondar áreas desoladas, onde restos de presas e rastros anunciam sua passagem."
+    },
+    "srd_deep-gnome-svirfneblin": {
+      "nome": "Deep Gnome (Svirfneblin)",
+      "texto": "Um gnomo adaptado à vida subterrânea, atento à pedra, aos túneis e aos perigos escondidos neles. Assentamentos e expedições sob a terra oferecem contextos para encontros, sem reduzir seus habitantes a uma única personalidade."
+    },
+    "srd_deer": {
+      "nome": "Deer",
+      "texto": "Um herbívoro ágil de pernas finas e sentidos atentos. Costuma buscar alimento onde encontra vegetação e rotas de retirada, reagindo a ruídos e movimentos com uma fuga que pode anunciar outro perigo nas proximidades."
+    },
+    "srd_deva": {
+      "nome": "Deva",
+      "texto": "Um mensageiro celestial de forma humanoide e asas luminosas. Sua presença pode trazer proteção, uma incumbência ou um julgamento difícil; o contraste entre aparência serena e força sobrenatural ajuda a distinguir sua intervenção de um encontro comum."
+    },
+    "srd_dire-wolf": {
+      "nome": "Dire Wolf",
+      "texto": "Um lobo de porte excepcional, com mandíbulas e musculatura capazes de enfrentar presas grandes. A caça em grupo e o uso do terreno tornam sua aproximação inquietante em florestas e campos, sobretudo longe de abrigos."
+    },
+    "srd_djinni": {
+      "nome": "Djinni",
+      "texto": "Um gênio ligado ao ar, com movimentos que sugerem a leveza e a força de uma tempestade. Alturas, ventos e espaços abertos combinam com sua presença; um encontro pode girar em torno de acordos e expectativas diferentes."
+    },
+    "srd_donkey": {
+      "nome": "Donkey",
+      "texto": "Um equino de orelhas longas e passo cuidadoso, usado para carga e deslocamento. Trilhas estreitas e tarefas de transporte combinam com sua presença, enquanto seu comportamento depende de segurança, hábito e da maneira como é conduzido."
+    },
+    "srd_doppelganger": {
+      "nome": "Doppelganger",
+      "texto": "Um metamorfo que pode assumir a aparência de outras pessoas. Seu perigo narrativo está na confiança: rostos conhecidos e histórias plausíveis deixam de garantir identidade, tornando observação e relações anteriores mais importantes que uma primeira impressão."
+    },
+    "srd_draft-horse": {
+      "nome": "Draft Horse",
+      "texto": "Um cavalo robusto, de musculatura apropriada a trabalhos pesados e transporte de cargas. Faz parte de estradas, fazendas e caravanas, onde arreios, cansaço e espaço para manobrar influenciam uma cena tanto quanto o animal em si."
+    },
+    "srd_dragon-turtle": {
+      "nome": "Dragon Turtle",
+      "texto": "Uma criatura marinha gigantesca cuja carapaça pode ser confundida com parte da paisagem. A cabeça dracônica e o vapor que acompanha sua ameaça transformam rotas de navegação em territórios nos quais embarcações parecem pequenas e frágeis."
+    },
+    "srd_dretch": {
+      "nome": "Dretch",
+      "texto": "Um demônio baixo, deformado e repulsivo, que concentra ameaça em um corpo aparentemente pouco impressionante. Pode aparecer em grupos ou sob o comando de forças maiores, trazendo desordem e uma presença desagradável a espaços fechados."
+    },
+    "srd_drider": {
+      "nome": "Drider",
+      "texto": "Uma criatura que combina torso de drow e corpo de aranha. Paredes, fios e sombras ajudam a compor seus encontros subterrâneos; sua anatomia permite ocupar ângulos de um ambiente que viajantes acostumados ao chão podem esquecer."
+    },
+    "srd_drow": {
+      "nome": "Drow",
+      "texto": "Um elfo de tradições subterrâneas, familiarizado com a escuridão e com os riscos de viver sob a superfície. A ficha representa capacidades de combate, não determina a cultura, as escolhas ou as intenções de cada pessoa encontrada."
+    },
+    "srd_druid": {
+      "nome": "Druid",
+      "texto": "Um praticante de magia ligado ao mundo natural e às transformações da vida. Pode proteger um lugar, orientar uma comunidade ou percorrer regiões selvagens; seus compromissos nem sempre seguem as fronteiras e prioridades de governantes urbanos."
+    },
+    "srd_dryad": {
+      "nome": "Dryad",
+      "texto": "Um ser feérico de aparência humanoide, intimamente associado às árvores. Sua presença pode tornar uma clareira silenciosa em um encontro consciente e pessoal, no qual cortar madeira ou atravessar um bosque deixa de ser um gesto indiferente."
+    },
+    "srd_duergar": {
+      "nome": "Duergar",
+      "texto": "Um anão habituado a ambientes subterrâneos, capaz de recorrer a poderes incomuns em um confronto. Minas e fortificações sob a terra oferecem contextos para encontros; a ficha não substitui a história nem as decisões de cada indivíduo."
+    },
+    "srd_dust-mephit": {
+      "nome": "Dust Mephit",
+      "texto": "Um pequeno ser alado associado à poeira e à secura. Pode surgir entre escombros ou em regiões áridas, onde sua movimentação espalha partículas pelo ar e torna o ambiente mais incômodo para quem tenta enxergar e respirar."
+    },
+    "srd_eagle": {
+      "nome": "Eagle",
+      "texto": "Uma ave de rapina de asas amplas, garras fortes e visão aguçada. Alturas e correntes de ar favorecem sua busca por alimento, enquanto ninhos em pontos elevados podem levar aventureiros a observar o terreno antes de avançar."
+    },
+    "srd_earth-elemental": {
+      "nome": "Earth Elemental",
+      "texto": "Uma massa de pedra e terra que se move com vontade própria. Sua aproximação lembra o deslocamento do próprio terreno, fazendo de paredes rochosas e solo firme partes de um ambiente que já não permanece imóvel."
+    },
+    "srd_efreeti": {
+      "nome": "Efreeti",
+      "texto": "Um gênio ligado ao fogo, de presença imponente e temperamento que pode se refletir em palavras calculadas. Calor, metal e ambientes grandiosos combinam com encontros em que poder e negociação ocupam o mesmo espaço."
+    },
+    "srd_elephant": {
+      "nome": "Elephant",
+      "texto": "Um grande mamífero de tromba, presas e corpo pesado, cuja vida pode estar ligada a um grupo. Trilhas amplas e vegetação pisoteada anunciam sua passagem, e uma reação de defesa pode alterar rapidamente o equilíbrio de um encontro."
+    },
+    "srd_elf-drow": {
+      "nome": "Elf, Drow",
+      "texto": "Um elfo de tradições subterrâneas, familiarizado com a escuridão e com os riscos de viver sob a superfície. A ficha representa capacidades de combate, não determina a cultura, as escolhas ou as intenções de cada pessoa encontrada."
+    },
+    "srd_elk": {
+      "nome": "Elk",
+      "texto": "Um grande cervídeo, reconhecível pela altura e pelas galhadas dos machos. Percorre áreas de vegetação e espaços de pastagem, onde o tamanho do animal e suas rotas de fuga pedem uma aproximação sem movimentos bruscos."
+    },
+    "srd_erinyes": {
+      "nome": "Erinyes",
+      "texto": "Uma figura infernal alada, cuja aparência disciplinada contrasta com a violência que pode exercer. Sua capacidade de escolher alvos e manter pressão à distância favorece encontros nos quais abrigo e posição importam tanto quanto força bruta."
+    },
+    "srd_ettercap": {
+      "nome": "Ettercap",
+      "texto": "Um predador humanoide de traços aracnídeos, associado a teias e armadilhas. Vegetação tomada por fios e caminhos interrompidos podem denunciar seu território antes que a criatura apareça, fazendo da exploração uma busca constante por passagens seguras."
+    },
+    "srd_ettin": {
+      "nome": "Ettin",
+      "texto": "Um gigante de duas cabeças, cujas vozes podem disputar atenção mesmo enquanto observam o ambiente. Sua força domina encontros próximos, e a convivência entre as cabeças oferece espaço para humor, tensão ou desentendimentos em cena."
+    },
+    "srd_fire-elemental": {
+      "nome": "Fire Elemental",
+      "texto": "Uma forma viva de chamas, sem carne ou ossos que limitem seus movimentos. O fogo ao redor parece ganhar intenção, e materiais combustíveis deixam de ser simples cenário quando a criatura avança por um espaço ocupado."
+    },
+    "srd_fire-giant": {
+      "nome": "Fire Giant",
+      "texto": "Um gigante de constituição poderosa, associado ao trabalho do metal e a ambientes de calor intenso. Ferramentas enormes, estruturas reforçadas e armas pesadas podem anunciar uma presença acostumada a moldar tanto materiais quanto o campo de batalha."
+    },
+    "srd_flesh-golem": {
+      "nome": "Flesh Golem",
+      "texto": "Um corpo artificial montado a partir de partes de criaturas e posto em movimento por magia. Costuras e proporções desiguais revelam sua origem; sua existência pode apontar para um laboratório, uma experiência ou uma ordem ainda em execução."
+    },
+    "srd_flying-snake": {
+      "nome": "Flying Snake",
+      "texto": "Uma serpente pequena cujas asas permitem movimentos rápidos pelo ar. Seu voo muda a maneira de acompanhar sua aproximação: copas de árvores, janelas e espaços elevados podem servir de passagem para uma criatura que não depende do chão."
+    },
+    "srd_flying-sword": {
+      "nome": "Flying Sword",
+      "texto": "Uma espada animada que paira e golpeia sem uma mão para conduzi-la. Pode guardar uma sala ou surpreender quem tenta recolhê-la, transformando um objeto de valor aparente em um adversário independente."
+    },
+    "srd_frog": {
+      "nome": "Frog",
+      "texto": "Um pequeno anfíbio de pele úmida e pernas próprias para o salto. Margens, brejos e poças oferecem abrigo e alimento, e seus chamados podem formar o fundo sonoro de uma exploração junto à água."
+    },
+    "srd_frost-giant": {
+      "nome": "Frost Giant",
+      "texto": "Um gigante de aparência rude e constituição adaptada ao frio. Regiões geladas e construções de grande escala combinam com sua presença; sua força pode tornar uma passagem estreita ou uma encosta nevada em um obstáculo formidável."
+    },
+    "srd_gargoyle": {
+      "nome": "Gargoyle",
+      "texto": "Uma criatura pétrea de asas e garras que pode se confundir com uma escultura. Fachadas, ruínas e saliências oferecem posições de espera, até que uma figura aparentemente decorativa se desprenda da pedra para atacar."
+    },
+    "srd_gelatinous-cube": {
+      "nome": "Gelatinous Cube",
+      "texto": "Uma massa gelatinosa quase transparente que ocupa corredores inteiros. Objetos e restos suspensos em seu interior podem ser percebidos antes do contorno da criatura, fazendo de uma passagem aparentemente vazia um perigo para exploradores desatentos."
+    },
+    "srd_ghast": {
+      "nome": "Ghast",
+      "texto": "Um morto-vivo carnívoro de aspecto deformado e odor repulsivo. Sua presença torna sepulturas e lugares abandonados ainda mais ameaçadores, sobretudo quando outras criaturas famintas se reúnem ao redor dele em busca de presas."
+    },
+    "srd_ghost": {
+      "nome": "Ghost",
+      "texto": "O espírito de alguém que permanece ligado ao mundo dos vivos. Sua aparência pode sugerir a pessoa que foi, enquanto sua presença aponta para uma história interrompida; entender essa ligação pode ser tão importante quanto enfrentar sua manifestação."
+    },
+    "srd_ghoul": {
+      "nome": "Ghoul",
+      "texto": "Um morto-vivo de apetite carnívoro, garras compridas e movimentos inquietantes. Pode buscar alimento entre túmulos e ruínas, mas sua ameaça se intensifica quando encontra seres vivos em lugares onde escapar não é simples."
+    },
+    "srd_giant-ape": {
+      "nome": "Giant Ape",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um primata de braços fortes e mãos capazes de agarrar e manipular objetos. Grupos e territórios arborizados favorecem encontros em que curiosidade, defesa do espaço e proteção dos filhotes são mais relevantes que uma hostilidade sem motivo."
+    },
+    "srd_giant-badger": {
+      "nome": "Giant Badger",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um mamífero de corpo baixo, patas fortes e focinho atento ao solo. Tocas e terreno escavado indicam sua atividade; embora pequeno, pode reagir de modo vigoroso quando uma aproximação ameaça seu abrigo."
+    },
+    "srd_giant-bat": {
+      "nome": "Giant Bat",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um pequeno mamífero alado que se orienta na escuridão e procura abrigo em locais protegidos. Cavernas, telhados e fendas podem abrigar colônias, cujos deslocamentos repentinos alteram o som e a visibilidade de uma passagem."
+    },
+    "srd_giant-boar": {
+      "nome": "Giant Boar",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um animal de corpo compacto, pescoço forte e presas que podem causar ferimentos graves. Busca alimento junto ao solo e em vegetação fechada, onde surpreendê-lo ou bloquear sua retirada pode provocar uma investida."
+    },
+    "srd_giant-centipede": {
+      "nome": "Giant Centipede",
+      "texto": "Uma centopeia de tamanho incomum, com corpo segmentado e muitas patas em movimento. Frestas, solo úmido e escuridão oferecem abrigo, mas sua escala transforma um animal normalmente discreto em uma ameaça visível a quem atravessa seu caminho."
+    },
+    "srd_giant-constrictor-snake": {
+      "nome": "Giant Constrictor Snake",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Uma serpente de corpo musculoso que captura presas por constrição. Vegetação, galhos e margens de água podem ocultar sua aproximação, fazendo da distância até o animal algo difícil de julgar à primeira vista."
+    },
+    "srd_giant-crab": {
+      "nome": "Giant Crab",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um crustáceo de carapaça dura e pinças, habituado a fundos aquáticos e margens úmidas. Rochas, areia e pequenas frestas oferecem abrigo, onde seus movimentos laterais ajudam a distingui-lo de outros animais costeiros."
+    },
+    "srd_giant-crocodile": {
+      "nome": "Giant Crocodile",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um réptil aquático de corpo protegido por escamas e mandíbulas poderosas. Permanece próximo à superfície ou às margens, onde poucos sinais visíveis podem esconder boa parte do animal à espera de uma presa."
+    },
+    "srd_giant-eagle": {
+      "nome": "Giant Eagle",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Uma ave de rapina de asas amplas, garras fortes e visão aguçada. Alturas e correntes de ar favorecem sua busca por alimento, enquanto ninhos em pontos elevados podem levar aventureiros a observar o terreno antes de avançar."
+    },
+    "srd_giant-elk": {
+      "nome": "Giant Elk",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um grande cervídeo, reconhecível pela altura e pelas galhadas dos machos. Percorre áreas de vegetação e espaços de pastagem, onde o tamanho do animal e suas rotas de fuga pedem uma aproximação sem movimentos bruscos."
+    },
+    "srd_giant-fire-beetle": {
+      "nome": "Giant Fire Beetle",
+      "texto": "Um besouro grande cujo brilho chama atenção em locais escuros. O contraste entre carapaça e luz pode revelar sua presença em túneis e cavernas, oferecendo um encontro com uma criatura cuja aparência modifica a iluminação do ambiente."
+    },
+    "srd_giant-frog": {
+      "nome": "Giant Frog",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um pequeno anfíbio de pele úmida e pernas próprias para o salto. Margens, brejos e poças oferecem abrigo e alimento, e seus chamados podem formar o fundo sonoro de uma exploração junto à água."
+    },
+    "srd_giant-goat": {
+      "nome": "Giant Goat",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um herbívoro de cascos firmes e grande desenvoltura em terreno irregular. Encostas e trilhas estreitas combinam com seus movimentos, enquanto rebanhos podem revelar a proximidade de moradores ou caminhos utilizáveis por viajantes."
+    },
+    "srd_giant-hyena": {
+      "nome": "Giant Hyena",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um mamífero de mandíbulas fortes, atento a oportunidades de caça e alimento disponível. Pode circular em grupo e aproveitar restos, tornando pegadas e vocalizações sinais úteis em áreas abertas e nas bordas de acampamentos."
+    },
+    "srd_giant-lizard": {
+      "nome": "Giant Lizard",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um pequeno réptil de cauda comprida e movimentos rápidos, que procura abrigo em fendas e vegetação. Pedras aquecidas, muros e troncos oferecem pontos de repouso, de onde pode desaparecer ao perceber uma ameaça."
+    },
+    "srd_giant-octopus": {
+      "nome": "Giant Octopus",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um molusco de corpo flexível e vários braços cobertos de ventosas. Fendas e fundos aquáticos oferecem abrigo, onde mudanças de cor e o uso dos braços tornam difícil distinguir a criatura do ambiente à primeira vista."
+    },
+    "srd_giant-owl": {
+      "nome": "Giant Owl",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Uma ave de rapina de olhos grandes e voo discreto, associada à atividade noturna. Árvores, ruínas e frestas elevadas podem servir de abrigo, onde sua observação silenciosa combina com cenas de exploração sob pouca luz."
+    },
+    "srd_giant-poisonous-snake": {
+      "nome": "Giant Poisonous Snake",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Uma serpente cuja mordida pode inocular veneno. Pedras, galhos e vegetação oferecem pontos de espera ou abrigo, e uma aproximação inesperada pode gerar uma reação defensiva antes que o viajante reconheça o animal."
+    },
+    "srd_giant-rat": {
+      "nome": "Giant Rat",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um pequeno roedor de focinho atento e corpo capaz de atravessar frestas estreitas. Esgotos, depósitos e espaços próximos a alimentos oferecem abrigo; rastros e ruídos podem indicar atividade em lugares aparentemente vazios."
+    },
+    "srd_giant-rat-diseased": {
+      "nome": "Giant Rat (Diseased)",
+      "texto": "Um rato de porte excepcional, associado a ambientes sujos e à possibilidade de transmitir doença. Tocas amplas, restos roídos e movimentação em esgotos ou depósitos ajudam a anunciar uma infestação antes de uma aproximação perigosa."
+    },
+    "srd_giant-scorpion": {
+      "nome": "Giant Scorpion",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um aracnídeo de pinças e cauda terminada em ferrão. Procura abrigo em frestas e locais protegidos, tornando o cuidado ao mover pedras, abrir recipientes ou recolher equipamento parte relevante de uma exploração."
+    },
+    "srd_giant-sea-horse": {
+      "nome": "Giant Sea Horse",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um pequeno peixe de corpo ereto, focinho alongado e cauda capaz de se prender à vegetação. Áreas submersas protegidas combinam com sua presença, em contraste com a força das correntes e o movimento de predadores maiores."
+    },
+    "srd_giant-shark": {
+      "nome": "Giant Shark",
+      "texto": "Um tubarão descomunal, cuja boca e massa corporal fazem uma embarcação pequena parecer frágil. A ameaça depende tanto do espaço submerso quanto daquilo que se vê da superfície, onde uma nadadeira revela apenas parte do animal."
+    },
+    "srd_giant-spider": {
+      "nome": "Giant Spider",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um aracnídeo de várias patas, capaz de ocupar frestas e produzir fios. Sua presença pode ser percebida por teias e pequenos restos de presas, tornando a observação do ambiente mais importante que o tamanho aparente do animal."
+    },
+    "srd_giant-toad": {
+      "nome": "Giant Toad",
+      "texto": "Um anfíbio enorme de boca larga e corpo robusto, próximo à água e a locais úmidos. Sua postura aparentemente imóvel pode esconder uma reação rápida, tornando margens e vegetação baixa lugares para observar com cuidado antes de passar."
+    },
+    "srd_giant-vulture": {
+      "nome": "Giant Vulture",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Uma ave de grande envergadura, adaptada à procura de carcaças. Círculos no céu e grupos pousados podem indicar restos de animais ou de uma batalha, oferecendo aos viajantes um sinal do que aconteceu além de sua vista."
+    },
+    "srd_giant-wasp": {
+      "nome": "Giant Wasp",
+      "texto": "Uma vespa de proporções monstruosas, com asas ruidosas e ferrão evidente. A defesa de um ninho pode dominar o encontro, sobretudo onde o terreno limita a retirada de quem se aproximou sem perceber a colônia."
+    },
+    "srd_giant-weasel": {
+      "nome": "Giant Weasel",
+      "texto": "Este exemplar de proporções gigantescas conserva os traços do animal comum, mas sua escala muda a relação com o ambiente e com possíveis presas. Um pequeno mamífero de corpo alongado e movimentos rápidos, capaz de entrar em espaços apertados. Procura alimento entre frestas e vegetação, onde sua agilidade pode ser percebida apenas por um breve movimento ou ruído."
+    },
+    "srd_giant-wolf-spider": {
+      "nome": "Giant Wolf Spider",
+      "texto": "Uma aranha caçadora de tamanho monstruoso, que percorre o terreno em vez de depender apenas de uma teia de captura. Sua aproximação baixa e rápida torna pedras, raízes e cantos escuros possíveis rotas de ataque."
+    },
+    "srd_gibbering-mouther": {
+      "nome": "Gibbering Mouther",
+      "texto": "Uma massa disforme coberta de bocas e olhos, que avança acompanhada de vozes sobrepostas. Sua presença agride a percepção e o senso de orientação, transformando um encontro próximo em uma experiência de confusão e horror corporal."
+    },
+    "srd_glabrezu": {
+      "nome": "Glabrezu",
+      "texto": "Um demônio de corpo poderoso e grandes pinças, cuja ameaça não se resume à força física. Sua combinação de astúcia e brutalidade favorece encontros em que propostas tentadoras e perigos evidentes fazem parte da mesma armadilha."
+    },
+    "srd_gladiator": {
+      "nome": "Gladiator",
+      "texto": "Um combatente treinado para enfrentar adversários diante de espectadores. Conhece pressão, exaustão e o valor de uma demonstração convincente de habilidade; fora da arena, sua reputação pode abrir portas ou atrair desafios indesejados."
+    },
+    "srd_gnoll": {
+      "nome": "Gnoll",
+      "texto": "Um humanoide de traços de hiena, com mandíbulas fortes e aparência predatória. Rastros de saque e campos de batalha podem compor seu contexto, mas o papel de uma pessoa ou grupo deve ser definido pela aventura."
+    },
+    "srd_gnome-deep-svirfneblin": {
+      "nome": "Gnome, Deep (Svirfneblin)",
+      "texto": "Um gnomo adaptado à vida subterrânea, atento à pedra, aos túneis e aos perigos escondidos neles. Assentamentos e expedições sob a terra oferecem contextos para encontros, sem reduzir seus habitantes a uma única personalidade."
+    },
+    "srd_goat": {
+      "nome": "Goat",
+      "texto": "Um herbívoro de cascos firmes e grande desenvoltura em terreno irregular. Encostas e trilhas estreitas combinam com seus movimentos, enquanto rebanhos podem revelar a proximidade de moradores ou caminhos utilizáveis por viajantes."
+    },
+    "srd_goblin": {
+      "nome": "Goblin",
+      "texto": "Um humanoide pequeno, ágil e de orelhas marcantes, capaz de aproveitar passagens e coberturas estreitas. Emboscadas e rotas de fuga combinam com suas capacidades, enquanto suas relações e motivações dependem da comunidade e da história em jogo."
+    },
+    "srd_gold-dragon-wyrmling": {
+      "nome": "Gold Dragon Wyrmling",
+      "texto": "Um dragão de escamas douradas e feições marcantes, cuja presença transmite uma majestade difícil de ignorar. Encontros podem envolver vigilância e avaliação das intenções de visitantes, diante de uma criatura que reúne força dracônica e fogo. Este filhote conserva as características de sua linhagem em um corpo menor, combinando vulnerabilidade relativa com perigos que já são dracônicos."
+    },
+    "srd_gorgon": {
+      "nome": "Gorgon",
+      "texto": "Um monstro de aparência bovina, recoberto por placas que lembram metal. Seu avanço pesado e seu sopro perigoso fazem de áreas abertas um lugar menos seguro do que parecem, sobretudo quando o terreno oferece poucas rotas de fuga."
+    },
+    "srd_gray-ooze": {
+      "nome": "Gray Ooze",
+      "texto": "Uma massa viscosa acinzentada que pode se confundir com pedra úmida ou sujeira. Sua movimentação lenta não a torna inofensiva: aproximar-se ou tocar uma superfície suspeita pode revelar tarde demais a natureza corrosiva do encontro."
+    },
+    "srd_green-dragon-wyrmling": {
+      "nome": "Green Dragon Wyrmling",
+      "texto": "Um dragão de escamas verdes, capaz de se confundir com a vegetação de um território arborizado. A floresta oferece esconderijos e caminhos indiretos, adequados a encontros em que observação, palavras calculadas e a ameaça de veneno se misturam. Este filhote conserva as características de sua linhagem em um corpo menor, combinando vulnerabilidade relativa com perigos que já são dracônicos."
+    },
+    "srd_green-hag": {
+      "nome": "Green Hag",
+      "texto": "Uma criatura astuta capaz de usar aparência e voz para enganar visitantes. Pântanos, bosques fechados e lugares de isolamento combinam com histórias de promessas ambíguas, nas quais aquilo que parece ajuda pode esconder um interesse próprio."
+    },
+    "srd_grick": {
+      "nome": "Grick",
+      "texto": "Um predador de corpo alongado, bico e tentáculos que se abre em uma extremidade. A coloração e a postura favorecem a espera junto à rocha, fazendo de fendas e passagens subterrâneas pontos de emboscada."
+    },
+    "srd_griffon": {
+      "nome": "Griffon",
+      "texto": "Uma criatura que reúne corpo leonino, asas e cabeça de águia. Sua anatomia combina força em terra e domínio do ar; ninhos elevados e rotas de caça amplas podem aproximá-la de rebanhos, viajantes e montarias."
+    },
+    "srd_grimlock": {
+      "nome": "Grimlock",
+      "texto": "Um humanoide subterrâneo cuja percepção não depende da visão comum. Ruídos, cheiros e vibrações tornam-se elementos importantes de um encontro em túneis escuros, onde a ausência de luz não oferece a mesma proteção para todos."
+    },
+    "srd_guard": {
+      "nome": "Guard",
+      "texto": "Um profissional encarregado de vigiar pessoas, acessos ou propriedades. Uniforme, armamento e postura podem indicar sua função, mas sua disposição para ajudar, negociar ou cumprir ordens depende do lugar e das responsabilidades que recebeu."
+    },
+    "srd_guardian-naga": {
+      "nome": "Guardian Naga",
+      "texto": "Uma criatura serpentina de semblante humano e presença vigilante. Conhecimento e proteção combinam com sua figura, adequada a passagens, templos e locais cuja importância pode ultrapassar o valor material dos objetos que contêm."
+    },
+    "srd_gynosphinx": {
+      "nome": "Gynosphinx",
+      "texto": "Uma esfinge alada de corpo leonino e rosto humano, associada a provas e conhecimento. Um encontro pode exigir escutar, interpretar e escolher com cuidado, pois sua autoridade não depende apenas das garras que mantém à vista."
+    },
+    "srd_half-red-dragon-veteran": {
+      "nome": "Half-Red Dragon Veteran",
+      "texto": "Um guerreiro experiente marcado por traços de dragão vermelho, como escamas e feições reptilianas. Sua disciplina de combate se soma à ameaça dracônica, criando um adversário cuja história pode ligar campos de batalha e linhagens incomuns."
+    },
+    "srd_harpy": {
+      "nome": "Harpy",
+      "texto": "Uma criatura alada que mistura traços humanoides e de ave de rapina. Sua voz pode atrair quem deveria manter distância, tornando penhascos, ruínas altas e caminhos perigosos cenários para uma ameaça que começa pelo ouvido."
+    },
+    "srd_hawk": {
+      "nome": "Hawk",
+      "texto": "Uma ave de rapina de voo controlado e atenção a pequenos movimentos no solo. Poleiros altos e áreas abertas favorecem sua caça, e a mudança súbita de sua trajetória pode revelar uma presa ou um intruso."
+    },
+    "srd_hell-hound": {
+      "nome": "Hell Hound",
+      "texto": "Um cão infernal de aparência ameaçadora, cuja respiração e presença sugerem fogo. Pode acompanhar um caçador sobrenatural ou guardar um lugar hostil, transformando uma perseguição em algo mais terrível que o encalço de uma fera comum."
+    },
+    "srd_hezrou": {
+      "nome": "Hezrou",
+      "texto": "Um demônio corpulento de aparência anfíbia e presença repulsiva. Seu corpo e seu odor dominam encontros próximos, sobretudo em áreas onde o terreno ou as paredes impedem que as presas mantenham distância."
+    },
+    "srd_hill-giant": {
+      "nome": "Hill Giant",
+      "texto": "Um gigante de hábitos rudes e apetite impressionante. Sua passagem pode ser indicada por cercas destruídas, provisões desaparecidas e objetos quebrados, enquanto sua força física torna negociações e distrações alternativas relevantes a um confronto direto."
+    },
+    "srd_hippogriff": {
+      "nome": "Hippogriff",
+      "texto": "Uma criatura alada com traços de cavalo e ave de rapina. Seu corpo permite imaginar tanto corridas por terreno aberto quanto aproximações pelo céu; ninhos em locais elevados e a defesa de filhotes podem motivar encontros."
+    },
+    "srd_hobgoblin": {
+      "nome": "Hobgoblin",
+      "texto": "Um humanoide de porte firme, frequentemente apresentado como um combatente organizado. Formação, equipamento e coordenação podem distingui-lo em cena, mas a ficha não define a lealdade, a moral ou a ambição de cada indivíduo."
+    },
+    "srd_homunculus": {
+      "nome": "Homunculus",
+      "texto": "Um pequeno ser artificial criado por magia para servir a um propósito. Sua aparência pode refletir o gosto de seu criador, e encontrá-lo observando uma sala ou transportando algo pode indicar uma vontade maior agindo à distância."
+    },
+    "srd_horned-devil": {
+      "nome": "Horned Devil",
+      "texto": "Um diabo grande, alado e coroado de chifres, cuja arma e cauda ampliam sua presença ameaçadora. Combina mobilidade e violência em encontros nos quais a criatura pode alcançar posições que pareciam fora de perigo."
+    },
+    "srd_hunter-shark": {
+      "nome": "Hunter Shark",
+      "texto": "Um tubarão grande de corpo potente e sentidos voltados à busca de alimento. Em águas abertas ou passagens profundas, a aproximação de uma presa pode transformar uma silhueta distante em uma perseguição difícil de acompanhar."
+    },
+    "srd_hydra": {
+      "nome": "Hydra",
+      "texto": "Um monstro reptiliano de muitas cabeças, com pescoços que se movem em direções diferentes. Em margens, pântanos ou passagens inundadas, sua multiplicidade torna difícil acompanhar todas as ameaças de uma só vez."
+    },
+    "srd_hyena": {
+      "nome": "Hyena",
+      "texto": "Um mamífero de mandíbulas fortes, atento a oportunidades de caça e alimento disponível. Pode circular em grupo e aproveitar restos, tornando pegadas e vocalizações sinais úteis em áreas abertas e nas bordas de acampamentos."
+    },
+    "srd_ice-devil": {
+      "nome": "Ice Devil",
+      "texto": "Um diabo de traços insetoides, exoesqueleto rígido e associação ao frio. Sua figura combina disciplina e estranheza, adequada a encontros em que gelo e bloqueios no terreno fazem parte de uma estratégia deliberada."
+    },
+    "srd_ice-mephit": {
+      "nome": "Ice Mephit",
+      "texto": "Um pequeno ser alado de aparência gelada, cujos movimentos lembram fragmentos de gelo ganhando vida. Neve, cavernas frias e superfícies congeladas oferecem um cenário natural para suas aproximações e provocações."
+    },
+    "srd_imp": {
+      "nome": "Imp",
+      "texto": "Um pequeno diabo alado, com cauda e sorriso que podem sugerir mais astúcia que força. Seu tamanho facilita a aproximação discreta, e suas propostas podem transformar um favor aparentemente simples em um compromisso desconfortável."
+    },
+    "srd_invisible-stalker": {
+      "nome": "Invisible Stalker",
+      "texto": "Uma presença elemental que pode ser percebida por deslocamentos de ar, sons ou objetos perturbados, sem oferecer uma silhueta visível. Um encontro com ela enfatiza rastrear sinais e descobrir o propósito da perseguição."
+    },
+    "srd_iron-golem": {
+      "nome": "Iron Golem",
+      "texto": "Um guardião humanoide de ferro, construído em escala e peso impressionantes. Seu corpo revela trabalho e intenção artificiais; salões reforçados e locais protegidos por magia combinam com uma criatura feita para continuar cumprindo ordens."
+    },
+    "srd_jackal": {
+      "nome": "Jackal",
+      "texto": "Um canídeo esguio que procura alimento de forma oportunista. Pode aparecer em áreas abertas e nas proximidades de assentamentos, onde restos de comida e pequenos animais oferecem razões para observar viajantes à distância."
+    },
+    "srd_killer-whale": {
+      "nome": "Killer Whale",
+      "texto": "Um grande cetáceo predador de corpo contrastante e natação poderosa. Pode se deslocar em grupo por águas frias ou costeiras, onde sua inteligência e coordenação tornam observação e perseguição parte importante da caça."
+    },
+    "srd_knight": {
+      "nome": "Knight",
+      "texto": "Um combatente de treinamento formal, frequentemente acompanhado por símbolos de serviço, honra ou posição. Pode proteger uma estrada, representar uma autoridade ou cumprir uma missão pessoal; armadura e título não garantem quais valores realmente segue."
+    },
+    "srd_kobold": {
+      "nome": "Kobold",
+      "texto": "Um humanoide pequeno de traços reptilianos, capaz de aproveitar espaços apertados e agir em conjunto. Túneis, obstáculos e preparativos podem tornar um encontro com seu grupo mais complexo do que o tamanho de cada integrante sugere."
+    },
+    "srd_kraken": {
+      "nome": "Kraken",
+      "texto": "Uma entidade marinha colossal, cuja anatomia tentacular dá escala ao medo das profundezas. Sua presença pode ser sentida por embarcações desaparecidas e águas inquietas, muito antes de os viajantes entenderem o tamanho da ameaça."
+    },
+    "srd_lamia": {
+      "nome": "Lamia",
+      "texto": "Uma criatura de torso humanoide e corpo de grande felino, capaz de misturar fascínio e perigo. Ruínas e recintos afastados combinam com encontros em que recepção, engano e domínio da situação se tornam difíceis de distinguir."
+    },
+    "srd_lemure": {
+      "nome": "Lemure",
+      "texto": "Uma criatura infernal disforme, de corpo mole e feições reduzidas pelo sofrimento. Sua aparência transmite uma existência degradada, adequada a paisagens de tormento onde seres mais poderosos a tratam como parte insignificante de sua hierarquia."
+    },
+    "srd_lich": {
+      "nome": "Lich",
+      "texto": "Um conjurador morto-vivo que mantém inteligência e vontade além da morte. Vestígios de erudição contrastam com um corpo arruinado, e sua presença sugere projetos de longa duração, segredos protegidos e um profundo interesse em continuar existindo."
+    },
+    "srd_lion": {
+      "nome": "Lion",
+      "texto": "Um grande felino de corpo musculoso, cuja silhueta pode incluir a juba característica dos machos. Áreas abertas e vegetação de cobertura favorecem aproximações de caça, enquanto o grupo e a defesa do alimento influenciam encontros."
+    },
+    "srd_lizard": {
+      "nome": "Lizard",
+      "texto": "Um pequeno réptil de cauda comprida e movimentos rápidos, que procura abrigo em fendas e vegetação. Pedras aquecidas, muros e troncos oferecem pontos de repouso, de onde pode desaparecer ao perceber uma ameaça."
+    },
+    "srd_lizardfolk": {
+      "nome": "Lizardfolk",
+      "texto": "Um humanoide reptiliano de escamas e cauda, adaptado a ambientes próximos à água. Pântanos, rios e costas oferecem contextos para suas comunidades; valores e costumes devem ser construídos pela história, sem confundir diferença cultural com hostilidade automática."
+    },
+    "srd_mage": {
+      "nome": "Mage",
+      "texto": "Um conjurador treinado no estudo e no uso da magia. Livros, componentes e gestos calculados podem revelar sua prática, mas sua profissão e seus objetivos variam: pesquisa, serviço, exploração e ambição pessoal são apenas algumas possibilidades."
+    },
+    "srd_magma-mephit": {
+      "nome": "Magma Mephit",
+      "texto": "Um pequeno ser alado que parece reunir rocha incandescente e calor vivo. Fendas vulcânicas e áreas de lava combinam com sua presença, onde a própria aparência já sugere o risco de uma aproximação descuidada."
+    },
+    "srd_magmin": {
+      "nome": "Magmin",
+      "texto": "Uma pequena criatura elemental de aparência humanoide e brilho ardente. Seu corpo faz do calor uma presença móvel, e materiais inflamáveis ao redor podem transformar sua passagem aparentemente breve em um problema muito maior."
+    },
+    "srd_mammoth": {
+      "nome": "Mammoth",
+      "texto": "Um grande animal de pelagem espessa, presas curvas e corpo pesado, adaptado ao frio. Manadas, trilhas largas e vegetação pisoteada podem anunciar sua presença em paisagens geladas, onde a proteção dos filhotes pode provocar uma reação vigorosa."
+    },
+    "srd_manticore": {
+      "nome": "Manticore",
+      "texto": "Um predador alado de corpo leonino, rosto inquietantemente humano e cauda armada de espinhos. Posições elevadas ajudam a compor suas investidas, e sua capacidade de ameaçar à distância torna a simples aproximação um desafio."
+    },
+    "srd_marilith": {
+      "nome": "Marilith",
+      "texto": "Um demônio de torso humanoide, muitos braços e corpo inferior serpentino. Suas armas e sua postura sugerem domínio do combate, capaz de transformar um espaço próximo em uma rede de ameaças coordenadas."
+    },
+    "srd_mastiff": {
+      "nome": "Mastiff",
+      "texto": "Um cão robusto de mandíbulas fortes, que pode atuar como guarda ou companheiro. Sua postura e reação a estranhos dependem de treino e vínculo, fazendo da presença de um condutor um detalhe importante do encontro."
+    },
+    "srd_medusa": {
+      "nome": "Medusa",
+      "texto": "Uma figura humanoide cujos cabelos são serpentes vivas e cujo olhar exige cautela. A presença de estátuas incomuns pode sugerir seu território, enquanto encontros pessoais oferecem espaço para tensão, isolamento e cuidados com aquilo que se observa."
+    },
+    "srd_merfolk": {
+      "nome": "Merfolk",
+      "texto": "Um povo aquático de torso humanoide e cauda adaptada à natação. Recifes, ruínas submersas e comunidades costeiras podem fazer parte de seu mundo, com relações e interesses que os habitantes da superfície nem sempre conhecem."
+    },
+    "srd_merrow": {
+      "nome": "Merrow",
+      "texto": "Um grande humanoide aquático de aparência predatória e força marcante. Águas profundas e passagens costeiras combinam com sua presença, sobretudo quando a luta ou a perseguição pode levar uma presa para longe da superfície."
+    },
+    "srd_mimic": {
+      "nome": "Mimic",
+      "texto": "Um predador capaz de assumir a aparência de um objeto. Baús e peças de mobiliário deixam de ser apenas parte do cenário quando a forma familiar esconde um corpo vivo, tornando curiosidade e pressa aliados da criatura."
+    },
+    "srd_minotaur": {
+      "nome": "Minotaur",
+      "texto": "Um humanoide poderoso de cabeça bovina e chifres grandes. Corredores, muralhas e caminhos sinuosos realçam sua presença em uma aventura, mas sua história e seus objetivos podem ser mais complexos que a imagem de um guardião de labirinto."
+    },
+    "srd_minotaur-skeleton": {
+      "nome": "Minotaur Skeleton",
+      "texto": "O esqueleto animado de um minotauro, ainda reconhecível pelo crânio e pelos chifres. Sua força e sua silhueta permanecem, mas a ausência de vida transforma antigas passagens e tumbas em locais vigiados por uma vontade imposta."
+    },
+    "srd_mule": {
+      "nome": "Mule",
+      "texto": "Um equino de carga, resistente e de passo atento ao terreno. Costuma acompanhar viajantes e trabalhos de transporte; arreios e bagagem revelam parte de sua função, enquanto confiança e rotina ajudam a conduzi-lo."
+    },
+    "srd_mummy": {
+      "nome": "Mummy",
+      "texto": "Um corpo preservado e animado, envolto em restos de mortalha e sinais funerários. Sua presença liga o perigo a sepulturas, promessas e transgressões, como se a quietude de um lugar de descanso tivesse adquirido uma resposta."
+    },
+    "srd_mummy-lord": {
+      "nome": "Mummy Lord",
+      "texto": "Um morto-vivo de autoridade e poder sobrenatural, cercado por vestígios de seu antigo prestígio. A tumba pode funcionar como extensão de sua vontade, onde riquezas e inscrições revelam apenas parte de uma história que ainda exige obediência."
+    },
+    "srd_nalfeshnee": {
+      "nome": "Nalfeshnee",
+      "texto": "Um demônio corpulento de aparência grotesca, com asas pequenas em relação ao corpo. Sua presença mistura repulsa e poder, adequada a encontros em que uma figura aparentemente desajeitada demonstra uma autoridade brutal."
+    },
+    "srd_night-hag": {
+      "nome": "Night Hag",
+      "texto": "Uma criatura ardilosa associada a sonhos e sofrimento. Sua ameaça não precisa começar em uma estrada ou ruína: relatos de noites perturbadas, medo persistente e acordos ruins podem preparar um encontro antes de sua aparição."
+    },
+    "srd_nightmare": {
+      "nome": "Nightmare",
+      "texto": "Uma montaria sobrenatural de aparência equina, marcada por chamas e escuridão. Seu galope transforma a figura familiar de um cavalo em presságio inquietante, sobretudo quando carrega um cavaleiro cuja chegada já desperta temor."
+    },
+    "srd_noble": {
+      "nome": "Noble",
+      "texto": "Uma pessoa que ocupa posição elevada em determinada sociedade. Roupas, acompanhantes e maneiras podem demonstrar prestígio, mas o que a torna importante em cena são seus vínculos, recursos, obrigações e a influência que exerce sobre outras pessoas."
+    },
+    "srd_ochre-jelly": {
+      "nome": "Ochre Jelly",
+      "texto": "Uma massa amarelada que escorre por superfícies e ocupa frestas sem um corpo rígido. Em subterrâneos, sua presença pode parecer umidade ou sujeira até que a matéria se mova deliberadamente em direção a uma presa."
+    },
+    "srd_octopus": {
+      "nome": "Octopus",
+      "texto": "Um molusco de corpo flexível e vários braços cobertos de ventosas. Fendas e fundos aquáticos oferecem abrigo, onde mudanças de cor e o uso dos braços tornam difícil distinguir a criatura do ambiente à primeira vista."
+    },
+    "srd_ogre": {
+      "nome": "Ogre",
+      "texto": "Um humanoide enorme de força impressionante e movimentos pesados. Sua escala altera o valor de portas, cercas e obstáculos, enquanto sinais de passagem e provisões consumidas podem anunciar que uma criatura muito grande se instalou por perto."
+    },
+    "srd_ogre-zombie": {
+      "nome": "Ogre Zombie",
+      "texto": "O corpo reanimado de um ogro, marcado pela deterioração e pela ausência de vontade própria. Sua força bruta permanece uma ameaça, e o avanço lento não oferece conforto quando um corredor ou uma multidão impede a fuga."
+    },
+    "srd_oni": {
+      "nome": "Oni",
+      "texto": "Um ser de aparência ogresca capaz de recorrer à magia e ao disfarce. Seu perigo pode crescer por meio de rumores e identidades falsas, antes que sua forma ameaçadora revele a relação entre desaparecimentos e uma presença aparentemente comum."
+    },
+    "srd_orc": {
+      "nome": "Orc",
+      "texto": "Um humanoide de constituição robusta e presas visíveis, representado aqui por um perfil de combatente. Equipamento, vínculos e atitudes devem vir da aventura: a ficha não determina o caráter nem o destino de uma pessoa ou comunidade."
+    },
+    "srd_otyugh": {
+      "nome": "Otyugh",
+      "texto": "Um monstro de corpo volumoso, tentáculos e boca enorme, encontrado em meio a detritos. Locais onde se acumula lixo oferecem alimento e esconderijo, fazendo de passagens de serviço e depósitos de resíduos encontros potencialmente perigosos."
+    },
+    "srd_owl": {
+      "nome": "Owl",
+      "texto": "Uma ave de rapina de olhos grandes e voo discreto, associada à atividade noturna. Árvores, ruínas e frestas elevadas podem servir de abrigo, onde sua observação silenciosa combina com cenas de exploração sob pouca luz."
+    },
+    "srd_owlbear": {
+      "nome": "Owlbear",
+      "texto": "Um predador que combina corpo semelhante ao de um urso e cabeça de coruja. Sua aparência mistura familiaridade e estranheza, enquanto garras e bico tornam clareiras, tocas e trilhas florestais lugares de aproximação cautelosa."
+    },
+    "srd_panther": {
+      "nome": "Panther",
+      "texto": "Um felino esguio de movimentos discretos, capaz de usar sombra e vegetação para se aproximar. A dificuldade de perceber sua posição torna ambientes fechados pela folhagem diferentes de um terreno onde as ameaças permanecem à vista."
+    },
+    "srd_pegasus": {
+      "nome": "Pegasus",
+      "texto": "Um cavalo alado cuja silhueta aproxima a força de uma montaria da liberdade do voo. Campos abertos e locais elevados favorecem sua presença, oferecendo encontros em que confiança e aproximação cuidadosa importam mais que uma tentativa de domínio."
+    },
+    "srd_phase-spider": {
+      "nome": "Phase Spider",
+      "texto": "Uma aranha monstruosa capaz de aparecer e desaparecer entre planos de existência. Sua ameaça torna insegura a ideia de uma barreira inteiramente fechada, enquanto fios, presas abandonadas e aparições breves podem compor uma perseguição desconcertante."
+    },
+    "srd_pit-fiend": {
+      "nome": "Pit Fiend",
+      "texto": "Um diabo de grande poder, corpo imponente e asas que ampliam sua silhueta. Sua presença sugere uma autoridade acostumada a comandar, negociar e punir, combinando planejamento com a capacidade de exercer violência devastadora."
+    },
+    "srd_planetar": {
+      "nome": "Planetar",
+      "texto": "Um ser celestial alado de força extraordinária e aparência solene. Pode aparecer como agente de uma causa maior, trazendo ajuda ou exigindo decisões difíceis; sua presença lembra que proteção e responsabilidade nem sempre são caminhos confortáveis."
+    },
+    "srd_plesiosaurus": {
+      "nome": "Plesiosaurus",
+      "texto": "Um grande réptil aquático de pescoço comprido e membros adaptados à natação. Lagos extensos e mares costeiros oferecem espaço para seu deslocamento, onde uma cabeça acima da água pode revelar apenas uma pequena parte do animal."
+    },
+    "srd_poisonous-snake": {
+      "nome": "Poisonous Snake",
+      "texto": "Uma serpente cuja mordida pode inocular veneno. Pedras, galhos e vegetação oferecem pontos de espera ou abrigo, e uma aproximação inesperada pode gerar uma reação defensiva antes que o viajante reconheça o animal."
+    },
+    "srd_polar-bear": {
+      "nome": "Polar Bear",
+      "texto": "Um urso grande de pelagem clara, adaptado a ambientes de gelo e água fria. Sua constituição e sua habilidade de se deslocar nesse terreno tornam a distância e a disponibilidade de abrigo fatores importantes em um encontro."
+    },
+    "srd_pony": {
+      "nome": "Pony",
+      "texto": "Um equino de pequeno porte, que pode servir como montaria ou auxiliar de transporte. Seu tamanho não elimina a necessidade de cuidado e descanso, e sua presença combina com caminhos rurais, comunidades e viagens de menor escala."
+    },
+    "srd_priest": {
+      "nome": "Priest",
+      "texto": "Um representante religioso capaz de conduzir ritos e recorrer à magia divina. Pode servir como conselheiro, curador ou autoridade espiritual, mas suas escolhas dependem da fé, da comunidade e das responsabilidades que procura cumprir."
+    },
+    "srd_pseudodragon": {
+      "nome": "Pseudodragon",
+      "texto": "Um pequeno parente dos dragões, com asas, cauda longa e comportamento atento. Sua escala permite aproximações discretas, enquanto expressão e curiosidade fazem dele uma presença adequada a encontros de observação e construção de confiança."
+    },
+    "srd_purple-worm": {
+      "nome": "Purple Worm",
+      "texto": "Um verme subterrâneo colossal, de boca enorme e corpo feito para atravessar a terra. Túneis desmedidos e tremores podem anunciar seu trajeto, lembrando aos exploradores que o mundo sob seus pés também possui grandes predadores."
+    },
+    "srd_quasit": {
+      "nome": "Quasit",
+      "texto": "Um pequeno demônio de aparência grotesca e comportamento furtivo. Pode agir como espião, provocador ou auxiliar de uma força maior, transformando incidentes aparentemente pequenos em sinais de uma influência mais perigosa."
+    },
+    "srd_quipper": {
+      "nome": "Quipper",
+      "texto": "Um peixe pequeno de dentes afiados, cuja aparência pode ser discreta até a boca se abrir. Em águas onde vários se reúnem, entrar sem observar o ambiente pode transformar uma travessia curta em uma experiência perigosa."
+    },
+    "srd_rakshasa": {
+      "nome": "Rakshasa",
+      "texto": "Uma figura infernal de aparência humanoide e traços de tigre, cujo refinamento pode ocultar uma ameaça calculada. Disfarces, relações sociais e promessas permitem encontros nos quais descobrir a identidade do adversário já é parte do desafio."
+    },
+    "srd_rat": {
+      "nome": "Rat",
+      "texto": "Um pequeno roedor de focinho atento e corpo capaz de atravessar frestas estreitas. Esgotos, depósitos e espaços próximos a alimentos oferecem abrigo; rastros e ruídos podem indicar atividade em lugares aparentemente vazios."
+    },
+    "srd_raven": {
+      "nome": "Raven",
+      "texto": "Uma ave de plumagem escura, bico forte e comportamento atento. Pode explorar alimento disponível e observar movimentações, enquanto sua presença em ruínas ou campos abertos oferece uma silhueta reconhecível e chamados fáceis de distinguir."
+    },
+    "srd_red-dragon-wyrmling": {
+      "nome": "Red Dragon Wyrmling",
+      "texto": "Um dragão de escamas vermelhas, corpo poderoso e silhueta feita para dominar o céu. Rochedos e regiões de calor combinam com sua presença, onde sinais de fogo e espaços de grande escala podem anunciar a proximidade do covil. Este filhote conserva as características de sua linhagem em um corpo menor, combinando vulnerabilidade relativa com perigos que já são dracônicos."
+    },
+    "srd_reef-shark": {
+      "nome": "Reef Shark",
+      "texto": "Um tubarão de corpo ágil, adequado à circulação por ambientes recifais e águas costeiras. Passagens entre rochas e correntes ajudam a compor seu território, onde a movimentação de presas pode atrair sua atenção."
+    },
+    "srd_remorhaz": {
+      "nome": "Remorhaz",
+      "texto": "Um predador alongado de regiões geladas, cuja presença reúne gelo e calor intenso. Sulcos na neve e deslocamentos sob a superfície podem anunciar sua aproximação, até que um terreno aparentemente imóvel se torne uma emboscada."
+    },
+    "srd_rhinoceros": {
+      "nome": "Rhinoceros",
+      "texto": "Um herbívoro pesado de pele espessa e chifres proeminentes. Seu porte não impede uma reação rápida, e aproximar-se sem cuidado ou bloquear uma rota pode transformar a observação de um animal em uma investida perigosa."
+    },
+    "srd_riding-horse": {
+      "nome": "Riding Horse",
+      "texto": "Um cavalo acostumado a transportar um cavaleiro, cuja utilidade depende de treino e confiança. Pode acompanhar viagens e explorações, mas terreno, ruídos e ameaças inesperadas ainda influenciam a maneira como reage."
+    },
+    "srd_roc": {
+      "nome": "Roc",
+      "texto": "Uma ave de rapina gigantesca, capaz de fazer animais grandes parecerem presas pequenas. Seu ninho exige espaço e altura, e o deslocamento de sua sombra pode transformar uma travessia a céu aberto em um momento de tensão."
+    },
+    "srd_roper": {
+      "nome": "Roper",
+      "texto": "Uma criatura que pode lembrar uma formação rochosa até estender seus apêndices. Em cavernas, sua postura de espera transforma o próprio cenário em armadilha, especialmente onde os viajantes precisam passar perto de saliências e colunas."
+    },
+    "srd_rug-of-smothering": {
+      "nome": "Rug of Smothering",
+      "texto": "Um tapete animado que pode permanecer indistinguível da decoração até envolver uma vítima. Salas aparentemente confortáveis ganham outro significado quando objetos domésticos obedecem a ordens mágicas e a saída fica fora de alcance."
+    },
+    "srd_rust-monster": {
+      "nome": "Rust Monster",
+      "texto": "Uma criatura de antenas compridas, atraída por metal. Sua presença torna armas, armaduras e equipamentos parte central do encontro, e marcas de corrosão podem ser um aviso importante em túneis e áreas abandonadas."
+    },
+    "srd_saber-toothed-tiger": {
+      "nome": "Saber-Toothed Tiger",
+      "texto": "Um felino grande e musculoso, reconhecível pelos longos dentes superiores. Sua caça privilegia aproximação e investidas potentes, fazendo de vegetação densa e terreno irregular ambientes em que a distância até uma ameaça pode ser enganosa."
+    },
+    "srd_sahuagin": {
+      "nome": "Sahuagin",
+      "texto": "Um humanoide aquático de feições predatórias e corpo adaptado ao mar. Incursões costeiras e encontros submersos podem colocá-lo em cena, onde correntezas, profundidade e a possibilidade de recuar para a água mudam a situação."
+    },
+    "srd_salamander": {
+      "nome": "Salamander",
+      "texto": "Um ser ligado ao fogo, com torso humanoide e corpo alongado de réptil. Seu calor e seus movimentos combinam com forjas, cavernas vulcânicas e outros lugares onde a proximidade já representa parte do perigo."
+    },
+    "srd_satyr": {
+      "nome": "Satyr",
+      "texto": "Um ser feérico de torso humanoide e pernas caprinas, associado a música e celebração. Trilhas arborizadas e clareiras oferecem cenários para encontros em que hospitalidade, impulso e prioridades muito diferentes podem se misturar."
+    },
+    "srd_scorpion": {
+      "nome": "Scorpion",
+      "texto": "Um aracnídeo de pinças e cauda terminada em ferrão. Procura abrigo em frestas e locais protegidos, tornando o cuidado ao mover pedras, abrir recipientes ou recolher equipamento parte relevante de uma exploração."
+    },
+    "srd_scout": {
+      "nome": "Scout",
+      "texto": "Uma pessoa treinada para observar o terreno, acompanhar rastros e transmitir informações. Pode atuar como guia, patrulheiro ou batedor, preferindo perceber o perigo com antecedência a descobrir sua força em um confronto inesperado."
+    },
+    "srd_sea-hag": {
+      "nome": "Sea Hag",
+      "texto": "Uma criatura de aparência repulsiva ligada a ambientes aquáticos. Grutas costeiras, águas turvas e locais isolados combinam com sua presença, em histórias nas quais olhar de perto ou atender a um chamado pode trazer consequências indesejadas."
+    },
+    "srd_sea-horse": {
+      "nome": "Sea Horse",
+      "texto": "Um pequeno peixe de corpo ereto, focinho alongado e cauda capaz de se prender à vegetação. Áreas submersas protegidas combinam com sua presença, em contraste com a força das correntes e o movimento de predadores maiores."
+    },
+    "srd_shadow": {
+      "nome": "Shadow",
+      "texto": "Uma forma escura que se desloca como se a ausência de luz tivesse adquirido vontade. Sua silhueta pode se confundir com sombras comuns, tornando lugares pouco iluminados e a atenção às próprias fontes de luz parte do encontro."
+    },
+    "srd_shambling-mound": {
+      "nome": "Shambling Mound",
+      "texto": "Uma massa ambulante de matéria vegetal, que parece reunir o apodrecimento e a vitalidade de um ambiente úmido. Brejos e vegetação fechada podem esconder seu contorno, até que aquilo que parecia um amontoado comece a avançar."
+    },
+    "srd_shield-guardian": {
+      "nome": "Shield Guardian",
+      "texto": "Um grande guardião artificial concebido para proteger alguém. Placas e membros robustos revelam sua função defensiva, enquanto sua presença perto de um conjurador ou de uma figura importante sugere que uma agressão encontrará resposta imediata."
+    },
+    "srd_shrieker": {
+      "nome": "Shrieker",
+      "texto": "Um fungo de aparência imóvel, capaz de romper o silêncio com um grito penetrante. Em cavernas e corredores subterrâneos, o perigo do encontro pode estar menos no organismo em si que naquilo que seu alarme acaba atraindo."
+    },
+    "srd_silver-dragon-wyrmling": {
+      "nome": "Silver Dragon Wyrmling",
+      "texto": "Um dragão de escamas prateadas e presença imponente, associado ao frio e a lugares elevados. Seu interesse por outras criaturas pode permitir aproximações cautelosas, mas asas, garras e sopro lembram que cordialidade não equivale à ausência de poder. Este filhote conserva as características de sua linhagem em um corpo menor, combinando vulnerabilidade relativa com perigos que já são dracônicos."
+    },
+    "srd_skeleton": {
+      "nome": "Skeleton",
+      "texto": "Uma estrutura óssea animada por magia, privada das necessidades de um corpo vivo. Pode vigiar tumbas ou obedecer a ordens de longa duração, tornando o silêncio de um lugar abandonado compatível com uma ameaça ainda ativa."
+    },
+    "srd_solar": {
+      "nome": "Solar",
+      "texto": "Um ser celestial de poder extraordinário, com asas e uma presença que domina a cena. Sua aparição combina com acontecimentos de grande importância, nos quais dever, julgamento e proteção exigem escolhas além das preocupações imediatas dos aventureiros."
+    },
+    "srd_specter": {
+      "nome": "Specter",
+      "texto": "Uma aparição hostil que mantém a forma vaga de uma pessoa, sem a substância de um corpo vivo. Lugares marcados por sofrimento podem compor seu cenário, onde a própria presença do morto ameaça aqueles que ainda respiram."
+    },
+    "srd_spider": {
+      "nome": "Spider",
+      "texto": "Um aracnídeo de várias patas, capaz de ocupar frestas e produzir fios. Sua presença pode ser percebida por teias e pequenos restos de presas, tornando a observação do ambiente mais importante que o tamanho aparente do animal."
+    },
+    "srd_spirit-naga": {
+      "nome": "Spirit Naga",
+      "texto": "Uma criatura serpentina de rosto humanoide e inteligência ameaçadora. Conhecimentos mágicos e ambição podem moldar seus encontros, fazendo de ruínas e locais escondidos espaços de influência, não apenas esconderijos de um predador."
+    },
+    "srd_sprite": {
+      "nome": "Sprite",
+      "texto": "Um pequeno ser feérico alado, de movimentos rápidos e atenção aguçada ao que o cerca. Um bosque pode parecer vazio mesmo quando está sendo observado, e conquistar sua confiança pode importar mais que demonstrar força."
+    },
+    "srd_spy": {
+      "nome": "Spy",
+      "texto": "Um agente treinado para observar, reunir informações e circular sem revelar seu verdadeiro propósito. Roupas comuns e uma história convincente podem substituir armas ostensivas, tornando conversas, documentos e rotinas de segurança partes importantes de um encontro."
+    },
+    "srd_steam-mephit": {
+      "nome": "Steam Mephit",
+      "texto": "Um pequeno ser alado associado a vapor e umidade quente. Fendas aquecidas, fontes e instalações fumegantes combinam com sua presença, onde silhuetas surgem e desaparecem em nuvens que dificultam acompanhar seus movimentos."
+    },
+    "srd_stirge": {
+      "nome": "Stirge",
+      "texto": "Um pequeno parasita alado de corpo pontiagudo, que procura se fixar em uma presa para se alimentar. Isolado já é desagradável; vários indivíduos em uma caverna ou construção abandonada podem transformar uma parada breve em urgência."
+    },
+    "srd_stone-giant": {
+      "nome": "Stone Giant",
+      "texto": "Um gigante de traços que lembram a própria rocha, cuja presença combina com cavernas e montanhas. Silêncio, pedra trabalhada e espaços amplos ajudam a compor encontros com uma criatura para a qual o mundo humano parece diminuto."
+    },
+    "srd_stone-golem": {
+      "nome": "Stone Golem",
+      "texto": "Uma estátua humanoide animada para agir como guardiã ou servidora. O peso e a rigidez de seu corpo contrastam com a capacidade de se mover, tornando galerias, templos e recintos antigos menos inertes do que parecem."
+    },
+    "srd_storm-giant": {
+      "nome": "Storm Giant",
+      "texto": "Um gigante de presença solene, associado à força das tempestades e a paisagens grandiosas. Seu porte e seus poderes tornam encontros pessoais acontecimentos marcantes, nos quais um gesto ou uma palavra podem ter consequências desproporcionais."
+    },
+    "srd_succubusincubus": {
+      "nome": "Succubus/Incubus",
+      "texto": "Um ser infernal capaz de usar atração, disfarce e proximidade para alcançar seus objetivos. Sua ameaça pode se construir por relações de confiança e escolhas manipuladas, sem depender de uma aparência imediatamente monstruosa."
+    },
+    "srd_swarm-of-bats": {
+      "nome": "Swarm of Bats",
+      "texto": "Morcegos em grande número formam uma nuvem de asas, ruídos e mudanças bruscas de direção. Cavernas e construções com abrigo podem concentrar a colônia, cuja movimentação torna difícil acompanhar cada animal individualmente."
+    },
+    "srd_swarm-of-beetles": {
+      "nome": "Swarm of Beetles",
+      "texto": "Besouros reunidos cobrem o chão com carapaças e patas em movimento. Madeira em decomposição, detritos e áreas subterrâneas oferecem contextos para o encontro, no qual a quantidade transforma animais pequenos em um obstáculo vivo."
+    },
+    "srd_swarm-of-centipedes": {
+      "nome": "Swarm of Centipedes",
+      "texto": "Um tapete de centopeias avança por frestas e superfícies úmidas. A sucessão de corpos segmentados e patas torna difícil localizar um espaço seguro para apoiar mãos e pés durante uma exploração."
+    },
+    "srd_swarm-of-insects": {
+      "nome": "Swarm of Insects",
+      "texto": "Uma concentração de insetos ocupa o ar ou as superfícies próximas com movimentos incessantes. O incômodo de poucos animais se transforma em ameaça coletiva, que pode cercar visitantes e interromper uma passagem."
+    },
+    "srd_swarm-of-poisonous-snakes": {
+      "nome": "Swarm of Poisonous Snakes",
+      "texto": "Numerosas serpentes venenosas se movem juntas em uma área apertada. A dificuldade de acompanhar todas as cabeças e mordidas torna o terreno parte do perigo, sobretudo onde não há espaço para recuar."
+    },
+    "srd_swarm-of-quippers": {
+      "nome": "Swarm of Quippers",
+      "texto": "Um cardume de pequenos peixes de dentes afiados se concentra ao redor de uma presa. A água esconde parte de seus movimentos, e a quantidade de animais faz de uma travessia submersa um encontro diferente de enfrentar um predador isolado."
+    },
+    "srd_swarm-of-rats": {
+      "nome": "Swarm of Rats",
+      "texto": "Muitos ratos se comprimem e atravessam frestas como uma massa inquieta. Ruídos nas paredes e comida roída podem anunciar a infestação, cujo número torna depósitos e passagens estreitas lugares especialmente desagradáveis."
+    },
+    "srd_swarm-of-ravens": {
+      "nome": "Swarm of Ravens",
+      "texto": "Corvos reunidos formam um tumulto de asas escuras, bicos e vocalizações. Seu movimento coletivo pode tomar o céu baixo ou um espaço aberto, tornando difícil acompanhar o que ocorre no meio do grupo."
+    },
+    "srd_swarm-of-spiders": {
+      "nome": "Swarm of Spiders",
+      "texto": "Aranhas em grande número recobrem superfícies e se espalham por cantos e fendas. A concentração de pequenos corpos transforma objetos e passagens em áreas que exigem atenção antes de qualquer contato."
+    },
+    "srd_swarm-of-wasps": {
+      "nome": "Swarm of Wasps",
+      "texto": "Uma nuvem de vespas se move ao redor de um ponto de interesse ou de seu ninho. O zumbido e a ameaça de múltiplas ferroadas tornam a aproximação e a retirada elementos centrais do encontro."
+    },
+    "srd_tarrasque": {
+      "nome": "Tarrasque",
+      "texto": "Um monstro descomunal de carapaça espessa, chifres e mandíbulas enormes. Sua passagem ameaça edifícios e territórios inteiros, fazendo do encontro menos uma disputa comum entre combatentes e mais uma crise de sobrevivência e destruição."
+    },
+    "srd_thug": {
+      "nome": "Thug",
+      "texto": "Uma pessoa acostumada a recorrer à intimidação e à violência para obter resultados. Pode trabalhar como cobrador, guarda-costas ou executor; sua posição em uma rede de interesses costuma explicar melhor suas ações que a arma que empunha."
+    },
+    "srd_tiger": {
+      "nome": "Tiger",
+      "texto": "Um grande felino de pelagem listrada, corpo musculoso e aproximação cuidadosa. Vegetação densa favorece o disfarce de seu contorno, e a passagem de silêncio para uma investida pode ocorrer antes que a presa compreenda a distância."
+    },
+    "srd_treant": {
+      "nome": "Treant",
+      "texto": "Um ser de aparência arbórea, cuja presença pode se confundir com árvores antigas. Sua decisão de falar ou se mover transforma o bosque em um lugar habitado, onde memória e proteção podem seguir ritmos diferentes dos humanos."
+    },
+    "srd_tribal-warrior": {
+      "nome": "Tribal Warrior",
+      "texto": "Um combatente ligado à defesa e às responsabilidades de uma comunidade. Equipamento e aparência devem refletir o povo e o ambiente da aventura; esta ficha não determina cultura, nível de organização ou relação com visitantes."
+    },
+    "srd_triceratops": {
+      "nome": "Triceratops",
+      "texto": "Um grande herbívoro de corpo pesado, três chifres e uma ampla proteção óssea atrás da cabeça. Campos e áreas de vegetação oferecem alimento, mas a reação de um animal acuado pode tornar a aproximação extremamente perigosa."
+    },
+    "srd_troll": {
+      "nome": "Troll",
+      "texto": "Um humanoide alto, de membros longos e aparência faminta, conhecido por uma capacidade extraordinária de recuperação. Seu modo de avançar pode tornar ferimentos aparentemente decisivos em alívio passageiro, sobretudo em trilhas e esconderijos de acesso difícil."
+    },
+    "srd_tyrannosaurus-rex": {
+      "nome": "Tyrannosaurus Rex",
+      "texto": "Um predador terrestre gigantesco de cabeça maciça, mandíbulas poderosas e braços pequenos. Sua escala domina áreas abertas, onde pegadas profundas e restos de presas podem dar aos viajantes uma oportunidade de perceber o risco antes do encontro."
+    },
+    "srd_unicorn": {
+      "nome": "Unicorn",
+      "texto": "Uma criatura equina de chifre único e presença sobrenatural, frequentemente associada a lugares naturais protegidos. Sua aparição pode sinalizar cuidado, esperança ou vigilância, tornando a maneira de se aproximar tão importante quanto aquilo que se pretende pedir."
+    },
+    "srd_vampire": {
+      "nome": "Vampire",
+      "texto": "Um morto-vivo que preserva inteligência, aparência e parte dos vínculos da vida anterior. Necessidade de sangue e capacidade de manipulação podem se esconder atrás de hospitalidade e prestígio, fazendo do convívio social uma extensão do perigo."
+    },
+    "srd_vampire-spawn": {
+      "nome": "Vampire Spawn",
+      "texto": "Um morto-vivo marcado pela fome vampírica, cuja aparência ainda pode lembrar quem foi em vida. Sua relação com um vampiro mais poderoso pode moldar sua situação, oferecendo encontros em que ameaça e perda de autonomia se misturam."
+    },
+    "srd_veteran": {
+      "nome": "Veteran",
+      "texto": "Um combatente que sobreviveu a confrontos e aprendeu a agir sob pressão. Equipamento usado e movimentos econômicos podem revelar experiência, enquanto antigos serviços, companheiros e promessas ajudam a explicar por que ainda empunha armas."
+    },
+    "srd_violet-fungus": {
+      "nome": "Violet Fungus",
+      "texto": "Um fungo de coloração marcante e apêndices capazes de alcançar o que se aproxima. Em cavernas e locais úmidos, pode parecer apenas mais uma parte da vegetação, até que a proximidade revele uma ameaça viva."
+    },
+    "srd_vrock": {
+      "nome": "Vrock",
+      "texto": "Um demônio de traços de abutre, asas grandes e aparência repulsiva. Sua presença combina com ruína e violência, e a possibilidade de atacar pelo ar torna difícil encontrar segurança apenas controlando os caminhos no chão."
+    },
+    "srd_vulture": {
+      "nome": "Vulture",
+      "texto": "Uma ave de grande envergadura, adaptada à procura de carcaças. Círculos no céu e grupos pousados podem indicar restos de animais ou de uma batalha, oferecendo aos viajantes um sinal do que aconteceu além de sua vista."
+    },
+    "srd_warhorse": {
+      "nome": "Warhorse",
+      "texto": "Um cavalo treinado para atuar em situações de combate. Sua postura e seus movimentos refletem trabalho com cavaleiros e equipamento, mas ferimentos, exaustão e condições do terreno continuam relevantes para qualquer cena em que participa."
+    },
+    "srd_warhorse-skeleton": {
+      "nome": "Warhorse Skeleton",
+      "texto": "O esqueleto animado de uma montaria de guerra, reconhecível pela postura e pela estrutura equina. Pode carregar um cavaleiro morto-vivo ou obedecer a ordens antigas, acrescentando ao som dos cascos a ausência inquietante de respiração."
+    },
+    "srd_water-elemental": {
+      "nome": "Water Elemental",
+      "texto": "Uma massa de água que mantém uma forma móvel e deliberada. Sua presença pode transformar uma margem ou recinto inundado em terreno hostil, onde o líquido deixa de ser um obstáculo passivo e passa a perseguir os vivos."
+    },
+    "srd_weasel": {
+      "nome": "Weasel",
+      "texto": "Um pequeno mamífero de corpo alongado e movimentos rápidos, capaz de entrar em espaços apertados. Procura alimento entre frestas e vegetação, onde sua agilidade pode ser percebida apenas por um breve movimento ou ruído."
+    },
+    "srd_werebear": {
+      "nome": "Werebear",
+      "texto": "Um licantropo capaz de assumir traços de urso, combinando aparência humana e força animal. Sua história pode envolver isolamento, segredo ou responsabilidade pela própria condição; encontrar a fera não revela, por si só, a pessoa por trás dela."
+    },
+    "srd_wereboar": {
+      "nome": "Wereboar",
+      "texto": "Um licantropo cuja transformação manifesta presas e a constituição robusta de um javali. Investidas e resistência física marcam sua presença em confronto, enquanto impulsos, vínculos e escolhas pessoais podem dar outro significado ao encontro."
+    },
+    "srd_wererat": {
+      "nome": "Wererat",
+      "texto": "Um licantropo de traços de rato, capaz de alternar entre aparências para circular por ambientes diferentes. Túneis, vielas e esconderijos urbanos combinam com histórias de identidades ocultas e grupos que se conhecem melhor que seus perseguidores."
+    },
+    "srd_weretiger": {
+      "nome": "Weretiger",
+      "texto": "Um licantropo capaz de reunir traços humanos e de tigre em uma forma predatória. A caça silenciosa e a força do felino oferecem uma presença marcante, mas suas atitudes e seu controle sobre a condição dependem da história."
+    },
+    "srd_werewolf": {
+      "nome": "Werewolf",
+      "texto": "Um licantropo cuja transformação mistura a figura humana e a de um lobo. Rastros, uivos e identidades escondidas podem construir a tensão do encontro, sem impedir que medo, lealdade ou arrependimento também façam parte de sua história."
+    },
+    "srd_white-dragon-wyrmling": {
+      "nome": "White Dragon Wyrmling",
+      "texto": "Escamas claras ajudam este dragão a se confundir com neve e gelo. Paisagens congeladas combinam com sua caça, onde o relevo e a exposição ao frio podem favorecer a criatura antes mesmo de ela se revelar. Este filhote conserva as características de sua linhagem em um corpo menor, combinando vulnerabilidade relativa com perigos que já são dracônicos."
+    },
+    "srd_wight": {
+      "nome": "Wight",
+      "texto": "Um morto-vivo de vontade própria, que ainda pode usar armas e agir com propósito. Tumbas e campos de batalha combinam com sua presença, onde o inimigo não é apenas um corpo que se move, mas uma intenção que persiste."
+    },
+    "srd_will-o-wisp": {
+      "nome": "Will-o'-Wisp",
+      "texto": "Uma luz errante que pode parecer sinal de companhia ou de um caminho seguro. Em pântanos e lugares desolados, segui-la transforma curiosidade e esperança em riscos, sobretudo quando a escuridão esconde o terreno sob os pés."
+    },
+    "srd_winter-wolf": {
+      "nome": "Winter Wolf",
+      "texto": "Um lobo de grande porte, pelagem clara e afinidade com ambientes gelados. Sua inteligência e seu sopro frio o distinguem de um animal comum, permitindo encontros em que a ameaça também pode observar, planejar e se comunicar."
+    },
+    "srd_wolf": {
+      "nome": "Wolf",
+      "texto": "Um canídeo de sentidos atentos e comportamento social, capaz de percorrer áreas extensas em busca de alimento. A movimentação do grupo e o uso do terreno tornam seus rastros tão importantes quanto a visão de um único animal."
+    },
+    "srd_worg": {
+      "nome": "Worg",
+      "texto": "Um predador semelhante a um lobo grande, mas dotado de inteligência própria. Pode caçar ou atuar ao lado de outros combatentes, e seus movimentos coordenados tornam caminhos de fuga e isolamento de presas elementos importantes do encontro."
+    },
+    "srd_wraith": {
+      "nome": "Wraith",
+      "texto": "Uma manifestação sombria de morte e hostilidade, cuja forma lembra uma figura humanoide sem corpo sólido. Sua presença pode tornar um lugar frio e opressivo, sugerindo um perigo que não depende de portas ou paredes comuns."
+    },
+    "srd_wyvern": {
+      "nome": "Wyvern",
+      "texto": "Um predador alado de anatomia dracônica, duas patas e cauda terminada em ferrão. Rochedos e grandes alturas oferecem pontos de observação e repouso, de onde pode cair sobre presas antes que encontrem abrigo."
+    },
+    "srd_xorn": {
+      "nome": "Xorn",
+      "texto": "Um ser de corpo pétreo e anatomia incomum, com membros dispostos ao redor de uma boca central. Associado à terra e à busca de minerais, pode tratar gemas e metais de maneira muito diferente dos exploradores que os transportam."
+    },
+    "srd_young-black-dragon": {
+      "nome": "Young Black Dragon",
+      "texto": "Escamas negras e uma silhueta de réptil alado distinguem este dragão. Pântanos e águas escuras combinam com sua presença, onde a cobertura e a ameaça de ácido podem transformar a aproximação ao covil em um percurso ameaçador. Ainda jovem, já é uma ameaça capaz de explorar território e disputar alimento e abrigo sem a proteção de um adulto."
+    },
+    "srd_young-blue-dragon": {
+      "nome": "Young Blue Dragon",
+      "texto": "Este dragão de escamas azuis se destaca pelo chifre na cabeça e pela associação à eletricidade. Regiões áridas e horizontes abertos oferecem espaço para seu domínio, onde abrigo e distância nem sempre protegem de uma ameaça que também vem do céu. Ainda jovem, já é uma ameaça capaz de explorar território e disputar alimento e abrigo sem a proteção de um adulto."
+    },
+    "srd_young-brass-dragon": {
+      "nome": "Young Brass Dragon",
+      "texto": "Escamas de brilho semelhante ao latão e uma silhueta alada marcam a aparência deste dragão. Terras áridas combinam com encontros em que conversa e curiosidade podem acompanhar o perigo evidente de um corpo poderoso e de um sopro de fogo. Ainda jovem, já é uma ameaça capaz de explorar território e disputar alimento e abrigo sem a proteção de um adulto."
+    },
+    "srd_young-bronze-dragon": {
+      "nome": "Young Bronze Dragon",
+      "texto": "Escamas de aparência bronzeada cobrem este dragão alado. Costas e paisagens junto ao mar oferecem um cenário para sua presença, onde observação, interesses próprios e o poder da eletricidade podem dar forma a relações com viajantes e comunidades. Ainda jovem, já é uma ameaça capaz de explorar território e disputar alimento e abrigo sem a proteção de um adulto."
+    },
+    "srd_young-copper-dragon": {
+      "nome": "Young Copper Dragon",
+      "texto": "Um dragão de escamas acobreadas, cuja anatomia permite ocupar alturas e recantos rochosos. Curiosidade e um gosto por situações inesperadas podem compor sua personalidade, sem diminuir a ameaça de suas garras e de seu sopro ácido. Ainda jovem, já é uma ameaça capaz de explorar território e disputar alimento e abrigo sem a proteção de um adulto."
+    },
+    "srd_young-gold-dragon": {
+      "nome": "Young Gold Dragon",
+      "texto": "Um dragão de escamas douradas e feições marcantes, cuja presença transmite uma majestade difícil de ignorar. Encontros podem envolver vigilância e avaliação das intenções de visitantes, diante de uma criatura que reúne força dracônica e fogo. Ainda jovem, já é uma ameaça capaz de explorar território e disputar alimento e abrigo sem a proteção de um adulto."
+    },
+    "srd_young-green-dragon": {
+      "nome": "Young Green Dragon",
+      "texto": "Um dragão de escamas verdes, capaz de se confundir com a vegetação de um território arborizado. A floresta oferece esconderijos e caminhos indiretos, adequados a encontros em que observação, palavras calculadas e a ameaça de veneno se misturam. Ainda jovem, já é uma ameaça capaz de explorar território e disputar alimento e abrigo sem a proteção de um adulto."
+    },
+    "srd_young-red-dragon": {
+      "nome": "Young Red Dragon",
+      "texto": "Um dragão de escamas vermelhas, corpo poderoso e silhueta feita para dominar o céu. Rochedos e regiões de calor combinam com sua presença, onde sinais de fogo e espaços de grande escala podem anunciar a proximidade do covil. Ainda jovem, já é uma ameaça capaz de explorar território e disputar alimento e abrigo sem a proteção de um adulto."
+    },
+    "srd_young-silver-dragon": {
+      "nome": "Young Silver Dragon",
+      "texto": "Um dragão de escamas prateadas e presença imponente, associado ao frio e a lugares elevados. Seu interesse por outras criaturas pode permitir aproximações cautelosas, mas asas, garras e sopro lembram que cordialidade não equivale à ausência de poder. Ainda jovem, já é uma ameaça capaz de explorar território e disputar alimento e abrigo sem a proteção de um adulto."
+    },
+    "srd_young-white-dragon": {
+      "nome": "Young White Dragon",
+      "texto": "Escamas claras ajudam este dragão a se confundir com neve e gelo. Paisagens congeladas combinam com sua caça, onde o relevo e a exposição ao frio podem favorecer a criatura antes mesmo de ela se revelar. Ainda jovem, já é uma ameaça capaz de explorar território e disputar alimento e abrigo sem a proteção de um adulto."
+    },
+    "srd_zombie": {
+      "nome": "Zombie",
+      "texto": "Um corpo reanimado que avança sem as necessidades e reações de um ser vivo. Seus movimentos arrastados podem esconder uma persistência perigosa, sobretudo quando corredores estreitos ou numerosos cadáveres limitam as rotas de passagem."
+    }
+  }
+}

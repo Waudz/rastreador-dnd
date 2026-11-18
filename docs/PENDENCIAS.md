@@ -1,5 +1,14 @@
 # Pendências e próxima tarefa
 
+## Descrições do bestiário — pedido de 17/11/2026, implementado localmente
+
+- Base conferida no GitHub: `bba0a5f` (`main`, cache v279). Texto original em português para todas as 325 criaturas do pacote 2014, em `dados/descricoes-monstros-2014.json`; licença e natureza do conteúdo declaradas.
+- Seção Descrição na aba Principal do leitor compartilhado, separada de estatísticas, ações e habilidades. Descrições já cadastradas em `descricao`, `description` ou `desc` prevalecem. Criaturas personalizadas sem texto não recebem uma descrição genérica inventada.
+- Cache preparado para v280 e conteúdo incluído no pacote offline. Nenhuma ficha, campanha, estatística ou registro do Supabase foi alterado. Envio ao GitHub autorizado pelo William em 17/11/2026.
+- Validação: 715 testes aprovados, 1 ignorado e nenhuma falha; navegador local como visitante confirmou a descrição na ficha do Goblin e a navegação para Ações, também a 375 px sem rolagem horizontal. Android físico e PWA desconectada não foram validados nesta rodada.
+- O novo pedido autoriza esta parte do backlog abaixo; Enciclopédia e Regras rápidas continuam fora do escopo.
+
+
 ## IDEIAS FUTURAS — ENCICLOPÉDIA, REGRAS RÁPIDAS E DESCRIÇÕES DO BESTIÁRIO (17/11/2026 — NÃO IMPLEMENTAR AGORA)
 
 **Prioridade atual:** testar e estabilizar as funcionalidades existentes. As ideias abaixo são backlog, sem iniciar desenvolvimento ou modificar o aplicativo nesta fase.
